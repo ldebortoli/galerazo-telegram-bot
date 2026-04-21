@@ -5,11 +5,11 @@ from ..database import Database
 from ..roles import CommandContext, UserLevel
 
 
-def handle(context: CommandContext, _db: Database) -> str | None:
+async def handle(context: CommandContext, _db: Database) -> str | None:
     if context.create_backup is None:
         return "No hay mecanismo de backup configurado."
 
-    result = context.create_backup()
+    result = await context.create_backup()
     if result.sent:
         return None
 

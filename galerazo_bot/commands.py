@@ -1,13 +1,16 @@
 from __future__ import annotations
 
+import asyncio
+import inspect
 from dataclasses import dataclass
-from typing import Callable, Optional
+from typing import Awaitable, Callable, Optional, Union
 
 from .database import Database
 from .roles import CommandContext, UserLevel
 
 
-CommandHandler = Callable[[CommandContext, Database], Optional[str]]
+CommandResult = Union[Optional[str], Awaitable[Optional[str]]]
+CommandHandler = Callable[[CommandContext, Database], CommandResult]
 DEFAULT_PERMISSION_ERROR = "No tenes permisos suficientes para usar este comando."
 
 
@@ -61,6 +64,24 @@ def handle_text(
     chat_id: str | None = None,
     user_level: UserLevel = UserLevel.COMMON,
 ) -> str | None:
+    return asyncio.run(
+        handle_text_async(
+            text=text,
+            sender_id=sender_id,
+            db=db,
+            chat_id=chat_id,
+            user_level=user_level,
+        )
+    )
+
+
+async def handle_text_async(
+    text: str,
+    sender_id: str,
+    db: Database,
+    chat_id: str | None = None,
+    user_level: UserLevel = UserLevel.COMMON,
+) -> str | None:
     context = CommandContext(
         sender_id=sender_id,
         chat_id=chat_id,
@@ -70,10 +91,48 @@ def handle_text(
         args=command_args(text),
     )
     db.save_incoming_message(sender_id=sender_id, text=text, chat_id=chat_id)
-    return _handle_with_context(context, db)
+    return await _handle_with_context(context, db)
 
 
 def handle_command(
+    text: str,
+    sender_id: str,
+    db: Database,
+    chat_id: str | None = None,
+    user_level: UserLevel = UserLevel.COMMON,
+    reply_to_user_id: str | None = None,
+    reply_to_username: str | None = None,
+    reply_to_display_name: str | None = None,
+    chat_type: str | None = None,
+    bot_user_id: str | None = None,
+    send_announcement=None,
+    create_backup=None,
+    send_debug_update=None,
+    send_galerazas=None,
+    leave_chat=None,
+) -> str | None:
+    return asyncio.run(
+        handle_command_async(
+            text=text,
+            sender_id=sender_id,
+            db=db,
+            chat_id=chat_id,
+            user_level=user_level,
+            reply_to_user_id=reply_to_user_id,
+            reply_to_username=reply_to_username,
+            reply_to_display_name=reply_to_display_name,
+            chat_type=chat_type,
+            bot_user_id=bot_user_id,
+            send_announcement=send_announcement,
+            create_backup=create_backup,
+            send_debug_update=send_debug_update,
+            send_galerazas=send_galerazas,
+            leave_chat=leave_chat,
+        )
+    )
+
+
+async def handle_command_async(
     text: str,
     sender_id: str,
     db: Database,
@@ -108,10 +167,10 @@ def handle_command(
         reply_to_display_name=reply_to_display_name,
     )
     db.save_incoming_message(sender_id=sender_id, text=text, chat_id=chat_id)
-    return _handle_with_context(context, db)
+    return await _handle_with_context(context, db)
 
 
-def _handle_with_context(context: CommandContext, db: Database) -> str | None:
+async def _handle_with_context(context: CommandContext, db: Database) -> str | None:
     command_name = normalize_command(context.raw_text)
     command = COMMANDS.get(command_name)
     if command is None:
@@ -120,7 +179,10 @@ def _handle_with_context(context: CommandContext, db: Database) -> str | None:
     if context.user_level < command.min_level:
         return command.permission_error or DEFAULT_PERMISSION_ERROR
 
-    return command.handler(context, db)
+    result = command.handler(context, db)
+    if inspect.isawaitable(result):
+        return await result
+    return result
 
 
 def _load_commands() -> dict[str, Command]:

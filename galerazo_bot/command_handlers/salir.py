@@ -5,7 +5,7 @@ from ..database import Database
 from ..roles import CommandContext, UserLevel
 
 
-def handle(context: CommandContext, _db: Database) -> str:
+async def handle(context: CommandContext, _db: Database) -> str:
     if context.chat_type not in {"group", "supergroup"}:
         return "El comando /salir solo funciona en grupos o supergrupos."
 
@@ -18,7 +18,7 @@ def handle(context: CommandContext, _db: Database) -> str:
     if context.leave_chat is None:
         return "No hay mecanismo configurado para salir del chat."
 
-    if not context.leave_chat():
+    if not await context.leave_chat():
         return "No pude salir del chat."
 
     return "Saliendo del grupo."

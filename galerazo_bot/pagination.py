@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup
+
 
 MESSAGE_LIMIT = 4096
 BUTTON_PREFIX = "paginated"
@@ -41,8 +43,13 @@ def render_page(header: str, lines: list[str], page: int, max_chars: int = MESSA
     return PaginatedPage(text=pages[safe_page - 1], page=safe_page, total_pages=total_pages)
 
 
-def build_keyboard(message_id: str, page: int, total_pages: int, unlocked: bool) -> dict:
-    rows = []
+def build_keyboard(
+    message_id: str,
+    page: int,
+    total_pages: int,
+    unlocked: bool,
+) -> InlineKeyboardMarkup:
+    rows: list[list[InlineKeyboardButton]] = []
     if total_pages > 1:
         page_buttons = []
         for item in _page_button_items(page, total_pages):
@@ -56,7 +63,7 @@ def build_keyboard(message_id: str, page: int, total_pages: int, unlocked: bool)
         rows.append(page_buttons)
 
     rows.append([_lock_button(message_id, page, unlocked), _delete_button(message_id)])
-    return {"inline_keyboard": rows}
+    return InlineKeyboardMarkup(rows)
 
 
 def parse_callback_data(data: str) -> tuple[str, str, str | None] | None:
@@ -80,14 +87,14 @@ def _page_button_items(page: int, total_pages: int) -> list[int | str]:
     return ["first", page - 1, page, page + 1, "last"]
 
 
-def _page_button(message_id: str, page: int, label: str) -> dict:
-    return {"text": label, "callback_data": f"{BUTTON_PREFIX}:page:{message_id}:{page}"}
+def _page_button(message_id: str, page: int, label: str) -> InlineKeyboardButton:
+    return InlineKeyboardButton(label, callback_data=f"{BUTTON_PREFIX}:page:{message_id}:{page}")
 
 
-def _lock_button(message_id: str, page: int, unlocked: bool) -> dict:
-    label = "🔓" if unlocked else "🔒"
-    return {"text": label, "callback_data": f"{BUTTON_PREFIX}:unlock:{message_id}:{page}"}
+def _lock_button(message_id: str, page: int, unlocked: bool) -> InlineKeyboardButton:
+    label = "\U0001f513" if unlocked else "\U0001f512"
+    return InlineKeyboardButton(label, callback_data=f"{BUTTON_PREFIX}:unlock:{message_id}:{page}")
 
 
-def _delete_button(message_id: str) -> dict:
-    return {"text": "❌", "callback_data": f"{BUTTON_PREFIX}:delete:{message_id}"}
+def _delete_button(message_id: str) -> InlineKeyboardButton:
+    return InlineKeyboardButton("\u274c", callback_data=f"{BUTTON_PREFIX}:delete:{message_id}")

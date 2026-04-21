@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from enum import IntEnum
 from pathlib import Path
-from typing import Callable
+from typing import Awaitable, Callable
 
 
 class UserLevel(IntEnum):
@@ -37,11 +37,11 @@ class CommandContext:
     raw_text: str
     args: str
     bot_user_id: str | None = None
-    send_announcement: Callable[[str], bool] | None = None
-    create_backup: Callable[[], BackupResult] | None = None
-    send_debug_update: Callable[[], bool] | None = None
-    send_galerazas: Callable[[], bool] | None = None
-    leave_chat: Callable[[], bool] | None = None
+    send_announcement: Callable[[str], Awaitable[bool]] | None = None
+    create_backup: Callable[[], Awaitable[BackupResult]] | None = None
+    send_debug_update: Callable[[], Awaitable[bool]] | None = None
+    send_galerazas: Callable[[], Awaitable[bool]] | None = None
+    leave_chat: Callable[[], Awaitable[bool]] | None = None
     reply_to_user_id: str | None = None
     reply_to_username: str | None = None
     reply_to_display_name: str | None = None
