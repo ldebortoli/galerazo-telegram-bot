@@ -26,6 +26,7 @@ class Command:
     hidden: bool = False
     configurable_group: str | None = None
     command_key: str | None = None
+    list_response: bool = False
 
     def __post_init__(self) -> None:
         if self.command_key is None:
@@ -120,7 +121,10 @@ def handle_command(
     reply_to_display_name: str | None = None,
     chat_type: str | None = None,
     bot_user_id: str | None = None,
+    sender_username: str | None = None,
+    sender_display_name: str | None = None,
     send_announcement=None,
+    send_report=None,
     create_backup=None,
     send_debug_update=None,
     send_galerazas=None,
@@ -140,7 +144,10 @@ def handle_command(
             reply_to_display_name=reply_to_display_name,
             chat_type=chat_type,
             bot_user_id=bot_user_id,
+            sender_username=sender_username,
+            sender_display_name=sender_display_name,
             send_announcement=send_announcement,
+            send_report=send_report,
             create_backup=create_backup,
             send_debug_update=send_debug_update,
             send_galerazas=send_galerazas,
@@ -162,7 +169,10 @@ async def handle_command_async(
     reply_to_display_name: str | None = None,
     chat_type: str | None = None,
     bot_user_id: str | None = None,
+    sender_username: str | None = None,
+    sender_display_name: str | None = None,
     send_announcement=None,
+    send_report=None,
     create_backup=None,
     send_debug_update=None,
     send_galerazas=None,
@@ -179,7 +189,10 @@ async def handle_command_async(
         args=command_args(text),
         language=language or _resolve_language(db, chat_id, chat_type),
         bot_user_id=bot_user_id,
+        sender_username=sender_username,
+        sender_display_name=sender_display_name,
         send_announcement=send_announcement,
+        send_report=send_report,
         create_backup=create_backup,
         send_debug_update=send_debug_update,
         send_galerazas=send_galerazas,

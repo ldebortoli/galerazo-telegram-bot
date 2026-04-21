@@ -40,7 +40,10 @@ class CommandContext:
     args: str
     language: str = DEFAULT_LANGUAGE
     bot_user_id: str | None = None
+    sender_username: str | None = None
+    sender_display_name: str | None = None
     send_announcement: Callable[[str], Awaitable[bool]] | None = None
+    send_report: Callable[[str], Awaitable[bool]] | None = None
     create_backup: Callable[[], Awaitable[BackupResult]] | None = None
     send_debug_update: Callable[[], Awaitable[bool]] | None = None
     send_galerazas: Callable[[], Awaitable[bool]] | None = None

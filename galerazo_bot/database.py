@@ -167,6 +167,19 @@ class Database:
             )
             conn.execute(
                 """
+                CREATE TABLE IF NOT EXISTS daily_user_reports (
+                    user_id TEXT NOT NULL,
+                    report_date TEXT NOT NULL,
+                    chat_id TEXT,
+                    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    PRIMARY KEY (user_id, report_date),
+                    FOREIGN KEY (user_id) REFERENCES users (user_id),
+                    FOREIGN KEY (chat_id) REFERENCES chats (chat_id)
+                )
+                """
+            )
+            conn.execute(
+                """
                 CREATE TABLE IF NOT EXISTS galeraza_daily_winners (
                     chat_id TEXT NOT NULL,
                     game_date TEXT NOT NULL,
@@ -437,6 +450,10 @@ class Database:
                 )
             conn.execute("DELETE FROM chat_command_settings WHERE chat_id = ?", (old_chat_id,))
             conn.execute(
+                "UPDATE daily_user_reports SET chat_id = ? WHERE chat_id = ?",
+                (new_chat_id, old_chat_id),
+            )
+            conn.execute(
                 "UPDATE galeraza_daily_winners SET chat_id = ? WHERE chat_id = ?",
                 (new_chat_id, old_chat_id),
             )
@@ -688,6 +705,20 @@ class Database:
             source.close()
 
         return backup_path
+
+    def try_record_daily_report(self, user_id: str, report_date: str, chat_id: str | None = None) -> bool:
+        self.get_or_create_user(user_id)
+        if chat_id is not None:
+            chat_id = self.resolve_chat_id(chat_id)
+        with self._connect() as conn:
+            cursor = conn.execute(
+                """
+                INSERT OR IGNORE INTO daily_user_reports (user_id, report_date, chat_id)
+                VALUES (?, ?, ?)
+                """,
+                (user_id, report_date, chat_id),
+            )
+        return cursor.rowcount > 0
 
     def try_award_daily_galeraza(
         self,

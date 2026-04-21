@@ -24,6 +24,6 @@ def handle(context: CommandContext, _db: Database) -> str:
 
 
 COMMANDS = {
-    "help": Command("help / ayuda", "muestra esta ayuda", handle),
-    "ayuda": Command("ayuda", "muestra esta ayuda", handle, hidden=True),
+    "help": Command("help / ayuda", "muestra esta ayuda", handle, list_response=True),
+    "ayuda": Command("ayuda", "muestra esta ayuda", handle, hidden=True, list_response=True),
 }

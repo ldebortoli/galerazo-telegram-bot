@@ -11,6 +11,7 @@ Base para un bot de Telegram en Python con `python-telegram-bot` y SQLite.
 - `desbloquear` / `desloquear`: desbloquea un usuario. Solo devs.
 - `listanegra`: muestra los usuarios bloqueados. Solo devs.
 - `novedad`: envia una noticia al canal de anuncios. Solo devs.
+- `reportar`: envia un reporte de bug al canal de logging. Maximo 1 por usuario por dia.
 - `backup`: responde con un backup de SQLite. Solo devs.
 - `debug`: responde con el objeto update del mensaje. Solo devs.
 - `chats`: muestra estadisticas de chats por estado y tipo.
@@ -144,12 +145,26 @@ Por ahora el canal de logging solo recibe:
 
 - Un mensaje cuando se inicia el bot.
 - Errores no handleados.
+- Reportes enviados por usuarios con `/reportar`.
+- Avisos cuando un mensaje no paginable supera el limite de Telegram y se envia truncado.
 
 El canal de anuncios recibe mensajes enviados por devs con:
 
 ```powershell
 /novedad mensaje
 ```
+
+## Reportar bugs
+
+Cualquier usuario puede enviar un reporte al canal de logging con:
+
+```powershell
+/reportar mensaje
+```
+
+El bot reenvia el texto al canal configurado en `TELEGRAM_LOG_CHAT_ID` junto con metadata del usuario y del chat: `user_id`, username, nombre visible, `chat_id`, tipo de chat, titulo y `message_id`.
+
+Para evitar abuso, cada usuario puede enviar como maximo un reporte por dia. Si Telegram convierte un grupo en supergrupo, la referencia al `chat_id` guardada para ese reporte diario se migra al nuevo id.
 
 ## Backups
 

@@ -203,6 +203,8 @@ async def _handle_command_update(update: Update, context: ContextTypes.DEFAULT_T
         db=state.db,
         chat_id=str(chat.id),
         user_level=user_level,
+        sender_username=user.username,
+        sender_display_name=_display_name(user),
         reply_to_user_id=str(reply_to_user.id) if reply_to_user is not None else None,
         reply_to_username=reply_to_user.username if reply_to_user is not None else None,
         reply_to_display_name=_display_name(reply_to_user) if reply_to_user is not None else None,
@@ -213,6 +215,16 @@ async def _handle_command_update(update: Update, context: ContextTypes.DEFAULT_T
             context.bot,
             state.settings.telegram_announcements_chat_id,
             text,
+            state.settings.telegram_log_chat_id,
+            _chat_language(state.db, chat.id),
+        ),
+        send_report=lambda text: _send_report(
+            db=state.db,
+            bot=context.bot,
+            log_chat_id=state.settings.telegram_log_chat_id,
+            message=message,
+            user=user,
+            report_text=text,
         ),
         create_backup=lambda: _create_and_send_backup(state.db, message),
         send_debug_update=lambda: _send_debug_update(state.db, message, update),
@@ -230,6 +242,9 @@ async def _handle_command_update(update: Update, context: ContextTypes.DEFAULT_T
             text=response,
             requester_user_id=str(user.id),
             list_type="command",
+            paginate=command.list_response if command is not None else False,
+            bot=context.bot,
+            log_chat_id=state.settings.telegram_log_chat_id,
         )
     except TelegramError as exc:
         if _is_bot_removed_error(exc):
@@ -401,7 +416,22 @@ async def _send_text_response(
     text: str,
     requester_user_id: str,
     list_type: str,
+    paginate: bool,
+    bot: Bot,
+    log_chat_id: str | None,
 ) -> None:
+    if len(text) > TELEGRAM_MESSAGE_LIMIT_CHARS and not paginate:
+        await message.reply_text(text[:TELEGRAM_MESSAGE_LIMIT_CHARS], do_quote=True)
+        await _send_log_event(
+            bot,
+            log_chat_id,
+            (
+                f"{t(_chat_language(db, message.chat.id), 'long_message.truncated_log')}\n"
+                f"chat_id={message.chat.id} message_id={message.message_id}"
+            ),
+        )
+        return
+
     lines = text.splitlines()
     header = lines[0] if lines else ""
     body_lines = lines[1:]
@@ -425,6 +455,41 @@ async def _send_text_response(
     await result.edit_text(
         text=page.text,
         reply_markup=build_keyboard(message_id, page.page, page.total_pages, unlocked=False),
+    )
+
+
+async def _send_report(
+    db: Database,
+    bot: Bot,
+    log_chat_id: str | None,
+    message: Message,
+    user: User,
+    report_text: str,
+) -> bool:
+    if not log_chat_id:
+        return False
+
+    language = _chat_language(db, message.chat.id)
+    username = f"@{user.username}" if user.username else "-"
+    display_name = _display_name(user) or "-"
+    chat_title = message.chat.title or "-"
+    log_text = (
+        f"{t(language, 'reportar.log_title')}\n"
+        f"user_id={user.id}\n"
+        f"username={username}\n"
+        f"display_name={display_name}\n"
+        f"chat_id={message.chat.id}\n"
+        f"chat_type={message.chat.type}\n"
+        f"chat_title={chat_title}\n"
+        f"message_id={message.message_id}\n"
+        "\n"
+        f"{report_text}"
+    )
+    return await _send_log_text_with_truncation(
+        bot,
+        log_chat_id,
+        log_text,
+        t(language, "long_message.truncated_log"),
     )
 
 
@@ -739,21 +804,51 @@ async def _send_unhandled_error_event(
 
 
 async def _send_log_event(bot: Bot, log_chat_id: str | None, text: str) -> None:
+    await _send_log_text_with_truncation(bot, log_chat_id, text)
+
+
+async def _send_log_text_with_truncation(
+    bot: Bot,
+    log_chat_id: str | None,
+    text: str,
+    truncation_notice: str | None = None,
+) -> bool:
     if not log_chat_id:
-        return
+        return False
 
     try:
-        await bot.send_message(chat_id=_parse_chat_id(log_chat_id), text=text)
+        was_truncated = len(text) > TELEGRAM_MESSAGE_LIMIT_CHARS
+        await bot.send_message(
+            chat_id=_parse_chat_id(log_chat_id),
+            text=text[:TELEGRAM_MESSAGE_LIMIT_CHARS],
+        )
+        if was_truncated and truncation_notice:
+            await bot.send_message(chat_id=_parse_chat_id(log_chat_id), text=truncation_notice)
     except (TelegramError, ValueError) as exc:
         logger.warning("No pude enviar evento al canal de logging: %s", exc)
+        return False
+
+    return True
 
 
-async def _send_announcement(bot: Bot, announcements_chat_id: str | None, text: str) -> bool:
+async def _send_announcement(
+    bot: Bot,
+    announcements_chat_id: str | None,
+    text: str,
+    log_chat_id: str | None = None,
+    language: str = DEFAULT_LANGUAGE,
+) -> bool:
     if not announcements_chat_id:
         return False
 
     try:
-        await bot.send_message(chat_id=_parse_chat_id(announcements_chat_id), text=text)
+        was_truncated = len(text) > TELEGRAM_MESSAGE_LIMIT_CHARS
+        await bot.send_message(
+            chat_id=_parse_chat_id(announcements_chat_id),
+            text=text[:TELEGRAM_MESSAGE_LIMIT_CHARS],
+        )
+        if was_truncated:
+            await _send_log_event(bot, log_chat_id, t(language, "long_message.truncated_log"))
     except (TelegramError, ValueError) as exc:
         logger.warning("No pude enviar novedad al canal de anuncios: %s", exc)
         return False

@@ -44,5 +44,5 @@ def _sum_chat_stats(rows) -> dict[str, int]:
 
 
 COMMANDS = {
-    "chats": Command("chats", "muestra estadisticas de chats", handle),
+    "chats": Command("chats", "muestra estadisticas de chats", handle, list_response=True),
 }

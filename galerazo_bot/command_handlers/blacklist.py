@@ -75,5 +75,5 @@ COMMANDS = {
     "bloquear": Command("bloquear", "bloquea un usuario", bloquear, UserLevel.DEV),
     "desbloquear": Command("desbloquear", "desbloquea un usuario", desbloquear, UserLevel.DEV),
     "desloquear": Command("desloquear", "desbloquea un usuario", desbloquear, UserLevel.DEV),
-    "listanegra": Command("listanegra", "muestra usuarios bloqueados", listanegra, UserLevel.DEV),
+    "listanegra": Command("listanegra", "muestra usuarios bloqueados", listanegra, UserLevel.DEV, list_response=True),
 }
