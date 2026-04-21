@@ -40,6 +40,7 @@ class CommandContext:
     send_announcement: Callable[[str], bool] | None = None
     create_backup: Callable[[], BackupResult] | None = None
     send_debug_update: Callable[[], bool] | None = None
+    send_galerazas: Callable[[], bool] | None = None
     leave_chat: Callable[[], bool] | None = None
     reply_to_user_id: str | None = None
     reply_to_username: str | None = None

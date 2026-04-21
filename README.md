@@ -14,6 +14,7 @@ Base inicial para un bot de Telegram en Python con comandos simples y SQLite.
 - `backup`: responde con un backup de SQLite. Solo devs.
 - `debug`: responde con el objeto update del mensaje. Solo devs.
 - `chats`: muestra estadisticas de chats por estado y tipo.
+- `galerazas`: muestra el ranking de La Galeraza en grupos/supergrupos.
 - `salir`: hace que el bot salga de un grupo o supergrupo. Solo devs.
 
 Tambien acepta comandos con prefijo, por ejemplo `!help` o `/hola`.
@@ -168,6 +169,52 @@ El reporte muestra:
 - El mismo desglose para chats privados, grupos, supergrupos y canales.
 
 Cuando Telegram informa que un grupo migra a supergrupo, el bot actualiza el `chat_id` viejo al nuevo para no contar el mismo chat dos veces.
+
+## La Galeraza
+
+La Galeraza es un juego para grupos y supergrupos.
+
+Reglas:
+
+- Cada chat tiene su propia competencia.
+- El usuario que manda el primer mensaje del dia que recibe el bot en ese chat gana 1 punto.
+- El bot responde a ese mensaje con:
+
+```text
+Felicitaciones ganaste la Galeraza!
+```
+
+- El juego no corre en chats privados ni canales.
+
+Ranking:
+
+```powershell
+/galerazas
+```
+
+Formato:
+
+```text
+Galeraza!
+usuario1 => 5
+usuario2 => 4
+```
+
+El ranking se ordena de mayor a menor puntaje.
+
+Si el ranking supera el limite maximo de caracteres por mensaje de Telegram, el bot lo pagina sin cortar renglones. La botonera tiene hasta 5 botones de paginas. Ejemplos:
+
+```text
+1 - 2 - [ 3 ] - 4
+<< - 6 - [ 7 ] - 8 - >>
+```
+
+La segunda fila de botones tiene:
+
+- Candado cerrado: solo el usuario que ejecuto `/galerazas` puede abrirlo. Al abrirlo, cualquier usuario puede usar la paginacion.
+- X roja: elimina el mensaje y borra la metadata de esa botonera. Solo pueden usarla el usuario que ejecuto `/galerazas` o un dev.
+
+Mientras el candado esta cerrado, solo pueden cambiar paginas el usuario que ejecuto `/galerazas` y los devs.
 
 ## Salir de un grupo
 

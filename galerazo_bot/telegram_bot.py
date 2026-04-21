@@ -5,14 +5,21 @@ import logging
 import traceback
 import time
 import uuid
+from datetime import datetime
 from pathlib import Path
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
+from zoneinfo import ZoneInfo
 
 from .commands import command_exists, handle_command, is_command_invocation
 from .config import load_settings
 from .database import Database
+from .galeraza import (
+    build_galeraza_keyboard,
+    parse_callback_data,
+    render_galeraza_page,
+)
 from .roles import BackupResult, UserLevel
 
 
@@ -48,11 +55,29 @@ class TelegramClient:
         chat_id: int | str,
         text: str,
         reply_to_message_id: int | None = None,
-    ) -> None:
+        reply_markup: dict | None = None,
+    ) -> dict:
         payload = {"chat_id": chat_id, "text": text}
         if reply_to_message_id is not None:
             payload["reply_parameters"] = json.dumps({"message_id": reply_to_message_id})
-        self._request("sendMessage", payload)
+        if reply_markup is not None:
+            payload["reply_markup"] = json.dumps(reply_markup)
+        return self._request("sendMessage", payload)
+
+    def edit_message_text(
+        self,
+        chat_id: int | str,
+        message_id: int | str,
+        text: str,
+        reply_markup: dict | None = None,
+    ) -> dict:
+        payload = {"chat_id": chat_id, "message_id": message_id, "text": text}
+        if reply_markup is not None:
+            payload["reply_markup"] = json.dumps(reply_markup)
+        return self._request("editMessageText", payload)
+
+    def delete_message(self, chat_id: int | str, message_id: int | str) -> None:
+        self._request("deleteMessage", {"chat_id": chat_id, "message_id": message_id})
 
     def send_document(
         self,
@@ -189,7 +214,7 @@ def _handle_update(
 ) -> None:
     callback_query = update.get("callback_query")
     if callback_query:
-        _handle_callback_query(callback_query, db, telegram)
+        _handle_callback_query(callback_query, db, telegram, dev_user_ids)
         return
 
     my_chat_member = update.get("my_chat_member")
@@ -211,7 +236,7 @@ def _handle_update(
     user_id = user.get("id")
     message_id = message.get("message_id")
 
-    if not text or chat_id is None or user_id is None:
+    if chat_id is None or user_id is None:
         return
 
     display_name = _display_name(user)
@@ -219,6 +244,18 @@ def _handle_update(
     db.get_or_create_user(str(user_id), display_name, username)
 
     if db.is_user_blocked(str(user_id)):
+        return
+
+    _maybe_award_daily_galeraza(
+        db=db,
+        telegram=telegram,
+        chat_id=chat_id,
+        chat_type=chat.get("type", "private"),
+        user_id=str(user_id),
+        message_id=message_id,
+    )
+
+    if not text:
         return
 
     if not is_command_invocation(text):
@@ -253,6 +290,7 @@ def _handle_update(
         send_announcement=lambda text: _send_announcement(telegram, announcements_chat_id, text),
         create_backup=lambda: _create_and_send_backup(db, telegram, chat_id, message_id),
         send_debug_update=lambda: _send_debug_update(telegram, chat_id, message_id, update),
+        send_galerazas=lambda: _send_galerazas(db, telegram, chat_id, str(user_id), message_id),
         leave_chat=lambda: _leave_chat(db, telegram, chat_id),
     )
     if response is not None:
@@ -276,7 +314,12 @@ def _display_name(user: dict) -> str | None:
     return full_name or user.get("username")
 
 
-def _handle_callback_query(callback_query: dict, db: Database, telegram: TelegramClient) -> None:
+def _handle_callback_query(
+    callback_query: dict,
+    db: Database,
+    telegram: TelegramClient,
+    dev_user_ids: frozenset[str],
+) -> None:
     user = callback_query.get("from", {})
     user_id = user.get("id")
     callback_query_id = callback_query.get("id")
@@ -286,6 +329,14 @@ def _handle_callback_query(callback_query: dict, db: Database, telegram: Telegra
 
     db.get_or_create_user(str(user_id), _display_name(user), user.get("username"))
     if db.is_user_blocked(str(user_id)):
+        if callback_query_id is not None:
+            telegram.answer_callback_query(str(callback_query_id))
+        return
+
+    data = callback_query.get("data", "")
+    parsed = parse_callback_data(data)
+    if parsed is not None:
+        _handle_galeraza_callback(callback_query, db, telegram, dev_user_ids, parsed)
         if callback_query_id is not None:
             telegram.answer_callback_query(str(callback_query_id))
         return
@@ -314,6 +365,161 @@ def _handle_my_chat_member_update(update: dict, db: Database, bot_user_id: str) 
 
     if status in {"left", "kicked"}:
         db.mark_chat_inactive(str(chat_id), status)
+
+
+def _maybe_award_daily_galeraza(
+    db: Database,
+    telegram: TelegramClient,
+    chat_id: int,
+    chat_type: str,
+    user_id: str,
+    message_id: int | None,
+) -> None:
+    if chat_type not in {"group", "supergroup"} or message_id is None:
+        return
+
+    game_date = _today_key()
+    awarded = db.try_award_daily_galeraza(
+        chat_id=str(chat_id),
+        game_date=game_date,
+        user_id=user_id,
+        message_id=str(message_id),
+    )
+    if not awarded:
+        return
+
+    telegram.send_message(
+        chat_id=chat_id,
+        text="Felicitaciones ganaste la Galeraza!",
+        reply_to_message_id=message_id,
+    )
+
+
+def _send_galerazas(
+    db: Database,
+    telegram: TelegramClient,
+    chat_id: int,
+    requester_user_id: str,
+    reply_to_message_id: int | None,
+) -> bool:
+    scores = db.get_galeraza_scores(str(chat_id))
+    page = render_galeraza_page(scores, page=1)
+    try:
+        result = telegram.send_message(
+            chat_id=chat_id,
+            text=page.text,
+            reply_to_message_id=reply_to_message_id,
+        )
+        message_id = str(result.get("result", {}).get("message_id", ""))
+        if page.total_pages > 1 and message_id:
+            db.save_galeraza_message_state(
+                chat_id=str(chat_id),
+                message_id=message_id,
+                requester_user_id=requester_user_id,
+                unlocked=False,
+                current_page=page.page,
+            )
+            telegram.edit_message_text(
+                chat_id=chat_id,
+                message_id=message_id,
+                text=page.text,
+                reply_markup=build_galeraza_keyboard(
+                    message_id,
+                    page.page,
+                    page.total_pages,
+                    unlocked=False,
+                ),
+            )
+        return True
+    except (HTTPError, URLError, TimeoutError, RuntimeError) as exc:
+        logger.warning("No pude enviar ranking de Galeraza: %s", exc)
+        return False
+
+
+def _handle_galeraza_callback(
+    callback_query: dict,
+    db: Database,
+    telegram: TelegramClient,
+    dev_user_ids: frozenset[str],
+    parsed: tuple[str, str, str | None],
+) -> None:
+    action, message_id, value = parsed
+    user = callback_query.get("from", {})
+    user_id = str(user.get("id"))
+    message = callback_query.get("message", {})
+    chat_id = message.get("chat", {}).get("id")
+    if chat_id is None:
+        return
+
+    state = db.get_galeraza_message_state(str(chat_id), message_id)
+    if state is None:
+        return
+
+    is_dev = user_id in dev_user_ids
+    is_owner = user_id == state.requester_user_id
+    can_page = state.unlocked or is_owner or is_dev
+    can_delete = is_owner or is_dev
+
+    if action == "unlock":
+        if not is_owner or state.unlocked:
+            return
+        db.set_galeraza_message_unlocked(str(chat_id), message_id, True)
+        current_page = state.current_page
+        _edit_galeraza_message(db, telegram, chat_id, message_id, page=current_page, unlocked=True)
+        return
+
+    if action == "delete":
+        if not can_delete:
+            return
+        try:
+            telegram.delete_message(chat_id=chat_id, message_id=message_id)
+        finally:
+            db.delete_galeraza_message_state(str(chat_id), message_id)
+        return
+
+    if action == "page":
+        if not can_page or value is None:
+            return
+        try:
+            target_page = int(value)
+        except ValueError:
+            return
+
+        if target_page == state.current_page:
+            return
+        rendered = render_galeraza_page(db.get_galeraza_scores(str(chat_id)), page=target_page)
+        _edit_galeraza_message(
+            db,
+            telegram,
+            chat_id,
+            message_id,
+            page=rendered.page,
+            unlocked=state.unlocked,
+        )
+
+
+def _edit_galeraza_message(
+    db: Database,
+    telegram: TelegramClient,
+    chat_id: int,
+    message_id: str,
+    page: int,
+    unlocked: bool,
+) -> None:
+    scores = db.get_galeraza_scores(str(chat_id))
+    rendered = render_galeraza_page(scores, page=page)
+    db.set_galeraza_message_page(str(chat_id), message_id, rendered.page)
+    telegram.edit_message_text(
+        chat_id=chat_id,
+        message_id=message_id,
+        text=rendered.text,
+        reply_markup=build_galeraza_keyboard(
+            message_id,
+            rendered.page,
+            rendered.total_pages,
+            unlocked=unlocked,
+        ),
+    )
 
 
 def _register_chat_from_message(message: dict, db: Database) -> None:
@@ -555,3 +761,11 @@ def _is_bot_removed_error(exc: RuntimeError) -> bool:
         "forbidden",
     ]
     return any(marker in message for marker in markers)
+
+
+def _today_key() -> str:
+    try:
+        now = datetime.now(ZoneInfo("America/Argentina/Buenos_Aires"))
+    except Exception:
+        now = datetime.now().astimezone()
+    return now.date().isoformat()

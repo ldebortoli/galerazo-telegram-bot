@@ -192,6 +192,19 @@ def _salir(context: CommandContext, _db: Database) -> str:
     return "Saliendo del grupo."
 
 
+def _galerazas(context: CommandContext, _db: Database) -> str | None:
+    if context.chat_type not in {"group", "supergroup"}:
+        return "La Galeraza solo funciona en grupos y supergrupos."
+
+    if context.send_galerazas is None:
+        return "No hay mecanismo configurado para mostrar la Galeraza."
+
+    if not context.send_galerazas():
+        return "No pude mostrar la Galeraza."
+
+    return None
+
+
 COMMANDS: dict[str, Command] = {
     "help": Command("help", "muestra esta ayuda", _help),
     "hola": Command("hola", "saluda al bot", _hola),
@@ -204,6 +217,7 @@ COMMANDS: dict[str, Command] = {
     "backup": Command("backup", "envia un backup de la base de datos", _backup, UserLevel.DEV),
     "debug": Command("debug", "devuelve el update crudo del mensaje", _debug, UserLevel.DEV),
     "chats": Command("chats", "muestra estadisticas de chats", _chats),
+    "galerazas": Command("galerazas", "muestra el ranking de la Galeraza", _galerazas),
     "salir": Command(
         "salir",
         "hace que el bot salga del grupo",
@@ -256,6 +270,7 @@ def handle_command(
     send_announcement=None,
     create_backup=None,
     send_debug_update=None,
+    send_galerazas=None,
     leave_chat=None,
 ) -> str | None:
     context = CommandContext(
@@ -269,6 +284,7 @@ def handle_command(
         send_announcement=send_announcement,
         create_backup=create_backup,
         send_debug_update=send_debug_update,
+        send_galerazas=send_galerazas,
         leave_chat=leave_chat,
         reply_to_user_id=reply_to_user_id,
         reply_to_username=reply_to_username,

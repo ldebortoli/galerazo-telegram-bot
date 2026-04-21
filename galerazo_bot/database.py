@@ -30,6 +30,23 @@ class ChatStatsRow:
     inactive: int
 
 
+@dataclass(frozen=True)
+class GalerazaScore:
+    user_id: str
+    username: str | None
+    display_name: str | None
+    points: int
+
+
+@dataclass(frozen=True)
+class GalerazaMessageState:
+    chat_id: str
+    message_id: str
+    requester_user_id: str
+    unlocked: bool
+    current_page: int
+
+
 class Database:
     def __init__(self, path: Path) -> None:
         self.path = path
@@ -105,6 +122,55 @@ class Database:
                     FOREIGN KEY (blocked_by_user_id) REFERENCES users (user_id)
                 )
                 """
+            )
+            conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS galeraza_daily_winners (
+                    chat_id TEXT NOT NULL,
+                    game_date TEXT NOT NULL,
+                    user_id TEXT NOT NULL,
+                    message_id TEXT,
+                    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    PRIMARY KEY (chat_id, game_date),
+                    FOREIGN KEY (chat_id) REFERENCES chats (chat_id),
+                    FOREIGN KEY (user_id) REFERENCES users (user_id)
+                )
+                """
+            )
+            conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS galeraza_scores (
+                    chat_id TEXT NOT NULL,
+                    user_id TEXT NOT NULL,
+                    points INTEGER NOT NULL DEFAULT 0,
+                    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    PRIMARY KEY (chat_id, user_id),
+                    FOREIGN KEY (chat_id) REFERENCES chats (chat_id),
+                    FOREIGN KEY (user_id) REFERENCES users (user_id)
+                )
+                """
+            )
+            conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS galeraza_message_states (
+                    chat_id TEXT NOT NULL,
+                    message_id TEXT NOT NULL,
+                    requester_user_id TEXT NOT NULL,
+                    unlocked INTEGER NOT NULL DEFAULT 0,
+                    current_page INTEGER NOT NULL DEFAULT 1,
+                    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    PRIMARY KEY (chat_id, message_id),
+                    FOREIGN KEY (chat_id) REFERENCES chats (chat_id),
+                    FOREIGN KEY (requester_user_id) REFERENCES users (user_id)
+                )
+                """
+            )
+            _ensure_column(
+                conn,
+                "galeraza_message_states",
+                "current_page",
+                "INTEGER NOT NULL DEFAULT 1",
             )
 
     def get_or_create_user(
@@ -263,6 +329,34 @@ class Database:
 
             conn.execute(
                 "UPDATE incoming_messages SET chat_id = ? WHERE chat_id = ?",
+                (new_chat_id, old_chat_id),
+            )
+            conn.execute(
+                "UPDATE galeraza_daily_winners SET chat_id = ? WHERE chat_id = ?",
+                (new_chat_id, old_chat_id),
+            )
+            old_scores = conn.execute(
+                """
+                SELECT user_id, points
+                FROM galeraza_scores
+                WHERE chat_id = ?
+                """,
+                (old_chat_id,),
+            ).fetchall()
+            for score in old_scores:
+                conn.execute(
+                    """
+                    INSERT INTO galeraza_scores (chat_id, user_id, points, updated_at)
+                    VALUES (?, ?, ?, CURRENT_TIMESTAMP)
+                    ON CONFLICT(chat_id, user_id) DO UPDATE SET
+                        points = galeraza_scores.points + excluded.points,
+                        updated_at = CURRENT_TIMESTAMP
+                    """,
+                    (new_chat_id, score["user_id"], score["points"]),
+                )
+            conn.execute("DELETE FROM galeraza_scores WHERE chat_id = ?", (old_chat_id,))
+            conn.execute(
+                "UPDATE galeraza_message_states SET chat_id = ? WHERE chat_id = ?",
                 (new_chat_id, old_chat_id),
             )
             conn.execute(
@@ -430,6 +524,173 @@ class Database:
             source.close()
 
         return backup_path
+
+    def try_award_daily_galeraza(
+        self,
+        chat_id: str,
+        game_date: str,
+        user_id: str,
+        message_id: str,
+    ) -> bool:
+        chat_id = self.resolve_chat_id(chat_id)
+        self.get_or_create_user(user_id)
+        with self._connect() as conn:
+            cursor = conn.execute(
+                """
+                INSERT OR IGNORE INTO galeraza_daily_winners (
+                    chat_id,
+                    game_date,
+                    user_id,
+                    message_id
+                )
+                VALUES (?, ?, ?, ?)
+                """,
+                (chat_id, game_date, user_id, message_id),
+            )
+            if cursor.rowcount == 0:
+                return False
+
+            conn.execute(
+                """
+                INSERT INTO galeraza_scores (chat_id, user_id, points)
+                VALUES (?, ?, 1)
+                ON CONFLICT(chat_id, user_id) DO UPDATE SET
+                    points = points + 1,
+                    updated_at = CURRENT_TIMESTAMP
+                """,
+                (chat_id, user_id),
+            )
+
+        return True
+
+    def get_galeraza_scores(self, chat_id: str) -> list[GalerazaScore]:
+        chat_id = self.resolve_chat_id(chat_id)
+        with self._connect() as conn:
+            rows = conn.execute(
+                """
+                SELECT
+                    galeraza_scores.user_id,
+                    users.username,
+                    users.display_name,
+                    galeraza_scores.points
+                FROM galeraza_scores
+                LEFT JOIN users ON users.user_id = galeraza_scores.user_id
+                WHERE galeraza_scores.chat_id = ?
+                ORDER BY galeraza_scores.points DESC, lower(COALESCE(users.display_name, users.username, galeraza_scores.user_id)) ASC
+                """,
+                (chat_id,),
+            ).fetchall()
+
+        return [
+            GalerazaScore(
+                user_id=row["user_id"],
+                username=row["username"],
+                display_name=row["display_name"],
+                points=row["points"],
+            )
+            for row in rows
+        ]
+
+    def save_galeraza_message_state(
+        self,
+        chat_id: str,
+        message_id: str,
+        requester_user_id: str,
+        unlocked: bool = False,
+        current_page: int = 1,
+    ) -> None:
+        chat_id = self.resolve_chat_id(chat_id)
+        with self._connect() as conn:
+            conn.execute(
+                """
+                INSERT INTO galeraza_message_states (
+                    chat_id,
+                    message_id,
+                    requester_user_id,
+                    unlocked,
+                    current_page
+                )
+                VALUES (?, ?, ?, ?, ?)
+                ON CONFLICT(chat_id, message_id) DO UPDATE SET
+                    requester_user_id = excluded.requester_user_id,
+                    unlocked = excluded.unlocked,
+                    current_page = excluded.current_page,
+                    updated_at = CURRENT_TIMESTAMP
+                """,
+                (chat_id, message_id, requester_user_id, int(unlocked), current_page),
+            )
+
+    def get_galeraza_message_state(
+        self,
+        chat_id: str,
+        message_id: str,
+    ) -> GalerazaMessageState | None:
+        chat_id = self.resolve_chat_id(chat_id)
+        with self._connect() as conn:
+            row = conn.execute(
+                """
+                SELECT chat_id, message_id, requester_user_id, unlocked, current_page
+                FROM galeraza_message_states
+                WHERE chat_id = ? AND message_id = ?
+                """,
+                (chat_id, message_id),
+            ).fetchone()
+
+        if row is None:
+            return None
+
+        return GalerazaMessageState(
+            chat_id=row["chat_id"],
+            message_id=row["message_id"],
+            requester_user_id=row["requester_user_id"],
+            unlocked=bool(row["unlocked"]),
+            current_page=row["current_page"],
+        )
+
+    def set_galeraza_message_unlocked(
+        self,
+        chat_id: str,
+        message_id: str,
+        unlocked: bool,
+    ) -> None:
+        chat_id = self.resolve_chat_id(chat_id)
+        with self._connect() as conn:
+            conn.execute(
+                """
+                UPDATE galeraza_message_states
+                SET unlocked = ?, updated_at = CURRENT_TIMESTAMP
+                WHERE chat_id = ? AND message_id = ?
+                """,
+                (int(unlocked), chat_id, message_id),
+            )
+
+    def set_galeraza_message_page(
+        self,
+        chat_id: str,
+        message_id: str,
+        current_page: int,
+    ) -> None:
+        chat_id = self.resolve_chat_id(chat_id)
+        with self._connect() as conn:
+            conn.execute(
+                """
+                UPDATE galeraza_message_states
+                SET current_page = ?, updated_at = CURRENT_TIMESTAMP
+                WHERE chat_id = ? AND message_id = ?
+                """,
+                (current_page, chat_id, message_id),
+            )
+
+    def delete_galeraza_message_state(self, chat_id: str, message_id: str) -> None:
+        chat_id = self.resolve_chat_id(chat_id)
+        with self._connect() as conn:
+            conn.execute(
+                """
+                DELETE FROM galeraza_message_states
+                WHERE chat_id = ? AND message_id = ?
+                """,
+                (chat_id, message_id),
+            )
 
 
 def _normalize_username(username: str | None) -> str | None:
