@@ -133,6 +133,8 @@ async def _preprocess_message(update: Update, context: ContextTypes.DEFAULT_TYPE
     state.db.get_or_create_user(str(user.id), _display_name(user), user.username)
     if state.db.is_user_blocked(str(user.id)):
         return
+    if _is_user_restricted_in_message_chat(state.db, message, str(user.id)):
+        return
 
     await _maybe_award_daily_galeraza(
         db=state.db,
@@ -218,7 +220,12 @@ async def _text_command_entrypoint(update: Update, context: ContextTypes.DEFAULT
 async def _unknown_command_entrypoint(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     state = _state(context)
     message = update.effective_message
-    if message is None:
+    user = update.effective_user
+    if message is None or user is None:
+        return
+    if state.db.is_user_blocked(str(user.id)):
+        return
+    if _is_user_restricted_in_message_chat(state.db, message, str(user.id)):
         return
     await message.reply_text(t(_chat_language(state.db, message.chat.id), "unknown_command"))
 
@@ -233,6 +240,8 @@ async def _handle_command_update(update: Update, context: ContextTypes.DEFAULT_T
 
     state.db.get_or_create_user(str(user.id), _display_name(user), user.username)
     if state.db.is_user_blocked(str(user.id)):
+        return
+    if _is_user_restricted_in_message_chat(state.db, message, str(user.id)):
         return
 
     user_level = UserLevel.COMMON
@@ -318,6 +327,9 @@ async def _callback_query_entrypoint(update: Update, context: ContextTypes.DEFAU
     if state.db.is_user_blocked(str(user.id)):
         await callback_query.answer()
         return
+    if _is_user_restricted_in_callback_chat(state.db, callback_query, str(user.id)):
+        await callback_query.answer()
+        return
 
     parsed = parse_callback_data(callback_query.data or "")
     popup_text = None
@@ -340,6 +352,9 @@ async def _config_callback_entrypoint(update: Update, context: ContextTypes.DEFA
 
     state.db.get_or_create_user(str(user.id), _display_name(user), user.username)
     if state.db.is_user_blocked(str(user.id)):
+        await callback_query.answer()
+        return
+    if _is_user_restricted_in_callback_chat(state.db, callback_query, str(user.id)):
         await callback_query.answer()
         return
 
@@ -406,6 +421,19 @@ def _display_name(user: User | None) -> str | None:
     if user is None:
         return None
     return user.full_name or user.username
+
+
+def _is_user_restricted_in_message_chat(db: Database, message: Message, user_id: str) -> bool:
+    if message.chat.type not in {"group", "supergroup"}:
+        return False
+    return db.is_user_restricted_in_chat(str(message.chat.id), user_id)
+
+
+def _is_user_restricted_in_callback_chat(db: Database, callback_query, user_id: str) -> bool:
+    message = callback_query.message
+    if message is None or message.chat.type not in {"group", "supergroup"}:
+        return False
+    return db.is_user_restricted_in_chat(str(message.chat.id), user_id)
 
 
 def _trigger_payload_from_message(message: Message | None) -> TriggerPayload | None:

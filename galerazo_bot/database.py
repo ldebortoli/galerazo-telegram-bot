@@ -23,6 +23,16 @@ class BlockedUser:
 
 
 @dataclass(frozen=True)
+class ChatRestrictedUser:
+    chat_id: str
+    user_id: str
+    username: str | None
+    display_name: str | None
+    restricted_by_user_id: str
+    restricted_at: str
+
+
+@dataclass(frozen=True)
 class ChatStatsRow:
     chat_type: str
     total: int
@@ -175,6 +185,20 @@ class Database:
                     blocked_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
                     FOREIGN KEY (user_id) REFERENCES users (user_id),
                     FOREIGN KEY (blocked_by_user_id) REFERENCES users (user_id)
+                )
+                """
+            )
+            conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS chat_restricted_users (
+                    chat_id TEXT NOT NULL,
+                    user_id TEXT NOT NULL,
+                    restricted_by_user_id TEXT NOT NULL,
+                    restricted_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    PRIMARY KEY (chat_id, user_id),
+                    FOREIGN KEY (chat_id) REFERENCES chats (chat_id),
+                    FOREIGN KEY (user_id) REFERENCES users (user_id),
+                    FOREIGN KEY (restricted_by_user_id) REFERENCES users (user_id)
                 )
                 """
             )
@@ -485,6 +509,30 @@ class Database:
                 "UPDATE daily_user_reports SET chat_id = ? WHERE chat_id = ?",
                 (new_chat_id, old_chat_id),
             )
+            old_restricted_users = conn.execute(
+                """
+                SELECT user_id, restricted_by_user_id
+                FROM chat_restricted_users
+                WHERE chat_id = ?
+                """,
+                (old_chat_id,),
+            ).fetchall()
+            for restricted_user in old_restricted_users:
+                conn.execute(
+                    """
+                    INSERT INTO chat_restricted_users (chat_id, user_id, restricted_by_user_id, restricted_at)
+                    VALUES (?, ?, ?, CURRENT_TIMESTAMP)
+                    ON CONFLICT(chat_id, user_id) DO UPDATE SET
+                        restricted_by_user_id = excluded.restricted_by_user_id,
+                        restricted_at = CURRENT_TIMESTAMP
+                    """,
+                    (
+                        new_chat_id,
+                        restricted_user["user_id"],
+                        restricted_user["restricted_by_user_id"],
+                    ),
+                )
+            conn.execute("DELETE FROM chat_restricted_users WHERE chat_id = ?", (old_chat_id,))
             conn.execute(
                 "UPDATE galeraza_daily_winners SET chat_id = ? WHERE chat_id = ?",
                 (new_chat_id, old_chat_id),
@@ -761,6 +809,76 @@ class Database:
                 display_name=row["display_name"],
                 blocked_by_user_id=row["blocked_by_user_id"],
                 blocked_at=row["blocked_at"],
+            )
+            for row in rows
+        ]
+
+    def restrict_user_in_chat(self, chat_id: str, user_id: str, restricted_by_user_id: str) -> None:
+        chat_id = self.resolve_chat_id(chat_id)
+        self.get_or_create_user(user_id)
+        self.get_or_create_user(restricted_by_user_id)
+        with self._connect() as conn:
+            conn.execute(
+                """
+                INSERT INTO chat_restricted_users (chat_id, user_id, restricted_by_user_id)
+                VALUES (?, ?, ?)
+                ON CONFLICT(chat_id, user_id) DO UPDATE SET
+                    restricted_by_user_id = excluded.restricted_by_user_id,
+                    restricted_at = CURRENT_TIMESTAMP
+                """,
+                (chat_id, user_id, restricted_by_user_id),
+            )
+
+    def unrestrict_user_in_chat(self, chat_id: str, user_id: str) -> bool:
+        chat_id = self.resolve_chat_id(chat_id)
+        with self._connect() as conn:
+            cursor = conn.execute(
+                "DELETE FROM chat_restricted_users WHERE chat_id = ? AND user_id = ?",
+                (chat_id, user_id),
+            )
+        return cursor.rowcount > 0
+
+    def is_user_restricted_in_chat(self, chat_id: str, user_id: str) -> bool:
+        chat_id = self.resolve_chat_id(chat_id)
+        with self._connect() as conn:
+            row = conn.execute(
+                """
+                SELECT 1
+                FROM chat_restricted_users
+                WHERE chat_id = ? AND user_id = ?
+                """,
+                (chat_id, user_id),
+            ).fetchone()
+        return row is not None
+
+    def list_restricted_users_in_chat(self, chat_id: str) -> list[ChatRestrictedUser]:
+        chat_id = self.resolve_chat_id(chat_id)
+        with self._connect() as conn:
+            rows = conn.execute(
+                """
+                SELECT
+                    chat_restricted_users.chat_id,
+                    chat_restricted_users.user_id,
+                    users.username,
+                    users.display_name,
+                    chat_restricted_users.restricted_by_user_id,
+                    chat_restricted_users.restricted_at
+                FROM chat_restricted_users
+                LEFT JOIN users ON users.user_id = chat_restricted_users.user_id
+                WHERE chat_restricted_users.chat_id = ?
+                ORDER BY chat_restricted_users.restricted_at DESC
+                """,
+                (chat_id,),
+            ).fetchall()
+
+        return [
+            ChatRestrictedUser(
+                chat_id=row["chat_id"],
+                user_id=row["user_id"],
+                username=row["username"],
+                display_name=row["display_name"],
+                restricted_by_user_id=row["restricted_by_user_id"],
+                restricted_at=row["restricted_at"],
             )
             for row in rows
         ]

@@ -12,6 +12,9 @@ Base para un bot de Telegram en Python con `python-telegram-bot` y SQLite.
 - `listanegra`: muestra los usuarios bloqueados. Solo devs.
 - `novedad`: envia una noticia al canal de anuncios. Solo devs.
 - `reportar`: envia un reporte de bug al canal de logging. Maximo 1 por usuario por dia.
+- `restringir`: restringe un usuario en el grupo actual. Solo admines del chat, quien agrego el bot o devs.
+- `habilitar`: vuelve a habilitar un usuario restringido en el grupo actual. Solo admines del chat, quien agrego el bot o devs.
+- `restringidos`: lista usuarios restringidos en el grupo actual. Solo admines del chat, quien agrego el bot o devs.
 - `backup`: responde con un backup de SQLite. Solo devs.
 - `debug`: responde con el objeto update del mensaje. Solo devs.
 - `chats`: muestra estadisticas de chats por estado y tipo.
@@ -379,6 +382,24 @@ Los comandos de lista negra solo responden a devs:
 Los `@alias` se resuelven contra usuarios que el bot ya haya visto.
 Si `/listanegra` supera el limite de caracteres de Telegram, el bot pagina la lista con botonera.
 Las listas de usuarios muestran siempre el id entre parentesis, por ejemplo `@usuario (123456789)`.
+
+## Restricciones por chat
+
+En grupos y supergrupos, los usuarios de nivel 2 o superior pueden restringir usuarios solo para ese chat:
+
+```powershell
+/restringir
+/restringir @alias
+/restringir 123456789
+/habilitar
+/habilitar @alias
+/habilitar 123456789
+/restringidos
+```
+
+`/restringir` y `/habilitar` sin argumentos se usan respondiendo al mensaje del usuario objetivo. Un usuario restringido en un chat no puede interactuar con el bot en ese chat: no procesa comandos, callbacks, Galeraza ni triggers. Esto no lo bloquea globalmente en otros chats.
+
+`/restringidos` muestra la lista con paginacion si supera el limite de Telegram. Si Telegram convierte el grupo en supergrupo, las restricciones se migran al nuevo `chat_id`.
 
 ## Probar localmente sin Telegram
 

@@ -12,6 +12,7 @@ from .hola import COMMANDS as HOLA_COMMANDS
 from .nivel import COMMANDS as NIVEL_COMMANDS
 from .novedad import COMMANDS as NOVEDAD_COMMANDS
 from .reportar import COMMANDS as REPORTAR_COMMANDS
+from .restrictions import COMMANDS as RESTRICTIONS_COMMANDS
 from .salir import COMMANDS as SALIR_COMMANDS
 from .triggers import COMMANDS as TRIGGERS_COMMANDS
 
@@ -23,6 +24,7 @@ COMMANDS: dict[str, Command] = {
     **BLACKLIST_COMMANDS,
     **NOVEDAD_COMMANDS,
     **REPORTAR_COMMANDS,
+    **RESTRICTIONS_COMMANDS,
     **BACKUP_COMMANDS,
     **DEBUG_COMMANDS,
     **CHATS_COMMANDS,
