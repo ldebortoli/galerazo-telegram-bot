@@ -9,7 +9,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
-from telegram import Bot, Chat, ChatMember, Message, ReplyParameters, Update, User
+from telegram import Bot, Chat, ChatMember, Message, Update, User
 from telegram.error import BadRequest, Forbidden, TelegramError
 from telegram.ext import (
     Application,
@@ -117,11 +117,8 @@ async def _preprocess_message(update: Update, context: ContextTypes.DEFAULT_TYPE
 
     await _maybe_award_daily_galeraza(
         db=state.db,
-        bot=context.bot,
-        chat_id=chat.id,
-        chat_type=chat.type,
+        message=message,
         user_id=str(user.id),
-        message_id=message.message_id,
     )
 
     text = message.text
@@ -192,9 +189,9 @@ async def _handle_command_update(update: Update, context: ContextTypes.DEFAULT_T
             state.settings.telegram_announcements_chat_id,
             text,
         ),
-        create_backup=lambda: _create_and_send_backup(state.db, context.bot, chat.id, message.message_id),
-        send_debug_update=lambda: _send_debug_update(context.bot, chat.id, message.message_id, update),
-        send_galerazas=lambda: _send_galerazas(state.db, context.bot, chat.id, str(user.id), message.message_id),
+        create_backup=lambda: _create_and_send_backup(state.db, message),
+        send_debug_update=lambda: _send_debug_update(message, update),
+        send_galerazas=lambda: _send_galerazas(state.db, message, str(user.id)),
         leave_chat=lambda: _leave_chat(state.db, context.bot, chat.id),
     )
     if response is None:
@@ -203,11 +200,9 @@ async def _handle_command_update(update: Update, context: ContextTypes.DEFAULT_T
     try:
         await _send_text_response(
             db=state.db,
-            bot=context.bot,
-            chat_id=chat.id,
+            message=message,
             text=response,
             requester_user_id=str(user.id),
-            reply_to_message_id=message.message_id,
             list_type="command",
         )
     except TelegramError as exc:
@@ -235,7 +230,6 @@ async def _callback_query_entrypoint(update: Update, context: ContextTypes.DEFAU
         popup_text = await _handle_paginated_callback(
             callback_query=callback_query,
             db=state.db,
-            bot=context.bot,
             dev_user_ids=state.settings.telegram_dev_user_ids,
             parsed=parsed,
         )
@@ -278,59 +272,45 @@ async def _handle_error(update: object, context: ContextTypes.DEFAULT_TYPE) -> N
 def _display_name(user: User | None) -> str | None:
     if user is None:
         return None
-    full_name = f"{user.first_name or ''} {user.last_name or ''}".strip()
-    return full_name or user.username
+    return user.full_name or user.username
 
 
 async def _maybe_award_daily_galeraza(
     db: Database,
-    bot: Bot,
-    chat_id: int,
-    chat_type: str,
+    message: Message,
     user_id: str,
-    message_id: int | None,
 ) -> None:
-    if chat_type not in {"group", "supergroup"} or message_id is None:
+    if message.chat.type not in {"group", "supergroup"}:
         return
 
     game_date = _today_key()
     awarded = db.try_award_daily_galeraza(
-        chat_id=str(chat_id),
+        chat_id=str(message.chat.id),
         game_date=game_date,
         user_id=user_id,
-        message_id=str(message_id),
+        message_id=str(message.message_id),
     )
     if not awarded:
         return
 
-    await bot.send_message(
-        chat_id=chat_id,
-        text="Felicitaciones ganaste la Galeraza!",
-        reply_parameters=ReplyParameters(message_id=message_id),
-    )
+    await message.reply_text("Felicitaciones ganaste la Galeraza!", do_quote=True)
 
 
 async def _send_galerazas(
     db: Database,
-    bot: Bot,
-    chat_id: int,
+    message: Message,
     requester_user_id: str,
-    reply_to_message_id: int | None,
 ) -> bool:
-    scores = db.get_galeraza_scores(str(chat_id))
+    scores = db.get_galeraza_scores(str(message.chat.id))
     lines = build_galeraza_lines(scores)
     page = render_galeraza_page(scores, page=1)
     content_json = json.dumps({"header": "Galeraza!", "lines": lines}, ensure_ascii=False)
     try:
-        result = await bot.send_message(
-            chat_id=chat_id,
-            text=page.text,
-            reply_parameters=_reply_parameters(reply_to_message_id),
-        )
+        result = await message.reply_text(page.text, do_quote=True)
         message_id = str(result.message_id)
         if page.total_pages > 1 and message_id:
             db.save_paginated_message_state(
-                chat_id=str(chat_id),
+                chat_id=str(message.chat.id),
                 message_id=message_id,
                 list_type="galeraza",
                 requester_user_id=requester_user_id,
@@ -338,9 +318,7 @@ async def _send_galerazas(
                 unlocked=False,
                 current_page=page.page,
             )
-            await bot.edit_message_text(
-                chat_id=chat_id,
-                message_id=message_id,
+            await result.edit_text(
                 text=page.text,
                 reply_markup=build_keyboard(message_id, page.page, page.total_pages, unlocked=False),
             )
@@ -352,11 +330,9 @@ async def _send_galerazas(
 
 async def _send_text_response(
     db: Database,
-    bot: Bot,
-    chat_id: int,
+    message: Message,
     text: str,
     requester_user_id: str,
-    reply_to_message_id: int | None,
     list_type: str,
 ) -> None:
     lines = text.splitlines()
@@ -364,18 +340,14 @@ async def _send_text_response(
     body_lines = lines[1:]
     page = render_page(header, body_lines, page=1)
 
-    result = await bot.send_message(
-        chat_id=chat_id,
-        text=page.text,
-        reply_parameters=_reply_parameters(reply_to_message_id),
-    )
+    result = await message.reply_text(page.text, do_quote=True)
     message_id = str(result.message_id)
     if page.total_pages <= 1 or not message_id:
         return
 
     content_json = json.dumps({"header": header, "lines": body_lines}, ensure_ascii=False)
     db.save_paginated_message_state(
-        chat_id=str(chat_id),
+        chat_id=str(message.chat.id),
         message_id=message_id,
         list_type=list_type,
         requester_user_id=requester_user_id,
@@ -383,9 +355,7 @@ async def _send_text_response(
         unlocked=False,
         current_page=page.page,
     )
-    await bot.edit_message_text(
-        chat_id=chat_id,
-        message_id=message_id,
+    await result.edit_text(
         text=page.text,
         reply_markup=build_keyboard(message_id, page.page, page.total_pages, unlocked=False),
     )
@@ -394,7 +364,6 @@ async def _send_text_response(
 async def _handle_paginated_callback(
     callback_query,
     db: Database,
-    bot: Bot,
     dev_user_ids: frozenset[str],
     parsed: tuple[str, str, str | None],
 ) -> str | None:
@@ -407,11 +376,11 @@ async def _handle_paginated_callback(
     chat_id = message.chat.id
     state = db.get_paginated_message_state(str(chat_id), message_id)
     if state is None:
-        await _delete_paginated_message(db, bot, chat_id, message_id)
+        await _delete_paginated_message(db, message, message_id)
         return "mensaje eliminado"
 
     if _is_paginated_state_expired(state.created_at):
-        await _delete_paginated_message(db, bot, chat_id, message_id)
+        await _delete_paginated_message(db, message, message_id)
         return "mensaje eliminado"
 
     user_id = str(user.id)
@@ -425,7 +394,7 @@ async def _handle_paginated_callback(
             return None
         unlocked = not state.unlocked
         db.set_paginated_message_unlocked(str(chat_id), message_id, unlocked)
-        await _edit_paginated_message(db, bot, chat_id, message_id, page=state.current_page, unlocked=unlocked)
+        await _edit_paginated_message(db, message, message_id, page=state.current_page, unlocked=unlocked)
         if unlocked:
             return "habilitado para todos"
         return "deshabilitado para todos"
@@ -433,7 +402,7 @@ async def _handle_paginated_callback(
     if action == "delete":
         if not can_delete:
             return None
-        await _delete_paginated_message(db, bot, chat_id, message_id)
+        await _delete_paginated_message(db, message, message_id)
         return "mensaje eliminado"
 
     if action == "page":
@@ -445,12 +414,25 @@ async def _handle_paginated_callback(
             return None
         if target_page == state.current_page:
             return None
-        await _edit_paginated_message(db, bot, chat_id, message_id, page=target_page, unlocked=state.unlocked)
+        await _edit_paginated_message(db, message, message_id, page=target_page, unlocked=state.unlocked)
 
     return None
 
 
 async def _delete_paginated_message(
+    db: Database,
+    message: Message,
+    message_id: str,
+) -> None:
+    try:
+        await message.delete()
+    except TelegramError as exc:
+        logger.warning("No pude eliminar mensaje paginado %s en chat %s: %s", message_id, message.chat.id, exc)
+    finally:
+        db.delete_paginated_message_state(str(message.chat.id), message_id)
+
+
+async def _delete_paginated_message_by_id(
     db: Database,
     bot: Bot,
     chat_id: int | str,
@@ -472,7 +454,7 @@ async def _cleanup_old_paginated_messages(db: Database, bot: Bot) -> None:
 
     logger.info("Limpiando %s botoneras vencidas.", len(states))
     for state in states:
-        await _delete_paginated_message(
+        await _delete_paginated_message_by_id(
             db=db,
             bot=bot,
             chat_id=_parse_chat_id(state.chat_id),
@@ -496,22 +478,19 @@ def _is_paginated_state_expired(created_at: str) -> bool:
 
 async def _edit_paginated_message(
     db: Database,
-    bot: Bot,
-    chat_id: int,
+    message: Message,
     message_id: str,
     page: int,
     unlocked: bool,
 ) -> None:
-    state = db.get_paginated_message_state(str(chat_id), message_id)
+    state = db.get_paginated_message_state(str(message.chat.id), message_id)
     if state is None:
         return
 
     content = json.loads(state.content_json)
     rendered = render_page(content["header"], content["lines"], page=page)
-    db.set_paginated_message_page(str(chat_id), message_id, rendered.page)
-    await bot.edit_message_text(
-        chat_id=chat_id,
-        message_id=int(message_id),
+    db.set_paginated_message_page(str(message.chat.id), message_id, rendered.page)
+    await message.edit_text(
         text=rendered.text,
         reply_markup=build_keyboard(message_id, rendered.page, rendered.total_pages, unlocked=unlocked),
     )
@@ -637,9 +616,7 @@ async def _send_announcement(bot: Bot, announcements_chat_id: str | None, text: 
 
 async def _create_and_send_backup(
     db: Database,
-    bot: Bot,
-    chat_id: int,
-    message_id: int | None,
+    message: Message,
 ) -> BackupResult:
     backup_path = db.create_backup(Path("backups"))
     size_bytes = backup_path.stat().st_size
@@ -652,11 +629,10 @@ async def _create_and_send_backup(
             sent=False,
         )
 
-    await bot.send_document(
-        chat_id=chat_id,
+    await message.reply_document(
         document=backup_path,
         caption="Backup de la base de datos.",
-        reply_parameters=_reply_parameters(message_id),
+        do_quote=True,
     )
     return BackupResult(
         path=backup_path,
@@ -667,9 +643,7 @@ async def _create_and_send_backup(
 
 
 async def _send_debug_update(
-    bot: Bot,
-    chat_id: int,
-    message_id: int | None,
+    message: Message,
     update: Update,
 ) -> bool:
     debug_json = update.to_json(indent=2)
@@ -677,22 +651,20 @@ async def _send_debug_update(
 
     try:
         if len(wrapped_json) <= TELEGRAM_MESSAGE_LIMIT_CHARS:
-            await bot.send_message(
-                chat_id=chat_id,
+            await message.reply_text(
                 text=wrapped_json,
-                reply_parameters=_reply_parameters(message_id),
+                do_quote=True,
             )
             return True
 
         debug_dir = Path("debug")
         debug_dir.mkdir(parents=True, exist_ok=True)
-        debug_path = debug_dir / f"update-{message_id or int(time.time())}.json"
+        debug_path = debug_dir / f"update-{message.message_id or int(time.time())}.json"
         debug_path.write_text(debug_json, encoding="utf-8")
-        await bot.send_document(
-            chat_id=chat_id,
+        await message.reply_document(
             document=debug_path,
             caption="Update de debug.",
-            reply_parameters=_reply_parameters(message_id),
+            do_quote=True,
         )
         return True
     except (TelegramError, OSError) as exc:
@@ -709,12 +681,6 @@ async def _leave_chat(db: Database, bot: Bot, chat_id: int) -> bool:
 
     db.mark_chat_inactive(str(chat_id), "left_by_command")
     return True
-
-
-def _reply_parameters(message_id: int | None) -> ReplyParameters | None:
-    if message_id is None:
-        return None
-    return ReplyParameters(message_id=message_id)
 
 
 def _parse_chat_id(raw_chat_id: str) -> int | str:
