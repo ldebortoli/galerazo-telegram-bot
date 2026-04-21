@@ -23,7 +23,18 @@ from telegram.ext import (
     filters,
 )
 
-from .commands import COMMANDS, command_exists, handle_command_async, is_command_invocation
+from .chat_config import (
+    CONFIG_PREFIX,
+    build_command_group_menu,
+    build_command_groups_menu,
+    build_language_menu,
+    build_main_menu,
+    command_group_label,
+    is_valid_command_group,
+    is_valid_language,
+    parse_config_callback,
+)
+from .commands import COMMANDS, command_exists, get_command, handle_command_async, is_command_invocation
 from .config import Settings, load_settings
 from .database import Database
 from .galeraza import build_galeraza_lines, render_galeraza_page
@@ -77,6 +88,7 @@ def _register_handlers(application: Application) -> None:
 
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, _text_command_entrypoint), group=1)
     application.add_handler(CallbackQueryHandler(_callback_query_entrypoint, pattern=f"^{BUTTON_PREFIX}:"), group=1)
+    application.add_handler(CallbackQueryHandler(_config_callback_entrypoint, pattern=f"^{CONFIG_PREFIX}:"), group=1)
     application.add_handler(ChatMemberHandler(_my_chat_member_entrypoint, ChatMemberHandler.MY_CHAT_MEMBER), group=1)
     application.add_handler(MessageHandler(filters.COMMAND, _unknown_command_entrypoint), group=2)
 
@@ -169,6 +181,10 @@ async def _handle_command_update(update: Update, context: ContextTypes.DEFAULT_T
         return
 
     user_level = UserLevel.COMMON
+    command = get_command(message.text)
+    if command is not None and _is_command_group_disabled(state.db, chat, command.configurable_group):
+        return
+
     if command_exists(message.text):
         user_level = await _resolve_user_level(
             user_id=str(user.id),
@@ -198,6 +214,7 @@ async def _handle_command_update(update: Update, context: ContextTypes.DEFAULT_T
         create_backup=lambda: _create_and_send_backup(state.db, message),
         send_debug_update=lambda: _send_debug_update(message, update),
         send_galerazas=lambda: _send_galerazas(state.db, message, str(user.id)),
+        send_config_menu=lambda: _send_config_menu(state.db, message),
         leave_chat=lambda: _leave_chat(state.db, context.bot, chat.id),
     )
     if response is None:
@@ -239,6 +256,43 @@ async def _callback_query_entrypoint(update: Update, context: ContextTypes.DEFAU
             dev_user_ids=state.settings.telegram_dev_user_ids,
             parsed=parsed,
         )
+    await callback_query.answer(text=popup_text)
+
+
+async def _config_callback_entrypoint(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    state = _state(context)
+    callback_query = update.callback_query
+    user = update.effective_user
+    if callback_query is None or user is None:
+        return
+
+    state.db.get_or_create_user(str(user.id), _display_name(user), user.username)
+    if state.db.is_user_blocked(str(user.id)):
+        await callback_query.answer()
+        return
+
+    message = callback_query.message
+    if message is None or message.chat.type not in {"group", "supergroup"}:
+        await callback_query.answer("Configuracion solo disponible en grupos.")
+        return
+
+    user_level = await _resolve_user_level(
+        user_id=str(user.id),
+        chat=message.chat,
+        db=state.db,
+        bot=context.bot,
+        dev_user_ids=state.settings.telegram_dev_user_ids,
+    )
+    if user_level < UserLevel.ADMIN:
+        await callback_query.answer("No tenes permisos suficientes para usar esta botonera.")
+        return
+
+    parsed = parse_config_callback(callback_query.data or "")
+    if parsed is None:
+        await callback_query.answer()
+        return
+
+    popup_text = await _handle_config_callback(state.db, message, parsed)
     await callback_query.answer(text=popup_text)
 
 
@@ -287,6 +341,8 @@ async def _maybe_award_daily_galeraza(
     user_id: str,
 ) -> None:
     if message.chat.type not in {"group", "supergroup"}:
+        return
+    if not db.is_command_group_enabled(str(message.chat.id), "galeraza"):
         return
 
     game_date = _today_key()
@@ -365,6 +421,77 @@ async def _send_text_response(
         text=page.text,
         reply_markup=build_keyboard(message_id, page.page, page.total_pages, unlocked=False),
     )
+
+
+async def _send_config_menu(db: Database, message: Message) -> bool:
+    try:
+        await message.reply_text(
+            "Configuracion del grupo",
+            reply_markup=build_main_menu(),
+            do_quote=True,
+        )
+        db.get_chat_settings(str(message.chat.id))
+        return True
+    except TelegramError as exc:
+        logger.warning("No pude enviar configuracion del chat %s: %s", message.chat.id, exc)
+        return False
+
+
+async def _handle_config_callback(db: Database, message: Message, parsed: tuple[str, ...]) -> str | None:
+    action = parsed[0]
+    chat_id = str(message.chat.id)
+
+    if action == "main":
+        await message.edit_text("Configuracion del grupo", reply_markup=build_main_menu())
+        return None
+
+    if action == "language":
+        settings = db.get_chat_settings(chat_id)
+        await message.edit_text("Idioma", reply_markup=build_language_menu(settings.language))
+        return None
+
+    if action == "lang" and len(parsed) == 2:
+        language = parsed[1]
+        if not is_valid_language(language):
+            return None
+        settings = db.get_chat_settings(chat_id)
+        if settings.language == language:
+            return None
+        db.set_chat_language(chat_id, language)
+        await message.edit_text("Idioma", reply_markup=build_language_menu(language))
+        return "Idioma actualizado."
+
+    if action == "commands":
+        await message.edit_text("Comandos", reply_markup=build_command_groups_menu())
+        return None
+
+    if action == "command" and len(parsed) == 2:
+        command_group = parsed[1]
+        if not is_valid_command_group(command_group):
+            return None
+        enabled = db.is_command_group_enabled(chat_id, command_group)
+        await message.edit_text(
+            f"{command_group_label(command_group)}\n\n¿Habilitado?",
+            reply_markup=build_command_group_menu(command_group, enabled),
+        )
+        return None
+
+    if action == "set" and len(parsed) == 3:
+        command_group = parsed[1]
+        if not is_valid_command_group(command_group):
+            return None
+        enabled = parsed[2] == "1"
+        current_enabled = db.is_command_group_enabled(chat_id, command_group)
+        if current_enabled == enabled:
+            return None
+        db.set_command_group_enabled(chat_id, command_group, enabled)
+        await message.edit_text(
+            f"{command_group_label(command_group)}\n\n¿Habilitado?",
+            reply_markup=build_command_group_menu(command_group, enabled),
+        )
+        return "Configuracion actualizada."
+
+    return None
 
 
 async def _handle_paginated_callback(
@@ -573,6 +700,12 @@ async def _resolve_user_level(
         return UserLevel.ADMIN
 
     return UserLevel.COMMON
+
+
+def _is_command_group_disabled(db: Database, chat: Chat, command_group: str | None) -> bool:
+    if command_group is None or chat.type not in {"group", "supergroup"}:
+        return False
+    return not db.is_command_group_enabled(str(chat.id), command_group)
 
 
 async def _is_chat_admin(chat_id: int, user_id: str, bot: Bot) -> bool:

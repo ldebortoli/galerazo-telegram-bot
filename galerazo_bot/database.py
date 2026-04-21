@@ -31,6 +31,12 @@ class ChatStatsRow:
 
 
 @dataclass(frozen=True)
+class ChatSettings:
+    chat_id: str
+    language: str
+
+
+@dataclass(frozen=True)
 class GalerazaScore:
     user_id: str
     username: str | None
@@ -108,6 +114,30 @@ class Database:
                     old_chat_id TEXT PRIMARY KEY,
                     new_chat_id TEXT NOT NULL,
                     migrated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+                )
+                """
+            )
+            conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS chat_settings (
+                    chat_id TEXT PRIMARY KEY,
+                    language TEXT NOT NULL DEFAULT 'es',
+                    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (chat_id) REFERENCES chats (chat_id)
+                )
+                """
+            )
+            conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS chat_command_settings (
+                    chat_id TEXT NOT NULL,
+                    command_group TEXT NOT NULL,
+                    enabled INTEGER NOT NULL DEFAULT 1,
+                    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    PRIMARY KEY (chat_id, command_group),
+                    FOREIGN KEY (chat_id) REFERENCES chats (chat_id)
                 )
                 """
             )
@@ -374,6 +404,39 @@ class Database:
                 (new_chat_id, old_chat_id),
             )
             conn.execute(
+                """
+                INSERT INTO chat_settings (chat_id, language, created_at, updated_at)
+                SELECT ?, language, created_at, CURRENT_TIMESTAMP
+                FROM chat_settings
+                WHERE chat_id = ?
+                ON CONFLICT(chat_id) DO UPDATE SET
+                    language = excluded.language,
+                    updated_at = CURRENT_TIMESTAMP
+                """,
+                (new_chat_id, old_chat_id),
+            )
+            conn.execute("DELETE FROM chat_settings WHERE chat_id = ?", (old_chat_id,))
+            old_command_settings = conn.execute(
+                """
+                SELECT command_group, enabled
+                FROM chat_command_settings
+                WHERE chat_id = ?
+                """,
+                (old_chat_id,),
+            ).fetchall()
+            for setting in old_command_settings:
+                conn.execute(
+                    """
+                    INSERT INTO chat_command_settings (chat_id, command_group, enabled, updated_at)
+                    VALUES (?, ?, ?, CURRENT_TIMESTAMP)
+                    ON CONFLICT(chat_id, command_group) DO UPDATE SET
+                        enabled = excluded.enabled,
+                        updated_at = CURRENT_TIMESTAMP
+                    """,
+                    (new_chat_id, setting["command_group"], setting["enabled"]),
+                )
+            conn.execute("DELETE FROM chat_command_settings WHERE chat_id = ?", (old_chat_id,))
+            conn.execute(
                 "UPDATE galeraza_daily_winners SET chat_id = ? WHERE chat_id = ?",
                 (new_chat_id, old_chat_id),
             )
@@ -437,6 +500,65 @@ class Database:
                 (chat_id,),
             ).fetchone()
         return row["added_by_user_id"] if row else None
+
+    def get_chat_settings(self, chat_id: str) -> ChatSettings:
+        chat_id = self.resolve_chat_id(chat_id)
+        with self._connect() as conn:
+            conn.execute(
+                """
+                INSERT INTO chat_settings (chat_id)
+                VALUES (?)
+                ON CONFLICT(chat_id) DO NOTHING
+                """,
+                (chat_id,),
+            )
+            row = conn.execute(
+                "SELECT chat_id, language FROM chat_settings WHERE chat_id = ?",
+                (chat_id,),
+            ).fetchone()
+
+        return ChatSettings(chat_id=row["chat_id"], language=row["language"])
+
+    def set_chat_language(self, chat_id: str, language: str) -> None:
+        chat_id = self.resolve_chat_id(chat_id)
+        with self._connect() as conn:
+            conn.execute(
+                """
+                INSERT INTO chat_settings (chat_id, language)
+                VALUES (?, ?)
+                ON CONFLICT(chat_id) DO UPDATE SET
+                    language = excluded.language,
+                    updated_at = CURRENT_TIMESTAMP
+                """,
+                (chat_id, language),
+            )
+
+    def is_command_group_enabled(self, chat_id: str, command_group: str) -> bool:
+        chat_id = self.resolve_chat_id(chat_id)
+        with self._connect() as conn:
+            row = conn.execute(
+                """
+                SELECT enabled
+                FROM chat_command_settings
+                WHERE chat_id = ? AND command_group = ?
+                """,
+                (chat_id, command_group),
+            ).fetchone()
+        return True if row is None else bool(row["enabled"])
+
+    def set_command_group_enabled(self, chat_id: str, command_group: str, enabled: bool) -> None:
+        chat_id = self.resolve_chat_id(chat_id)
+        with self._connect() as conn:
+            conn.execute(
+                """
+                INSERT INTO chat_command_settings (chat_id, command_group, enabled)
+                VALUES (?, ?, ?)
+                ON CONFLICT(chat_id, command_group) DO UPDATE SET
+                    enabled = excluded.enabled,
+                    updated_at = CURRENT_TIMESTAMP
+                """,
+                (chat_id, command_group, int(enabled)),
+            )
 
     def mark_chat_inactive(self, chat_id: str, reason: str) -> None:
         chat_id = self.resolve_chat_id(chat_id)

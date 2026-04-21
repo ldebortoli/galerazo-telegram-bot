@@ -14,6 +14,7 @@ Base para un bot de Telegram en Python con `python-telegram-bot` y SQLite.
 - `backup`: responde con un backup de SQLite. Solo devs.
 - `debug`: responde con el objeto update del mensaje. Solo devs.
 - `chats`: muestra estadisticas de chats por estado y tipo.
+- `config`: abre el tablero de configuracion del grupo. Solo admines del chat, quien agrego el bot o devs.
 - `galerazas`: muestra el ranking de La Galeraza en grupos/supergrupos.
 - `salir`: hace que el bot salga de un grupo o supergrupo. Solo devs.
 
@@ -32,6 +33,8 @@ Los comandos especificos estan en `galerazo_bot/command_handlers/`. Cada archivo
 3. Importar ese `COMMANDS` en `galerazo_bot/command_handlers/__init__.py` y sumarlo al diccionario central.
 
 El handler de dominio de `/hola` esta en `galerazo_bot/command_handlers/hola.py`. El `CommandHandler` de Telegram que lo activa se registra en `galerazo_bot/telegram_bot.py`.
+
+Los comandos que pertenecen a un conjunto configurable usan `configurable_group` en su definicion. Si ese conjunto esta deshabilitado para un chat, el bot ignora esos comandos para todos los usuarios, incluidos devs.
 
 ## Instalacion
 
@@ -200,6 +203,7 @@ Felicitaciones ganaste la Galeraza!
 ```
 
 - El juego no corre en chats privados ni canales.
+- Se puede deshabilitar por grupo desde `/config`. Si esta deshabilitada, no se detectan ganadores y `/galerazas` no responde en ese chat.
 
 Ranking:
 
@@ -222,6 +226,26 @@ El ranking se ordena de mayor a menor puntaje.
 El bot corre con `concurrent_updates(False)` para procesar un update por vez. Esto es importante para La Galeraza y para cualquier comando que liste datos: primero se procesan los efectos del mensaje entrante y despues se ejecuta el comando correspondiente, de modo que `/galerazas` y las demas listas lean la base ya actualizada.
 
 El premio diario usa una insercion atomica en SQLite (`INSERT OR IGNORE`) por chat y fecha. Si llegan dos mensajes candidatos muy cerca, solo el primero que se procese para ese chat y dia suma el punto.
+
+## Configuracion por grupo
+
+`/config` abre un tablero con opciones del grupo o supergrupo. Solo pueden usarlo admines del chat, quien agrego el bot o devs. Los botones del tablero tambien validan ese nivel de permisos cada vez que se tocan.
+
+Menu principal:
+
+- `Idioma`: por ahora solo `Español`. El idioma actual aparece marcado entre corchetes.
+- `Comandos`: muestra los conjuntos de comandos configurables por grupo.
+
+Todos los submenus tienen un boton `< Atrás`. El menu principal no tiene boton de volver.
+
+Por ahora el unico conjunto configurable es `Galeraza`. Su submenu muestra:
+
+```text
+¿Habilitado?
+[ Sí ] - No
+```
+
+Todos los conjuntos vienen habilitados por defecto cuando el bot entra a un chat nuevo. La configuracion se guarda en SQLite y se migra si Telegram convierte un grupo en supergrupo.
 
 Si el ranking supera el limite maximo de caracteres por mensaje de Telegram, el bot lo pagina sin cortar renglones. La botonera tiene hasta 5 botones de paginas. Ejemplos:
 

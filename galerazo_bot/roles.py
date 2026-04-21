@@ -41,6 +41,7 @@ class CommandContext:
     create_backup: Callable[[], Awaitable[BackupResult]] | None = None
     send_debug_update: Callable[[], Awaitable[bool]] | None = None
     send_galerazas: Callable[[], Awaitable[bool]] | None = None
+    send_config_menu: Callable[[], Awaitable[bool]] | None = None
     leave_chat: Callable[[], Awaitable[bool]] | None = None
     reply_to_user_id: str | None = None
     reply_to_username: str | None = None

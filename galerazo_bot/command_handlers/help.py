@@ -12,6 +12,13 @@ def handle(context: CommandContext, _db: Database) -> str:
     for command in iter_commands():
         if command.hidden or context.user_level < command.min_level:
             continue
+        if (
+            context.chat_id is not None
+            and context.chat_type in {"group", "supergroup"}
+            and command.configurable_group is not None
+            and not _db.is_command_group_enabled(context.chat_id, command.configurable_group)
+        ):
+            continue
         lines.append(f"- {command.name}: {command.description}")
     return "\n".join(lines)
 

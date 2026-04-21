@@ -19,5 +19,10 @@ async def handle(context: CommandContext, _db: Database) -> str | None:
 
 
 COMMANDS = {
-    "galerazas": Command("galerazas", "muestra el ranking de la Galeraza", handle),
+    "galerazas": Command(
+        "galerazas",
+        "muestra el ranking de la Galeraza",
+        handle,
+        configurable_group="galeraza",
+    ),
 }

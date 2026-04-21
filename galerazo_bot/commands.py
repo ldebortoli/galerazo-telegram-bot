@@ -22,6 +22,7 @@ class Command:
     min_level: UserLevel = UserLevel.COMMON
     permission_error: str | None = None
     hidden: bool = False
+    configurable_group: str | None = None
 
 
 def normalize_command(text: str) -> str:
@@ -51,6 +52,10 @@ def is_command_invocation(text: str) -> bool:
 
 def command_exists(text: str) -> bool:
     return normalize_command(text) in COMMANDS
+
+
+def get_command(text: str) -> Command | None:
+    return COMMANDS.get(normalize_command(text))
 
 
 def iter_commands() -> tuple[Command, ...]:
@@ -109,6 +114,7 @@ def handle_command(
     create_backup=None,
     send_debug_update=None,
     send_galerazas=None,
+    send_config_menu=None,
     leave_chat=None,
 ) -> str | None:
     return asyncio.run(
@@ -127,6 +133,7 @@ def handle_command(
             create_backup=create_backup,
             send_debug_update=send_debug_update,
             send_galerazas=send_galerazas,
+            send_config_menu=send_config_menu,
             leave_chat=leave_chat,
         )
     )
@@ -147,6 +154,7 @@ async def handle_command_async(
     create_backup=None,
     send_debug_update=None,
     send_galerazas=None,
+    send_config_menu=None,
     leave_chat=None,
 ) -> str | None:
     context = CommandContext(
@@ -161,6 +169,7 @@ async def handle_command_async(
         create_backup=create_backup,
         send_debug_update=send_debug_update,
         send_galerazas=send_galerazas,
+        send_config_menu=send_config_menu,
         leave_chat=leave_chat,
         reply_to_user_id=reply_to_user_id,
         reply_to_username=reply_to_username,
