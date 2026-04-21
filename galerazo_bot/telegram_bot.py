@@ -15,11 +15,8 @@ from zoneinfo import ZoneInfo
 from .commands import command_exists, handle_command, is_command_invocation
 from .config import load_settings
 from .database import Database
-from .galeraza import (
-    build_galeraza_keyboard,
-    parse_callback_data,
-    render_galeraza_page,
-)
+from .galeraza import build_galeraza_lines, render_galeraza_page
+from .pagination import build_keyboard, parse_callback_data, render_page
 from .roles import BackupResult, UserLevel
 
 
@@ -295,10 +292,14 @@ def _handle_update(
     )
     if response is not None:
         try:
-            telegram.send_message(
+            _send_text_response(
+                db=db,
+                telegram=telegram,
                 chat_id=chat_id,
                 text=response,
+                requester_user_id=str(user_id),
                 reply_to_message_id=message_id,
+                list_type="command",
             )
         except RuntimeError as exc:
             if _is_bot_removed_error(exc):
@@ -336,7 +337,7 @@ def _handle_callback_query(
     data = callback_query.get("data", "")
     parsed = parse_callback_data(data)
     if parsed is not None:
-        _handle_galeraza_callback(callback_query, db, telegram, dev_user_ids, parsed)
+        _handle_paginated_callback(callback_query, db, telegram, dev_user_ids, parsed)
         if callback_query_id is not None:
             telegram.answer_callback_query(str(callback_query_id))
         return
@@ -403,7 +404,12 @@ def _send_galerazas(
     reply_to_message_id: int | None,
 ) -> bool:
     scores = db.get_galeraza_scores(str(chat_id))
+    lines = build_galeraza_lines(scores)
     page = render_galeraza_page(scores, page=1)
+    content_json = json.dumps(
+        {"header": "Galeraza!", "lines": lines},
+        ensure_ascii=False,
+    )
     try:
         result = telegram.send_message(
             chat_id=chat_id,
@@ -412,10 +418,12 @@ def _send_galerazas(
         )
         message_id = str(result.get("result", {}).get("message_id", ""))
         if page.total_pages > 1 and message_id:
-            db.save_galeraza_message_state(
+            db.save_paginated_message_state(
                 chat_id=str(chat_id),
                 message_id=message_id,
+                list_type="galeraza",
                 requester_user_id=requester_user_id,
+                content_json=content_json,
                 unlocked=False,
                 current_page=page.page,
             )
@@ -423,7 +431,7 @@ def _send_galerazas(
                 chat_id=chat_id,
                 message_id=message_id,
                 text=page.text,
-                reply_markup=build_galeraza_keyboard(
+                reply_markup=build_keyboard(
                     message_id,
                     page.page,
                     page.total_pages,
@@ -436,7 +444,56 @@ def _send_galerazas(
         return False
 
 
-def _handle_galeraza_callback(
+def _send_text_response(
+    db: Database,
+    telegram: TelegramClient,
+    chat_id: int,
+    text: str,
+    requester_user_id: str,
+    reply_to_message_id: int | None,
+    list_type: str,
+) -> None:
+    lines = text.splitlines()
+    header = lines[0] if lines else ""
+    body_lines = lines[1:]
+    page = render_page(header, body_lines, page=1)
+
+    result = telegram.send_message(
+        chat_id=chat_id,
+        text=page.text,
+        reply_to_message_id=reply_to_message_id,
+    )
+    message_id = str(result.get("result", {}).get("message_id", ""))
+    if page.total_pages <= 1 or not message_id:
+        return
+
+    content_json = json.dumps(
+        {"header": header, "lines": body_lines},
+        ensure_ascii=False,
+    )
+    db.save_paginated_message_state(
+        chat_id=str(chat_id),
+        message_id=message_id,
+        list_type=list_type,
+        requester_user_id=requester_user_id,
+        content_json=content_json,
+        unlocked=False,
+        current_page=page.page,
+    )
+    telegram.edit_message_text(
+        chat_id=chat_id,
+        message_id=message_id,
+        text=page.text,
+        reply_markup=build_keyboard(
+            message_id,
+            page.page,
+            page.total_pages,
+            unlocked=False,
+        ),
+    )
+
+
+def _handle_paginated_callback(
     callback_query: dict,
     db: Database,
     telegram: TelegramClient,
@@ -451,7 +508,7 @@ def _handle_galeraza_callback(
     if chat_id is None:
         return
 
-    state = db.get_galeraza_message_state(str(chat_id), message_id)
+    state = db.get_paginated_message_state(str(chat_id), message_id)
     if state is None:
         return
 
@@ -463,9 +520,9 @@ def _handle_galeraza_callback(
     if action == "unlock":
         if not is_owner or state.unlocked:
             return
-        db.set_galeraza_message_unlocked(str(chat_id), message_id, True)
+        db.set_paginated_message_unlocked(str(chat_id), message_id, True)
         current_page = state.current_page
-        _edit_galeraza_message(db, telegram, chat_id, message_id, page=current_page, unlocked=True)
+        _edit_paginated_message(db, telegram, chat_id, message_id, page=current_page, unlocked=True)
         return
 
     if action == "delete":
@@ -474,7 +531,7 @@ def _handle_galeraza_callback(
         try:
             telegram.delete_message(chat_id=chat_id, message_id=message_id)
         finally:
-            db.delete_galeraza_message_state(str(chat_id), message_id)
+            db.delete_paginated_message_state(str(chat_id), message_id)
         return
 
     if action == "page":
@@ -487,18 +544,17 @@ def _handle_galeraza_callback(
 
         if target_page == state.current_page:
             return
-        rendered = render_galeraza_page(db.get_galeraza_scores(str(chat_id)), page=target_page)
-        _edit_galeraza_message(
+        _edit_paginated_message(
             db,
             telegram,
             chat_id,
             message_id,
-            page=rendered.page,
+            page=target_page,
             unlocked=state.unlocked,
         )
 
 
-def _edit_galeraza_message(
+def _edit_paginated_message(
     db: Database,
     telegram: TelegramClient,
     chat_id: int,
@@ -506,14 +562,18 @@ def _edit_galeraza_message(
     page: int,
     unlocked: bool,
 ) -> None:
-    scores = db.get_galeraza_scores(str(chat_id))
-    rendered = render_galeraza_page(scores, page=page)
-    db.set_galeraza_message_page(str(chat_id), message_id, rendered.page)
+    state = db.get_paginated_message_state(str(chat_id), message_id)
+    if state is None:
+        return
+
+    content = json.loads(state.content_json)
+    rendered = render_page(content["header"], content["lines"], page=page)
+    db.set_paginated_message_page(str(chat_id), message_id, rendered.page)
     telegram.edit_message_text(
         chat_id=chat_id,
         message_id=message_id,
         text=rendered.text,
-        reply_markup=build_galeraza_keyboard(
+        reply_markup=build_keyboard(
             message_id,
             rendered.page,
             rendered.total_pages,

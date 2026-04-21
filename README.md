@@ -216,6 +216,19 @@ La segunda fila de botones tiene:
 
 Mientras el candado esta cerrado, solo pueden cambiar paginas el usuario que ejecuto `/galerazas` y los devs.
 
+## Listas paginadas
+
+El bot tiene una botonera generica para comandos que devuelven listas largas. Si una respuesta supera el limite maximo de caracteres por mensaje de Telegram, el bot:
+
+- Divide el texto por renglones sin cortar ninguno al final de pagina.
+- Guarda metadata de la botonera en SQLite.
+- Muestra hasta 5 botones de paginas.
+- Permite paginar solo al usuario que pidio la lista y a devs mientras el candado esta cerrado.
+- Permite abrir el candado para que cualquier usuario pueda paginar.
+- Permite borrar el mensaje y su metadata con la X roja, solo al usuario original o a devs.
+
+Esto ya aplica a `/galerazas` y a cualquier comando que devuelva una respuesta larga, por ejemplo `/listanegra`.
+
 ## Salir de un grupo
 
 Los devs pueden hacer que el bot salga de un grupo o supergrupo con:
@@ -253,6 +266,7 @@ Los comandos de lista negra solo responden a devs:
 
 `/bloquear` y `/desbloquear` sin argumentos se usan respondiendo al mensaje del usuario objetivo.
 Los `@alias` se resuelven contra usuarios que el bot ya haya visto.
+Si `/listanegra` supera el limite de caracteres de Telegram, el bot pagina la lista con botonera.
 
 ## Probar localmente sin Telegram
 

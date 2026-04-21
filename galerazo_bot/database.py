@@ -47,6 +47,17 @@ class GalerazaMessageState:
     current_page: int
 
 
+@dataclass(frozen=True)
+class PaginatedMessageState:
+    chat_id: str
+    message_id: str
+    list_type: str
+    requester_user_id: str
+    content_json: str
+    unlocked: bool
+    current_page: int
+
+
 class Database:
     def __init__(self, path: Path) -> None:
         self.path = path
@@ -152,10 +163,12 @@ class Database:
             )
             conn.execute(
                 """
-                CREATE TABLE IF NOT EXISTS galeraza_message_states (
+                CREATE TABLE IF NOT EXISTS paginated_message_states (
                     chat_id TEXT NOT NULL,
                     message_id TEXT NOT NULL,
+                    list_type TEXT NOT NULL,
                     requester_user_id TEXT NOT NULL,
+                    content_json TEXT NOT NULL,
                     unlocked INTEGER NOT NULL DEFAULT 0,
                     current_page INTEGER NOT NULL DEFAULT 1,
                     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -166,12 +179,40 @@ class Database:
                 )
                 """
             )
+            _ensure_column(conn, "paginated_message_states", "content_json", "TEXT NOT NULL DEFAULT '{}'")
             _ensure_column(
                 conn,
-                "galeraza_message_states",
+                "paginated_message_states",
                 "current_page",
                 "INTEGER NOT NULL DEFAULT 1",
             )
+            if _table_exists(conn, "galeraza_message_states"):
+                conn.execute(
+                    """
+                    INSERT OR IGNORE INTO paginated_message_states (
+                        chat_id,
+                        message_id,
+                        list_type,
+                        requester_user_id,
+                        content_json,
+                        unlocked,
+                        current_page,
+                        created_at,
+                        updated_at
+                    )
+                    SELECT
+                        chat_id,
+                        message_id,
+                        'galeraza',
+                        requester_user_id,
+                        '{}',
+                        unlocked,
+                        current_page,
+                        created_at,
+                        updated_at
+                    FROM galeraza_message_states
+                    """
+                )
 
     def get_or_create_user(
         self,
@@ -356,7 +397,7 @@ class Database:
                 )
             conn.execute("DELETE FROM galeraza_scores WHERE chat_id = ?", (old_chat_id,))
             conn.execute(
-                "UPDATE galeraza_message_states SET chat_id = ? WHERE chat_id = ?",
+                "UPDATE paginated_message_states SET chat_id = ? WHERE chat_id = ?",
                 (new_chat_id, old_chat_id),
             )
             conn.execute(
@@ -591,11 +632,13 @@ class Database:
             for row in rows
         ]
 
-    def save_galeraza_message_state(
+    def save_paginated_message_state(
         self,
         chat_id: str,
         message_id: str,
+        list_type: str,
         requester_user_id: str,
+        content_json: str,
         unlocked: bool = False,
         current_page: int = 1,
     ) -> None:
@@ -603,34 +646,46 @@ class Database:
         with self._connect() as conn:
             conn.execute(
                 """
-                INSERT INTO galeraza_message_states (
+                INSERT INTO paginated_message_states (
                     chat_id,
                     message_id,
+                    list_type,
                     requester_user_id,
+                    content_json,
                     unlocked,
                     current_page
                 )
-                VALUES (?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT(chat_id, message_id) DO UPDATE SET
+                    list_type = excluded.list_type,
                     requester_user_id = excluded.requester_user_id,
+                    content_json = excluded.content_json,
                     unlocked = excluded.unlocked,
                     current_page = excluded.current_page,
                     updated_at = CURRENT_TIMESTAMP
                 """,
-                (chat_id, message_id, requester_user_id, int(unlocked), current_page),
+                (
+                    chat_id,
+                    message_id,
+                    list_type,
+                    requester_user_id,
+                    content_json,
+                    int(unlocked),
+                    current_page,
+                ),
             )
 
-    def get_galeraza_message_state(
+    def get_paginated_message_state(
         self,
         chat_id: str,
         message_id: str,
-    ) -> GalerazaMessageState | None:
+    ) -> PaginatedMessageState | None:
         chat_id = self.resolve_chat_id(chat_id)
         with self._connect() as conn:
             row = conn.execute(
                 """
-                SELECT chat_id, message_id, requester_user_id, unlocked, current_page
-                FROM galeraza_message_states
+                SELECT chat_id, message_id, list_type, requester_user_id, content_json, unlocked, current_page
+                FROM paginated_message_states
                 WHERE chat_id = ? AND message_id = ?
                 """,
                 (chat_id, message_id),
@@ -639,15 +694,17 @@ class Database:
         if row is None:
             return None
 
-        return GalerazaMessageState(
+        return PaginatedMessageState(
             chat_id=row["chat_id"],
             message_id=row["message_id"],
+            list_type=row["list_type"],
             requester_user_id=row["requester_user_id"],
+            content_json=row["content_json"],
             unlocked=bool(row["unlocked"]),
             current_page=row["current_page"],
         )
 
-    def set_galeraza_message_unlocked(
+    def set_paginated_message_unlocked(
         self,
         chat_id: str,
         message_id: str,
@@ -657,14 +714,14 @@ class Database:
         with self._connect() as conn:
             conn.execute(
                 """
-                UPDATE galeraza_message_states
+                UPDATE paginated_message_states
                 SET unlocked = ?, updated_at = CURRENT_TIMESTAMP
                 WHERE chat_id = ? AND message_id = ?
                 """,
                 (int(unlocked), chat_id, message_id),
             )
 
-    def set_galeraza_message_page(
+    def set_paginated_message_page(
         self,
         chat_id: str,
         message_id: str,
@@ -674,23 +731,57 @@ class Database:
         with self._connect() as conn:
             conn.execute(
                 """
-                UPDATE galeraza_message_states
+                UPDATE paginated_message_states
                 SET current_page = ?, updated_at = CURRENT_TIMESTAMP
                 WHERE chat_id = ? AND message_id = ?
                 """,
                 (current_page, chat_id, message_id),
             )
 
-    def delete_galeraza_message_state(self, chat_id: str, message_id: str) -> None:
+    def delete_paginated_message_state(self, chat_id: str, message_id: str) -> None:
         chat_id = self.resolve_chat_id(chat_id)
         with self._connect() as conn:
             conn.execute(
                 """
-                DELETE FROM galeraza_message_states
+                DELETE FROM paginated_message_states
                 WHERE chat_id = ? AND message_id = ?
                 """,
                 (chat_id, message_id),
             )
+
+    def save_galeraza_message_state(
+        self,
+        chat_id: str,
+        message_id: str,
+        requester_user_id: str,
+        unlocked: bool = False,
+        current_page: int = 1,
+    ) -> None:
+        self.save_paginated_message_state(
+            chat_id,
+            message_id,
+            "galeraza",
+            requester_user_id,
+            "{}",
+            unlocked,
+            current_page,
+        )
+
+    def get_galeraza_message_state(
+        self,
+        chat_id: str,
+        message_id: str,
+    ) -> PaginatedMessageState | None:
+        return self.get_paginated_message_state(chat_id, message_id)
+
+    def set_galeraza_message_unlocked(self, chat_id: str, message_id: str, unlocked: bool) -> None:
+        self.set_paginated_message_unlocked(chat_id, message_id, unlocked)
+
+    def set_galeraza_message_page(self, chat_id: str, message_id: str, current_page: int) -> None:
+        self.set_paginated_message_page(chat_id, message_id, current_page)
+
+    def delete_galeraza_message_state(self, chat_id: str, message_id: str) -> None:
+        self.delete_paginated_message_state(chat_id, message_id)
 
 
 def _normalize_username(username: str | None) -> str | None:
@@ -706,3 +797,15 @@ def _ensure_column(conn: sqlite3.Connection, table_name: str, column_name: str, 
     }
     if column_name not in columns:
         conn.execute(f"ALTER TABLE {table_name} ADD COLUMN {column_name} {definition}")
+
+
+def _table_exists(conn: sqlite3.Connection, table_name: str) -> bool:
+    row = conn.execute(
+        """
+        SELECT 1
+        FROM sqlite_master
+        WHERE type = 'table' AND name = ?
+        """,
+        (table_name,),
+    ).fetchone()
+    return row is not None
