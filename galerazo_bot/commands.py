@@ -18,6 +18,7 @@ class Command:
     handler: CommandHandler
     min_level: UserLevel = UserLevel.COMMON
     permission_error: str | None = None
+    hidden: bool = False
 
 
 def normalize_command(text: str) -> str:
@@ -49,9 +50,11 @@ def command_exists(text: str) -> bool:
     return normalize_command(text) in COMMANDS
 
 
-def _help(_context: CommandContext, _db: Database) -> str:
+def _help(context: CommandContext, _db: Database) -> str:
     lines = ["Comandos disponibles:"]
     for command in COMMANDS.values():
+        if command.hidden or context.user_level < command.min_level:
+            continue
         lines.append(f"- {command.name}: {command.description}")
     return "\n".join(lines)
 
@@ -206,7 +209,8 @@ def _galerazas(context: CommandContext, _db: Database) -> str | None:
 
 
 COMMANDS: dict[str, Command] = {
-    "help": Command("help", "muestra esta ayuda", _help),
+    "help": Command("help / ayuda", "muestra esta ayuda", _help),
+    "ayuda": Command("ayuda", "muestra esta ayuda", _help, hidden=True),
     "hola": Command("hola", "saluda al bot", _hola),
     "nivel": Command("nivel", "muestra tu nivel de usuario", _nivel),
     "bloquear": Command("bloquear", "bloquea un usuario", _bloquear, UserLevel.DEV),

@@ -4,7 +4,7 @@ Base inicial para un bot de Telegram en Python con comandos simples y SQLite.
 
 ## Comandos
 
-- `help`: muestra los comandos disponibles.
+- `help` / `ayuda`: muestra los comandos disponibles para tu nivel de usuario.
 - `hola`: responde un saludo.
 - `nivel`: muestra el nivel detectado para el usuario.
 - `bloquear`: bloquea un usuario. Solo devs.
@@ -17,7 +17,7 @@ Base inicial para un bot de Telegram en Python con comandos simples y SQLite.
 - `galerazas`: muestra el ranking de La Galeraza en grupos/supergrupos.
 - `salir`: hace que el bot salga de un grupo o supergrupo. Solo devs.
 
-Tambien acepta comandos con prefijo, por ejemplo `!help` o `/hola`.
+Tambien acepta comandos con prefijo, por ejemplo `!help`, `/ayuda` o `/hola`.
 
 ## Instalacion
 
