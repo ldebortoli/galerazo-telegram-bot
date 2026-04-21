@@ -38,6 +38,7 @@ from .commands import COMMANDS, command_exists, get_command, handle_command_asyn
 from .config import Settings, load_settings
 from .database import Database
 from .galeraza import build_galeraza_lines, render_galeraza_page
+from .i18n import DEFAULT_LANGUAGE, t
 from .pagination import BUTTON_PREFIX, build_keyboard, parse_callback_data, render_page
 from .roles import BackupResult, UserLevel
 
@@ -162,10 +163,11 @@ async def _text_command_entrypoint(update: Update, context: ContextTypes.DEFAULT
 
 
 async def _unknown_command_entrypoint(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    state = _state(context)
     message = update.effective_message
     if message is None:
         return
-    await message.reply_text("No conozco ese comando. Escribi help para ver las opciones.")
+    await message.reply_text(t(_chat_language(state.db, message.chat.id), "unknown_command"))
 
 
 async def _handle_command_update(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -205,6 +207,7 @@ async def _handle_command_update(update: Update, context: ContextTypes.DEFAULT_T
         reply_to_username=reply_to_user.username if reply_to_user is not None else None,
         reply_to_display_name=_display_name(reply_to_user) if reply_to_user is not None else None,
         chat_type=chat.type,
+        language=_chat_language(state.db, chat.id),
         bot_user_id=state.bot_user_id,
         send_announcement=lambda text: _send_announcement(
             context.bot,
@@ -212,7 +215,7 @@ async def _handle_command_update(update: Update, context: ContextTypes.DEFAULT_T
             text,
         ),
         create_backup=lambda: _create_and_send_backup(state.db, message),
-        send_debug_update=lambda: _send_debug_update(message, update),
+        send_debug_update=lambda: _send_debug_update(state.db, message, update),
         send_galerazas=lambda: _send_galerazas(state.db, message, str(user.id)),
         send_config_menu=lambda: _send_config_menu(state.db, message),
         leave_chat=lambda: _leave_chat(state.db, context.bot, chat.id),
@@ -272,8 +275,9 @@ async def _config_callback_entrypoint(update: Update, context: ContextTypes.DEFA
         return
 
     message = callback_query.message
+    language = _chat_language(state.db, message.chat.id) if message is not None else DEFAULT_LANGUAGE
     if message is None or message.chat.type not in {"group", "supergroup"}:
-        await callback_query.answer("Configuracion solo disponible en grupos.")
+        await callback_query.answer(t(language, "config.group_only_popup"))
         return
 
     user_level = await _resolve_user_level(
@@ -284,7 +288,7 @@ async def _config_callback_entrypoint(update: Update, context: ContextTypes.DEFA
         dev_user_ids=state.settings.telegram_dev_user_ids,
     )
     if user_level < UserLevel.ADMIN:
-        await callback_query.answer("No tenes permisos suficientes para usar esta botonera.")
+        await callback_query.answer(t(language, "config.permission_popup"))
         return
 
     parsed = parse_config_callback(callback_query.data or "")
@@ -355,7 +359,7 @@ async def _maybe_award_daily_galeraza(
     if not awarded:
         return
 
-    await message.reply_text("Felicitaciones ganaste la Galeraza!", do_quote=True)
+    await message.reply_text(t(_chat_language(db, message.chat.id), "galeraza.win"), do_quote=True)
 
 
 async def _send_galerazas(
@@ -363,10 +367,11 @@ async def _send_galerazas(
     message: Message,
     requester_user_id: str,
 ) -> bool:
+    language = _chat_language(db, message.chat.id)
     scores = db.get_galeraza_scores(str(message.chat.id))
     lines = build_galeraza_lines(scores)
-    page = render_galeraza_page(scores, page=1)
-    content_json = json.dumps({"header": "Galeraza!", "lines": lines}, ensure_ascii=False)
+    page = render_galeraza_page(scores, page=1, language=language)
+    content_json = json.dumps({"header": t(language, "galeraza.header"), "lines": lines}, ensure_ascii=False)
     try:
         result = await message.reply_text(page.text, do_quote=True)
         message_id = str(result.message_id)
@@ -424,10 +429,11 @@ async def _send_text_response(
 
 
 async def _send_config_menu(db: Database, message: Message) -> bool:
+    language = _chat_language(db, message.chat.id)
     try:
         await message.reply_text(
-            "Configuracion del grupo",
-            reply_markup=build_main_menu(),
+            t(language, "config.title"),
+            reply_markup=build_main_menu(language),
             do_quote=True,
         )
         db.get_chat_settings(str(message.chat.id))
@@ -440,14 +446,15 @@ async def _send_config_menu(db: Database, message: Message) -> bool:
 async def _handle_config_callback(db: Database, message: Message, parsed: tuple[str, ...]) -> str | None:
     action = parsed[0]
     chat_id = str(message.chat.id)
+    language = _chat_language(db, message.chat.id)
 
     if action == "main":
-        await message.edit_text("Configuracion del grupo", reply_markup=build_main_menu())
+        await message.edit_text(t(language, "config.title"), reply_markup=build_main_menu(language))
         return None
 
     if action == "language":
         settings = db.get_chat_settings(chat_id)
-        await message.edit_text("Idioma", reply_markup=build_language_menu(settings.language))
+        await message.edit_text(t(settings.language, "config.language"), reply_markup=build_language_menu(settings.language))
         return None
 
     if action == "lang" and len(parsed) == 2:
@@ -458,11 +465,11 @@ async def _handle_config_callback(db: Database, message: Message, parsed: tuple[
         if settings.language == language:
             return None
         db.set_chat_language(chat_id, language)
-        await message.edit_text("Idioma", reply_markup=build_language_menu(language))
-        return "Idioma actualizado."
+        await message.edit_text(t(language, "config.language"), reply_markup=build_language_menu(language))
+        return t(language, "config.language_updated")
 
     if action == "commands":
-        await message.edit_text("Comandos", reply_markup=build_command_groups_menu())
+        await message.edit_text(t(language, "config.commands"), reply_markup=build_command_groups_menu(language))
         return None
 
     if action == "command" and len(parsed) == 2:
@@ -471,8 +478,8 @@ async def _handle_config_callback(db: Database, message: Message, parsed: tuple[
             return None
         enabled = db.is_command_group_enabled(chat_id, command_group)
         await message.edit_text(
-            f"{command_group_label(command_group)}\n\n¿Habilitado?",
-            reply_markup=build_command_group_menu(command_group, enabled),
+            f"{command_group_label(command_group, language)}\n\n{t(language, 'config.enabled_question')}",
+            reply_markup=build_command_group_menu(command_group, enabled, language),
         )
         return None
 
@@ -486,10 +493,10 @@ async def _handle_config_callback(db: Database, message: Message, parsed: tuple[
             return None
         db.set_command_group_enabled(chat_id, command_group, enabled)
         await message.edit_text(
-            f"{command_group_label(command_group)}\n\n¿Habilitado?",
-            reply_markup=build_command_group_menu(command_group, enabled),
+            f"{command_group_label(command_group, language)}\n\n{t(language, 'config.enabled_question')}",
+            reply_markup=build_command_group_menu(command_group, enabled, language),
         )
-        return "Configuracion actualizada."
+        return t(language, "config.updated")
 
     return None
 
@@ -507,14 +514,15 @@ async def _handle_paginated_callback(
         return None
 
     chat_id = message.chat.id
+    language = _chat_language(db, chat_id)
     state = db.get_paginated_message_state(str(chat_id), message_id)
     if state is None:
         await _delete_paginated_message(db, message, message_id)
-        return "mensaje eliminado"
+        return t(language, "pagination.deleted")
 
     if _is_paginated_state_expired(state.created_at):
         await _delete_paginated_message(db, message, message_id)
-        return "mensaje eliminado"
+        return t(language, "pagination.deleted")
 
     user_id = str(user.id)
     is_dev = user_id in dev_user_ids
@@ -529,14 +537,14 @@ async def _handle_paginated_callback(
         db.set_paginated_message_unlocked(str(chat_id), message_id, unlocked)
         await _edit_paginated_message(db, message, message_id, page=state.current_page, unlocked=unlocked)
         if unlocked:
-            return "habilitado para todos"
-        return "deshabilitado para todos"
+            return t(language, "pagination.unlocked")
+        return t(language, "pagination.locked")
 
     if action == "delete":
         if not can_delete:
             return None
         await _delete_paginated_message(db, message, message_id)
-        return "mensaje eliminado"
+        return t(language, "pagination.deleted")
 
     if action == "page":
         if not can_page or value is None:
@@ -770,7 +778,7 @@ async def _create_and_send_backup(
 
     await message.reply_document(
         document=backup_path,
-        caption="Backup de la base de datos.",
+        caption=t(_chat_language(db, message.chat.id), "backup.caption"),
         do_quote=True,
     )
     return BackupResult(
@@ -782,6 +790,7 @@ async def _create_and_send_backup(
 
 
 async def _send_debug_update(
+    db: Database,
     message: Message,
     update: Update,
 ) -> bool:
@@ -802,7 +811,7 @@ async def _send_debug_update(
         debug_path.write_text(debug_json, encoding="utf-8")
         await message.reply_document(
             document=debug_path,
-            caption="Update de debug.",
+            caption=t(_chat_language(db, message.chat.id), "debug.caption"),
             do_quote=True,
         )
         return True
@@ -826,6 +835,14 @@ def _parse_chat_id(raw_chat_id: str) -> int | str:
     if raw_chat_id.lstrip("-").isdigit():
         return int(raw_chat_id)
     return raw_chat_id
+
+
+def _chat_language(db: Database, chat_id: int | str | None) -> str:
+    if chat_id is None:
+        return DEFAULT_LANGUAGE
+    return db.get_chat_settings(str(chat_id)).language
+
+
 
 
 def _is_bot_removed_error(exc: TelegramError) -> bool:

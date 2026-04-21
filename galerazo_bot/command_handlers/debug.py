@@ -7,10 +7,10 @@ from ..roles import CommandContext, UserLevel
 
 async def handle(context: CommandContext, _db: Database) -> str | None:
     if context.send_debug_update is None:
-        return "No hay mecanismo de debug configurado."
+        return context.t("debug.not_configured")
 
     if not await context.send_debug_update():
-        return "No pude enviar el update de debug."
+        return context.t("debug.send_failed")
 
     return None
 

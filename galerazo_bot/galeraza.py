@@ -1,14 +1,12 @@
 from __future__ import annotations
 
 from .database import GalerazaScore
+from .i18n import DEFAULT_LANGUAGE, t
 from .pagination import PaginatedPage, render_page
 
 
-HEADER = "Galeraza!"
-
-
-def render_galeraza_page(scores: list[GalerazaScore], page: int) -> PaginatedPage:
-    return render_page(HEADER, build_galeraza_lines(scores), page)
+def render_galeraza_page(scores: list[GalerazaScore], page: int, language: str = DEFAULT_LANGUAGE) -> PaginatedPage:
+    return render_page(t(language, "galeraza.header"), build_galeraza_lines(scores), page)
 
 
 def build_galeraza_lines(scores: list[GalerazaScore]) -> list[str]:

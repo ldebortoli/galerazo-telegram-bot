@@ -5,6 +5,8 @@ from enum import IntEnum
 from pathlib import Path
 from typing import Awaitable, Callable
 
+from .i18n import DEFAULT_LANGUAGE, t
+
 
 class UserLevel(IntEnum):
     COMMON = 1
@@ -36,6 +38,7 @@ class CommandContext:
     user_level: UserLevel
     raw_text: str
     args: str
+    language: str = DEFAULT_LANGUAGE
     bot_user_id: str | None = None
     send_announcement: Callable[[str], Awaitable[bool]] | None = None
     create_backup: Callable[[], Awaitable[BackupResult]] | None = None
@@ -46,3 +49,6 @@ class CommandContext:
     reply_to_user_id: str | None = None
     reply_to_username: str | None = None
     reply_to_display_name: str | None = None
+
+    def t(self, key: str, **kwargs) -> str:
+        return t(self.language, key, **kwargs)

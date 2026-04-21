@@ -4,6 +4,8 @@ from dataclasses import dataclass
 
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 
+from .i18n import t
+
 
 CONFIG_PREFIX = "config"
 
@@ -20,15 +22,15 @@ class CommandGroupOption:
     label: str
 
 
-LANGUAGES = (LanguageOption("es", "Español"),)
+LANGUAGES = (LanguageOption("es", "Español"), LanguageOption("en", "English"))
 COMMAND_GROUPS = (CommandGroupOption("galeraza", "Galeraza"),)
 
 
-def build_main_menu() -> InlineKeyboardMarkup:
+def build_main_menu(language: str) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         [
-            [InlineKeyboardButton("Idioma", callback_data=f"{CONFIG_PREFIX}:language")],
-            [InlineKeyboardButton("Comandos", callback_data=f"{CONFIG_PREFIX}:commands")],
+            [InlineKeyboardButton(t(language, "config.language"), callback_data=f"{CONFIG_PREFIX}:language")],
+            [InlineKeyboardButton(t(language, "config.commands"), callback_data=f"{CONFIG_PREFIX}:commands")],
         ]
     )
 
@@ -43,38 +45,42 @@ def build_language_menu(current_language: str) -> InlineKeyboardMarkup:
         ]
         for language in LANGUAGES
     ]
-    rows.append([_back_button(f"{CONFIG_PREFIX}:main")])
+    rows.append([_back_button(current_language, f"{CONFIG_PREFIX}:main")])
     return InlineKeyboardMarkup(rows)
 
 
-def build_command_groups_menu() -> InlineKeyboardMarkup:
+def build_command_groups_menu(language: str) -> InlineKeyboardMarkup:
     rows = [
-        [InlineKeyboardButton(group.label, callback_data=f"{CONFIG_PREFIX}:command:{group.key}")]
+        [InlineKeyboardButton(command_group_label(group.key, language), callback_data=f"{CONFIG_PREFIX}:command:{group.key}")]
         for group in COMMAND_GROUPS
     ]
-    rows.append([_back_button(f"{CONFIG_PREFIX}:main")])
+    rows.append([_back_button(language, f"{CONFIG_PREFIX}:main")])
     return InlineKeyboardMarkup(rows)
 
 
-def build_command_group_menu(command_group: str, enabled: bool) -> InlineKeyboardMarkup:
+def build_command_group_menu(command_group: str, enabled: bool, language: str) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         [
             [
                 InlineKeyboardButton(
-                    _selected_label("Sí", enabled),
+                    _selected_label(t(language, "config.yes"), enabled),
                     callback_data=f"{CONFIG_PREFIX}:set:{command_group}:1",
                 ),
                 InlineKeyboardButton(
-                    _selected_label("No", not enabled),
+                    _selected_label(t(language, "config.no"), not enabled),
                     callback_data=f"{CONFIG_PREFIX}:set:{command_group}:0",
                 ),
             ],
-            [_back_button(f"{CONFIG_PREFIX}:commands")],
+            [_back_button(language, f"{CONFIG_PREFIX}:commands")],
         ]
     )
 
 
-def command_group_label(command_group: str) -> str:
+def command_group_label(command_group: str, language: str) -> str:
+    translation_key = f"config.command_group.{command_group}"
+    translated = t(language, translation_key)
+    if translated != translation_key:
+        return translated
     for group in COMMAND_GROUPS:
         if group.key == command_group:
             return group.label
@@ -96,8 +102,8 @@ def parse_config_callback(data: str) -> tuple[str, ...] | None:
     return parts[1:]
 
 
-def _back_button(callback_data: str) -> InlineKeyboardButton:
-    return InlineKeyboardButton("< Atrás", callback_data=callback_data)
+def _back_button(language: str, callback_data: str) -> InlineKeyboardButton:
+    return InlineKeyboardButton(t(language, "config.back"), callback_data=callback_data)
 
 
 def _selected_label(label: str, selected: bool) -> str:

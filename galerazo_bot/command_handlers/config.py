@@ -7,13 +7,13 @@ from ..roles import CommandContext, UserLevel
 
 async def handle(context: CommandContext, _db: Database) -> str | None:
     if context.chat_type not in {"group", "supergroup"}:
-        return "El comando /config solo funciona en grupos y supergrupos."
+        return context.t("config.group_only")
 
     if context.send_config_menu is None:
-        return "No hay mecanismo configurado para mostrar configuracion."
+        return context.t("config.not_configured")
 
     if not await context.send_config_menu():
-        return "No pude mostrar la configuracion."
+        return context.t("config.send_failed")
 
     return None
 

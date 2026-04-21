@@ -7,21 +7,21 @@ from ..roles import CommandContext, UserLevel
 
 async def handle(context: CommandContext, _db: Database) -> str:
     if context.chat_type not in {"group", "supergroup"}:
-        return "El comando /salir solo funciona en grupos o supergrupos."
+        return context.t("salir.group_only")
 
     if context.reply_to_user_id is None:
-        return "Uso: responde a un mensaje del bot con /salir para que salga del grupo."
+        return context.t("salir.usage")
 
     if context.reply_to_user_id != context.bot_user_id:
-        return "Uso: responde a un mensaje del bot con /salir para que salga del grupo."
+        return context.t("salir.usage")
 
     if context.leave_chat is None:
-        return "No hay mecanismo configurado para salir del chat."
+        return context.t("salir.not_configured")
 
     if not await context.leave_chat():
-        return "No pude salir del chat."
+        return context.t("salir.failed")
 
-    return "Saliendo del grupo."
+    return context.t("salir.leaving")
 
 
 COMMANDS = {
@@ -30,6 +30,6 @@ COMMANDS = {
         "hace que el bot salga del grupo",
         handle,
         UserLevel.DEV,
-        "No tenes permisos para usar /salir.",
+        permission_error_key="salir.permission",
     ),
 }

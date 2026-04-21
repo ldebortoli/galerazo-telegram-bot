@@ -8,15 +8,15 @@ from ..roles import CommandContext, UserLevel
 async def handle(context: CommandContext, _db: Database) -> str:
     message = context.args.strip()
     if not message:
-        return "Uso: /novedad mensaje"
+        return context.t("novedad.usage")
 
     if context.send_announcement is None:
-        return "No hay canal de anuncios configurado."
+        return context.t("novedad.not_configured")
 
     if not await context.send_announcement(message):
-        return "No pude enviar la novedad al canal de anuncios."
+        return context.t("novedad.send_failed")
 
-    return "Novedad enviada."
+    return context.t("novedad.sent")
 
 
 COMMANDS = {

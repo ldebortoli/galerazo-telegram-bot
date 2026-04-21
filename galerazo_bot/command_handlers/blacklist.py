@@ -8,35 +8,35 @@ from ..roles import CommandContext, UserLevel
 def bloquear(context: CommandContext, db: Database) -> str:
     target = _resolve_target_user(context, db)
     if target is None:
-        return "Uso: /bloquear respondiendo un mensaje, con @alias o con user id."
+        return context.t("blacklist.block_usage")
 
     if target.user_id == context.sender_id:
-        return "No podes bloquearte a vos mismo."
+        return context.t("blacklist.cannot_block_self")
 
     db.block_user(user_id=target.user_id, blocked_by_user_id=context.sender_id)
-    return f"Usuario bloqueado: {_format_user(target)}."
+    return context.t("blacklist.blocked", user=_format_user(target))
 
 
 def desbloquear(context: CommandContext, db: Database) -> str:
     target = _resolve_target_user(context, db)
     if target is None:
-        return "Uso: /desbloquear respondiendo un mensaje, con @alias o con user id."
+        return context.t("blacklist.unblock_usage")
 
     was_blocked = db.unblock_user(target.user_id)
     if not was_blocked:
-        return f"El usuario no estaba bloqueado: {_format_user(target)}."
+        return context.t("blacklist.not_blocked", user=_format_user(target))
 
-    return f"Usuario desbloqueado: {_format_user(target)}."
+    return context.t("blacklist.unblocked", user=_format_user(target))
 
 
 def listanegra(_context: CommandContext, db: Database) -> str:
     blocked_users = db.list_blocked_users()
     if not blocked_users:
-        return "La lista negra esta vacia."
+        return _context.t("blacklist.empty")
 
-    lines = ["Usuarios bloqueados:"]
+    lines = [_context.t("blacklist.header")]
     for user in blocked_users:
-        username = f"@{user.username}" if user.username else "sin alias"
+        username = f"@{user.username}" if user.username else _context.t("blacklist.no_username")
         display_name = f" - {user.display_name}" if user.display_name else ""
         lines.append(f"- {user.user_id} ({username}){display_name}")
     return "\n".join(lines)

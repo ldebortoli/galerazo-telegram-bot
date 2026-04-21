@@ -6,12 +6,13 @@ from dataclasses import dataclass
 from typing import Awaitable, Callable, Optional, Union
 
 from .database import Database
+from .i18n import DEFAULT_LANGUAGE, t
 from .roles import CommandContext, UserLevel
 
 
 CommandResult = Union[Optional[str], Awaitable[Optional[str]]]
 CommandHandler = Callable[[CommandContext, Database], CommandResult]
-DEFAULT_PERMISSION_ERROR = "No tenes permisos suficientes para usar este comando."
+DEFAULT_PERMISSION_ERROR_KEY = "permission_denied"
 
 
 @dataclass(frozen=True)
@@ -21,8 +22,14 @@ class Command:
     handler: CommandHandler
     min_level: UserLevel = UserLevel.COMMON
     permission_error: str | None = None
+    permission_error_key: str | None = None
     hidden: bool = False
     configurable_group: str | None = None
+    command_key: str | None = None
+
+    def __post_init__(self) -> None:
+        if self.command_key is None:
+            object.__setattr__(self, "command_key", self.name.split(maxsplit=1)[0])
 
 
 def normalize_command(text: str) -> str:
@@ -76,6 +83,7 @@ def handle_text(
             db=db,
             chat_id=chat_id,
             user_level=user_level,
+            language=DEFAULT_LANGUAGE,
         )
     )
 
@@ -86,6 +94,7 @@ async def handle_text_async(
     db: Database,
     chat_id: str | None = None,
     user_level: UserLevel = UserLevel.COMMON,
+    language: str = DEFAULT_LANGUAGE,
 ) -> str | None:
     context = CommandContext(
         sender_id=sender_id,
@@ -94,6 +103,7 @@ async def handle_text_async(
         user_level=user_level,
         raw_text=text,
         args=command_args(text),
+        language=language,
     )
     db.save_incoming_message(sender_id=sender_id, text=text, chat_id=chat_id)
     return await _handle_with_context(context, db)
@@ -116,6 +126,7 @@ def handle_command(
     send_galerazas=None,
     send_config_menu=None,
     leave_chat=None,
+    language: str | None = None,
 ) -> str | None:
     return asyncio.run(
         handle_command_async(
@@ -135,6 +146,7 @@ def handle_command(
             send_galerazas=send_galerazas,
             send_config_menu=send_config_menu,
             leave_chat=leave_chat,
+            language=language,
         )
     )
 
@@ -156,6 +168,7 @@ async def handle_command_async(
     send_galerazas=None,
     send_config_menu=None,
     leave_chat=None,
+    language: str | None = None,
 ) -> str | None:
     context = CommandContext(
         sender_id=sender_id,
@@ -164,6 +177,7 @@ async def handle_command_async(
         user_level=user_level,
         raw_text=text,
         args=command_args(text),
+        language=language or _resolve_language(db, chat_id, chat_type),
         bot_user_id=bot_user_id,
         send_announcement=send_announcement,
         create_backup=create_backup,
@@ -183,10 +197,14 @@ async def _handle_with_context(context: CommandContext, db: Database) -> str | N
     command_name = normalize_command(context.raw_text)
     command = COMMANDS.get(command_name)
     if command is None:
-        return "No conozco ese comando. Escribi help para ver las opciones."
+        return context.t("unknown_command")
 
     if context.user_level < command.min_level:
-        return command.permission_error or DEFAULT_PERMISSION_ERROR
+        if command.permission_error_key:
+            return context.t(command.permission_error_key)
+        if command.permission_error:
+            return command.permission_error
+        return context.t(DEFAULT_PERMISSION_ERROR_KEY)
 
     result = command.handler(context, db)
     if inspect.isawaitable(result):
@@ -198,6 +216,12 @@ def _load_commands() -> dict[str, Command]:
     from .command_handlers import COMMANDS as handler_commands
 
     return dict(handler_commands)
+
+
+def _resolve_language(db: Database, chat_id: str | None, chat_type: str | None) -> str:
+    if chat_id is None or chat_type not in {"group", "supergroup"}:
+        return DEFAULT_LANGUAGE
+    return db.get_chat_settings(chat_id).language
 
 
 COMMANDS: dict[str, Command] = _load_commands()

@@ -233,10 +233,12 @@ El premio diario usa una insercion atomica en SQLite (`INSERT OR IGNORE`) por ch
 
 Menu principal:
 
-- `Idioma`: por ahora solo `Español`. El idioma actual aparece marcado entre corchetes.
+- `Idioma`: permite elegir `Español` o `English`. El idioma actual aparece marcado entre corchetes.
 - `Comandos`: muestra los conjuntos de comandos configurables por grupo.
 
 Todos los submenus tienen un boton `< Atrás`. El menu principal no tiene boton de volver.
+
+El idioma por defecto siempre es español. Si un grupo cambia a inglés, los textos que el bot muestra o envia en ese grupo pasan a inglés: respuestas de comandos, menús, popups de botoneras, backups/debug captions y mensajes de La Galeraza.
 
 Por ahora el unico conjunto configurable es `Galeraza`. Su submenu muestra:
 

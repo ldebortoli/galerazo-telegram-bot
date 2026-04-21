@@ -8,7 +8,7 @@ from ..roles import CommandContext
 def handle(context: CommandContext, _db: Database) -> str:
     from ..commands import iter_commands
 
-    lines = ["Comandos disponibles:"]
+    lines = [context.t("help.header")]
     for command in iter_commands():
         if command.hidden or context.user_level < command.min_level:
             continue
@@ -19,7 +19,7 @@ def handle(context: CommandContext, _db: Database) -> str:
             and not _db.is_command_group_enabled(context.chat_id, command.configurable_group)
         ):
             continue
-        lines.append(f"- {command.name}: {command.description}")
+        lines.append(f"- {command.name}: {context.t(f'help.{command.command_key}')}")
     return "\n".join(lines)
 
 

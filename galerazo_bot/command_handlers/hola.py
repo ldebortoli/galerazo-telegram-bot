@@ -8,7 +8,7 @@ from ..roles import CommandContext
 def handle(context: CommandContext, db: Database) -> str:
     user = db.get_or_create_user(context.sender_id)
     name = user.display_name or "galerazo"
-    return f"Hola, {name}. Soy Galerazo Bot."
+    return context.t("hola.response", name=name)
 
 
 COMMANDS = {
