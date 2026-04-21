@@ -19,6 +19,18 @@ Base inicial para un bot de Telegram en Python con comandos simples y SQLite.
 
 Tambien acepta comandos con prefijo, por ejemplo `!help`, `/ayuda` o `/hola`.
 
+## Estructura de comandos
+
+El dispatcher esta en `galerazo_bot/commands.py`. Ese archivo normaliza el texto, valida permisos y ejecuta el handler registrado.
+
+Los comandos especificos estan en `galerazo_bot/command_handlers/`. Cada archivo contiene el handler y sus metodos auxiliares. Para agregar un comando nuevo:
+
+1. Crear un archivo nuevo en `galerazo_bot/command_handlers/`.
+2. Definir un diccionario `COMMANDS` con los nombres/aliases que activa ese archivo.
+3. Importar ese `COMMANDS` en `galerazo_bot/command_handlers/__init__.py` y sumarlo al diccionario central.
+
+El handler de `/hola` esta en `galerazo_bot/command_handlers/hola.py`.
+
 ## Instalacion
 
 ```powershell
