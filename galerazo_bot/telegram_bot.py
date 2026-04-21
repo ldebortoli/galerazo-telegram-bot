@@ -5,7 +5,7 @@ import logging
 import traceback
 import time
 import uuid
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode
@@ -23,6 +23,7 @@ from .roles import BackupResult, UserLevel
 logger = logging.getLogger(__name__)
 TELEGRAM_DOCUMENT_UPLOAD_LIMIT_BYTES = 50 * 1024 * 1024
 TELEGRAM_MESSAGE_LIMIT_CHARS = 4096
+PAGINATED_METADATA_TTL = timedelta(days=14)
 
 
 class TelegramClient:
@@ -91,8 +92,11 @@ class TelegramClient:
 
         self._request_multipart("sendDocument", fields, "document", document_path)
 
-    def answer_callback_query(self, callback_query_id: str) -> None:
-        self._request("answerCallbackQuery", {"callback_query_id": callback_query_id})
+    def answer_callback_query(self, callback_query_id: str, text: str | None = None) -> None:
+        payload = {"callback_query_id": callback_query_id}
+        if text is not None:
+            payload["text"] = text
+        self._request("answerCallbackQuery", payload)
 
     def leave_chat(self, chat_id: int | str) -> None:
         self._request("leaveChat", {"chat_id": chat_id})
@@ -337,9 +341,9 @@ def _handle_callback_query(
     data = callback_query.get("data", "")
     parsed = parse_callback_data(data)
     if parsed is not None:
-        _handle_paginated_callback(callback_query, db, telegram, dev_user_ids, parsed)
+        popup_text = _handle_paginated_callback(callback_query, db, telegram, dev_user_ids, parsed)
         if callback_query_id is not None:
-            telegram.answer_callback_query(str(callback_query_id))
+            telegram.answer_callback_query(str(callback_query_id), popup_text)
         return
 
     if callback_query_id is not None:
@@ -499,18 +503,23 @@ def _handle_paginated_callback(
     telegram: TelegramClient,
     dev_user_ids: frozenset[str],
     parsed: tuple[str, str, str | None],
-) -> None:
+) -> str | None:
     action, message_id, value = parsed
     user = callback_query.get("from", {})
     user_id = str(user.get("id"))
     message = callback_query.get("message", {})
     chat_id = message.get("chat", {}).get("id")
     if chat_id is None:
-        return
+        return None
 
     state = db.get_paginated_message_state(str(chat_id), message_id)
     if state is None:
-        return
+        _delete_paginated_message(db, telegram, chat_id, message_id)
+        return "mensaje eliminado"
+
+    if _is_paginated_state_expired(state.created_at):
+        _delete_paginated_message(db, telegram, chat_id, message_id)
+        return "mensaje eliminado"
 
     is_dev = user_id in dev_user_ids
     is_owner = user_id == state.requester_user_id
@@ -518,32 +527,32 @@ def _handle_paginated_callback(
     can_delete = is_owner or is_dev
 
     if action == "unlock":
-        if not is_owner or state.unlocked:
-            return
-        db.set_paginated_message_unlocked(str(chat_id), message_id, True)
+        if not is_owner:
+            return None
+        unlocked = not state.unlocked
+        db.set_paginated_message_unlocked(str(chat_id), message_id, unlocked)
         current_page = state.current_page
-        _edit_paginated_message(db, telegram, chat_id, message_id, page=current_page, unlocked=True)
-        return
+        _edit_paginated_message(db, telegram, chat_id, message_id, page=current_page, unlocked=unlocked)
+        if unlocked:
+            return "habilitado para todos"
+        return "deshabilitado para todos"
 
     if action == "delete":
         if not can_delete:
-            return
-        try:
-            telegram.delete_message(chat_id=chat_id, message_id=message_id)
-        finally:
-            db.delete_paginated_message_state(str(chat_id), message_id)
-        return
+            return None
+        _delete_paginated_message(db, telegram, chat_id, message_id)
+        return "mensaje eliminado"
 
     if action == "page":
         if not can_page or value is None:
-            return
+            return None
         try:
             target_page = int(value)
         except ValueError:
-            return
+            return None
 
         if target_page == state.current_page:
-            return
+            return None
         _edit_paginated_message(
             db,
             telegram,
@@ -552,6 +561,31 @@ def _handle_paginated_callback(
             page=target_page,
             unlocked=state.unlocked,
         )
+    return None
+
+
+def _delete_paginated_message(
+    db: Database,
+    telegram: TelegramClient,
+    chat_id: int,
+    message_id: str,
+) -> None:
+    try:
+        telegram.delete_message(chat_id=chat_id, message_id=message_id)
+    except (HTTPError, URLError, TimeoutError, RuntimeError) as exc:
+        logger.warning("No pude eliminar mensaje paginado %s en chat %s: %s", message_id, chat_id, exc)
+    finally:
+        db.delete_paginated_message_state(str(chat_id), message_id)
+
+
+def _is_paginated_state_expired(created_at: str) -> bool:
+    try:
+        created = datetime.fromisoformat(created_at.replace(" ", "T"))
+    except ValueError:
+        logger.warning("Fecha invalida en metadata de botonera: %s", created_at)
+        return False
+
+    return datetime.utcnow() - created > PAGINATED_METADATA_TTL
 
 
 def _edit_paginated_message(

@@ -56,6 +56,7 @@ class PaginatedMessageState:
     content_json: str
     unlocked: bool
     current_page: int
+    created_at: str
 
 
 class Database:
@@ -684,7 +685,15 @@ class Database:
         with self._connect() as conn:
             row = conn.execute(
                 """
-                SELECT chat_id, message_id, list_type, requester_user_id, content_json, unlocked, current_page
+                SELECT
+                    chat_id,
+                    message_id,
+                    list_type,
+                    requester_user_id,
+                    content_json,
+                    unlocked,
+                    current_page,
+                    created_at
                 FROM paginated_message_states
                 WHERE chat_id = ? AND message_id = ?
                 """,
@@ -702,6 +711,7 @@ class Database:
             content_json=row["content_json"],
             unlocked=bool(row["unlocked"]),
             current_page=row["current_page"],
+            created_at=row["created_at"],
         )
 
     def set_paginated_message_unlocked(

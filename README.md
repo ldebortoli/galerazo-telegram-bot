@@ -211,7 +211,7 @@ Si el ranking supera el limite maximo de caracteres por mensaje de Telegram, el 
 
 La segunda fila de botones tiene:
 
-- Candado cerrado: solo el usuario que ejecuto `/galerazas` puede abrirlo. Al abrirlo, cualquier usuario puede usar la paginacion.
+- Candado cerrado: solo el usuario que ejecuto `/galerazas` puede abrirlo o cerrarlo. Al abrirlo, cualquier usuario puede usar la paginacion.
 - X roja: elimina el mensaje y borra la metadata de esa botonera. Solo pueden usarla el usuario que ejecuto `/galerazas` o un dev.
 
 Mientras el candado esta cerrado, solo pueden cambiar paginas el usuario que ejecuto `/galerazas` y los devs.
@@ -224,8 +224,10 @@ El bot tiene una botonera generica para comandos que devuelven listas largas. Si
 - Guarda metadata de la botonera en SQLite.
 - Muestra hasta 5 botones de paginas.
 - Permite paginar solo al usuario que pidio la lista y a devs mientras el candado esta cerrado.
-- Permite abrir el candado para que cualquier usuario pueda paginar.
+- Permite abrir y cerrar el candado. Al abrirlo muestra el popup `habilitado para todos`; al cerrarlo muestra `deshabilitado para todos`.
 - Permite borrar el mensaje y su metadata con la X roja, solo al usuario original o a devs.
+- Si alguien toca una botonera creada hace mas de 2 semanas, el bot intenta eliminar el mensaje, borra la metadata y muestra el popup `mensaje eliminado`.
+- Si alguien toca una botonera cuya metadata ya no existe en SQLite, el bot intenta eliminar el mensaje y muestra el popup `mensaje eliminado`.
 
 Esto ya aplica a `/galerazas` y a cualquier comando que devuelva una respuesta larga, por ejemplo `/listanegra`.
 
