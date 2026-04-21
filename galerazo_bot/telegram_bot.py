@@ -384,7 +384,7 @@ async def _send_galerazas(
 ) -> bool:
     language = _chat_language(db, message.chat.id)
     scores = db.get_galeraza_scores(str(message.chat.id))
-    lines = build_galeraza_lines(scores)
+    lines = build_galeraza_lines(scores, language)
     page = render_galeraza_page(scores, page=1, language=language)
     content_json = json.dumps({"header": t(language, "galeraza.header"), "lines": lines}, ensure_ascii=False)
     try:

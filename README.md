@@ -230,8 +230,8 @@ Formato:
 
 ```text
 Galeraza!
-usuario1 => 5
-usuario2 => 4
+usuario1 (id1) => 5
+usuario2 (id2) => 4
 ```
 
 El ranking se ordena de mayor a menor puntaje.
@@ -332,6 +332,7 @@ Los comandos de lista negra solo responden a devs:
 `/bloquear` y `/desbloquear` sin argumentos se usan respondiendo al mensaje del usuario objetivo.
 Los `@alias` se resuelven contra usuarios que el bot ya haya visto.
 Si `/listanegra` supera el limite de caracteres de Telegram, el bot pagina la lista con botonera.
+Las listas de usuarios muestran siempre el id entre parentesis, por ejemplo `@usuario (123456789)`.
 
 ## Probar localmente sin Telegram
 

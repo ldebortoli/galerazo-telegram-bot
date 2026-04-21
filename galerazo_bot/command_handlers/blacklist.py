@@ -36,9 +36,7 @@ def listanegra(_context: CommandContext, db: Database) -> str:
 
     lines = [_context.t("blacklist.header")]
     for user in blocked_users:
-        username = f"@{user.username}" if user.username else _context.t("blacklist.no_username")
-        display_name = f" - {user.display_name}" if user.display_name else ""
-        lines.append(f"- {user.user_id} ({username}){display_name}")
+        lines.append(f"- {_format_user(user, _context)}")
     return "\n".join(lines)
 
 
@@ -63,11 +61,13 @@ def _resolve_target_user(context: CommandContext, db: Database):
     return db.get_user_by_username(target)
 
 
-def _format_user(user) -> str:
+def _format_user(user, context: CommandContext | None = None) -> str:
     if user.username:
-        return f"{user.user_id} (@{user.username})"
+        return f"@{user.username} ({user.user_id})"
     if user.display_name:
-        return f"{user.user_id} ({user.display_name})"
+        return f"{user.display_name} ({user.user_id})"
+    if context is not None:
+        return f"{context.t('user.unknown')} ({user.user_id})"
     return user.user_id
 
 

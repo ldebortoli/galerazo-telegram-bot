@@ -8,6 +8,7 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
     "es": {
         "permission_denied": "No tenes permisos suficientes para usar este comando.",
         "unknown_command": "No conozco ese comando. Escribi help para ver las opciones.",
+        "user.unknown": "Usuario",
         "help.header": "Comandos disponibles:",
         "help.help": "muestra esta ayuda",
         "help.hola": "saluda al bot",
@@ -96,6 +97,7 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
     "en": {
         "permission_denied": "You do not have enough permissions to use this command.",
         "unknown_command": "I do not know that command. Type help to see the options.",
+        "user.unknown": "User",
         "help.header": "Available commands:",
         "help.help": "shows this help",
         "help.hola": "greets the bot",

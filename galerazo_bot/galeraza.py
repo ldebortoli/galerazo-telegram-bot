@@ -6,19 +6,19 @@ from .pagination import PaginatedPage, render_page
 
 
 def render_galeraza_page(scores: list[GalerazaScore], page: int, language: str = DEFAULT_LANGUAGE) -> PaginatedPage:
-    return render_page(t(language, "galeraza.header"), build_galeraza_lines(scores), page)
+    return render_page(t(language, "galeraza.header"), build_galeraza_lines(scores, language), page)
 
 
-def build_galeraza_lines(scores: list[GalerazaScore]) -> list[str]:
-    return [_score_line(score) for score in scores]
+def build_galeraza_lines(scores: list[GalerazaScore], language: str = DEFAULT_LANGUAGE) -> list[str]:
+    return [_score_line(score, language) for score in scores]
 
 
-def _score_line(score: GalerazaScore) -> str:
+def _score_line(score: GalerazaScore, language: str) -> str:
     if score.username:
         name = f"@{score.username}"
     elif score.display_name:
         name = score.display_name
     else:
-        name = score.user_id
+        name = t(language, "user.unknown")
 
-    return f"{name} => {score.points}"
+    return f"{name} ({score.user_id}) => {score.points}"
