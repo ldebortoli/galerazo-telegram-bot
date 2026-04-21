@@ -52,7 +52,13 @@ def main() -> None:
         raise RuntimeError("Falta TELEGRAM_BOT_TOKEN en el archivo .env")
 
     db = Database(settings.database_path)
-    application = ApplicationBuilder().token(settings.telegram_bot_token).post_init(_post_init).build()
+    application = (
+        ApplicationBuilder()
+        .token(settings.telegram_bot_token)
+        .post_init(_post_init)
+        .concurrent_updates(False)
+        .build()
+    )
     application.bot_data["settings"] = settings
     application.bot_data["db"] = db
 

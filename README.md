@@ -217,6 +217,12 @@ usuario2 => 4
 
 El ranking se ordena de mayor a menor puntaje.
 
+### Orden y consistencia
+
+El bot corre con `concurrent_updates(False)` para procesar un update por vez. Esto es importante para La Galeraza y para cualquier comando que liste datos: primero se procesan los efectos del mensaje entrante y despues se ejecuta el comando correspondiente, de modo que `/galerazas` y las demas listas lean la base ya actualizada.
+
+El premio diario usa una insercion atomica en SQLite (`INSERT OR IGNORE`) por chat y fecha. Si llegan dos mensajes candidatos muy cerca, solo el primero que se procese para ese chat y dia suma el punto.
+
 Si el ranking supera el limite maximo de caracteres por mensaje de Telegram, el bot lo pagina sin cortar renglones. La botonera tiene hasta 5 botones de paginas. Ejemplos:
 
 ```text
