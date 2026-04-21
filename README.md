@@ -13,7 +13,7 @@ Base inicial para un bot de Telegram en Python con comandos simples y SQLite.
 - `novedad`: envia una noticia al canal de anuncios. Solo devs.
 - `backup`: responde con un backup de SQLite. Solo devs.
 - `debug`: responde con el objeto update del mensaje. Solo devs.
-- `chats`: muestra estadisticas de chats por estado y tipo. Solo devs.
+- `chats`: muestra estadisticas de chats por estado y tipo.
 - `salir`: hace que el bot salga de un grupo o supergrupo. Solo devs.
 
 Tambien acepta comandos con prefijo, por ejemplo `!help` o `/hola`.
@@ -154,7 +154,7 @@ Si el JSON entra en un mensaje de Telegram, el bot responde con texto. Si es dem
 
 ## Estadisticas de chats
 
-Los devs pueden ver estadisticas de chats con:
+Cualquier usuario puede ver estadisticas de chats con:
 
 ```powershell
 /chats

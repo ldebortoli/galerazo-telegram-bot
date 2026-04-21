@@ -203,7 +203,7 @@ COMMANDS: dict[str, Command] = {
     "novedad": Command("novedad", "envia una novedad al canal de anuncios", _novedad, UserLevel.DEV),
     "backup": Command("backup", "envia un backup de la base de datos", _backup, UserLevel.DEV),
     "debug": Command("debug", "devuelve el update crudo del mensaje", _debug, UserLevel.DEV),
-    "chats": Command("chats", "muestra estadisticas de chats", _chats, UserLevel.DEV),
+    "chats": Command("chats", "muestra estadisticas de chats", _chats),
     "salir": Command(
         "salir",
         "hace que el bot salga del grupo",
