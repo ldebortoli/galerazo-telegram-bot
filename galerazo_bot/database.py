@@ -22,6 +22,14 @@ class BlockedUser:
     blocked_at: str
 
 
+@dataclass(frozen=True)
+class ChatStatsRow:
+    chat_type: str
+    total: int
+    active: int
+    inactive: int
+
+
 class Database:
     def __init__(self, path: Path) -> None:
         self.path = path
@@ -55,12 +63,16 @@ class Database:
                     chat_type TEXT NOT NULL,
                     title TEXT,
                     added_by_user_id TEXT,
+                    status TEXT NOT NULL DEFAULT 'active',
+                    status_reason TEXT,
                     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
                     updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
                     FOREIGN KEY (added_by_user_id) REFERENCES users (user_id)
                 )
                 """
             )
+            _ensure_column(conn, "chats", "status", "TEXT NOT NULL DEFAULT 'active'")
+            _ensure_column(conn, "chats", "status_reason", "TEXT")
             conn.execute(
                 """
                 CREATE TABLE IF NOT EXISTS chat_migrations (
@@ -182,6 +194,8 @@ class Database:
                     chat_type = excluded.chat_type,
                     title = COALESCE(excluded.title, chats.title),
                     added_by_user_id = COALESCE(excluded.added_by_user_id, chats.added_by_user_id),
+                    status = 'active',
+                    status_reason = NULL,
                     updated_at = CURRENT_TIMESTAMP
                 """,
                 (chat_id, chat_type, title, added_by_user_id),
@@ -194,7 +208,7 @@ class Database:
         with self._connect() as conn:
             old_chat = conn.execute(
                 """
-                SELECT chat_id, chat_type, title, added_by_user_id, created_at
+                SELECT chat_id, chat_type, title, added_by_user_id, status, status_reason, created_at
                 FROM chats
                 WHERE chat_id = ?
                 """,
@@ -212,10 +226,18 @@ class Database:
                     SET
                         title = COALESCE(title, ?),
                         added_by_user_id = COALESCE(added_by_user_id, ?),
+                        status = ?,
+                        status_reason = ?,
                         updated_at = CURRENT_TIMESTAMP
                     WHERE chat_id = ?
                     """,
-                    (old_chat["title"], old_chat["added_by_user_id"], new_chat_id),
+                    (
+                        old_chat["title"],
+                        old_chat["added_by_user_id"],
+                        old_chat["status"],
+                        old_chat["status_reason"],
+                        new_chat_id,
+                    ),
                 )
                 conn.execute("DELETE FROM chats WHERE chat_id = ?", (old_chat_id,))
             elif old_chat:
@@ -279,6 +301,45 @@ class Database:
                 (chat_id,),
             ).fetchone()
         return row["added_by_user_id"] if row else None
+
+    def mark_chat_inactive(self, chat_id: str, reason: str) -> None:
+        chat_id = self.resolve_chat_id(chat_id)
+        with self._connect() as conn:
+            conn.execute(
+                """
+                UPDATE chats
+                SET
+                    status = 'inactive',
+                    status_reason = ?,
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE chat_id = ?
+                """,
+                (reason, chat_id),
+            )
+
+    def get_chat_stats(self) -> list[ChatStatsRow]:
+        with self._connect() as conn:
+            rows = conn.execute(
+                """
+                SELECT
+                    chat_type,
+                    COUNT(*) AS total,
+                    SUM(CASE WHEN status = 'active' THEN 1 ELSE 0 END) AS active,
+                    SUM(CASE WHEN status != 'active' THEN 1 ELSE 0 END) AS inactive
+                FROM chats
+                GROUP BY chat_type
+                """
+            ).fetchall()
+
+        return [
+            ChatStatsRow(
+                chat_type=row["chat_type"],
+                total=row["total"],
+                active=row["active"] or 0,
+                inactive=row["inactive"] or 0,
+            )
+            for row in rows
+        ]
 
     def save_incoming_message(
         self,

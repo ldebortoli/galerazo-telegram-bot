@@ -28,7 +28,10 @@ class TelegramClient:
         self.base_url = f"https://api.telegram.org/bot{token}"
 
     def get_updates(self, offset: int | None) -> list[dict]:
-        params = {"timeout": 30, "allowed_updates": json.dumps(["message", "callback_query"])}
+        params = {
+            "timeout": 30,
+            "allowed_updates": json.dumps(["message", "callback_query", "my_chat_member"]),
+        }
         if offset is not None:
             params["offset"] = offset
 
@@ -186,11 +189,17 @@ def _handle_update(
         _handle_callback_query(callback_query, db, telegram)
         return
 
+    my_chat_member = update.get("my_chat_member")
+    if my_chat_member:
+        _handle_my_chat_member_update(my_chat_member, db, bot_user_id)
+        return
+
     message = update.get("message", {})
     if _handle_chat_migration(message, db):
         return
     _register_chat_from_message(message, db)
     _register_bot_added_event(message, db, bot_user_id)
+    _register_bot_removed_event(message, db, bot_user_id)
 
     text = message.get("text")
     chat = message.get("chat", {})
@@ -241,11 +250,17 @@ def _handle_update(
         send_debug_update=lambda: _send_debug_update(telegram, chat_id, message_id, update),
     )
     if response is not None:
-        telegram.send_message(
-            chat_id=chat_id,
-            text=response,
-            reply_to_message_id=message_id,
-        )
+        try:
+            telegram.send_message(
+                chat_id=chat_id,
+                text=response,
+                reply_to_message_id=message_id,
+            )
+        except RuntimeError as exc:
+            if _is_bot_removed_error(exc):
+                db.mark_chat_inactive(str(chat_id), "send_message_failed")
+                return
+            raise
 
 
 def _display_name(user: dict) -> str | None:
@@ -271,6 +286,28 @@ def _handle_callback_query(callback_query: dict, db: Database, telegram: Telegra
 
     if callback_query_id is not None:
         telegram.answer_callback_query(str(callback_query_id))
+
+
+def _handle_my_chat_member_update(update: dict, db: Database, bot_user_id: str) -> None:
+    chat = update.get("chat", {})
+    new_chat_member = update.get("new_chat_member", {})
+    from_user = update.get("from", {})
+    user = new_chat_member.get("user", {})
+    chat_id = chat.get("id")
+
+    if chat_id is None or str(user.get("id")) != bot_user_id:
+        return
+
+    status = new_chat_member.get("status")
+    db.register_chat(
+        chat_id=str(chat_id),
+        chat_type=chat.get("type", "private"),
+        title=chat.get("title"),
+        added_by_user_id=str(from_user.get("id")) if from_user.get("id") is not None else None,
+    )
+
+    if status in {"left", "kicked"}:
+        db.mark_chat_inactive(str(chat_id), status)
 
 
 def _register_chat_from_message(message: dict, db: Database) -> None:
@@ -323,6 +360,27 @@ def _register_bot_added_event(message: dict, db: Database, bot_user_id: str) -> 
         title=chat.get("title"),
         added_by_user_id=str(added_by_user_id),
     )
+
+
+def _register_bot_removed_event(message: dict, db: Database, bot_user_id: str) -> None:
+    chat = message.get("chat", {})
+    chat_id = chat.get("id")
+    if chat_id is None:
+        return
+
+    left_member = message.get("left_chat_member")
+    if isinstance(left_member, dict) and str(left_member.get("id")) == bot_user_id:
+        db.mark_chat_inactive(str(chat_id), "left_chat_member")
+        return
+
+    new_status = message.get("new_chat_member", {})
+    if not isinstance(new_status, dict):
+        return
+
+    user = new_status.get("user", {})
+    status = new_status.get("status")
+    if str(user.get("id")) == bot_user_id and status in {"left", "kicked"}:
+        db.mark_chat_inactive(str(chat_id), status)
 
 
 def _resolve_user_level(
@@ -468,3 +526,15 @@ def _parse_chat_id(raw_chat_id: str) -> int | str:
     if raw_chat_id.lstrip("-").isdigit():
         return int(raw_chat_id)
     return raw_chat_id
+
+
+def _is_bot_removed_error(exc: RuntimeError) -> bool:
+    message = str(exc).lower()
+    markers = [
+        "bot was blocked by the user",
+        "bot was kicked",
+        "bot is not a member",
+        "chat not found",
+        "forbidden",
+    ]
+    return any(marker in message for marker in markers)
