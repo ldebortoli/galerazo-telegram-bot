@@ -8,6 +8,7 @@ from .roles import CommandContext, UserLevel
 
 
 CommandHandler = Callable[[CommandContext, Database], Optional[str]]
+DEFAULT_PERMISSION_ERROR = "No tenes permisos suficientes para usar este comando."
 
 
 @dataclass(frozen=True)
@@ -236,7 +237,7 @@ def handle_text(
         return "No conozco ese comando. Escribi help para ver las opciones."
 
     if context.user_level < command.min_level:
-        return None
+        return command.permission_error or DEFAULT_PERMISSION_ERROR
 
     return command.handler(context, db)
 
@@ -281,7 +282,7 @@ def handle_command(
         return "No conozco ese comando. Escribi help para ver las opciones."
 
     if context.user_level < command.min_level:
-        return command.permission_error
+        return command.permission_error or DEFAULT_PERMISSION_ERROR
 
     return command.handler(context, db)
 
