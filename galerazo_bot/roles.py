@@ -31,6 +31,14 @@ class BackupResult:
 
 
 @dataclass(frozen=True)
+class TriggerPayload:
+    text: str | None = None
+    media_type: str | None = None
+    file_id: str | None = None
+    caption: str | None = None
+
+
+@dataclass(frozen=True)
 class CommandContext:
     sender_id: str
     chat_id: str | None
@@ -52,6 +60,7 @@ class CommandContext:
     reply_to_user_id: str | None = None
     reply_to_username: str | None = None
     reply_to_display_name: str | None = None
+    reply_to_trigger_payload: TriggerPayload | None = None
 
     def t(self, key: str, **kwargs) -> str:
         return t(self.language, key, **kwargs)

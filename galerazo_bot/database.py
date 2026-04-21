@@ -65,6 +65,19 @@ class PaginatedMessageState:
     created_at: str
 
 
+@dataclass(frozen=True)
+class Trigger:
+    chat_id: str
+    trigger_name: str
+    display_name: str
+    text: str | None
+    media_type: str | None
+    file_id: str | None
+    caption: str | None
+    created_by_user_id: str
+    created_at: str
+
+
 class Database:
     def __init__(self, path: Path) -> None:
         self.path = path
@@ -220,6 +233,25 @@ class Database:
                     PRIMARY KEY (chat_id, message_id),
                     FOREIGN KEY (chat_id) REFERENCES chats (chat_id),
                     FOREIGN KEY (requester_user_id) REFERENCES users (user_id)
+                )
+                """
+            )
+            conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS triggers (
+                    chat_id TEXT NOT NULL,
+                    trigger_name TEXT NOT NULL,
+                    display_name TEXT NOT NULL,
+                    text TEXT,
+                    media_type TEXT,
+                    file_id TEXT,
+                    caption TEXT,
+                    created_by_user_id TEXT NOT NULL,
+                    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    PRIMARY KEY (chat_id, trigger_name),
+                    FOREIGN KEY (chat_id) REFERENCES chats (chat_id),
+                    FOREIGN KEY (created_by_user_id) REFERENCES users (user_id)
                 )
                 """
             )
@@ -481,6 +513,50 @@ class Database:
                 "UPDATE paginated_message_states SET chat_id = ? WHERE chat_id = ?",
                 (new_chat_id, old_chat_id),
             )
+            old_triggers = conn.execute(
+                """
+                SELECT trigger_name, display_name, text, media_type, file_id, caption, created_by_user_id
+                FROM triggers
+                WHERE chat_id = ?
+                """,
+                (old_chat_id,),
+            ).fetchall()
+            for trigger in old_triggers:
+                conn.execute(
+                    """
+                    INSERT INTO triggers (
+                        chat_id,
+                        trigger_name,
+                        display_name,
+                        text,
+                        media_type,
+                        file_id,
+                        caption,
+                        created_by_user_id,
+                        updated_at
+                    )
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+                    ON CONFLICT(chat_id, trigger_name) DO UPDATE SET
+                        display_name = excluded.display_name,
+                        text = excluded.text,
+                        media_type = excluded.media_type,
+                        file_id = excluded.file_id,
+                        caption = excluded.caption,
+                        created_by_user_id = excluded.created_by_user_id,
+                        updated_at = CURRENT_TIMESTAMP
+                    """,
+                    (
+                        new_chat_id,
+                        trigger["trigger_name"],
+                        trigger["display_name"],
+                        trigger["text"],
+                        trigger["media_type"],
+                        trigger["file_id"],
+                        trigger["caption"],
+                        trigger["created_by_user_id"],
+                    ),
+                )
+            conn.execute("DELETE FROM triggers WHERE chat_id = ?", (old_chat_id,))
             conn.execute(
                 """
                 INSERT INTO chat_migrations (old_chat_id, new_chat_id)
@@ -980,11 +1056,102 @@ class Database:
     def delete_galeraza_message_state(self, chat_id: str, message_id: str) -> None:
         self.delete_paginated_message_state(chat_id, message_id)
 
+    def add_trigger(
+        self,
+        chat_id: str,
+        trigger_name: str,
+        display_name: str,
+        text: str | None,
+        media_type: str | None,
+        file_id: str | None,
+        caption: str | None,
+        created_by_user_id: str,
+    ) -> bool:
+        chat_id = self.resolve_chat_id(chat_id)
+        self.get_or_create_user(created_by_user_id)
+        with self._connect() as conn:
+            cursor = conn.execute(
+                """
+                INSERT OR IGNORE INTO triggers (
+                    chat_id,
+                    trigger_name,
+                    display_name,
+                    text,
+                    media_type,
+                    file_id,
+                    caption,
+                    created_by_user_id
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    chat_id,
+                    trigger_name,
+                    display_name,
+                    text,
+                    media_type,
+                    file_id,
+                    caption,
+                    created_by_user_id,
+                ),
+            )
+        return cursor.rowcount > 0
+
+    def delete_trigger(self, chat_id: str, trigger_name: str) -> bool:
+        chat_id = self.resolve_chat_id(chat_id)
+        with self._connect() as conn:
+            cursor = conn.execute(
+                "DELETE FROM triggers WHERE chat_id = ? AND trigger_name = ?",
+                (chat_id, trigger_name),
+            )
+        return cursor.rowcount > 0
+
+    def get_trigger(self, chat_id: str, trigger_name: str) -> Trigger | None:
+        chat_id = self.resolve_chat_id(chat_id)
+        with self._connect() as conn:
+            row = conn.execute(
+                """
+                SELECT chat_id, trigger_name, display_name, text, media_type, file_id, caption, created_by_user_id, created_at
+                FROM triggers
+                WHERE chat_id = ? AND trigger_name = ?
+                """,
+                (chat_id, trigger_name),
+            ).fetchone()
+        return _trigger_from_row(row) if row is not None else None
+
+    def list_triggers(self, chat_id: str) -> list[Trigger]:
+        chat_id = self.resolve_chat_id(chat_id)
+        with self._connect() as conn:
+            rows = conn.execute(
+                """
+                SELECT chat_id, trigger_name, display_name, text, media_type, file_id, caption, created_by_user_id, created_at
+                FROM triggers
+                WHERE chat_id = ?
+                ORDER BY lower(display_name) ASC
+                """,
+                (chat_id,),
+            ).fetchall()
+        return [_trigger_from_row(row) for row in rows]
+
 
 def _normalize_username(username: str | None) -> str | None:
     if not username:
         return None
     return username.removeprefix("@").strip() or None
+
+
+def _trigger_from_row(row: sqlite3.Row) -> Trigger:
+    return Trigger(
+        chat_id=row["chat_id"],
+        trigger_name=row["trigger_name"],
+        display_name=row["display_name"],
+        text=row["text"],
+        media_type=row["media_type"],
+        file_id=row["file_id"],
+        caption=row["caption"],
+        created_by_user_id=row["created_by_user_id"],
+        created_at=row["created_at"],
+    )
 
 
 def _ensure_column(conn: sqlite3.Connection, table_name: str, column_name: str, definition: str) -> None:

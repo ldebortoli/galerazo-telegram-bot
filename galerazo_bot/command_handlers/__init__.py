@@ -13,6 +13,7 @@ from .nivel import COMMANDS as NIVEL_COMMANDS
 from .novedad import COMMANDS as NOVEDAD_COMMANDS
 from .reportar import COMMANDS as REPORTAR_COMMANDS
 from .salir import COMMANDS as SALIR_COMMANDS
+from .triggers import COMMANDS as TRIGGERS_COMMANDS
 
 
 COMMANDS: dict[str, Command] = {
@@ -27,5 +28,6 @@ COMMANDS: dict[str, Command] = {
     **CHATS_COMMANDS,
     **CONFIG_COMMANDS,
     **GALERAZAS_COMMANDS,
+    **TRIGGERS_COMMANDS,
     **SALIR_COMMANDS,
 }

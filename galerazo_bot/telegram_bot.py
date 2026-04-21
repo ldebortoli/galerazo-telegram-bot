@@ -36,11 +36,11 @@ from .chat_config import (
 )
 from .commands import COMMANDS, command_exists, get_command, handle_command_async, is_command_invocation
 from .config import Settings, load_settings
-from .database import Database
+from .database import Database, Trigger
 from .galeraza import build_galeraza_lines, render_galeraza_page
 from .i18n import DEFAULT_LANGUAGE, t
 from .pagination import BUTTON_PREFIX, build_keyboard, parse_callback_data, render_page
-from .roles import BackupResult, UserLevel
+from .roles import BackupResult, TriggerPayload, UserLevel
 
 
 logger = logging.getLogger(__name__)
@@ -140,11 +140,64 @@ async def _preprocess_message(update: Update, context: ContextTypes.DEFAULT_TYPE
         user_id=str(user.id),
     )
 
-    text = message.text
+    text = message.text or message.caption
     if not text or is_command_invocation(text):
         return
 
+    await _maybe_send_triggered_messages(
+        db=state.db,
+        bot=context.bot,
+        message=message,
+    )
+
     state.db.save_incoming_message(sender_id=str(user.id), text=text, chat_id=str(chat.id))
+
+
+async def _maybe_send_triggered_messages(
+    db: Database,
+    bot: Bot,
+    message: Message,
+) -> None:
+    if message.chat.type not in {"group", "supergroup"}:
+        return
+    if not db.is_command_group_enabled(str(message.chat.id), "triggers"):
+        return
+
+    text = message.text or message.caption
+    if not text:
+        return
+
+    normalized_text = text.casefold()
+    for trigger in db.list_triggers(str(message.chat.id)):
+        if trigger.trigger_name not in normalized_text:
+            continue
+        try:
+            await _send_trigger_message(bot, message.chat.id, trigger)
+        except TelegramError as exc:
+            logger.warning("No pude enviar trigger %s en chat %s: %s", trigger.display_name, message.chat.id, exc)
+
+
+async def _send_trigger_message(bot: Bot, chat_id: int, trigger: Trigger) -> None:
+    if trigger.media_type == "photo" and trigger.file_id:
+        await bot.send_photo(chat_id=chat_id, photo=trigger.file_id, caption=trigger.caption)
+        return
+    if trigger.media_type == "video" and trigger.file_id:
+        await bot.send_video(chat_id=chat_id, video=trigger.file_id, caption=trigger.caption)
+        return
+    if trigger.media_type == "audio" and trigger.file_id:
+        await bot.send_audio(chat_id=chat_id, audio=trigger.file_id, caption=trigger.caption)
+        return
+    if trigger.media_type == "voice" and trigger.file_id:
+        await bot.send_voice(chat_id=chat_id, voice=trigger.file_id, caption=trigger.caption)
+        return
+    if trigger.media_type == "document" and trigger.file_id:
+        await bot.send_document(chat_id=chat_id, document=trigger.file_id, caption=trigger.caption)
+        return
+    if trigger.media_type == "video_note" and trigger.file_id:
+        await bot.send_video_note(chat_id=chat_id, video_note=trigger.file_id)
+        return
+    if trigger.text:
+        await bot.send_message(chat_id=chat_id, text=trigger.text[:TELEGRAM_MESSAGE_LIMIT_CHARS])
 
 
 async def _command_entrypoint(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -208,6 +261,7 @@ async def _handle_command_update(update: Update, context: ContextTypes.DEFAULT_T
         reply_to_user_id=str(reply_to_user.id) if reply_to_user is not None else None,
         reply_to_username=reply_to_user.username if reply_to_user is not None else None,
         reply_to_display_name=_display_name(reply_to_user) if reply_to_user is not None else None,
+        reply_to_trigger_payload=_trigger_payload_from_message(message.reply_to_message),
         chat_type=chat.type,
         language=_chat_language(state.db, chat.id),
         bot_user_id=state.bot_user_id,
@@ -352,6 +406,26 @@ def _display_name(user: User | None) -> str | None:
     if user is None:
         return None
     return user.full_name or user.username
+
+
+def _trigger_payload_from_message(message: Message | None) -> TriggerPayload | None:
+    if message is None:
+        return None
+    if message.text:
+        return TriggerPayload(text=message.text)
+    if message.photo:
+        return TriggerPayload(media_type="photo", file_id=message.photo[-1].file_id, caption=message.caption)
+    if message.video:
+        return TriggerPayload(media_type="video", file_id=message.video.file_id, caption=message.caption)
+    if message.audio:
+        return TriggerPayload(media_type="audio", file_id=message.audio.file_id, caption=message.caption)
+    if message.voice:
+        return TriggerPayload(media_type="voice", file_id=message.voice.file_id, caption=message.caption)
+    if message.document:
+        return TriggerPayload(media_type="document", file_id=message.document.file_id, caption=message.caption)
+    if message.video_note:
+        return TriggerPayload(media_type="video_note", file_id=message.video_note.file_id)
+    return None
 
 
 async def _maybe_award_daily_galeraza(

@@ -119,6 +119,7 @@ def handle_command(
     reply_to_user_id: str | None = None,
     reply_to_username: str | None = None,
     reply_to_display_name: str | None = None,
+    reply_to_trigger_payload=None,
     chat_type: str | None = None,
     bot_user_id: str | None = None,
     sender_username: str | None = None,
@@ -142,6 +143,7 @@ def handle_command(
             reply_to_user_id=reply_to_user_id,
             reply_to_username=reply_to_username,
             reply_to_display_name=reply_to_display_name,
+            reply_to_trigger_payload=reply_to_trigger_payload,
             chat_type=chat_type,
             bot_user_id=bot_user_id,
             sender_username=sender_username,
@@ -167,6 +169,7 @@ async def handle_command_async(
     reply_to_user_id: str | None = None,
     reply_to_username: str | None = None,
     reply_to_display_name: str | None = None,
+    reply_to_trigger_payload=None,
     chat_type: str | None = None,
     bot_user_id: str | None = None,
     sender_username: str | None = None,
@@ -201,6 +204,7 @@ async def handle_command_async(
         reply_to_user_id=reply_to_user_id,
         reply_to_username=reply_to_username,
         reply_to_display_name=reply_to_display_name,
+        reply_to_trigger_payload=reply_to_trigger_payload,
     )
     db.save_incoming_message(sender_id=sender_id, text=text, chat_id=chat_id)
     return await _handle_with_context(context, db)

@@ -17,6 +17,9 @@ Base para un bot de Telegram en Python con `python-telegram-bot` y SQLite.
 - `chats`: muestra estadisticas de chats por estado y tipo.
 - `config`: abre el tablero de configuracion del grupo. Solo admines del chat, quien agrego el bot o devs.
 - `galerazas`: muestra el ranking de La Galeraza en grupos/supergrupos.
+- `agregartrigger` / `agrtrigger`: agrega un trigger respondiendo a un mensaje en grupos/supergrupos.
+- `borrartrigger`: borra un trigger por nombre en grupos/supergrupos.
+- `triggers`: lista los triggers del grupo o supergrupo.
 - `salir`: hace que el bot salga de un grupo o supergrupo. Solo devs.
 
 Tambien acepta comandos con prefijo, por ejemplo `!help`, `/ayuda` o `/hola`.
@@ -255,7 +258,7 @@ Todos los submenus tienen un boton `< Atrás`. El menu principal no tiene boton 
 
 El idioma por defecto siempre es español. Si un grupo cambia a inglés, los textos que el bot muestra o envia en ese grupo pasan a inglés: respuestas de comandos, menús, popups de botoneras, backups/debug captions y mensajes de La Galeraza.
 
-Por ahora el unico conjunto configurable es `Galeraza`. Su submenu muestra:
+Por ahora los conjuntos configurables son `Galeraza` y `Triggers`. Cada submenu muestra:
 
 ```text
 ¿Habilitado?
@@ -264,7 +267,7 @@ Por ahora el unico conjunto configurable es `Galeraza`. Su submenu muestra:
 
 Todos los conjuntos vienen habilitados por defecto cuando el bot entra a un chat nuevo. La configuracion se guarda en SQLite y se migra si Telegram convierte un grupo en supergrupo.
 
-Si el ranking supera el limite maximo de caracteres por mensaje de Telegram, el bot lo pagina sin cortar renglones. La botonera tiene hasta 5 botones de paginas. Ejemplos:
+Si el ranking o cualquier lista configurable supera el limite maximo de caracteres por mensaje de Telegram, el bot lo pagina sin cortar renglones. La botonera tiene hasta 5 botones de paginas. Ejemplos:
 
 ```text
 1 - 2 - [ 3 ] - 4
@@ -293,6 +296,49 @@ El bot tiene una botonera generica para comandos que devuelven listas largas. Si
 - Al iniciar, el bot tambien busca metadata de botoneras con mas de 2 semanas, intenta eliminar esos mensajes y siempre borra la metadata local.
 
 Esto ya aplica a `/galerazas` y a cualquier comando que devuelva una respuesta larga, por ejemplo `/listanegra`.
+
+## Triggers
+
+Los triggers funcionan solo en grupos y supergrupos. Se pueden deshabilitar por grupo desde `/config` dentro de `Comandos -> Triggers`. Si estan deshabilitados, no funcionan los comandos del grupo y tampoco se disparan mensajes por triggers.
+
+Para agregar uno:
+
+```powershell
+/agregartrigger nombretrigger
+```
+
+Tambien existe el alias:
+
+```powershell
+/agrtrigger nombretrigger
+```
+
+El comando se usa respondiendo a un mensaje valido. `nombretrigger` tiene que tener entre 6 y 32 caracteres, no puede tener espacios y no puede repetirse en el mismo chat. El bot guarda el contenido para enviar un mensaje nuevo cuando otro mensaje del chat contenga ese texto.
+
+Tipos soportados:
+
+- Texto.
+- Imagenes.
+- Videos.
+- Audios y musica.
+- Documentos.
+- Videomensajes.
+
+Si el mensaje tiene caption, el bot tambien guarda esa caption. Para media, se guarda el `file_id` de Telegram y el tipo interno de media para saber que metodo usar al enviarlo.
+
+Para borrar:
+
+```powershell
+/borrartrigger nombretrigger
+```
+
+Para listar:
+
+```powershell
+/triggers
+```
+
+La lista se pagina automaticamente si supera el limite de Telegram. Si Telegram convierte el grupo en supergrupo, los triggers guardados se migran al nuevo `chat_id`.
 
 ## Salir de un grupo
 
