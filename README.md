@@ -228,6 +228,7 @@ El bot tiene una botonera generica para comandos que devuelven listas largas. Si
 - Permite borrar el mensaje y su metadata con la X roja, solo al usuario original o a devs.
 - Si alguien toca una botonera creada hace mas de 2 semanas, el bot intenta eliminar el mensaje, borra la metadata y muestra el popup `mensaje eliminado`.
 - Si alguien toca una botonera cuya metadata ya no existe en SQLite, el bot intenta eliminar el mensaje y muestra el popup `mensaje eliminado`.
+- Al iniciar, el bot tambien busca metadata de botoneras con mas de 2 semanas, intenta eliminar esos mensajes y siempre borra la metadata local.
 
 Esto ya aplica a `/galerazas` y a cualquier comando que devuelva una respuesta larga, por ejemplo `/listanegra`.
 

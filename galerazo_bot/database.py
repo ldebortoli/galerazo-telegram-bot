@@ -714,6 +714,40 @@ class Database:
             created_at=row["created_at"],
         )
 
+    def list_paginated_message_states_before(self, cutoff: str) -> list[PaginatedMessageState]:
+        with self._connect() as conn:
+            rows = conn.execute(
+                """
+                SELECT
+                    chat_id,
+                    message_id,
+                    list_type,
+                    requester_user_id,
+                    content_json,
+                    unlocked,
+                    current_page,
+                    created_at
+                FROM paginated_message_states
+                WHERE created_at < ?
+                ORDER BY created_at ASC
+                """,
+                (cutoff,),
+            ).fetchall()
+
+        return [
+            PaginatedMessageState(
+                chat_id=row["chat_id"],
+                message_id=row["message_id"],
+                list_type=row["list_type"],
+                requester_user_id=row["requester_user_id"],
+                content_json=row["content_json"],
+                unlocked=bool(row["unlocked"]),
+                current_page=row["current_page"],
+                created_at=row["created_at"],
+            )
+            for row in rows
+        ]
+
     def set_paginated_message_unlocked(
         self,
         chat_id: str,

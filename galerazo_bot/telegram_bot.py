@@ -172,6 +172,8 @@ def main() -> None:
     bot_user_id = str(telegram.get_me()["id"])
     offset: int | None = None
 
+    _cleanup_old_paginated_messages(db, telegram)
+
     logger.info("Galerazo Bot escuchando mensajes de Telegram.")
     _send_log_event(
         telegram,
@@ -567,7 +569,7 @@ def _handle_paginated_callback(
 def _delete_paginated_message(
     db: Database,
     telegram: TelegramClient,
-    chat_id: int,
+    chat_id: int | str,
     message_id: str,
 ) -> None:
     try:
@@ -576,6 +578,26 @@ def _delete_paginated_message(
         logger.warning("No pude eliminar mensaje paginado %s en chat %s: %s", message_id, chat_id, exc)
     finally:
         db.delete_paginated_message_state(str(chat_id), message_id)
+
+
+def _cleanup_old_paginated_messages(db: Database, telegram: TelegramClient) -> None:
+    cutoff = _paginated_metadata_cutoff()
+    states = db.list_paginated_message_states_before(cutoff)
+    if not states:
+        return
+
+    logger.info("Limpiando %s botoneras vencidas.", len(states))
+    for state in states:
+        _delete_paginated_message(
+            db=db,
+            telegram=telegram,
+            chat_id=_parse_chat_id(state.chat_id),
+            message_id=state.message_id,
+        )
+
+
+def _paginated_metadata_cutoff() -> str:
+    return (datetime.utcnow() - PAGINATED_METADATA_TTL).strftime("%Y-%m-%d %H:%M:%S")
 
 
 def _is_paginated_state_expired(created_at: str) -> bool:
