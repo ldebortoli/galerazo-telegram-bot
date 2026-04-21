@@ -32,12 +32,15 @@ class BackupResult:
 class CommandContext:
     sender_id: str
     chat_id: str | None
+    chat_type: str | None
     user_level: UserLevel
     raw_text: str
     args: str
+    bot_user_id: str | None = None
     send_announcement: Callable[[str], bool] | None = None
     create_backup: Callable[[], BackupResult] | None = None
     send_debug_update: Callable[[], bool] | None = None
+    leave_chat: Callable[[], bool] | None = None
     reply_to_user_id: str | None = None
     reply_to_username: str | None = None
     reply_to_display_name: str | None = None

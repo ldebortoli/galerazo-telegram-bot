@@ -72,6 +72,9 @@ class TelegramClient:
     def answer_callback_query(self, callback_query_id: str) -> None:
         self._request("answerCallbackQuery", {"callback_query_id": callback_query_id})
 
+    def leave_chat(self, chat_id: int | str) -> None:
+        self._request("leaveChat", {"chat_id": chat_id})
+
     def _request(self, method: str, payload: dict) -> dict:
         data = urlencode(payload).encode("utf-8")
         request = Request(f"{self.base_url}/{method}", data=data, method="POST")
@@ -245,9 +248,12 @@ def _handle_update(
         reply_to_user_id=str(reply_to_user_id) if reply_to_user_id is not None else None,
         reply_to_username=reply_to_user.get("username"),
         reply_to_display_name=_display_name(reply_to_user),
+        chat_type=chat.get("type"),
+        bot_user_id=bot_user_id,
         send_announcement=lambda text: _send_announcement(telegram, announcements_chat_id, text),
         create_backup=lambda: _create_and_send_backup(db, telegram, chat_id, message_id),
         send_debug_update=lambda: _send_debug_update(telegram, chat_id, message_id, update),
+        leave_chat=lambda: _leave_chat(db, telegram, chat_id),
     )
     if response is not None:
         try:
@@ -520,6 +526,17 @@ def _send_debug_update(
     except (HTTPError, URLError, TimeoutError, RuntimeError, OSError) as exc:
         logger.warning("No pude enviar update de debug: %s", exc)
         return False
+
+
+def _leave_chat(db: Database, telegram: TelegramClient, chat_id: int) -> bool:
+    try:
+        telegram.leave_chat(chat_id)
+    except (HTTPError, URLError, TimeoutError, RuntimeError) as exc:
+        logger.warning("No pude salir del chat %s: %s", chat_id, exc)
+        return False
+
+    db.mark_chat_inactive(str(chat_id), "left_by_command")
+    return True
 
 
 def _parse_chat_id(raw_chat_id: str) -> int | str:

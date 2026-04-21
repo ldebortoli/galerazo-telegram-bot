@@ -16,6 +16,7 @@ class Command:
     description: str
     handler: CommandHandler
     min_level: UserLevel = UserLevel.COMMON
+    permission_error: str | None = None
 
 
 def normalize_command(text: str) -> str:
@@ -171,6 +172,25 @@ def _chats(_context: CommandContext, db: Database) -> str:
     return "\n".join(lines)
 
 
+def _salir(context: CommandContext, _db: Database) -> str:
+    if context.chat_type not in {"group", "supergroup"}:
+        return "El comando /salir solo funciona en grupos o supergrupos."
+
+    if context.reply_to_user_id is None:
+        return "Uso: responde a un mensaje del bot con /salir para que salga del grupo."
+
+    if context.reply_to_user_id != context.bot_user_id:
+        return "Uso: responde a un mensaje del bot con /salir para que salga del grupo."
+
+    if context.leave_chat is None:
+        return "No hay mecanismo configurado para salir del chat."
+
+    if not context.leave_chat():
+        return "No pude salir del chat."
+
+    return "Saliendo del grupo."
+
+
 COMMANDS: dict[str, Command] = {
     "help": Command("help", "muestra esta ayuda", _help),
     "hola": Command("hola", "saluda al bot", _hola),
@@ -183,6 +203,13 @@ COMMANDS: dict[str, Command] = {
     "backup": Command("backup", "envia un backup de la base de datos", _backup, UserLevel.DEV),
     "debug": Command("debug", "devuelve el update crudo del mensaje", _debug, UserLevel.DEV),
     "chats": Command("chats", "muestra estadisticas de chats", _chats, UserLevel.DEV),
+    "salir": Command(
+        "salir",
+        "hace que el bot salga del grupo",
+        _salir,
+        UserLevel.DEV,
+        "No tenes permisos para usar /salir.",
+    ),
 }
 
 
@@ -196,6 +223,7 @@ def handle_text(
     context = CommandContext(
         sender_id=sender_id,
         chat_id=chat_id,
+        chat_type=None,
         user_level=user_level,
         raw_text=text,
         args=command_args(text),
@@ -222,19 +250,25 @@ def handle_command(
     reply_to_user_id: str | None = None,
     reply_to_username: str | None = None,
     reply_to_display_name: str | None = None,
+    chat_type: str | None = None,
+    bot_user_id: str | None = None,
     send_announcement=None,
     create_backup=None,
     send_debug_update=None,
+    leave_chat=None,
 ) -> str | None:
     context = CommandContext(
         sender_id=sender_id,
         chat_id=chat_id,
+        chat_type=chat_type,
         user_level=user_level,
         raw_text=text,
         args=command_args(text),
+        bot_user_id=bot_user_id,
         send_announcement=send_announcement,
         create_backup=create_backup,
         send_debug_update=send_debug_update,
+        leave_chat=leave_chat,
         reply_to_user_id=reply_to_user_id,
         reply_to_username=reply_to_username,
         reply_to_display_name=reply_to_display_name,
@@ -247,7 +281,7 @@ def handle_command(
         return "No conozco ese comando. Escribi help para ver las opciones."
 
     if context.user_level < command.min_level:
-        return None
+        return command.permission_error
 
     return command.handler(context, db)
 

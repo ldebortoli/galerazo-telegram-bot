@@ -14,6 +14,7 @@ Base inicial para un bot de Telegram en Python con comandos simples y SQLite.
 - `backup`: responde con un backup de SQLite. Solo devs.
 - `debug`: responde con el objeto update del mensaje. Solo devs.
 - `chats`: muestra estadisticas de chats por estado y tipo. Solo devs.
+- `salir`: hace que el bot salga de un grupo o supergrupo. Solo devs.
 
 Tambien acepta comandos con prefijo, por ejemplo `!help` o `/hola`.
 
@@ -167,6 +168,17 @@ El reporte muestra:
 - El mismo desglose para chats privados, grupos, supergrupos y canales.
 
 Cuando Telegram informa que un grupo migra a supergrupo, el bot actualiza el `chat_id` viejo al nuevo para no contar el mismo chat dos veces.
+
+## Salir de un grupo
+
+Los devs pueden hacer que el bot salga de un grupo o supergrupo con:
+
+```powershell
+/salir
+```
+
+Este comando solo funciona si el dev responde a un mensaje del bot con `/salir`.
+Si se usa sin responder, el bot explica el uso correcto. Si lo usa alguien que no es dev, responde que no tiene permisos.
 
 ## Niveles de usuario
 
