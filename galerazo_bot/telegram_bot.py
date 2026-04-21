@@ -1,0 +1,470 @@
+from __future__ import annotations
+
+import json
+import logging
+import traceback
+import time
+import uuid
+from pathlib import Path
+from urllib.error import HTTPError, URLError
+from urllib.parse import urlencode
+from urllib.request import Request, urlopen
+
+from .commands import command_exists, handle_command, is_command_invocation
+from .config import load_settings
+from .database import Database
+from .roles import BackupResult, UserLevel
+
+
+logger = logging.getLogger(__name__)
+TELEGRAM_DOCUMENT_UPLOAD_LIMIT_BYTES = 50 * 1024 * 1024
+TELEGRAM_MESSAGE_LIMIT_CHARS = 4096
+
+
+class TelegramClient:
+    def __init__(self, token: str) -> None:
+        if not token:
+            raise RuntimeError("Falta TELEGRAM_BOT_TOKEN en el archivo .env")
+        self.base_url = f"https://api.telegram.org/bot{token}"
+
+    def get_updates(self, offset: int | None) -> list[dict]:
+        params = {"timeout": 30, "allowed_updates": json.dumps(["message", "callback_query"])}
+        if offset is not None:
+            params["offset"] = offset
+
+        return self._request("getUpdates", params)["result"]
+
+    def get_me(self) -> dict:
+        return self._request("getMe", {})["result"]
+
+    def get_chat_administrators(self, chat_id: int) -> list[dict]:
+        return self._request("getChatAdministrators", {"chat_id": chat_id})["result"]
+
+    def send_message(
+        self,
+        chat_id: int | str,
+        text: str,
+        reply_to_message_id: int | None = None,
+    ) -> None:
+        payload = {"chat_id": chat_id, "text": text}
+        if reply_to_message_id is not None:
+            payload["reply_parameters"] = json.dumps({"message_id": reply_to_message_id})
+        self._request("sendMessage", payload)
+
+    def send_document(
+        self,
+        chat_id: int | str,
+        document_path: Path,
+        caption: str | None = None,
+        reply_to_message_id: int | None = None,
+    ) -> None:
+        fields = {"chat_id": str(chat_id)}
+        if caption:
+            fields["caption"] = caption
+        if reply_to_message_id is not None:
+            fields["reply_parameters"] = json.dumps({"message_id": reply_to_message_id})
+
+        self._request_multipart("sendDocument", fields, "document", document_path)
+
+    def answer_callback_query(self, callback_query_id: str) -> None:
+        self._request("answerCallbackQuery", {"callback_query_id": callback_query_id})
+
+    def _request(self, method: str, payload: dict) -> dict:
+        data = urlencode(payload).encode("utf-8")
+        request = Request(f"{self.base_url}/{method}", data=data, method="POST")
+
+        with urlopen(request, timeout=35) as response:
+            body = response.read().decode("utf-8")
+
+        result = json.loads(body)
+        if not result.get("ok"):
+            raise RuntimeError(f"Telegram API error: {result}")
+        return result
+
+    def _request_multipart(
+        self,
+        method: str,
+        fields: dict[str, str],
+        file_field: str,
+        file_path: Path,
+    ) -> dict:
+        boundary = f"----galerazo-{uuid.uuid4().hex}"
+        parts: list[bytes] = []
+
+        for name, value in fields.items():
+            parts.extend(
+                [
+                    f"--{boundary}\r\n".encode("utf-8"),
+                    f'Content-Disposition: form-data; name="{name}"\r\n\r\n'.encode("utf-8"),
+                    str(value).encode("utf-8"),
+                    b"\r\n",
+                ]
+            )
+
+        parts.extend(
+            [
+                f"--{boundary}\r\n".encode("utf-8"),
+                (
+                    f'Content-Disposition: form-data; name="{file_field}"; '
+                    f'filename="{file_path.name}"\r\n'
+                ).encode("utf-8"),
+                b"Content-Type: application/octet-stream\r\n\r\n",
+                file_path.read_bytes(),
+                b"\r\n",
+                f"--{boundary}--\r\n".encode("utf-8"),
+            ]
+        )
+
+        request = Request(
+            f"{self.base_url}/{method}",
+            data=b"".join(parts),
+            headers={"Content-Type": f"multipart/form-data; boundary={boundary}"},
+            method="POST",
+        )
+
+        with urlopen(request, timeout=120) as response:
+            body = response.read().decode("utf-8")
+
+        result = json.loads(body)
+        if not result.get("ok"):
+            raise RuntimeError(f"Telegram API error: {result}")
+        return result
+
+
+def main() -> None:
+    logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
+
+    settings = load_settings()
+    db = Database(settings.database_path)
+    telegram = TelegramClient(settings.telegram_bot_token)
+    bot_user_id = str(telegram.get_me()["id"])
+    offset: int | None = None
+
+    logger.info("Galerazo Bot escuchando mensajes de Telegram.")
+    _send_log_event(
+        telegram,
+        settings.telegram_log_chat_id,
+        "Galerazo Bot iniciado.",
+    )
+
+    while True:
+        try:
+            for update in telegram.get_updates(offset):
+                offset = update["update_id"] + 1
+                try:
+                    _handle_update(
+                        update,
+                        db,
+                        telegram,
+                        bot_user_id,
+                        settings.telegram_dev_user_ids,
+                        settings.telegram_announcements_chat_id,
+                    )
+                except Exception as exc:
+                    logger.exception("Error no handleado procesando update.")
+                    _send_unhandled_error_event(telegram, settings.telegram_log_chat_id, exc)
+        except (HTTPError, URLError, TimeoutError, RuntimeError) as exc:
+            logger.exception("Error no handleado leyendo Telegram.")
+            _send_unhandled_error_event(telegram, settings.telegram_log_chat_id, exc)
+            time.sleep(5)
+        except Exception as exc:
+            logger.exception("Error no handleado en el loop principal.")
+            _send_unhandled_error_event(telegram, settings.telegram_log_chat_id, exc)
+            time.sleep(5)
+
+
+def _handle_update(
+    update: dict,
+    db: Database,
+    telegram: TelegramClient,
+    bot_user_id: str,
+    dev_user_ids: frozenset[str],
+    announcements_chat_id: str | None = None,
+) -> None:
+    callback_query = update.get("callback_query")
+    if callback_query:
+        _handle_callback_query(callback_query, db, telegram)
+        return
+
+    message = update.get("message", {})
+    if _handle_chat_migration(message, db):
+        return
+    _register_chat_from_message(message, db)
+    _register_bot_added_event(message, db, bot_user_id)
+
+    text = message.get("text")
+    chat = message.get("chat", {})
+    user = message.get("from", {})
+    chat_id = chat.get("id")
+    user_id = user.get("id")
+    message_id = message.get("message_id")
+
+    if not text or chat_id is None or user_id is None:
+        return
+
+    display_name = _display_name(user)
+    username = user.get("username")
+    db.get_or_create_user(str(user_id), display_name, username)
+
+    if db.is_user_blocked(str(user_id)):
+        return
+
+    if not is_command_invocation(text):
+        db.save_incoming_message(sender_id=str(user_id), text=text, chat_id=str(chat_id))
+        return
+
+    user_level = UserLevel.COMMON
+    if command_exists(text):
+        user_level = _resolve_user_level(
+            user_id=str(user_id),
+            chat_id=chat_id,
+            chat_type=chat.get("type", "private"),
+            db=db,
+            telegram=telegram,
+            dev_user_ids=dev_user_ids,
+        )
+
+    reply_to_user = message.get("reply_to_message", {}).get("from", {})
+    reply_to_user_id = reply_to_user.get("id")
+
+    response = handle_command(
+        text=text,
+        sender_id=str(user_id),
+        db=db,
+        chat_id=str(chat_id),
+        user_level=user_level,
+        reply_to_user_id=str(reply_to_user_id) if reply_to_user_id is not None else None,
+        reply_to_username=reply_to_user.get("username"),
+        reply_to_display_name=_display_name(reply_to_user),
+        send_announcement=lambda text: _send_announcement(telegram, announcements_chat_id, text),
+        create_backup=lambda: _create_and_send_backup(db, telegram, chat_id, message_id),
+        send_debug_update=lambda: _send_debug_update(telegram, chat_id, message_id, update),
+    )
+    if response is not None:
+        telegram.send_message(
+            chat_id=chat_id,
+            text=response,
+            reply_to_message_id=message_id,
+        )
+
+
+def _display_name(user: dict) -> str | None:
+    first_name = user.get("first_name", "")
+    last_name = user.get("last_name", "")
+    full_name = f"{first_name} {last_name}".strip()
+    return full_name or user.get("username")
+
+
+def _handle_callback_query(callback_query: dict, db: Database, telegram: TelegramClient) -> None:
+    user = callback_query.get("from", {})
+    user_id = user.get("id")
+    callback_query_id = callback_query.get("id")
+
+    if user_id is None:
+        return
+
+    db.get_or_create_user(str(user_id), _display_name(user), user.get("username"))
+    if db.is_user_blocked(str(user_id)):
+        if callback_query_id is not None:
+            telegram.answer_callback_query(str(callback_query_id))
+        return
+
+    if callback_query_id is not None:
+        telegram.answer_callback_query(str(callback_query_id))
+
+
+def _register_chat_from_message(message: dict, db: Database) -> None:
+    chat = message.get("chat", {})
+    chat_id = chat.get("id")
+    if chat_id is None:
+        return
+
+    db.register_chat(
+        chat_id=str(chat_id),
+        chat_type=chat.get("type", "private"),
+        title=chat.get("title"),
+    )
+
+
+def _handle_chat_migration(message: dict, db: Database) -> bool:
+    old_chat_id = message.get("chat", {}).get("id")
+    new_chat_id = message.get("migrate_to_chat_id")
+
+    if old_chat_id is None or new_chat_id is None:
+        return False
+
+    db.migrate_chat_id(old_chat_id=str(old_chat_id), new_chat_id=str(new_chat_id))
+    logger.info("Chat migrado de %s a %s.", old_chat_id, new_chat_id)
+    return True
+
+
+def _register_bot_added_event(message: dict, db: Database, bot_user_id: str) -> None:
+    chat = message.get("chat", {})
+    from_user = message.get("from", {})
+    new_members = message.get("new_chat_members", [])
+    chat_id = chat.get("id")
+    added_by_user_id = from_user.get("id")
+
+    if chat_id is None or added_by_user_id is None:
+        return
+
+    was_bot_added = any(str(member.get("id")) == bot_user_id for member in new_members)
+    if not was_bot_added:
+        return
+
+    db.get_or_create_user(
+        str(added_by_user_id),
+        _display_name(from_user),
+        from_user.get("username"),
+    )
+    db.register_chat(
+        chat_id=str(chat_id),
+        chat_type=chat.get("type", "private"),
+        title=chat.get("title"),
+        added_by_user_id=str(added_by_user_id),
+    )
+
+
+def _resolve_user_level(
+    user_id: str,
+    chat_id: int,
+    chat_type: str,
+    db: Database,
+    telegram: TelegramClient,
+    dev_user_ids: frozenset[str],
+) -> UserLevel:
+    if user_id in dev_user_ids:
+        return UserLevel.DEV
+
+    added_by_user_id = db.get_chat_added_by_user_id(str(chat_id))
+    if added_by_user_id == user_id:
+        return UserLevel.ADMIN
+
+    if chat_type in {"group", "supergroup"} and _is_chat_admin(chat_id, user_id, telegram):
+        return UserLevel.ADMIN
+
+    return UserLevel.COMMON
+
+
+def _is_chat_admin(chat_id: int, user_id: str, telegram: TelegramClient) -> bool:
+    try:
+        administrators = telegram.get_chat_administrators(chat_id)
+    except (HTTPError, URLError, TimeoutError, RuntimeError) as exc:
+        logger.warning("No pude leer admines del chat %s: %s", chat_id, exc)
+        return False
+
+    return any(str(admin.get("user", {}).get("id")) == user_id for admin in administrators)
+
+
+def _send_unhandled_error_event(
+    telegram: TelegramClient,
+    log_chat_id: str | None,
+    exc: BaseException,
+) -> None:
+    trace = "".join(traceback.format_exception(type(exc), exc, exc.__traceback__))
+    if len(trace) > 3200:
+        trace = trace[-3200:]
+
+    _send_log_event(
+        telegram,
+        log_chat_id,
+        f"Error no handleado:\n{trace}",
+    )
+
+
+def _send_log_event(telegram: TelegramClient, log_chat_id: str | None, text: str) -> None:
+    if not log_chat_id:
+        return
+
+    try:
+        telegram.send_message(chat_id=_parse_chat_id(log_chat_id), text=text)
+    except (HTTPError, URLError, TimeoutError, RuntimeError, ValueError) as exc:
+        logger.warning("No pude enviar evento al canal de logging: %s", exc)
+
+
+def _send_announcement(
+    telegram: TelegramClient,
+    announcements_chat_id: str | None,
+    text: str,
+) -> bool:
+    if not announcements_chat_id:
+        return False
+
+    try:
+        telegram.send_message(chat_id=_parse_chat_id(announcements_chat_id), text=text)
+    except (HTTPError, URLError, TimeoutError, RuntimeError, ValueError) as exc:
+        logger.warning("No pude enviar novedad al canal de anuncios: %s", exc)
+        return False
+
+    return True
+
+
+def _create_and_send_backup(
+    db: Database,
+    telegram: TelegramClient,
+    chat_id: int,
+    message_id: int | None,
+) -> BackupResult:
+    backup_path = db.create_backup(Path("backups"))
+    size_bytes = backup_path.stat().st_size
+
+    if size_bytes > TELEGRAM_DOCUMENT_UPLOAD_LIMIT_BYTES:
+        return BackupResult(
+            path=backup_path,
+            size_bytes=size_bytes,
+            max_size_bytes=TELEGRAM_DOCUMENT_UPLOAD_LIMIT_BYTES,
+            sent=False,
+        )
+
+    telegram.send_document(
+        chat_id=chat_id,
+        document_path=backup_path,
+        caption="Backup de la base de datos.",
+        reply_to_message_id=message_id,
+    )
+    return BackupResult(
+        path=backup_path,
+        size_bytes=size_bytes,
+        max_size_bytes=TELEGRAM_DOCUMENT_UPLOAD_LIMIT_BYTES,
+        sent=True,
+    )
+
+
+def _send_debug_update(
+    telegram: TelegramClient,
+    chat_id: int,
+    message_id: int | None,
+    update: dict,
+) -> bool:
+    debug_json = json.dumps(update, ensure_ascii=False, indent=2, sort_keys=True)
+    wrapped_json = f"```json\n{debug_json}\n```"
+
+    try:
+        if len(wrapped_json) <= TELEGRAM_MESSAGE_LIMIT_CHARS:
+            telegram.send_message(
+                chat_id=chat_id,
+                text=wrapped_json,
+                reply_to_message_id=message_id,
+            )
+            return True
+
+        debug_dir = Path("debug")
+        debug_dir.mkdir(parents=True, exist_ok=True)
+        debug_path = debug_dir / f"update-{message_id or int(time.time())}.json"
+        debug_path.write_text(debug_json, encoding="utf-8")
+        telegram.send_document(
+            chat_id=chat_id,
+            document_path=debug_path,
+            caption="Update de debug.",
+            reply_to_message_id=message_id,
+        )
+        return True
+    except (HTTPError, URLError, TimeoutError, RuntimeError, OSError) as exc:
+        logger.warning("No pude enviar update de debug: %s", exc)
+        return False
+
+
+def _parse_chat_id(raw_chat_id: str) -> int | str:
+    if raw_chat_id.lstrip("-").isdigit():
+        return int(raw_chat_id)
+    return raw_chat_id
