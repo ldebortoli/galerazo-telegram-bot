@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
 import time
@@ -37,7 +38,15 @@ from .chat_config import (
 from .commands import COMMANDS, command_exists, get_command, handle_command_async, is_command_invocation
 from .config import Settings, load_settings
 from .database import Database, Trigger
+from .expenses import (
+    ExpenseSheetStatus,
+    ExpenseSubmissionResult,
+    ExpenseSyncResult,
+    fallback_sheet_detail,
+    format_amount,
+)
 from .galeraza import build_galeraza_lines, render_galeraza_page
+from .google_sheets import GoogleSheetsConfig, GoogleSheetsExpenseWriter
 from .i18n import DEFAULT_LANGUAGE, t
 from .pagination import BUTTON_PREFIX, build_keyboard, parse_callback_data, render_page
 from .roles import BackupResult, TriggerPayload, UserLevel
@@ -54,6 +63,7 @@ class BotState:
     db: Database
     settings: Settings
     bot_user_id: str
+    expense_sheet_writer: GoogleSheetsExpenseWriter
 
 
 def main() -> None:
@@ -102,6 +112,13 @@ async def _post_init(application: Application) -> None:
         db=db,
         settings=settings,
         bot_user_id=str(bot_user.id),
+        expense_sheet_writer=GoogleSheetsExpenseWriter(
+            GoogleSheetsConfig(
+                credentials_json_path=settings.google_sheets_credentials_json_path,
+                spreadsheet_id=settings.google_sheets_spreadsheet_id,
+                worksheet_name=settings.google_sheets_worksheet_name,
+            )
+        ),
     )
 
     await _cleanup_old_paginated_messages(db, application.bot)
@@ -288,6 +305,27 @@ async def _handle_command_update(update: Update, context: ContextTypes.DEFAULT_T
             message=message,
             user=user,
             report_text=text,
+        ),
+        submit_expense=lambda currency, amount_cents, payment_method, source, description: _submit_expense(
+            db=state.db,
+            writer=state.expense_sheet_writer,
+            message=message,
+            user=user,
+            currency=currency,
+            amount_cents=int(amount_cents),
+            payment_method=payment_method,
+            source=source,
+            description=description,
+        ),
+        sync_expenses=lambda: _sync_pending_expenses(
+            db=state.db,
+            writer=state.expense_sheet_writer,
+            message=message,
+        ),
+        get_expense_sheet_status=lambda: _build_expense_sheet_status(
+            db=state.db,
+            writer=state.expense_sheet_writer,
+            chat_id=str(chat.id),
         ),
         create_backup=lambda: _create_and_send_backup(state.db, message),
         send_debug_update=lambda: _send_debug_update(state.db, message, update),
@@ -592,6 +630,116 @@ async def _send_report(
         log_chat_id,
         log_text,
         t(language, "long_message.truncated_log"),
+    )
+
+
+async def _submit_expense(
+    db: Database,
+    writer: GoogleSheetsExpenseWriter,
+    message: Message,
+    user: User,
+    currency: str,
+    amount_cents: int,
+    payment_method: str,
+    source: str,
+    description: str,
+) -> ExpenseSubmissionResult:
+    expense = db.add_expense(
+        chat_id=str(message.chat.id),
+        user_id=str(user.id),
+        amount_cents=amount_cents,
+        currency=currency,
+        payment_method=payment_method,
+        source=source,
+        description=description,
+    )
+
+    row = [
+        str(expense.expense_id),
+        expense.created_at,
+        expense.chat_id,
+        message.chat.title or "-",
+        expense.user_id,
+        f"@{expense.username}" if expense.username else "-",
+        expense.display_name or "-",
+        format_amount(expense.amount_cents, expense.currency),
+        expense.currency,
+        expense.payment_method,
+        expense.source,
+        expense.description,
+    ]
+    synced, error = await asyncio.to_thread(writer.append_expense_row, row)
+    if synced:
+        db.mark_expense_synced(expense.expense_id)
+        return ExpenseSubmissionResult(expense_id=expense.expense_id, synced=True, configured=True)
+
+    db.mark_expense_failed(expense.expense_id, error)
+    return ExpenseSubmissionResult(
+        expense_id=expense.expense_id,
+        synced=False,
+        configured=writer.is_configured(),
+        error=error,
+    )
+
+
+def _build_expense_sheet_status(
+    db: Database,
+    writer: GoogleSheetsExpenseWriter,
+    chat_id: str,
+) -> ExpenseSheetStatus:
+    configured = writer.is_configured()
+    ready = writer.is_ready()
+    return ExpenseSheetStatus(
+        enabled_for_chat=db.is_command_group_enabled(chat_id, "gastos"),
+        configured=configured,
+        ready=ready,
+        worksheet_name=writer.worksheet_name if configured else None,
+        pending_count=db.count_pending_expenses(chat_id),
+        detail=fallback_sheet_detail(_chat_language(db, chat_id), configured, ready),
+    )
+
+
+async def _sync_pending_expenses(
+    db: Database,
+    writer: GoogleSheetsExpenseWriter,
+    message: Message,
+) -> ExpenseSyncResult:
+    if not writer.is_configured():
+        return ExpenseSyncResult(configured=False, synced_count=0, failed_count=0)
+
+    pending_expenses = db.list_pending_expenses(str(message.chat.id))
+    synced_count = 0
+    failed_count = 0
+    last_error = None
+    for expense in pending_expenses:
+        row = [
+            str(expense.expense_id),
+            expense.created_at,
+            expense.chat_id,
+            message.chat.title or "-",
+            expense.user_id,
+            f"@{expense.username}" if expense.username else "-",
+            expense.display_name or "-",
+            format_amount(expense.amount_cents, expense.currency),
+            expense.currency,
+            expense.payment_method,
+            expense.source,
+            expense.description,
+        ]
+        synced, error = await asyncio.to_thread(writer.append_expense_row, row)
+        if synced:
+            db.mark_expense_synced(expense.expense_id)
+            synced_count += 1
+            continue
+        db.mark_expense_failed(expense.expense_id, error)
+        failed_count += 1
+        last_error = error
+
+    return ExpenseSyncResult(
+        configured=True,
+        synced_count=synced_count,
+        failed_count=failed_count,
+        last_error=last_error,
     )
 
 

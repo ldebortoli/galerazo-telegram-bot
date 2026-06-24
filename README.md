@@ -12,6 +12,12 @@ Base para un bot de Telegram en Python con `python-telegram-bot` y SQLite.
 - `listanegra`: muestra los usuarios bloqueados. Solo devs.
 - `novedad`: envia una noticia al canal de anuncios. Solo devs.
 - `reportar`: envia un reporte de bug al canal de logging. Maximo 1 por usuario por dia.
+- `habilitargastos`: habilita el sistema de gastos en el chat actual. Solo admines del chat, quien agrego el bot o devs.
+- `deshabilitargastos`: deshabilita el sistema de gastos en el chat actual. Solo admines del chat, quien agrego el bot o devs.
+- `gasto`: registra un gasto en el chat actual si el sistema de gastos esta habilitado.
+- `ultimosgastos`: lista los ultimos gastos del chat actual.
+- `estadogastos`: muestra el estado de gastos y de Google Sheets. Solo admines del chat, quien agrego el bot o devs.
+- `sincronizargastos`: intenta sincronizar gastos pendientes con Google Sheets. Solo admines del chat, quien agrego el bot o devs.
 - `restringir`: restringe un usuario en el grupo actual. Solo admines del chat, quien agrego el bot o devs.
 - `habilitar`: vuelve a habilitar un usuario restringido en el grupo actual. Solo admines del chat, quien agrego el bot o devs.
 - `restringidos`: lista usuarios restringidos en el grupo actual. Solo admines del chat, quien agrego el bot o devs.
@@ -137,9 +143,24 @@ TELEGRAM_DEV_USER_IDS=123456789
 TELEGRAM_LOG_CHAT_ID=-1001234567890
 TELEGRAM_ANNOUNCEMENTS_CHAT_ID=-1009876543210
 DATABASE_PATH=data/galerazo.sqlite3
+GOOGLE_SHEETS_CREDENTIALS_JSON_PATH=secrets/google-service-account.json
+GOOGLE_SHEETS_SPREADSHEET_ID=replace-with-spreadsheet-id
+GOOGLE_SHEETS_WORKSHEET_NAME=Gastos
 ```
 
 El archivo `.env` no se sube al repo.
+
+### 7. Configurar Google Sheets para gastos
+
+El sistema de gastos usa estas variables:
+
+```env
+GOOGLE_SHEETS_CREDENTIALS_JSON_PATH=secrets/google-service-account.json
+GOOGLE_SHEETS_SPREADSHEET_ID=replace-with-spreadsheet-id
+GOOGLE_SHEETS_WORKSHEET_NAME=Gastos
+```
+
+Si faltan credenciales o `GOOGLE_SHEETS_SPREADSHEET_ID`, el bot igual guarda los gastos en SQLite y los deja pendientes de sincronizacion para subirlos despues.
 
 ## Canales del bot
 
@@ -261,14 +282,14 @@ Todos los submenus tienen un boton `< Atrás`. El menu principal no tiene boton 
 
 El idioma por defecto siempre es español. Si un grupo cambia a inglés, los textos que el bot muestra o envia en ese grupo pasan a inglés: respuestas de comandos, menús, popups de botoneras, backups/debug captions y mensajes de La Galeraza.
 
-Por ahora los conjuntos configurables son `Galeraza` y `Triggers`. Cada submenu muestra:
+Por ahora los conjuntos configurables son `Galeraza`, `Triggers` y `Gastos`. Cada submenu muestra:
 
 ```text
 ¿Habilitado?
 [ Sí ] - No
 ```
 
-Todos los conjuntos vienen habilitados por defecto cuando el bot entra a un chat nuevo. La configuracion se guarda en SQLite y se migra si Telegram convierte un grupo en supergrupo.
+`Galeraza` y `Triggers` vienen habilitados por defecto. `Gastos` viene deshabilitado hasta que un admin o dev del chat lo habilite. La configuracion se guarda en SQLite y se migra si Telegram convierte un grupo en supergrupo.
 
 Si el ranking o cualquier lista configurable supera el limite maximo de caracteres por mensaje de Telegram, el bot lo pagina sin cortar renglones. La botonera tiene hasta 5 botones de paginas. Ejemplos:
 
@@ -342,6 +363,48 @@ Para listar:
 ```
 
 La lista se pagina automaticamente si supera el limite de Telegram. Si Telegram convierte el grupo en supergrupo, los triggers guardados se migran al nuevo `chat_id`.
+
+## Gastos
+
+Los gastos funcionan solo en grupos y supergrupos. Para chats nuevos vienen deshabilitados por defecto. Un usuario de nivel 2 o superior puede habilitarlos con:
+
+```powershell
+/habilitargastos
+```
+
+Y deshabilitarlos con:
+
+```powershell
+/deshabilitargastos
+```
+
+Tambien aparecen en `/config` dentro de `Comandos -> Gastos`.
+
+Cuando el sistema esta habilitado, cualquier usuario del chat puede registrar gastos con este formato:
+
+```powershell
+/gasto monto | medio de pago | origen | descripcion
+```
+
+Ejemplo:
+
+```powershell
+/gasto 18500 | transferencia | caja del grupo | pizzas de la juntada
+```
+
+El bot guarda monto, moneda, medio de pago, origen, descripcion, usuario, chat, fecha y estado de sincronizacion.
+
+Comandos utiles:
+
+```powershell
+/ultimosgastos
+/estadogastos
+/sincronizargastos
+```
+
+`/ultimosgastos` devuelve los ultimos gastos del chat. `/estadogastos` muestra si el grupo tiene gastos habilitados, si Google Sheets esta listo y cuantos pendientes hay. `/sincronizargastos` intenta subir los pendientes.
+
+Si Google Sheets no esta configurado todavia, `/gasto` guarda igual en SQLite y lo deja pendiente. Si Telegram convierte el grupo en supergrupo, los gastos guardados migran al nuevo `chat_id`.
 
 ## Salir de un grupo
 

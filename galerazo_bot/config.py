@@ -18,6 +18,9 @@ class Settings:
     telegram_log_chat_id: str | None
     telegram_announcements_chat_id: str | None
     database_path: Path
+    google_sheets_credentials_json_path: Path | None
+    google_sheets_spreadsheet_id: str | None
+    google_sheets_worksheet_name: str
 
 
 def load_settings() -> Settings:
@@ -29,8 +32,17 @@ def load_settings() -> Settings:
         telegram_log_chat_id=os.getenv("TELEGRAM_LOG_CHAT_ID") or None,
         telegram_announcements_chat_id=os.getenv("TELEGRAM_ANNOUNCEMENTS_CHAT_ID") or None,
         database_path=Path(os.getenv("DATABASE_PATH", "data/galerazo.sqlite3")),
+        google_sheets_credentials_json_path=_optional_path(os.getenv("GOOGLE_SHEETS_CREDENTIALS_JSON_PATH")),
+        google_sheets_spreadsheet_id=os.getenv("GOOGLE_SHEETS_SPREADSHEET_ID") or None,
+        google_sheets_worksheet_name=os.getenv("GOOGLE_SHEETS_WORKSHEET_NAME", "Gastos"),
     )
 
 
 def _parse_id_list(raw_value: str) -> frozenset[str]:
     return frozenset(item.strip() for item in raw_value.split(",") if item.strip())
+
+
+def _optional_path(raw_value: str | None) -> Path | None:
+    if not raw_value:
+        return None
+    return Path(raw_value)

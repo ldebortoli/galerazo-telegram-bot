@@ -23,7 +23,11 @@ class CommandGroupOption:
 
 
 LANGUAGES = (LanguageOption("es", "Español"), LanguageOption("en", "English"))
-COMMAND_GROUPS = (CommandGroupOption("galeraza", "Galeraza"), CommandGroupOption("triggers", "Triggers"))
+COMMAND_GROUPS = (
+    CommandGroupOption("galeraza", "Galeraza"),
+    CommandGroupOption("triggers", "Triggers"),
+    CommandGroupOption("gastos", "Gastos"),
+)
 
 
 def build_main_menu(language: str) -> InlineKeyboardMarkup:

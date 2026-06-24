@@ -88,6 +88,24 @@ class Trigger:
     created_at: str
 
 
+@dataclass(frozen=True)
+class Expense:
+    expense_id: int
+    chat_id: str
+    user_id: str
+    username: str | None
+    display_name: str | None
+    amount_cents: int
+    currency: str
+    payment_method: str
+    source: str
+    description: str
+    sheet_status: str
+    sheet_error: str | None
+    created_at: str
+    synced_at: str | None
+
+
 class Database:
     def __init__(self, path: Path) -> None:
         self.path = path
@@ -276,6 +294,26 @@ class Database:
                     PRIMARY KEY (chat_id, trigger_name),
                     FOREIGN KEY (chat_id) REFERENCES chats (chat_id),
                     FOREIGN KEY (created_by_user_id) REFERENCES users (user_id)
+                )
+                """
+            )
+            conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS expenses (
+                    expense_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    chat_id TEXT NOT NULL,
+                    user_id TEXT NOT NULL,
+                    amount_cents INTEGER NOT NULL,
+                    currency TEXT NOT NULL DEFAULT 'ARS',
+                    payment_method TEXT NOT NULL,
+                    source TEXT NOT NULL,
+                    description TEXT NOT NULL,
+                    sheet_status TEXT NOT NULL DEFAULT 'pending',
+                    sheet_error TEXT,
+                    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    synced_at TEXT,
+                    FOREIGN KEY (chat_id) REFERENCES chats (chat_id),
+                    FOREIGN KEY (user_id) REFERENCES users (user_id)
                 )
                 """
             )
@@ -561,6 +599,10 @@ class Database:
                 "UPDATE paginated_message_states SET chat_id = ? WHERE chat_id = ?",
                 (new_chat_id, old_chat_id),
             )
+            conn.execute(
+                "UPDATE expenses SET chat_id = ? WHERE chat_id = ?",
+                (new_chat_id, old_chat_id),
+            )
             old_triggers = conn.execute(
                 """
                 SELECT trigger_name, display_name, text, media_type, file_id, caption, created_by_user_id
@@ -685,7 +727,9 @@ class Database:
                 """,
                 (chat_id, command_group),
             ).fetchone()
-        return True if row is None else bool(row["enabled"])
+        if row is None:
+            return False if command_group == "gastos" else True
+        return bool(row["enabled"])
 
     def set_command_group_enabled(self, chat_id: str, command_group: str, enabled: bool) -> None:
         chat_id = self.resolve_chat_id(chat_id)
@@ -1251,6 +1295,168 @@ class Database:
             ).fetchall()
         return [_trigger_from_row(row) for row in rows]
 
+    def add_expense(
+        self,
+        chat_id: str,
+        user_id: str,
+        amount_cents: int,
+        currency: str,
+        payment_method: str,
+        source: str,
+        description: str,
+    ) -> Expense:
+        chat_id = self.resolve_chat_id(chat_id)
+        self.get_or_create_user(user_id)
+        with self._connect() as conn:
+            cursor = conn.execute(
+                """
+                INSERT INTO expenses (
+                    chat_id,
+                    user_id,
+                    amount_cents,
+                    currency,
+                    payment_method,
+                    source,
+                    description
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    chat_id,
+                    user_id,
+                    amount_cents,
+                    currency,
+                    payment_method,
+                    source,
+                    description,
+                ),
+            )
+            row = conn.execute(
+                """
+                SELECT
+                    expenses.expense_id,
+                    expenses.chat_id,
+                    expenses.user_id,
+                    users.username,
+                    users.display_name,
+                    expenses.amount_cents,
+                    expenses.currency,
+                    expenses.payment_method,
+                    expenses.source,
+                    expenses.description,
+                    expenses.sheet_status,
+                    expenses.sheet_error,
+                    expenses.created_at,
+                    expenses.synced_at
+                FROM expenses
+                LEFT JOIN users ON users.user_id = expenses.user_id
+                WHERE expenses.expense_id = ?
+                """,
+                (cursor.lastrowid,),
+            ).fetchone()
+        return _expense_from_row(row)
+
+    def mark_expense_synced(self, expense_id: int) -> None:
+        with self._connect() as conn:
+            conn.execute(
+                """
+                UPDATE expenses
+                SET
+                    sheet_status = 'synced',
+                    sheet_error = NULL,
+                    synced_at = CURRENT_TIMESTAMP
+                WHERE expense_id = ?
+                """,
+                (expense_id,),
+            )
+
+    def mark_expense_failed(self, expense_id: int, error: str | None) -> None:
+        with self._connect() as conn:
+            conn.execute(
+                """
+                UPDATE expenses
+                SET
+                    sheet_status = 'pending',
+                    sheet_error = ?,
+                    synced_at = NULL
+                WHERE expense_id = ?
+                """,
+                (error, expense_id),
+            )
+
+    def list_recent_expenses(self, chat_id: str, limit: int = 20) -> list[Expense]:
+        chat_id = self.resolve_chat_id(chat_id)
+        with self._connect() as conn:
+            rows = conn.execute(
+                """
+                SELECT
+                    expenses.expense_id,
+                    expenses.chat_id,
+                    expenses.user_id,
+                    users.username,
+                    users.display_name,
+                    expenses.amount_cents,
+                    expenses.currency,
+                    expenses.payment_method,
+                    expenses.source,
+                    expenses.description,
+                    expenses.sheet_status,
+                    expenses.sheet_error,
+                    expenses.created_at,
+                    expenses.synced_at
+                FROM expenses
+                LEFT JOIN users ON users.user_id = expenses.user_id
+                WHERE expenses.chat_id = ?
+                ORDER BY expenses.expense_id DESC
+                LIMIT ?
+                """,
+                (chat_id, limit),
+            ).fetchall()
+        return [_expense_from_row(row) for row in rows]
+
+    def list_pending_expenses(self, chat_id: str, limit: int = 200) -> list[Expense]:
+        chat_id = self.resolve_chat_id(chat_id)
+        with self._connect() as conn:
+            rows = conn.execute(
+                """
+                SELECT
+                    expenses.expense_id,
+                    expenses.chat_id,
+                    expenses.user_id,
+                    users.username,
+                    users.display_name,
+                    expenses.amount_cents,
+                    expenses.currency,
+                    expenses.payment_method,
+                    expenses.source,
+                    expenses.description,
+                    expenses.sheet_status,
+                    expenses.sheet_error,
+                    expenses.created_at,
+                    expenses.synced_at
+                FROM expenses
+                LEFT JOIN users ON users.user_id = expenses.user_id
+                WHERE expenses.chat_id = ? AND expenses.sheet_status != 'synced'
+                ORDER BY expenses.expense_id ASC
+                LIMIT ?
+                """,
+                (chat_id, limit),
+            ).fetchall()
+        return [_expense_from_row(row) for row in rows]
+
+    def count_pending_expenses(self, chat_id: str) -> int:
+        chat_id = self.resolve_chat_id(chat_id)
+        with self._connect() as conn:
+            row = conn.execute(
+                """
+                SELECT COUNT(*) AS pending_count
+                FROM expenses
+                WHERE chat_id = ? AND sheet_status != 'synced'
+                """,
+                (chat_id,),
+            ).fetchone()
+        return int(row["pending_count"]) if row is not None else 0
+
 
 def _normalize_username(username: str | None) -> str | None:
     if not username:
@@ -1269,6 +1475,25 @@ def _trigger_from_row(row: sqlite3.Row) -> Trigger:
         caption=row["caption"],
         created_by_user_id=row["created_by_user_id"],
         created_at=row["created_at"],
+    )
+
+
+def _expense_from_row(row: sqlite3.Row) -> Expense:
+    return Expense(
+        expense_id=row["expense_id"],
+        chat_id=row["chat_id"],
+        user_id=row["user_id"],
+        username=row["username"],
+        display_name=row["display_name"],
+        amount_cents=row["amount_cents"],
+        currency=row["currency"],
+        payment_method=row["payment_method"],
+        source=row["source"],
+        description=row["description"],
+        sheet_status=row["sheet_status"],
+        sheet_error=row["sheet_error"],
+        created_at=row["created_at"],
+        synced_at=row["synced_at"],
     )
 
 

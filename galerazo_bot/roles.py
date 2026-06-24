@@ -5,6 +5,7 @@ from enum import IntEnum
 from pathlib import Path
 from typing import Awaitable, Callable
 
+from .expenses import ExpenseSheetStatus, ExpenseSubmissionResult, ExpenseSyncResult
 from .i18n import DEFAULT_LANGUAGE, t
 
 
@@ -52,6 +53,9 @@ class CommandContext:
     sender_display_name: str | None = None
     send_announcement: Callable[[str], Awaitable[bool]] | None = None
     send_report: Callable[[str], Awaitable[bool]] | None = None
+    submit_expense: Callable[[str, str, str, str, str], Awaitable[ExpenseSubmissionResult]] | None = None
+    sync_expenses: Callable[[], Awaitable[ExpenseSyncResult]] | None = None
+    get_expense_sheet_status: Callable[[], ExpenseSheetStatus] | None = None
     create_backup: Callable[[], Awaitable[BackupResult]] | None = None
     send_debug_update: Callable[[], Awaitable[bool]] | None = None
     send_galerazas: Callable[[], Awaitable[bool]] | None = None
