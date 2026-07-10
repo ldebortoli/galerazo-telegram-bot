@@ -1,3 +1,4 @@
+<!-- codex-persistent-memory -->
 # Persistent project memory
 
 Before doing any work in this repository, read these files in order:

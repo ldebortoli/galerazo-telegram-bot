@@ -6,6 +6,8 @@ Galerazo Bot es un bot de Telegram para chats privados, grupos, supergrupos y ca
 
 La fuente de verdad operativa para agentes es esta carpeta `.codex/`. Al iniciar una sesion se deben leer, en orden: `CONTEXT.md`, `DECISIONS.md`, `BACKLOG.md`, `USER_QUEUE.md` y `SESSION_HANDOFF.md`.
 
+La misma politica se aplica globalmente desde `C:\Users\calei\.codex\AGENTS.md`. Los proyectos nuevos se inicializan con `C:\Users\calei\.codex\project-memory\Initialize-ProjectMemory.ps1` antes de implementar su primera tarea.
+
 ## Stack tecnologico
 
 - Python 3.12 en Docker; desarrollo local verificado con Python 3.13 en Windows.

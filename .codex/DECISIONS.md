@@ -108,3 +108,12 @@ Este archivo es append-only a nivel conceptual: no borrar decisiones anteriores.
 - Decision: `Database._connect` es un context manager que abre una conexion por operacion, hace commit o rollback y siempre cierra en `finally`.
 - Motivo: `with sqlite3.Connection` maneja transacciones pero no cierra el descriptor; en Windows esto bloqueaba la limpieza de bases temporales y podia retener archivos mas tiempo del necesario.
 - Validacion: migracion de gastos, creacion/reapertura de backup y limpieza de un directorio temporal.
+
+## D-015 - Politica global de memoria para todos los proyectos
+
+- Estado: vigente.
+- Fecha: 2026-07-10.
+- Decision: la estructura `.codex/` y su flujo obligatorio se aplican a todos los proyectos activos y deben inicializarse automaticamente antes del primer trabajo en cualquier proyecto futuro.
+- Alcance: la instruccion global vive en `C:\Users\calei\.codex\AGENTS.md`; cada proyecto conserva su propia fuente de verdad en `.codex/`.
+- Motivo: continuidad entre sesiones, modelos y agentes sin depender de memoria conversacional.
+- Verificacion: la documentacion oficial de Codex confirma que al iniciar cada run carga primero el `AGENTS.md` global de `CODEX_HOME` y luego concatena las instrucciones del proyecto desde la raiz hacia el directorio actual.

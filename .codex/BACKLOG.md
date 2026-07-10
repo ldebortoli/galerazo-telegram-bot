@@ -3,6 +3,8 @@
 ## P1
 
 - Conectar el sistema de gastos con el Google Sheet real cuando el usuario proporcione o confirme el spreadsheet ID, worksheet y credenciales de service account.
+- Identificar y coordinar la otra instancia que usa el mismo token de Telegram antes de volver a encender el bot local; el ultimo proceso local termino por conflicto de `getUpdates`.
+- Corregir `TELEGRAM_LOG_CHAT_ID` o los permisos del bot: Telegram responde `Chat not found` al enviar eventos de inicio.
 
 ## P2
 
@@ -15,6 +17,7 @@ No hay tareas en curso.
 
 # DONE
 
+- [2026-07-10] Aplicar la memoria persistente a 14 proyectos activos y configurar `~/.codex/AGENTS.md` mas un inicializador idempotente para todos los proyectos futuros.
 - [2026-07-10] Crear la memoria persistente `.codex/`, agregar el punto de entrada `AGENTS.md`, consolidar cambios pendientes y pushear `main`.
 - [2026-07-10] Migrar el bot a `python-telegram-bot` manteniendo arquitectura modular y procesamiento secuencial.
 - [2026-07-10] Implementar niveles common/admin/dev, blacklist global y restricciones por chat.
