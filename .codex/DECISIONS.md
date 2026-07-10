@@ -117,3 +117,11 @@ Este archivo es append-only a nivel conceptual: no borrar decisiones anteriores.
 - Alcance: la instruccion global vive en `C:\Users\calei\.codex\AGENTS.md`; cada proyecto conserva su propia fuente de verdad en `.codex/`.
 - Motivo: continuidad entre sesiones, modelos y agentes sin depender de memoria conversacional.
 - Verificacion: la documentacion oficial de Codex confirma que al iniciar cada run carga primero el `AGENTS.md` global de `CODEX_HOME` y luego concatena las instrucciones del proyecto desde la raiz hacia el directorio actual.
+
+## D-016 - Comandos desconocidos sin respuesta
+
+- Estado: vigente.
+- Fecha: 2026-07-10.
+- Decision: ignorar silenciosamente comandos que no existen y no registrar un fallback PTB en un grupo posterior.
+- Motivo: los handlers de distintos grupos pueden procesar el mismo update; el fallback de grupo 2 respondia `unknown_command` incluso despues de que `/galerazas` ya habia sido manejado correctamente en grupo 1.
+- Validacion: pruebas para `/inventado`, `!inventado`, texto desconocido, registro unico de `/galerazas` y ausencia de handlers en grupo 2.

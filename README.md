@@ -33,6 +33,8 @@ Base para un bot de Telegram en Python con `python-telegram-bot` y SQLite.
 
 Tambien acepta comandos con prefijo, por ejemplo `!help`, `/ayuda` o `/hola`.
 
+Los comandos que no existen se ignoran silenciosamente. Cada comando implementado se procesa una sola vez y no cae en un handler generico posterior.
+
 ## Estructura de comandos
 
 Los handlers reales de Telegram se registran en `galerazo_bot/telegram_bot.py` con `CommandHandler`, `MessageHandler`, `CallbackQueryHandler` y `ChatMemberHandler`.

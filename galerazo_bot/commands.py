@@ -226,7 +226,7 @@ async def _handle_with_context(context: CommandContext, db: Database) -> str | N
     command_name = normalize_command(context.raw_text)
     command = COMMANDS.get(command_name)
     if command is None:
-        return context.t("unknown_command")
+        return None
 
     if context.user_level < command.min_level:
         if command.permission_error_key:

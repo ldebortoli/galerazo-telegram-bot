@@ -37,6 +37,7 @@ La misma politica se aplica globalmente desde `C:\Users\calei\.codex\AGENTS.md`.
 - `galerazo_bot/control_panel.py`: UI local, manejo del proceso, `.env` y logs.
 - `launcher/GalerazoBotControlLauncher.cs`: lanzador Windows.
 - `assets/`: PNG e ICO del conejo con galera.
+- `tests/`: pruebas `unittest` de regresion y comportamiento.
 - `.github/workflows/deploy.yml`: deploy Railway desactivado con `if: ${{ false }}`.
 
 ## Persistencia y consistencia
@@ -101,10 +102,11 @@ python -m compileall app.py control_panel.py galerazo_bot
 python -m galerazo_bot.cli hola
 python -m galerazo_bot.cli help
 python -m galerazo_bot.cli nivel
+python -m unittest discover -s tests -v
 git diff --check
 ```
 
-No existe todavia una suite automatizada formal. Para cambios de persistencia se usan pruebas focalizadas con bases SQLite temporales y para el panel pruebas focalizadas del flujo de proceso.
+La suite automatizada usa `unittest`. Actualmente cubre el enrutamiento de comandos; para persistencia y panel se mantienen ademas pruebas focalizadas con bases SQLite temporales y flujo de proceso.
 
 ## Convenciones de codigo
 
@@ -115,6 +117,7 @@ No existe todavia una suite automatizada formal. Para cambios de persistencia se
 - Las listas de usuarios muestran siempre el user ID entre parentesis.
 - Las listas largas usan la paginacion reutilizable y nunca cortan un renglon.
 - Los comandos conservan sus nombres originales en todos los idiomas.
+- Los comandos inexistentes se ignoran silenciosamente; no registrar fallbacks en grupos posteriores de PTB que vuelvan a procesar comandos validos.
 - Los niveles se validan al invocar comandos o tocar botones, no como clasificacion global permanente.
 
 ## Git y deploy

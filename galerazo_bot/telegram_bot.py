@@ -35,7 +35,7 @@ from .chat_config import (
     is_valid_language,
     parse_config_callback,
 )
-from .commands import COMMANDS, command_exists, get_command, handle_command_async, is_command_invocation
+from .commands import COMMANDS, get_command, handle_command_async, is_command_invocation
 from .config import Settings, load_settings
 from .database import Database, Trigger
 from .expenses import (
@@ -101,7 +101,6 @@ def _register_handlers(application: Application) -> None:
     application.add_handler(CallbackQueryHandler(_callback_query_entrypoint, pattern=f"^{BUTTON_PREFIX}:"), group=1)
     application.add_handler(CallbackQueryHandler(_config_callback_entrypoint, pattern=f"^{CONFIG_PREFIX}:"), group=1)
     application.add_handler(ChatMemberHandler(_my_chat_member_entrypoint, ChatMemberHandler.MY_CHAT_MEMBER), group=1)
-    application.add_handler(MessageHandler(filters.COMMAND, _unknown_command_entrypoint), group=2)
 
 
 async def _post_init(application: Application) -> None:
@@ -234,19 +233,6 @@ async def _text_command_entrypoint(update: Update, context: ContextTypes.DEFAULT
     await _handle_command_update(update, context)
 
 
-async def _unknown_command_entrypoint(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    state = _state(context)
-    message = update.effective_message
-    user = update.effective_user
-    if message is None or user is None:
-        return
-    if state.db.is_user_blocked(str(user.id)):
-        return
-    if _is_user_restricted_in_message_chat(state.db, message, str(user.id)):
-        return
-    await message.reply_text(t(_chat_language(state.db, message.chat.id), "unknown_command"))
-
-
 async def _handle_command_update(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     state = _state(context)
     message = update.effective_message
@@ -266,7 +252,7 @@ async def _handle_command_update(update: Update, context: ContextTypes.DEFAULT_T
     if command is not None and _is_command_group_disabled(state.db, chat, command.configurable_group):
         return
 
-    if command_exists(message.text):
+    if command is not None:
         user_level = await _resolve_user_level(
             user_id=str(user.id),
             chat=chat,

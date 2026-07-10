@@ -6,7 +6,7 @@ Mantener y ampliar Galerazo Bot como bot de Telegram modular, consistente y rean
 
 ## Tarea actual
 
-No hay una tarea activa. La politica global de memoria persistente ya esta instalada y los proyectos activos fueron inicializados.
+No hay una tarea activa. El bug de doble respuesta de comandos esta corregido y cubierto por pruebas.
 
 ## Estado real al cerrar la sesion
 
@@ -21,6 +21,9 @@ No hay una tarea activa. La politica global de memoria persistente ya esta insta
 
 ## Terminado recientemente
 
+- Se elimino el fallback PTB de comandos desconocidos en grupo 2 y el dispatcher ahora retorna `None` para nombres inexistentes.
+- `/galerazas` se registra una sola vez y ya no genera una segunda respuesta `unknown_command`.
+- Se agrego `tests/test_command_routing.py`; sus tres pruebas y `compileall` pasan.
 - Se instalo la politica global de memoria y el inicializador idempotente para proyectos futuros.
 - Se inicializo `.codex/` en los proyectos activos nombrados y repositorios reales detectados, excluyendo carpetas fechadas efimeras y `CODEX APPS`.
 - La carga automatica de `~/.codex/AGENTS.md` fue verificada contra la documentacion oficial de Codex.
@@ -40,10 +43,9 @@ No hay una tarea activa. La politica global de memoria persistente ya esta insta
 
 ## Proximos pasos exactos
 
-1. En el proximo run, Codex debe cargar automaticamente las instrucciones globales.
-2. Al abrir o crear un proyecto sin `.codex/`, ejecutar el inicializador global antes de implementar.
-3. Procesar `USER_QUEUE.md`, reconciliar el estado real y continuar desde `BACKLOG.md`.
-4. Para Galerazo Bot, el proximo trabajo priorizado sigue siendo conectar el Google Sheet real cuando se proporcionen sus datos.
+1. Procesar el proximo pedido del usuario desde `USER_QUEUE.md`/`BACKLOG.md`.
+2. Antes de encender localmente, resolver la instancia duplicada que usa el token de Telegram.
+3. El proximo trabajo funcional priorizado sigue siendo conectar el Google Sheet real cuando se proporcionen sus datos.
 
 ## Problemas y riesgos
 
