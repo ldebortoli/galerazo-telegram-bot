@@ -1,10 +1,13 @@
 __pycache__/
+bin/
 *.py[cod]
 .env
 .venv/
 venv/
 data/*.sqlite3
 data/*.sqlite3-*
+data/bot.pid
+data/bot.log
 backups/*.sqlite3
 backups/*.sqlite3-*
 debug/*.json

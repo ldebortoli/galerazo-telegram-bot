@@ -58,6 +58,21 @@ Copy-Item .env.example .env
 pip install -r requirements.txt
 ```
 
+### Panel de control para Windows
+
+Ejecuta `pythonw control_panel.py` para abrir una interfaz de escritorio desde la que se puede:
+
+- encender, apagar y reiniciar el bot local;
+- editar la configuracion de `.env`;
+- consultar el estado del proceso;
+- ver el log local guardado en `data/bot.log`.
+
+El panel guarda el PID en `data/bot.pid`. Cerrar la ventana no apaga el bot. El acceso directo `Galerazo Bot` se puede colocar dentro de `CODEX APPS` y apunta a este panel.
+
+Durante el arranque el estado queda en amarillo mientras se valida la configuracion y la conexion con Telegram. Si el proceso falla, el panel abre la pestana de logs y muestra el error de inicio.
+
+Para reconstruir el lanzador de Windows ejecuta `powershell -ExecutionPolicy Bypass -File build_control_panel.ps1`.
+
 La dependencia principal es `python-telegram-bot`, declarada en `requirements.txt`.
 
 ## Configuracion inicial
