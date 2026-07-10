@@ -10,8 +10,8 @@ La misma politica se aplica globalmente desde `C:\Users\calei\.codex\AGENTS.md`.
 
 ## Stack tecnologico
 
-- Python 3.12 en Docker; desarrollo local verificado con Python 3.13 en Windows.
-- `python-telegram-bot==22.3` para Telegram Bot API y polling.
+- Python 3.14.6 exacto en Windows, CI y Docker; `.python-version` es la fuente canonica.
+- `python-telegram-bot==22.8` para Telegram Bot API y polling.
 - SQLite mediante `sqlite3` de la libreria estandar.
 - `gspread` y `google-auth` para Google Sheets.
 - `python-dotenv` para configuracion local desde `.env`.
@@ -39,6 +39,11 @@ La misma politica se aplica globalmente desde `C:\Users\calei\.codex\AGENTS.md`.
 - `assets/`: PNG e ICO del conejo con galera.
 - `tests/`: pruebas `unittest` de regresion y comportamiento.
 - `.github/workflows/deploy.yml`: deploy Railway desactivado con `if: ${{ false }}`.
+- `.github/workflows/quality.yml`: tests nativos y dentro de Docker en cada push/PR.
+- `.github/workflows/runtime-update.yml`: actualizacion semanal de Python y dependencias estables, con merge solo despues de validar.
+- `requirements.in`: dependencias directas; `requirements.txt`: lock completo reproducible.
+- `scripts/runtime_versions.py`: valida y sincroniza la version exacta entre runtime y Docker.
+- `scripts/sync_windows_runtime.ps1`: instala/verifica el Python exacto con winget, recrea `.venv` e instala/valida el lock.
 
 ## Persistencia y consistencia
 
@@ -72,9 +77,9 @@ Copiar `.env.example` a `.env`. Variables:
 Instalar:
 
 ```powershell
-python -m venv .venv
+py -3.14 -m venv .venv
 .\.venv\Scripts\Activate.ps1
-pip install -r requirements.txt
+python -m pip install --requirement requirements.txt
 Copy-Item .env.example .env
 ```
 
@@ -104,6 +109,7 @@ python -m galerazo_bot.cli hola
 python -m galerazo_bot.cli help
 python -m galerazo_bot.cli nivel
 python -m unittest discover -s tests -v
+python scripts/runtime_versions.py
 python -m galerazo_bot.log_checkpoint
 git diff --check
 ```
@@ -116,6 +122,8 @@ La suite automatizada usa `unittest` y cubre enrutamiento, config, Galeraza, ser
 - Handlers y auxiliares especificos de un comando viven juntos en `command_handlers/<grupo>.py`.
 - Registrar cada modulo nuevo en `command_handlers/__init__.py`.
 - Reutilizar APIs de `python-telegram-bot` antes de implementar equivalentes propios.
+- Usar siempre `.venv`; no ejecutar el proyecto con el alias global `python` sin activar el entorno.
+- Mantener la ultima version estable de CPython y dependencias; todo upgrade debe actualizar el lock y pasar tests nativos y Docker o revertirse.
 - Las listas de usuarios muestran siempre el user ID entre parentesis.
 - Las listas largas usan la paginacion reutilizable y nunca cortan un renglon.
 - Los comandos conservan sus nombres originales en todos los idiomas.

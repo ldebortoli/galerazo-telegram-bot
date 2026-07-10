@@ -1,6 +1,6 @@
 # Galerazo Bot
 
-Base para un bot de Telegram en Python con `python-telegram-bot` y SQLite.
+Base para un bot de Telegram con una version estable y reproducible de Python, `python-telegram-bot` y SQLite.
 
 ## Comandos
 
@@ -55,11 +55,12 @@ Los comandos que pertenecen a un conjunto configurable usan `configurable_group`
 ## Instalacion
 
 ```powershell
-python -m venv .venv
+powershell -ExecutionPolicy Bypass -File scripts/sync_windows_runtime.ps1
 .\.venv\Scripts\Activate.ps1
 Copy-Item .env.example .env
-pip install -r requirements.txt
 ```
+
+`.python-version` es la fuente de verdad. El entorno local, GitHub Actions y Docker deben usar exactamente ese patch de Python. El bot y el panel rechazan el arranque si se ejecutan con otra version.
 
 ### Panel de control para Windows
 
@@ -76,7 +77,29 @@ Durante el arranque el estado queda en amarillo mientras se valida la configurac
 
 Para reconstruir el lanzador de Windows ejecuta `powershell -ExecutionPolicy Bypass -File build_control_panel.ps1`.
 
-La dependencia principal es `python-telegram-bot`, declarada en `requirements.txt`.
+Las dependencias directas se declaran en `requirements.in`. `requirements.txt` fija todas las versiones directas y transitivas para que Windows y Docker instalen el mismo conjunto reproducible.
+
+### Actualizaciones y rollback
+
+El workflow `Update runtime and dependencies` corre semanalmente y tambien se puede iniciar manualmente. Usa la ultima version estable disponible de Python, resuelve las ultimas releases estables de `requirements.in` y valida:
+
+- alineacion entre `.python-version` y Docker;
+- suite completa en Python nativo;
+- compilacion y `pip check`;
+- build y suite completa dentro de Docker.
+
+Solo despues de esas validaciones crea y fusiona la actualizacion. Si algun paso falla, el workflow termina antes de modificar `main`, por lo que el estado anterior queda activo.
+
+Si aparece un problema despues de fusionar una actualizacion, ubica ese commit y revertirlo conserva el historial:
+
+```powershell
+git log -- .python-version Dockerfile requirements.txt
+git revert <commit-de-actualizacion>
+powershell -ExecutionPolicy Bypass -File scripts/sync_windows_runtime.ps1
+git push
+```
+
+El sincronizador toma automaticamente la version restaurada desde `.python-version`.
 
 ## Configuracion inicial
 

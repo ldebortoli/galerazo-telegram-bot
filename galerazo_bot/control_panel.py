@@ -9,6 +9,7 @@ from pathlib import Path
 from tkinter import messagebox, ttk
 
 from .instance_lock import SingleInstance
+from .runtime import ensure_python_version
 
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -371,6 +372,11 @@ class ControlPanel(tk.Tk):
 
 
 def main() -> None:
+    try:
+        ensure_python_version()
+    except RuntimeError as error:
+        messagebox.showerror("Version de Python incorrecta", str(error))
+        return
     _configure_windows_app_identity()
     instance = SingleInstance(f"control-panel:{PROJECT_ROOT}")
     if not instance.acquire():

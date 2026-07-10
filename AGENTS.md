@@ -32,3 +32,8 @@ Do not expose or version `.env`, credentials, databases, logs, backups or local 
 ## Bot log checkpoint
 
 Before ending every user instruction, run `python -m galerazo_bot.log_checkpoint`. It reads only new entries from `data/bot.log`. If it reports errors, investigate and fix them before finishing; after the entries are understood and addressed, run `python -m galerazo_bot.log_checkpoint --acknowledge` and then run the normal check once more. Never print `.env` or secrets while diagnosing logs.
+
+<!-- galerazo-runtime-policy -->
+## Runtime and dependency policy
+
+Use the latest stable CPython and stable dependency releases. Windows development, CI and Docker must use the exact patch version recorded in `.python-version`; run project commands through `.venv`. Before finishing work, run `.venv\Scripts\python.exe scripts\runtime_versions.py` and the test suite. Dependency upgrades must update the complete `requirements.txt` lock and pass both native and Docker tests when Docker is available. If an upgrade causes a regression, revert the runtime/dependency upgrade commit and recreate `.venv` from the restored lock before continuing.

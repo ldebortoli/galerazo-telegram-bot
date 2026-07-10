@@ -9,7 +9,7 @@ internal static class GalerazoBotControlLauncher
     {
         string projectRoot = Directory.GetParent(AppDomain.CurrentDomain.BaseDirectory.TrimEnd(Path.DirectorySeparatorChar)).FullName;
         string scriptPath = Path.Combine(projectRoot, "control_panel.py");
-        string pythonw = FindPythonw();
+        string pythonw = FindProjectPythonw(projectRoot);
 
         Process.Start(new ProcessStartInfo
         {
@@ -21,8 +21,11 @@ internal static class GalerazoBotControlLauncher
         });
     }
 
-    private static string FindPythonw()
+    private static string FindProjectPythonw(string projectRoot)
     {
+        string projectPythonw = Path.Combine(projectRoot, ".venv", "Scripts", "pythonw.exe");
+        if (File.Exists(projectPythonw)) return projectPythonw;
+
         string localPrograms = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
         string pythonRoot = Path.Combine(localPrograms, "Programs", "Python");
         if (Directory.Exists(pythonRoot))
@@ -39,6 +42,6 @@ internal static class GalerazoBotControlLauncher
             if (File.Exists(candidate)) return candidate;
         }
 
-        throw new FileNotFoundException("No se encontro pythonw.exe. Instala Python o agregalo al PATH.");
+        throw new FileNotFoundException("No se encontro .venv\\Scripts\\pythonw.exe. Crea el entorno con py -3.14 -m venv .venv.");
     }
 }

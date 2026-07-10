@@ -4,6 +4,7 @@ No hay pedidos sin procesar.
 
 # Procesadas
 
+- [2026-07-10] Mantener Python y las librerias en la ultima version estable posible, usando exactamente la misma version en Windows y Docker y haciendo rollback si una actualizacion causa problemas.
 - [2026-07-10] Configurar globalmente que, al iniciar una ejecucion por un nuevo mensaje, las tareas pendientes de `USER_QUEUE.md` no solo pasen al backlog sino que se resuelvan automaticamente hasta completarse o quedar realmente bloqueadas; aplicar a proyectos activos y futuros.
 - [2026-07-10] Garantizar instancia unica del bot y de los paneles Galerazo/Spider Tracker.
 - [2026-07-10] Agrandar visualmente la pestana seleccionada del panel Galerazo.

@@ -173,3 +173,13 @@ Este archivo es append-only a nivel conceptual: no borrar decisiones anteriores.
 - Fecha: 2026-07-10.
 - Decision: ejecutar polling con `drop_pending_updates=False` explicito.
 - Limite: solo se procesan updates que Telegram todavia conserve; las ya descartadas por Telegram no se pueden recuperar.
+
+## D-023 - Runtime unico, estable y actualizable
+
+- Estado: vigente.
+- Fecha: 2026-07-10.
+- Decision: `.python-version` fija el ultimo CPython estable exacto y Windows, CI y Docker deben coincidir hasta el patch; actualmente Python 3.14.6.
+- Dependencias: `requirements.in` enumera paquetes directos sin prereleases y `requirements.txt` fija todo el grafo instalado; actualmente PTB 22.8, python-dotenv 1.2.2, gspread 6.2.1 y google-auth 2.55.2.
+- Automatizacion: Quality valida entorno nativo y Docker; Runtime Update busca actualizaciones semanalmente y solo las fusiona despues de pasar ambas validaciones.
+- Rollback: si una actualizacion falla durante validacion no modifica `main`; si aparece una regresion posterior, revertir el commit de runtime, recrear `.venv` desde el lock restaurado y volver a validar antes de pushear.
+- Motivo: eliminar diferencias entre Windows y deploy sin renunciar a releases estables recientes.

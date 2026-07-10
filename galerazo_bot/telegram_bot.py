@@ -52,6 +52,7 @@ from .instance_lock import SingleInstance
 from .logging_utils import configure_logging
 from .pagination import BUTTON_PREFIX, build_keyboard, parse_callback_data, render_page
 from .roles import BackupResult, TriggerPayload, UserLevel
+from .runtime import ensure_python_version
 
 
 logger = logging.getLogger(__name__)
@@ -73,6 +74,7 @@ class BotState:
 
 
 def main() -> None:
+    ensure_python_version()
     configure_logging()
 
     settings = load_settings()

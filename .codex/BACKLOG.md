@@ -16,6 +16,7 @@ No hay tareas en curso.
 
 # DONE
 
+- [2026-07-10] Unificar Windows, Docker y CI en Python 3.14.6, actualizar y fijar todas las librerias, automatizar upgrades validados y documentar rollback.
 - [2026-07-10] Agrandar la pestana seleccionada del panel y fijar identidad AppUserModelID/icono del conejo en Windows.
 - [2026-07-10] Mostrar `/comando` en `/help`, agregar `/start` bilingue y fijar `drop_pending_updates=False`.
 - [2026-07-10] Aplicar globalmente la ejecucion automatica de tareas de `USER_QUEUE.md` en los 14 proyectos activos y en el inicializador de proyectos futuros.
