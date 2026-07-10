@@ -11,10 +11,11 @@
 
 # IN PROGRESS
 
-- [P0] Crear la memoria persistente `.codex/`, validar el estado consolidado del proyecto, committear y pushear todos los cambios pendientes.
+No hay tareas en curso.
 
 # DONE
 
+- [2026-07-10] Crear la memoria persistente `.codex/`, agregar el punto de entrada `AGENTS.md`, consolidar cambios pendientes y pushear `main`.
 - [2026-07-10] Migrar el bot a `python-telegram-bot` manteniendo arquitectura modular y procesamiento secuencial.
 - [2026-07-10] Implementar niveles common/admin/dev, blacklist global y restricciones por chat.
 - [2026-07-10] Implementar tracking y migracion de grupos a supergrupos para todas las tablas con `chat_id`.

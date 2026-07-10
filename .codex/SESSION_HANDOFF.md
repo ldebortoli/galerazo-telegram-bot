@@ -6,13 +6,13 @@ Mantener y ampliar Galerazo Bot como bot de Telegram modular, consistente y rean
 
 ## Tarea actual
 
-Crear y validar la memoria persistente `.codex/`; luego consolidar en Git el commit local de gastos y los cambios sin commit del panel Windows, icono y correcciones de arranque, y pushear `main`.
+No hay una tarea de implementacion activa. El proyecto queda listo para retomar desde `BACKLOG.md` o desde nuevos pedidos incorporados a `USER_QUEUE.md`.
 
-## Estado real al crear este handoff
+## Estado real al cerrar la sesion
 
 - Rama: `main`, tracking `origin/main`.
-- Antes de esta tarea, `main` estaba un commit adelante de origin: `86cbc12 Add group expense tracking`.
-- Habia cambios sin commit del panel de Windows, requirements, README, iconos y lanzador.
+- `86cbc12 Add group expense tracking` y `023c4fa Add persistent project memory and bot control panel` fueron pusheados a `origin/main`.
+- Despues de actualizar este handoff debe existir solo un commit final de estado y `main` debe quedar sincronizada con origin.
 - El bot local esta encendido y el panel esta abierto. El PID del bot se guarda en `data/bot.pid`; verificarlo dinamicamente, no confiar en un numero escrito aqui.
 - `.env` existe localmente y contiene secretos; esta ignorado y nunca debe imprimirse ni versionarse.
 - El workflow de Railway sigue desactivado intencionalmente.
@@ -27,14 +27,15 @@ Crear y validar la memoria persistente `.codex/`; luego consolidar en Git el com
 - El panel ahora pasa `.env` al hijo, valida errores tempranos y usa APIs Win32 no destructivas para comprobar PIDs.
 - El flujo real de botones Apagar/Encender termino en `BOT ENCENDIDO` sin errores.
 - Las conexiones SQLite ahora se cierran explicitamente; migracion, backup y limpieza temporal fueron validados.
+- Se creo la memoria persistente `.codex/` y `AGENTS.md` obliga a cargarla al iniciar.
+- Validaciones finales: compileall, `pip check`, CLI `hola`/`nivel`, migracion de gastos, backup SQLite, limpieza temporal, deteccion Win32 de proceso y `git diff --check`.
 
 ## Proximos pasos exactos
 
-1. Validar sintaxis, imports, `git diff --check` y pruebas focalizadas de SQLite/panel.
-2. Actualizar este handoff y mover la tarea de memoria persistente de IN PROGRESS a DONE.
-3. Crear commit con todos los cambios pendientes, incluyendo `.codex/`.
-4. Pushear `main` a `origin`.
-5. Confirmar que `main` queda sincronizada y el bot local sigue activo.
+1. Al iniciar otra sesion, leer los cinco archivos `.codex/` en el orden indicado por `AGENTS.md`.
+2. Incorporar entradas nuevas de `USER_QUEUE.md` a `BACKLOG.md` sin duplicados.
+3. Reconciliar este handoff con `git status` y con el proceso local real.
+4. Continuar con el pedido nuevo del usuario. Si no hay uno, el proximo trabajo priorizado es conectar el Google Sheet real cuando se proporcionen sus datos.
 
 ## Problemas y riesgos
 
@@ -63,3 +64,4 @@ Crear y validar la memoria persistente `.codex/`; luego consolidar en Git el com
 - `assets/galerazo-bot-icon.png`
 - `assets/galerazo-bot-icon.ico`
 - Archivos del sistema de gastos incluidos en el commit local `86cbc12`.
+- `galerazo_bot/database.py` para cierre explicito de conexiones SQLite.
