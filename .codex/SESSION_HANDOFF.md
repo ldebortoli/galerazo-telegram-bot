@@ -2,84 +2,59 @@
 
 ## Objetivo general
 
-Mantener y ampliar Galerazo Bot como bot de Telegram modular, consistente y reanudable, con SQLite como fuente de verdad, migracion completa de `chat_id` y operacion local/deploy documentados.
+Mantener y ampliar Galerazo Bot como bot de Telegram modular y reanudable, con SQLite como fuente de verdad, migracion completa de `chat_id` y operacion local/deploy documentados.
 
 ## Tarea actual
 
-No hay una tarea activa. El cierre de `/config` y el nuevo formato de Tabla de Galerazas estan implementados y probados.
+No hay una tarea activa. Todos los pedidos registrados en `USER_QUEUE.md` estan implementados, validados y en `DONE`.
 
-## Estado real al cerrar la sesion
+## Estado actual
 
-- Rama: `main`, tracking `origin/main`.
-- `86cbc12 Add group expense tracking` y `023c4fa Add persistent project memory and bot control panel` fueron pusheados a `origin/main`.
-- Despues de actualizar este handoff debe existir solo un commit final de estado y `main` debe quedar sincronizada con origin.
-- El panel local esta abierto, pero el bot local esta apagado y no existe `data/bot.pid`. El ultimo proceso termino porque otra instancia uso el mismo token para `getUpdates`; no reiniciar a ciegas hasta identificarla.
-- `.env` existe localmente y contiene secretos; esta ignorado y nunca debe imprimirse ni versionarse.
-- El workflow de Railway sigue desactivado intencionalmente.
-- `C:\Users\calei\.codex\AGENTS.md` contiene las reglas globales y sera cargado en nuevos runs de Codex.
-- `C:\Users\calei\.codex\project-memory\Initialize-ProjectMemory.ps1` inicializa proyectos nuevos sin sobrescribir memoria existente.
+- Rama `main`, tracking `origin/main`.
+- La politica global ejecuta automaticamente tareas originadas en `USER_QUEUE.md` hasta completarlas o bloquearlas; se propago a 14 proyectos activos y al inicializador de proyectos futuros.
+- El bot y el panel Galerazo tienen exclusividad local; Spider Tracker comparte un mutex entre sus paneles C# y PowerShell.
+- `/debug` serializa `Update.to_dict()`, los errores no manejados incluyen Update JSON y los logs redactan tokens.
+- `python -m galerazo_bot.log_checkpoint` esta inicializado y no reporta entradas pendientes.
+- `/help` usa `/comando`, existe `/start` bilingue y polling conserva updates pendientes con `drop_pending_updates=False`.
+- El panel carga el icono del conejo, usa AppUserModelID propio y agranda la pestana seleccionada.
+- El bot local permanece apagado; no iniciar a ciegas si existe un deploy externo con el mismo token.
+- `.env` existe, esta ignorado y nunca debe imprimirse ni versionarse.
+- Railway sigue desactivado intencionalmente.
 
-## Terminado recientemente
+## Validacion reciente
 
-- Todas las pantallas de `/config` tienen X; common recibe error de permisos y admin/dev eliminan el mensaje con popup.
-- El ranking usa `Tabla de Galerazas`, `display_name (user_id)` y nunca agrega `@`; nombres y aliases salen del cache SQLite existente.
-- La suite tiene nueve pruebas y todas pasan.
-- Se elimino el fallback PTB de comandos desconocidos en grupo 2 y el dispatcher ahora retorna `None` para nombres inexistentes.
-- `/galerazas` se registra una sola vez y ya no genera una segunda respuesta `unknown_command`.
-- Se agrego `tests/test_command_routing.py`; sus tres pruebas y `compileall` pasan.
-- Se instalo la politica global de memoria y el inicializador idempotente para proyectos futuros.
-- Se inicializo `.codex/` en los proyectos activos nombrados y repositorios reales detectados, excluyendo carpetas fechadas efimeras y `CODEX APPS`.
-- La carga automatica de `~/.codex/AGENTS.md` fue verificada contra la documentacion oficial de Codex.
-- Se validaron cinco archivos de memoria y marcador `AGENTS.md` en 14 proyectos: New project, Spider Tracker, Content Generator, Documentos de vacaciones, Galerazo Bot, INA, Liricas, Presentacion de tesis, Licenciado Dengue Web, Reshare Stories, Pixel Flow Matrix, Viajes planeados, Seguidores de Instagram y Catalogo de obras.
-- Commits pusheados: Spider Tracker `fbf2a93`, Documentos de vacaciones `0f547ee`, Reshare Stories `1260ab5` y Seguidores `d1e9100`.
-- Commits locales sin remoto: Pixel Flow `0740ed8` y Catalogo de obras `158b870`.
-- Sistema de gastos por grupo con SQLite y sincronizacion opcional a Google Sheets.
-- Panel Tkinter con control de proceso, editor de `.env` y visor de logs.
-- Lanzador C# y acceso directo `Galerazo Bot` en `C:\Users\calei\Documents\Codex\CODEX APPS`.
-- Icono PNG/ICO de conejo con galera.
-- Diagnostico del fallo de encendido: faltaba `python-dotenv` y una instancia vieja no pasaba el entorno.
-- El panel ahora pasa `.env` al hijo, valida errores tempranos y usa APIs Win32 no destructivas para comprobar PIDs.
-- El flujo real de botones Apagar/Encender termino en `BOT ENCENDIDO` sin errores.
-- Las conexiones SQLite ahora se cierran explicitamente; migracion, backup y limpieza temporal fueron validados.
-- Se creo la memoria persistente `.codex/` y `AGENTS.md` obliga a cargarla al iniciar.
-- Validaciones finales: compileall, `pip check`, CLI `hola`/`nivel`, migracion de gastos, backup SQLite, limpieza temporal, deteccion Win32 de proceso y `git diff --check`.
+- `python -m unittest discover -s tests -v`: 19 pruebas OK.
+- `python -m compileall app.py control_panel.py galerazo_bot`: OK.
+- Runtime Tkinter: padding `(20, 11)`, fuente seleccionada `Segoe UI Semibold 11`, icono cargado.
+- Lanzador Galerazo y panel Spider recompilados correctamente.
+- Parser PowerShell de Spider: OK.
+- Checkpoint de log: sin entradas nuevas pendientes.
 
-## Proximos pasos exactos
+## Proximos pasos
 
-1. Procesar el proximo pedido priorizado en BACKLOG.
-2. La prioridad operativa es garantizar instancia unica del bot/panel y resolver el conflicto de polling.
-3. Implementar despues el checkpoint incremental de logs solicitado en USER_QUEUE.
+1. Atender el proximo pedido directo o pendiente nuevo de `USER_QUEUE.md`.
+2. Para habilitar logging remoto, corregir `TELEGRAM_LOG_CHAT_ID` y asegurar que el bot sea miembro/admin del canal; el valor actual responde `Chat not found`.
+3. Conectar el Google Sheet real cuando el usuario confirme ID, hoja y credenciales.
 
-## Problemas y riesgos
+## Riesgos y bloqueos
 
-- No hay suite formal de tests; la cobertura actual es compileall y scripts focalizados.
-- El primer barrido global encontro repositorios sin remoto `origin`; el inicializador fue corregido y la repeticion idempotente termino correctamente.
-- Las instrucciones globales se descubren una vez por run; esta sesion comenzo antes del cambio, pero todos los runs futuros las cargaran.
-- Los proyectos sin Git conservan la memoria solo localmente. Pixel Flow y Catalogo tienen commit pero no remoto.
-- Reshare Stories y Seguidores mantienen cambios locales preexistentes fuera de los commits de memoria; no revertirlos ni mezclarlos accidentalmente.
-- Nunca usar `os.kill(pid, 0)` para comprobar procesos en Windows; ver D-011.
-- Antes de terminar procesos, leer y validar el PID exacto. No ejecutar operaciones contra PID 0 si falta `data/bot.pid`.
-- Dos instancias del bot causan conflictos de polling. Mantener una sola instancia local.
-- Telegram devuelve `Chat not found` para el canal de logging configurado; revisar ID y permisos antes de dar por valida esa integracion.
-- No activar deploy automatico ni transmitir `.env`/credenciales.
-- La guia README contiene algunos caracteres mojibake preexistentes en la seccion de configuracion; no se corrigieron aun porque no bloquean la funcionalidad.
+- El canal de logging no es accesible con la configuracion actual (`Chat not found`); requiere un cambio externo de ID o permisos.
+- Telegram no expone que equipo o servicio mantiene un `getUpdates`; el mutex identifica duplicados locales y el error identifica conflictos externos.
+- No activar deploy automatico ni transmitir `.env` o credenciales.
+- Reshare Stories y Seguidores conservan cambios locales ajenos; no mezclarlos ni revertirlos.
 
-## Archivos modificados o nuevos en esta linea de trabajo
+## Archivos principales modificados
 
-- `.codex/CONTEXT.md`
-- `.codex/DECISIONS.md`
-- `.codex/BACKLOG.md`
-- `.codex/USER_QUEUE.md`
-- `.codex/SESSION_HANDOFF.md`
+- `C:\Users\calei\.codex\AGENTS.md`
+- `C:\Users\calei\.codex\project-memory\Initialize-ProjectMemory.ps1`
 - `AGENTS.md`
-- `.gitignore`
-- `README.md`
-- `requirements.txt`
-- `control_panel.py`
+- `.codex/*`
+- `galerazo_bot/instance_lock.py`
+- `galerazo_bot/log_checkpoint.py`
+- `galerazo_bot/logging_utils.py`
+- `galerazo_bot/telegram_bot.py`
 - `galerazo_bot/control_panel.py`
-- `build_control_panel.ps1`
-- `launcher/GalerazoBotControlLauncher.cs`
-- `assets/galerazo-bot-icon.png`
-- `assets/galerazo-bot-icon.ico`
-- Archivos del sistema de gastos incluidos en el commit local `86cbc12`.
-- `galerazo_bot/database.py` para cierre explicito de conexiones SQLite.
+- `galerazo_bot/command_handlers/help.py`
+- `galerazo_bot/command_handlers/start.py`
+- `galerazo_bot/i18n.py`
+- `tests/*`

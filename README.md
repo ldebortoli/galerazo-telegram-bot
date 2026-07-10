@@ -4,7 +4,8 @@ Base para un bot de Telegram en Python con `python-telegram-bot` y SQLite.
 
 ## Comandos
 
-- `help` / `ayuda`: muestra los comandos disponibles para tu nivel de usuario.
+- `/help` / `/ayuda`: muestra los comandos disponibles para tu nivel de usuario.
+- `/start`: saluda y muestra como abrir la ayuda.
 - `hola`: responde un saludo.
 - `nivel`: muestra el nivel detectado para el usuario.
 - `bloquear`: bloquea un usuario. Solo devs.
@@ -501,6 +502,7 @@ python app.py
 ```
 
 El bot usa polling contra la Bot API de Telegram, asi que no necesitas exponer un webhook publico para empezar.
+El polling usa explicitamente `drop_pending_updates=False`: al volver a encenderse procesa las updates que Telegram todavia conserve. Las updates que Telegram ya haya descartado por antiguedad no se pueden recuperar.
 
 ## Hosting gratuito
 

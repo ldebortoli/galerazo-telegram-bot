@@ -8,6 +8,7 @@ data/*.sqlite3
 data/*.sqlite3-*
 data/bot.pid
 data/bot.log
+data/bot-log-checkpoint.json
 backups/*.sqlite3
 backups/*.sqlite3-*
 debug/*.json

@@ -47,6 +47,7 @@ La misma politica se aplica globalmente desde `C:\Users\calei\.codex\AGENTS.md`.
 - Todos los datos asociados a un `chat_id` deben migrarse cuando Telegram convierte un grupo en supergrupo.
 - `Database.migrate_chat_id` es el punto central de esa migracion.
 - El bot usa `concurrent_updates(False)` para procesar updates secuencialmente.
+- El polling fija `drop_pending_updates=False` para consumir updates que Telegram todavia conserve.
 - Los callbacks de botoneras se procesan en el mismo flujo secuencial.
 - La Galeraza usa una insercion atomica para garantizar un ganador por chat y dia.
 - Los datos de chats no se eliminan cuando el bot es expulsado o bloqueado; solo cambia su estado de actividad.
@@ -103,10 +104,11 @@ python -m galerazo_bot.cli hola
 python -m galerazo_bot.cli help
 python -m galerazo_bot.cli nivel
 python -m unittest discover -s tests -v
+python -m galerazo_bot.log_checkpoint
 git diff --check
 ```
 
-La suite automatizada usa `unittest`. Actualmente cubre el enrutamiento de comandos; para persistencia y panel se mantienen ademas pruebas focalizadas con bases SQLite temporales y flujo de proceso.
+La suite automatizada usa `unittest` y cubre enrutamiento, config, Galeraza, serializacion de debug, logging de errores, redaccion de secretos, checkpoint incremental e instancia unica.
 
 ## Convenciones de codigo
 
@@ -118,6 +120,7 @@ La suite automatizada usa `unittest`. Actualmente cubre el enrutamiento de coman
 - Las listas largas usan la paginacion reutilizable y nunca cortan un renglon.
 - Los comandos conservan sus nombres originales en todos los idiomas.
 - Los comandos inexistentes se ignoran silenciosamente; no registrar fallbacks en grupos posteriores de PTB que vuelvan a procesar comandos validos.
+- Antes de cerrar cada pedido se ejecuta `python -m galerazo_bot.log_checkpoint`; los errores nuevos se investigan antes de reconocer y avanzar el offset.
 - Los rankings usan nombres visibles cacheados en `users` y user IDs; no generan menciones ni hacen requests de nombres al renderizar.
 - Todas las pantallas de `/config` incluyen `config:close`; los permisos se validan antes de ejecutar cualquier callback.
 - Los niveles se validan al invocar comandos o tocar botones, no como clasificacion global permanente.

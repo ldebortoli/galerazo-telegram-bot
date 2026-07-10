@@ -9,7 +9,7 @@ from telegram.ext import CommandHandler
 
 from galerazo_bot.commands import handle_command_async
 from galerazo_bot.database import Database
-from galerazo_bot.telegram_bot import _register_handlers
+from galerazo_bot.telegram_bot import POLLING_OPTIONS, _register_handlers
 
 
 class CapturingApplication:
@@ -21,6 +21,9 @@ class CapturingApplication:
 
 
 class CommandRoutingTests(unittest.TestCase):
+    def test_polling_keeps_pending_updates(self) -> None:
+        self.assertFalse(POLLING_OPTIONS["drop_pending_updates"])
+
     def test_registered_commands_have_no_unknown_command_fallback(self) -> None:
         application = CapturingApplication()
 
@@ -76,6 +79,27 @@ class CommandRoutingTests(unittest.TestCase):
 
             self.assertIsNone(response)
             self.assertEqual(calls, 1)
+
+    def test_help_uses_slash_prefixed_commands(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            db = Database(Path(directory) / "test.sqlite3")
+            db.get_or_create_user("1", "Test User")
+
+            response = asyncio.run(handle_command_async("/help", "1", db))
+
+            self.assertIn("/help:", response)
+            self.assertIn("/start:", response)
+            self.assertNotIn("- help:", response)
+
+    def test_start_greets_and_points_to_help(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            db = Database(Path(directory) / "test.sqlite3")
+            db.get_or_create_user("1", "Test User")
+
+            response = asyncio.run(handle_command_async("/start", "1", db))
+
+            self.assertIn("Test User", response)
+            self.assertIn("/help", response)
 
 
 if __name__ == "__main__":

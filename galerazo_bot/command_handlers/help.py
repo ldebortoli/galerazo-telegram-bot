@@ -19,11 +19,11 @@ def handle(context: CommandContext, _db: Database) -> str:
             and not _db.is_command_group_enabled(context.chat_id, command.configurable_group)
         ):
             continue
-        lines.append(f"- {command.name}: {context.t(f'help.{command.command_key}')}")
+        lines.append(f"/{command.name}: {context.t(f'help.{command.command_key}')}")
     return "\n".join(lines)
 
 
 COMMANDS = {
-    "help": Command("help / ayuda", "muestra esta ayuda", handle, list_response=True),
+    "help": Command("help", "muestra esta ayuda", handle, list_response=True),
     "ayuda": Command("ayuda", "muestra esta ayuda", handle, hidden=True, list_response=True),
 }

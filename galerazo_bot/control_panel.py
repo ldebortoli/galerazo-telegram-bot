@@ -8,6 +8,8 @@ import tkinter as tk
 from pathlib import Path
 from tkinter import messagebox, ttk
 
+from .instance_lock import SingleInstance
+
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 DATA_DIR = PROJECT_ROOT / "data"
@@ -16,6 +18,7 @@ LOG_PATH = DATA_DIR / "bot.log"
 ENV_PATH = PROJECT_ROOT / ".env"
 ICON_PNG_PATH = PROJECT_ROOT / "assets" / "galerazo-bot-icon.png"
 ICON_ICO_PATH = PROJECT_ROOT / "assets" / "galerazo-bot-icon.ico"
+WINDOWS_APP_ID = "GalerazoBot.ControlPanel"
 
 FIELDS = (
     ("TELEGRAM_BOT_TOKEN", "Token del bot", True),
@@ -143,8 +146,14 @@ class ControlPanel(tk.Tk):
         style.configure("Title.TLabel", font=("Segoe UI Semibold", 22))
         style.configure("Status.TLabel", font=("Segoe UI Semibold", 12))
         style.configure("TNotebook", background=self.BG, borderwidth=0)
-        style.configure("TNotebook.Tab", background=self.PANEL, foreground=self.MUTED, padding=(18, 9))
-        style.map("TNotebook.Tab", background=[("selected", self.BORDER)], foreground=[("selected", self.TEXT)])
+        style.configure("TNotebook.Tab", background=self.PANEL, foreground=self.MUTED, padding=(14, 8), font=("Segoe UI", 10))
+        style.map(
+            "TNotebook.Tab",
+            background=[("selected", self.BORDER)],
+            foreground=[("selected", self.TEXT)],
+            padding=[("selected", (20, 11))],
+            font=[("selected", ("Segoe UI Semibold", 11))],
+        )
         style.configure("TEntry", fieldbackground="#17283d", foreground=self.TEXT, insertcolor=self.TEXT, bordercolor=self.BORDER, padding=8)
         style.configure("TButton", background="#1c293a", foreground=self.TEXT, bordercolor=self.BORDER, padding=(14, 9))
         style.map("TButton", background=[("active", "#293a50"), ("disabled", self.PANEL)])
@@ -362,4 +371,18 @@ class ControlPanel(tk.Tk):
 
 
 def main() -> None:
-    ControlPanel().mainloop()
+    _configure_windows_app_identity()
+    instance = SingleInstance(f"control-panel:{PROJECT_ROOT}")
+    if not instance.acquire():
+        messagebox.showinfo("Galerazo Bot", "El panel de control ya esta abierto.")
+        return
+    try:
+        ControlPanel().mainloop()
+    finally:
+        instance.release()
+
+
+def _configure_windows_app_identity() -> None:
+    if os.name != "nt":
+        return
+    ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(WINDOWS_APP_ID)

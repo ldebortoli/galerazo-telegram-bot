@@ -15,11 +15,13 @@ from .novedad import COMMANDS as NOVEDAD_COMMANDS
 from .reportar import COMMANDS as REPORTAR_COMMANDS
 from .restrictions import COMMANDS as RESTRICTIONS_COMMANDS
 from .salir import COMMANDS as SALIR_COMMANDS
+from .start import COMMANDS as START_COMMANDS
 from .triggers import COMMANDS as TRIGGERS_COMMANDS
 
 
 COMMANDS: dict[str, Command] = {
     **HELP_COMMANDS,
+    **START_COMMANDS,
     **HOLA_COMMANDS,
     **NIVEL_COMMANDS,
     **BLACKLIST_COMMANDS,

@@ -141,3 +141,35 @@ Este archivo es append-only a nivel conceptual: no borrar decisiones anteriores.
 - Decision: el ranking se titula `Tabla de Galerazas` y muestra `display_name (user_id)`; si falta nombre visible usa el username sin `@` y finalmente `Usuario`.
 - Motivo: evitar menciones/notificaciones y distinguir usuarios con nombres repetidos sin consultas adicionales a Telegram.
 - Persistencia: la tabla `users` ya cachea y actualiza `display_name`/`username` al recibir updates; `get_galeraza_scores` resuelve todo con un JOIN local.
+
+## D-019 - Ejecucion automatica de la cola del usuario
+
+- Estado: vigente.
+- Fecha: 2026-07-10.
+- Decision: al comenzar un run, cada pedido pendiente de `USER_QUEUE.md` se incorpora sin duplicados a `BACKLOG.md`, se marca como procesado y luego se ejecuta automaticamente por prioridad hasta quedar completado o realmente bloqueado.
+- Semantica: `Procesadas` solo confirma que la entrada fue incorporada al backlog; una tarea esta resuelta unicamente cuando figura en `DONE` despues de implementacion, validacion y documentacion.
+- Continuidad: terminar el pedido directo que inicio el run no detiene el trabajo pendiente de la cola. Si una tarea se bloquea, se registra el bloqueo preciso y se continua con otras tareas ejecutables.
+- Alcance: todos los proyectos activos y futuros mediante la politica global y el inicializador de memoria.
+
+## D-020 - Exclusividad por token y por panel
+
+- Estado: vigente.
+- Fecha: 2026-07-10.
+- Decision: el proceso Telegram toma un mutex derivado del token y el panel toma otro derivado del proyecto; una segunda instancia local se rechaza antes de iniciar.
+- Conflictos externos: un `telegram.error.Conflict` detiene el proceso con un diagnostico que indica revisar otros equipos o deploys.
+- Motivo: el archivo PID del panel no cubria ejecuciones directas de `app.py` ni otros lanzadores.
+
+## D-021 - Checkpoint incremental y redaccion de logs
+
+- Estado: vigente.
+- Fecha: 2026-07-10.
+- Decision: `python -m galerazo_bot.log_checkpoint` revisa solo bytes nuevos de `data/bot.log`; no avanza ante errores hasta recibir `--acknowledge` despues de investigarlos.
+- Seguridad: toda salida de logging pasa por `SecretRedactionFilter` y oculta tokens incluidos en URLs de Telegram.
+- Persistencia local: `data/bot-log-checkpoint.json` esta ignorado por Git.
+
+## D-022 - Updates pendientes conservadas
+
+- Estado: vigente.
+- Fecha: 2026-07-10.
+- Decision: ejecutar polling con `drop_pending_updates=False` explicito.
+- Limite: solo se procesan updates que Telegram todavia conserve; las ya descartadas por Telegram no se pueden recuperar.

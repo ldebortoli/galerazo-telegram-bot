@@ -22,3 +22,13 @@ Before ending a session:
 - commit and push when a remote is configured.
 
 Do not expose or version `.env`, credentials, databases, logs, backups or local PID files.
+
+<!-- codex-user-queue-execution -->
+## Automatic user queue execution
+
+`Procesadas` in `.codex/USER_QUEUE.md` means incorporated into `BACKLOG.md`, not completed. After handling the direct message that starts a run, automatically execute every unblocked queue-derived backlog task by priority. Continue until each is implemented, validated and moved to `DONE`, or record its precise blocker and continue with other executable queued work. Do not stop after triage or after only one queued task unless the user explicitly asks to pause, stop or only report status.
+
+<!-- galerazo-bot-log-checkpoint -->
+## Bot log checkpoint
+
+Before ending every user instruction, run `python -m galerazo_bot.log_checkpoint`. It reads only new entries from `data/bot.log`. If it reports errors, investigate and fix them before finishing; after the entries are understood and addressed, run `python -m galerazo_bot.log_checkpoint --acknowledge` and then run the normal check once more. Never print `.env` or secrets while diagnosing logs.

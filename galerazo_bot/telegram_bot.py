@@ -11,7 +11,7 @@ from pathlib import Path
 from zoneinfo import ZoneInfo
 
 from telegram import Bot, Chat, ChatMember, Message, Update, User
-from telegram.error import BadRequest, Forbidden, TelegramError
+from telegram.error import BadRequest, Conflict, Forbidden, TelegramError
 from telegram.ext import (
     Application,
     ApplicationBuilder,
@@ -48,6 +48,8 @@ from .expenses import (
 from .galeraza import build_galeraza_lines, render_galeraza_page
 from .google_sheets import GoogleSheetsConfig, GoogleSheetsExpenseWriter
 from .i18n import DEFAULT_LANGUAGE, t
+from .instance_lock import SingleInstance
+from .logging_utils import configure_logging
 from .pagination import BUTTON_PREFIX, build_keyboard, parse_callback_data, render_page
 from .roles import BackupResult, TriggerPayload, UserLevel
 
@@ -56,6 +58,10 @@ logger = logging.getLogger(__name__)
 TELEGRAM_DOCUMENT_UPLOAD_LIMIT_BYTES = 50 * 1024 * 1024
 TELEGRAM_MESSAGE_LIMIT_CHARS = 4096
 PAGINATED_METADATA_TTL = timedelta(days=14)
+POLLING_OPTIONS = {
+    "allowed_updates": Update.ALL_TYPES,
+    "drop_pending_updates": False,
+}
 
 
 @dataclass(frozen=True)
@@ -67,28 +73,38 @@ class BotState:
 
 
 def main() -> None:
-    logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
+    configure_logging()
 
     settings = load_settings()
     if not settings.telegram_bot_token:
         raise RuntimeError("Falta TELEGRAM_BOT_TOKEN en el archivo .env")
 
-    db = Database(settings.database_path)
-    application = (
-        ApplicationBuilder()
-        .token(settings.telegram_bot_token)
-        .post_init(_post_init)
-        .concurrent_updates(False)
-        .build()
-    )
-    application.bot_data["settings"] = settings
-    application.bot_data["db"] = db
+    instance = SingleInstance(f"telegram-bot-token:{settings.telegram_bot_token}")
+    if not instance.acquire():
+        raise RuntimeError(
+            "Ya hay otra instancia local de este bot en ejecucion. "
+            "Apagala desde el panel que la inicio antes de volver a encenderla."
+        )
 
-    _register_handlers(application)
-    application.add_error_handler(_handle_error)
+    try:
+        db = Database(settings.database_path)
+        application = (
+            ApplicationBuilder()
+            .token(settings.telegram_bot_token)
+            .post_init(_post_init)
+            .concurrent_updates(False)
+            .build()
+        )
+        application.bot_data["settings"] = settings
+        application.bot_data["db"] = db
 
-    logger.info("Galerazo Bot escuchando mensajes de Telegram.")
-    application.run_polling(allowed_updates=Update.ALL_TYPES)
+        _register_handlers(application)
+        application.add_error_handler(_handle_error)
+
+        logger.info("Galerazo Bot escuchando mensajes de Telegram.")
+        application.run_polling(**POLLING_OPTIONS)
+    finally:
+        instance.release()
 
 
 def _register_handlers(application: Application) -> None:
@@ -435,10 +451,21 @@ async def _my_chat_member_entrypoint(update: Update, context: ContextTypes.DEFAU
 
 async def _handle_error(update: object, context: ContextTypes.DEFAULT_TYPE) -> None:
     logger.exception("Error no handleado procesando update.", exc_info=context.error)
+    if isinstance(context.error, Conflict):
+        logger.error(
+            "Telegram rechazo el polling porque otra instancia externa usa este token. "
+            "Revisar otros equipos, servicios o deploys activos."
+        )
+        context.application.stop_running()
     settings = context.application.bot_data.get("settings")
     if settings is None or context.error is None:
         return
-    await _send_unhandled_error_event(context.bot, settings.telegram_log_chat_id, context.error)
+    await _send_unhandled_error_event(
+        context.bot,
+        settings.telegram_log_chat_id,
+        context.error,
+        update,
+    )
 
 
 def _display_name(user: User | None) -> str | None:
@@ -1035,12 +1062,20 @@ async def _send_unhandled_error_event(
     bot: Bot,
     log_chat_id: str | None,
     exc: BaseException,
+    update: object = None,
 ) -> None:
     trace = "".join(traceback.format_exception(type(exc), exc, exc.__traceback__))
-    if len(trace) > 3200:
-        trace = trace[-3200:]
+    if len(trace) > 2200:
+        trace = trace[-2200:]
 
-    await _send_log_event(bot, log_chat_id, f"Error no handleado:\n{trace}")
+    update_json = _serialize_update(update)
+    text = f"Error no handleado:\n{trace}\nUpdate JSON:\n{update_json}"
+    await _send_log_text_with_truncation(
+        bot,
+        log_chat_id,
+        text,
+        truncation_notice="El reporte de error y su update fueron truncados al limite de Telegram.",
+    )
 
 
 async def _send_log_event(bot: Bot, log_chat_id: str | None, text: str) -> None:
@@ -1129,7 +1164,7 @@ async def _send_debug_update(
     message: Message,
     update: Update,
 ) -> bool:
-    debug_json = update.to_json(indent=2)
+    debug_json = _serialize_update(update)
     wrapped_json = f"```json\n{debug_json}\n```"
 
     try:
@@ -1153,6 +1188,16 @@ async def _send_debug_update(
     except (TelegramError, OSError) as exc:
         logger.warning("No pude enviar update de debug: %s", exc)
         return False
+
+
+def _serialize_update(update: object) -> str:
+    if isinstance(update, Update):
+        payload = update.to_dict()
+    elif update is None:
+        payload = None
+    else:
+        payload = update
+    return json.dumps(payload, ensure_ascii=False, indent=2, default=repr)
 
 
 async def _leave_chat(db: Database, bot: Bot, chat_id: int) -> bool:

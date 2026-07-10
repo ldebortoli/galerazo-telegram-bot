@@ -3,21 +3,12 @@
 ## P1
 
 - Conectar el sistema de gastos con el Google Sheet real cuando el usuario proporcione o confirme el spreadsheet ID, worksheet y credenciales de service account.
-- Garantizar una sola instancia del bot y una sola ventana del panel Galerazo; identificar la instancia que usa el token. Aplicar el mismo bloqueo de panel unico a Spider Tracker.
 - Corregir `TELEGRAM_LOG_CHAT_ID` o los permisos del bot: Telegram responde `Chat not found` al enviar eventos de inicio.
-- Implementar un checkpoint incremental de `data/bot.log` al terminar cada instruccion de Codex, revisar solo entradas nuevas y corregir errores detectados.
-- Corregir `/debug` para responder con la update JSON o adjuntarla como archivo cuando exceda el limite de Telegram.
-- Registrar junto con cada fallo la update JSON que lo causo para facilitar el debug posterior.
 
 ## P2
 
 - Activar el deploy automatico de Railway solo cuando el usuario lo pida y despues de verificar `RAILWAY_TOKEN` y `RAILWAY_SERVICE_ID`.
 - Ampliar la suite automatizada para base de datos, permisos, migraciones de chat, paginacion y panel de control.
-- Hacer que la pestana seleccionada del panel Galerazo se vea mas grande que las no seleccionadas.
-- Mostrar comandos como `/comando` en `/help` en vez de `- comando`.
-- Agregar `/start` con saludo y referencia a `/help`.
-- Verificar y garantizar que el polling procese updates pendientes recibidas mientras el bot estuvo apagado, salvo descarte de Telegram.
-- Mostrar el icono del conejo en la barra de tareas mientras el panel Galerazo esta abierto.
 
 # IN PROGRESS
 
@@ -25,6 +16,12 @@ No hay tareas en curso.
 
 # DONE
 
+- [2026-07-10] Agrandar la pestana seleccionada del panel y fijar identidad AppUserModelID/icono del conejo en Windows.
+- [2026-07-10] Mostrar `/comando` en `/help`, agregar `/start` bilingue y fijar `drop_pending_updates=False`.
+- [2026-07-10] Aplicar globalmente la ejecucion automatica de tareas de `USER_QUEUE.md` en los 14 proyectos activos y en el inicializador de proyectos futuros.
+- [2026-07-10] Implementar el checkpoint incremental obligatorio de `data/bot.log`, corregir los errores detectados y redactar tokens en logs existentes y futuros.
+- [2026-07-10] Corregir `/debug` con JSON en mensaje/archivo y adjuntar la update JSON a cada error no manejado.
+- [2026-07-10] Garantizar una sola instancia local del bot por token y una sola ventana de los paneles Galerazo/Spider; cerrar Galerazo ante conflictos de polling externos con diagnostico explicito.
 - [2026-07-10] Agregar X a todas las pantallas de `/config`, con cierre permitido solo para admines/devs y pruebas de permisos.
 - [2026-07-10] Renombrar el ranking a `Tabla de Galerazas` y mostrar nombre visible mas user ID sin menciones ni requests de Telegram.
 - [2026-07-10] Corregir la doble respuesta de `/galerazas`, eliminar el fallback `unknown_command`, ignorar comandos inexistentes y agregar pruebas de regresion.
