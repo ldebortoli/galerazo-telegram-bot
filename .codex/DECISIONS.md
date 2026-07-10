@@ -125,3 +125,19 @@ Este archivo es append-only a nivel conceptual: no borrar decisiones anteriores.
 - Decision: ignorar silenciosamente comandos que no existen y no registrar un fallback PTB en un grupo posterior.
 - Motivo: los handlers de distintos grupos pueden procesar el mismo update; el fallback de grupo 2 respondia `unknown_command` incluso despues de que `/galerazas` ya habia sido manejado correctamente en grupo 1.
 - Validacion: pruebas para `/inventado`, `!inventado`, texto desconocido, registro unico de `/galerazas` y ausencia de handlers en grupo 2.
+
+## D-017 - Cierre autorizado del menu de configuracion
+
+- Estado: vigente.
+- Fecha: 2026-07-10.
+- Decision: todas las pantallas de `/config` incluyen una X con callback `config:close`; solo admines y devs pueden eliminar el mensaje.
+- Motivo: permitir cerrar el tablero sin dejar botoneras obsoletas y conservar el mismo control de permisos de todas las opciones de configuracion.
+- Validacion: presencia de X en los cuatro tipos de menu, parseo del callback, rechazo de common y cierre para admin/dev.
+
+## D-018 - Ranking sin menciones y con nombres cacheados
+
+- Estado: vigente.
+- Fecha: 2026-07-10.
+- Decision: el ranking se titula `Tabla de Galerazas` y muestra `display_name (user_id)`; si falta nombre visible usa el username sin `@` y finalmente `Usuario`.
+- Motivo: evitar menciones/notificaciones y distinguir usuarios con nombres repetidos sin consultas adicionales a Telegram.
+- Persistencia: la tabla `users` ya cachea y actualiza `display_name`/`username` al recibir updates; `get_galeraza_scores` resuelve todo con un JOIN local.

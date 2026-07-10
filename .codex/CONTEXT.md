@@ -118,6 +118,8 @@ La suite automatizada usa `unittest`. Actualmente cubre el enrutamiento de coman
 - Las listas largas usan la paginacion reutilizable y nunca cortan un renglon.
 - Los comandos conservan sus nombres originales en todos los idiomas.
 - Los comandos inexistentes se ignoran silenciosamente; no registrar fallbacks en grupos posteriores de PTB que vuelvan a procesar comandos validos.
+- Los rankings usan nombres visibles cacheados en `users` y user IDs; no generan menciones ni hacen requests de nombres al renderizar.
+- Todas las pantallas de `/config` incluyen `config:close`; los permisos se validan antes de ejecutar cualquier callback.
 - Los niveles se validan al invocar comandos o tocar botones, no como clasificacion global permanente.
 
 ## Git y deploy

@@ -35,6 +35,7 @@ def build_main_menu(language: str) -> InlineKeyboardMarkup:
         [
             [InlineKeyboardButton(t(language, "config.language"), callback_data=f"{CONFIG_PREFIX}:language")],
             [InlineKeyboardButton(t(language, "config.commands"), callback_data=f"{CONFIG_PREFIX}:commands")],
+            [_close_button()],
         ]
     )
 
@@ -49,7 +50,7 @@ def build_language_menu(current_language: str) -> InlineKeyboardMarkup:
         ]
         for language in LANGUAGES
     ]
-    rows.append([_back_button(current_language, f"{CONFIG_PREFIX}:main")])
+    rows.append(_navigation_row(current_language, f"{CONFIG_PREFIX}:main"))
     return InlineKeyboardMarkup(rows)
 
 
@@ -58,7 +59,7 @@ def build_command_groups_menu(language: str) -> InlineKeyboardMarkup:
         [InlineKeyboardButton(command_group_label(group.key, language), callback_data=f"{CONFIG_PREFIX}:command:{group.key}")]
         for group in COMMAND_GROUPS
     ]
-    rows.append([_back_button(language, f"{CONFIG_PREFIX}:main")])
+    rows.append(_navigation_row(language, f"{CONFIG_PREFIX}:main"))
     return InlineKeyboardMarkup(rows)
 
 
@@ -75,7 +76,7 @@ def build_command_group_menu(command_group: str, enabled: bool, language: str) -
                     callback_data=f"{CONFIG_PREFIX}:set:{command_group}:0",
                 ),
             ],
-            [_back_button(language, f"{CONFIG_PREFIX}:commands")],
+            _navigation_row(language, f"{CONFIG_PREFIX}:commands"),
         ]
     )
 
@@ -108,6 +109,14 @@ def parse_config_callback(data: str) -> tuple[str, ...] | None:
 
 def _back_button(language: str, callback_data: str) -> InlineKeyboardButton:
     return InlineKeyboardButton(t(language, "config.back"), callback_data=callback_data)
+
+
+def _close_button() -> InlineKeyboardButton:
+    return InlineKeyboardButton("\u274c", callback_data=f"{CONFIG_PREFIX}:close")
+
+
+def _navigation_row(language: str, back_callback_data: str) -> list[InlineKeyboardButton]:
+    return [_back_button(language, back_callback_data), _close_button()]
 
 
 def _selected_label(label: str, selected: bool) -> str:

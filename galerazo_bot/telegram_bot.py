@@ -749,6 +749,10 @@ async def _handle_config_callback(db: Database, message: Message, parsed: tuple[
     chat_id = str(message.chat.id)
     language = _chat_language(db, message.chat.id)
 
+    if action == "close":
+        await message.delete()
+        return t(language, "config.closed")
+
     if action == "main":
         await message.edit_text(t(language, "config.title"), reply_markup=build_main_menu(language))
         return None

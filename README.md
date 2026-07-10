@@ -273,12 +273,12 @@ Ranking:
 Formato:
 
 ```text
-Galeraza!
-usuario1 (id1) => 5
-usuario2 (id2) => 4
+Tabla de Galerazas
+Nombre visible 1 (id1) => 5
+Nombre visible 2 (id2) => 4
 ```
 
-El ranking se ordena de mayor a menor puntaje.
+El ranking se ordena de mayor a menor puntaje. Usa el nombre visible guardado en SQLite y el user ID; no incluye `@alias`, por lo que no genera menciones. Los nombres se actualizan cuando el bot recibe nuevas updates de esos usuarios y el ranking no hace requests adicionales a Telegram.
 
 ### Orden y consistencia
 
@@ -296,6 +296,8 @@ Menu principal:
 - `Comandos`: muestra los conjuntos de comandos configurables por grupo.
 
 Todos los submenus tienen un boton `< Atrás`. El menu principal no tiene boton de volver.
+
+Todos los niveles del menu incluyen una X roja para cerrar y eliminar el mensaje de configuracion. Igual que el resto del tablero, solo pueden usarla admines del chat, quien agrego el bot o devs.
 
 El idioma por defecto siempre es español. Si un grupo cambia a inglés, los textos que el bot muestra o envia en ese grupo pasan a inglés: respuestas de comandos, menús, popups de botoneras, backups/debug captions y mensajes de La Galeraza.
 

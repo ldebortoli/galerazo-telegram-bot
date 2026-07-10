@@ -14,10 +14,10 @@ def build_galeraza_lines(scores: list[GalerazaScore], language: str = DEFAULT_LA
 
 
 def _score_line(score: GalerazaScore, language: str) -> str:
-    if score.username:
-        name = f"@{score.username}"
-    elif score.display_name:
+    if score.display_name:
         name = score.display_name
+    elif score.username:
+        name = score.username
     else:
         name = t(language, "user.unknown")
 

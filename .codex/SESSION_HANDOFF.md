@@ -6,7 +6,7 @@ Mantener y ampliar Galerazo Bot como bot de Telegram modular, consistente y rean
 
 ## Tarea actual
 
-No hay una tarea activa. El bug de doble respuesta de comandos esta corregido y cubierto por pruebas.
+No hay una tarea activa. El cierre de `/config` y el nuevo formato de Tabla de Galerazas estan implementados y probados.
 
 ## Estado real al cerrar la sesion
 
@@ -21,6 +21,9 @@ No hay una tarea activa. El bug de doble respuesta de comandos esta corregido y 
 
 ## Terminado recientemente
 
+- Todas las pantallas de `/config` tienen X; common recibe error de permisos y admin/dev eliminan el mensaje con popup.
+- El ranking usa `Tabla de Galerazas`, `display_name (user_id)` y nunca agrega `@`; nombres y aliases salen del cache SQLite existente.
+- La suite tiene nueve pruebas y todas pasan.
 - Se elimino el fallback PTB de comandos desconocidos en grupo 2 y el dispatcher ahora retorna `None` para nombres inexistentes.
 - `/galerazas` se registra una sola vez y ya no genera una segunda respuesta `unknown_command`.
 - Se agrego `tests/test_command_routing.py`; sus tres pruebas y `compileall` pasan.
@@ -43,9 +46,9 @@ No hay una tarea activa. El bug de doble respuesta de comandos esta corregido y 
 
 ## Proximos pasos exactos
 
-1. Procesar el proximo pedido del usuario desde `USER_QUEUE.md`/`BACKLOG.md`.
-2. Antes de encender localmente, resolver la instancia duplicada que usa el token de Telegram.
-3. El proximo trabajo funcional priorizado sigue siendo conectar el Google Sheet real cuando se proporcionen sus datos.
+1. Procesar el proximo pedido priorizado en BACKLOG.
+2. La prioridad operativa es garantizar instancia unica del bot/panel y resolver el conflicto de polling.
+3. Implementar despues el checkpoint incremental de logs solicitado en USER_QUEUE.
 
 ## Problemas y riesgos
 
