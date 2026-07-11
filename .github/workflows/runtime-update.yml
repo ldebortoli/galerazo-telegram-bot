@@ -16,6 +16,7 @@ permissions:
 jobs:
   update:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -26,6 +27,8 @@ jobs:
         uses: actions/setup-python@v6
         with:
           python-version: "3.x"
+          cache: pip
+          cache-dependency-path: requirements.in
 
       - name: Align runtime files
         run: python scripts/runtime_versions.py --set-running
@@ -37,7 +40,18 @@ jobs:
           .update-venv/bin/python -m pip install --upgrade --requirement requirements.in
           .update-venv/bin/python -m pip freeze > requirements.txt
 
+      - name: Detect runtime changes
+        id: changes
+        run: |
+          if git diff --quiet -- .python-version Dockerfile requirements.txt; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "Runtime and dependencies are already current."
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Validate updated environment
+        if: steps.changes.outputs.changed == 'true'
         run: |
           .update-venv/bin/python scripts/runtime_versions.py
           .update-venv/bin/python -m unittest discover -s tests -v
@@ -45,19 +59,17 @@ jobs:
           .update-venv/bin/python -m pip check
 
       - name: Validate updated Docker image
+        if: steps.changes.outputs.changed == 'true'
         run: |
           docker build --tag galerazo-bot:update-test .
           docker run --rm galerazo-bot:update-test python -m unittest discover -s tests -v
           docker run --rm galerazo-bot:update-test python scripts/runtime_versions.py
 
       - name: Create and merge validated update
+        if: steps.changes.outputs.changed == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          if git diff --quiet; then
-            echo "Runtime and dependencies are already current."
-            exit 0
-          fi
           branch="automation/runtime-update"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"

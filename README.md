@@ -92,6 +92,16 @@ El workflow `Update runtime and dependencies` corre semanalmente y tambien se pu
 
 Solo despues de esas validaciones crea y fusiona la actualizacion. Si algun paso falla, el workflow termina antes de modificar `main`, por lo que el estado anterior queda activo.
 
+Si no encuentra cambios de runtime o dependencias, omite la suite y el build Docker para no consumir minutos innecesarios.
+
+### CI y consumo de GitHub Actions
+
+- `Quality` ejecuta la suite Linux solo ante cambios sustantivos. Commits limitados a `.codex/`, Markdown o `.gitignore` no generan un run.
+- Pushes nuevos a la misma rama cancelan un run anterior que todavia este activo.
+- `Docker quality` corre solo cuando cambian Dockerfile, `.python-version`, dependencias o la configuracion del propio workflow. Tambien puede iniciarse manualmente.
+- El deploy desactivado es exclusivamente manual y no crea runs omitidos en cada push.
+- Los jobs tienen timeouts de 10, 15 y 20 minutos para evitar consumo indefinido ante un bloqueo.
+
 Si aparece un problema despues de fusionar una actualizacion, ubica ese commit y revertirlo conserva el historial:
 
 ```powershell

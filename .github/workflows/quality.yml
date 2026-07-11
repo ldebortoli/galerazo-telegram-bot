@@ -2,11 +2,29 @@ name: Quality
 
 on:
   push:
+    branches:
+      - main
+    paths-ignore:
+      - ".codex/**"
+      - "**/*.md"
+      - ".gitignore"
   pull_request:
+    branches:
+      - main
+    paths-ignore:
+      - ".codex/**"
+      - "**/*.md"
+      - ".gitignore"
+  workflow_dispatch:
+
+concurrency:
+  group: quality-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   test:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -31,18 +49,3 @@ jobs:
 
       - name: Check installed dependencies
         run: python -m pip check
-
-  docker:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v7
-
-      - name: Build image
-        run: docker build --tag galerazo-bot:test .
-
-      - name: Run tests in image
-        run: docker run --rm galerazo-bot:test python -m unittest discover -s tests -v
-
-      - name: Verify Docker Python
-        run: docker run --rm galerazo-bot:test python scripts/runtime_versions.py

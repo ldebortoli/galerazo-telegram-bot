@@ -265,3 +265,14 @@ Este archivo es append-only a nivel conceptual: no borrar decisiones anteriores.
 - Decision: en capas de 16 a 64 px, recortar automaticamente el area superior cuadrada del arte para mostrar conejo, cara y ala de la galera sin deformacion; las capas de 128/256 px mantienen la ilustracion completa.
 - Motivo: el arte completo es alto y angosto, por lo que solo ocupaba 10 de 16 pixeles de ancho en la barra de tareas.
 - Validacion: la capa activa 16x16 ocupa 14x14 con un margen uniforme de un pixel; la suite exige al menos 75% de ocupacion horizontal y vertical en todas las capas pequenas.
+
+## D-034 - CI proporcional al cambio
+
+- Estado: vigente.
+- Fecha: 2026-07-11.
+- Decision: commits solo documentales (`.codex`, Markdown y `.gitignore`) no disparan Quality; cambios sustantivos ejecutan un unico job Linux y cancelan runs anteriores de la misma rama.
+- Docker: se separa en `docker-quality.yml` y corre automaticamente solo al cambiar Dockerfile, runtime, lock de dependencias o el propio workflow; tambien admite ejecucion manual.
+- Deploy: mientras permanezca desactivado solo admite `workflow_dispatch`, por lo que ya no crea un run omitido en cada push.
+- Runtime update: conserva frecuencia semanal, pero no compila ni prueba cuando la resolucion produce exactamente las mismas versiones.
+- Limites: Quality tiene timeout de 10 minutos, Docker 15 y Runtime Update 20.
+- Motivo: en repositorios privados GitHub contabiliza cada job por separado y redondea su duracion al minuto siguiente; los dos jobs cortos anteriores consumian al menos dos minutos por push.

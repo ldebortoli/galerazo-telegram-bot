@@ -10,7 +10,7 @@
 
 # IN PROGRESS
 
-No hay tareas en curso.
+- Reducir el consumo de GitHub Actions: ignorar commits documentales, cancelar runs obsoletos, ejecutar Docker solo ante cambios de runtime/contenedor y evitar runs de deploy mientras siga desactivado.
 
 # DONE
 

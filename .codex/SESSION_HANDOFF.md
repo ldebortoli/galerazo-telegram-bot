@@ -6,7 +6,7 @@ Mantener y ampliar Galerazo Bot como bot de Telegram modular y reanudable, con S
 
 ## Tarea actual
 
-No hay tareas autonomas en curso. Solo quedan los bloqueos externos de Google Sheets real y activacion explicita de Railway.
+Optimizar GitHub Actions para reducir minutos consumidos sin perder validacion local, Linux ni Docker cuando corresponda.
 
 ## Estado actual
 
@@ -18,7 +18,8 @@ No hay tareas autonomas en curso. Solo quedan los bloqueos externos de Google Sh
 - `requirements.txt` fija tambien todas las dependencias transitivas y `pip list --outdated` devuelve una lista vacia.
 - El lanzador compilado prioriza `.venv\Scripts\pythonw.exe`.
 - `scripts/sync_windows_runtime.ps1` fue probado de punta a punta y recrea/valida el entorno local desde `.python-version`.
-- Quality prueba Python nativo y Docker; Runtime Update busca estables semanalmente y fusiona solo despues de validar.
+- Quality prueba Python en Linux; Docker Quality valida el contenedor cuando cambia su runtime; Runtime Update busca estables semanalmente y fusiona solo despues de validar.
+- Quality quedo reducido a un job Linux por cambio sustantivo; Docker corre por separado solo ante cambios de runtime/contenedor, y commits documentales no disparan CI.
 - Railway continua desactivado.
 - `.env` sigue ignorado y nunca debe imprimirse ni versionarse.
 - El panel abierto bajo PID `1376` usa un ICO con nueve capas DIB BGRA de 32 bits; las capas 16..64 usan composicion compacta y el icono 16x16 activo ocupa 14x14 con margen transparente uniforme de un pixel.
