@@ -25,6 +25,8 @@ No hay tareas autonomas pendientes. Solo quedan dos tareas bloqueadas por input 
 - El bot fue reiniciado con el codigo actual y esta activo bajo el PID de control `5076`; polling, logging y startup respondieron HTTP 200.
 - El canal de logging esta verificado como accesible en `data/integration-status.json`.
 - `/ruletarusa`, triggers ampliados, prefijos, help agrupado, debug JSON y listas sin menciones estan implementados.
+- El feature commit `1fe268d` fue pusheado a `origin/main`.
+- La regla global exige que cada tarea procesada de USER_QUEUE quede DONE, IN PROGRESS o con bloqueo inline; tambien se actualizo el inicializador de proyectos futuros.
 
 ## Validacion reciente
 
@@ -36,7 +38,8 @@ No hay tareas autonomas pendientes. Solo quedan dos tareas bloqueadas por input 
 - `python -m pip list --outdated --format=json`: `[]`.
 - Lanzador Galerazo recompilado correctamente.
 - Checkpoint posterior al reinicio: sin errores nuevos.
-- Docker local no esta instalado; confirmar build y tests con GitHub Actions.
+- GitHub Actions Quality `29134479207`: success, incluidos build y tests Docker.
+- GitHub Actions Deploy: skipped intencionalmente.
 
 ## Proximos pasos
 
