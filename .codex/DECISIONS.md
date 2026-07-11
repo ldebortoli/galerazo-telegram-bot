@@ -276,3 +276,11 @@ Este archivo es append-only a nivel conceptual: no borrar decisiones anteriores.
 - Runtime update: conserva frecuencia semanal, pero no compila ni prueba cuando la resolucion produce exactamente las mismas versiones.
 - Limites: Quality tiene timeout de 10 minutos, Docker 15 y Runtime Update 20.
 - Motivo: en repositorios privados GitHub contabiliza cada job por separado y redondea su duracion al minuto siguiente; los dos jobs cortos anteriores consumian al menos dos minutos por push.
+
+## D-035 - Altura reservada para el estado de integraciones
+
+- Estado: vigente.
+- Fecha: 2026-07-11.
+- Decision: el panel abre en `760x720`, no permite menos de `680x700` y reduce el padding vertical de Configuracion a 16 px.
+- Motivo: con el layout anterior el label de logging solicitaba 21 px pero Tk solo le asignaba 14, cortando el texto inferior.
+- Validacion: una prueba nativa de Windows instancia Tk a la altura minima y exige que `winfo_height >= winfo_reqheight` para el label.

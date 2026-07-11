@@ -118,8 +118,8 @@ class ControlPanel(tk.Tk):
     def __init__(self) -> None:
         super().__init__()
         self.title("Galerazo Bot - Control")
-        self.geometry("760x690")
-        self.minsize(680, 620)
+        self.geometry("760x720")
+        self.minsize(680, 700)
         self.configure(bg=self.BG)
         self.variables: dict[str, tk.StringVar] = {}
         self.starting_process: subprocess.Popen[str] | None = None
@@ -205,7 +205,7 @@ class ControlPanel(tk.Tk):
         self.notebook = ttk.Notebook(outer)
         self.notebook.pack(fill="both", expand=True)
         self.control_tab = ttk.Frame(self.notebook, padding=(4, 22))
-        self.config_tab = ttk.Frame(self.notebook, padding=(4, 20))
+        self.config_tab = ttk.Frame(self.notebook, padding=(4, 16))
         self.logs_tab = ttk.Frame(self.notebook, padding=(4, 20))
         self.notebook.add(self.control_tab, text="Control")
         self.notebook.add(self.config_tab, text="Configuración")

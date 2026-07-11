@@ -6,7 +6,7 @@ Mantener y ampliar Galerazo Bot como bot de Telegram modular y reanudable, con S
 
 ## Tarea actual
 
-No hay tareas autonomas en curso. Solo quedan los bloqueos externos de Google Sheets real y activacion explicita de Railway.
+No hay tareas autonomas en curso. Quedan bloqueados Google Sheets real, Railway y la comprobacion visual del medio de pago de GitHub.
 
 ## Estado actual
 
@@ -22,10 +22,11 @@ No hay tareas autonomas en curso. Solo quedan los bloqueos externos de Google Sh
 - Quality quedo reducido a un job Linux por cambio sustantivo; Docker corre por separado solo ante cambios de runtime/contenedor, y commits documentales no disparan CI.
 - Railway continua desactivado.
 - `.env` sigue ignorado y nunca debe imprimirse ni versionarse.
-- El panel abierto bajo PID `1376` usa un ICO con nueve capas DIB BGRA de 32 bits; las capas 16..64 usan composicion compacta y el icono 16x16 activo ocupa 14x14 con margen transparente uniforme de un pixel.
+- El panel abierto bajo PID `18228` usa un ICO con nueve capas DIB BGRA de 32 bits; las capas 16..64 usan composicion compacta y el icono 16x16 activo ocupa 14x14 con margen transparente uniforme de un pixel.
+- El panel abre en 760x720 (minimo 680x700); el label de logging recibe sus 21 px requeridos y muestra completo `Canal de logging: OK - Canal de logging accesible.`
 - El canal de logging esta verificado como accesible en `data/integration-status.json`.
 - `/ruletarusa`, triggers ampliados, prefijos, help agrupado, debug JSON y listas sin menciones estan implementados.
-- La Galeraza usa el timestamp Telegram con timezone argentino y el bot fue reiniciado con ese codigo bajo PID de control `10416`.
+- La Galeraza usa el timestamp Telegram con timezone argentino. El bot esta actualmente apagado y no existe `data/bot.pid`; el panel queda abierto para iniciarlo cuando el usuario lo decida.
 - `PerChatUpdateProcessor` serializa FIFO cada chat, permite que chats distintos avancen en paralelo y conserva el orden durante migraciones del ID de grupo al de supergrupo.
 - `try_award_daily_galeraza` usa `BEGIN IMMEDIATE` ademas de la clave unica por chat/fecha.
 - El ganador historico de Dankgentina del 2026-07-11 fue corregido a [Lewito] Leonardo (360780605), mensaje 1337843, timestamp Telegram `2026-07-11T03:08:17+00:00`; backup previo en `data/backups/galerazo-backup-20260711-030434.sqlite3`.
@@ -39,7 +40,7 @@ No hay tareas autonomas en curso. Solo quedan los bloqueos externos de Google Sh
 
 - `.venv\Scripts\python.exe --version`: Python 3.14.6.
 - `python scripts/runtime_versions.py`: runtime alineado.
-- `python -m unittest discover -s tests -v`: 59 pruebas OK.
+- `python -m unittest discover -s tests -v`: 60 pruebas OK, incluida la geometria Tk nativa de Windows.
 - `python -m compileall app.py control_panel.py galerazo_bot scripts`: OK.
 - `python -m pip check`: sin dependencias rotas.
 - `python -m pip list --outdated --format=json`: `[]`.
@@ -50,10 +51,12 @@ No hay tareas autonomas en curso. Solo quedan los bloqueos externos de Google Sh
 - GitHub Actions Docker Quality `29142895267`: success; se disparo una vez por la creacion del workflow y en adelante solo corre para cambios de runtime/contenedor.
 - El push `f58718a` no genero ningun run de Deploy; el workflow desactivado quedo exclusivamente manual.
 - El push documental `fbde709` genero cero runs, confirmando que `.codex`/Markdown ya no consumen Actions.
+- Checkpoint mas reciente: bytes 193931..249232 sin errores nuevos.
 
 ## Proximos pasos
 
-1. Mantener bloqueados Google Sheets real y Railway hasta recibir el input correspondiente.
+1. Para confirmar el medio de pago, iniciar sesion en GitHub en el navegador disponible o autorizar explicitamente `gh auth refresh -h github.com -s user`; no ampliar scopes sin confirmacion.
+2. Mantener bloqueados Google Sheets real y Railway hasta recibir el input correspondiente.
 
 ## Riesgos y bloqueos
 
@@ -62,6 +65,7 @@ No hay tareas autonomas en curso. Solo quedan los bloqueos externos de Google Sh
 - No activar Railway ni exponer `.env` o credenciales.
 - Google Sheets real esta bloqueado hasta que el usuario confirme spreadsheet ID, worksheet y credenciales de service account.
 - Railway esta bloqueado por decision explicita: solo se activa cuando el usuario lo pida y existan sus secrets.
+- Facturacion personal GitHub no se pudo leer: la API devolvio 404 por falta de scope `user` y la sesion web disponible estaba deslogueada. Segun GitHub, sin medio de pago valido se bloquea el uso al agotar la cuota.
 
 ## Archivos principales modificados
 

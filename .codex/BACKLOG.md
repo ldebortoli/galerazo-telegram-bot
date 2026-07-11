@@ -3,6 +3,7 @@
 ## P1
 
 - [BLOCKED: falta que el usuario confirme spreadsheet ID, worksheet y credenciales de service account] Conectar el sistema de gastos con el Google Sheet real.
+- [BLOCKED: el token `gh` no tiene scope `user`/Plan y el navegador disponible no tiene sesion GitHub; requiere iniciar sesion o autorizar explicitamente ampliar el scope] Confirmar visualmente si la cuenta personal tiene medio de pago cargado. La documentacion oficial confirma que, si no existe un medio valido, Actions se bloquea al agotar la cuota y no cobra excedentes.
 
 ## P2
 
@@ -14,6 +15,7 @@ No hay tareas en curso.
 
 # DONE
 
+- [2026-07-11] Corregir el texto truncado del estado de logging: ampliar el panel, ajustar padding y agregar una prueba Tk nativa que confirma 21/21 px de altura asignada.
 - [2026-07-11] Reducir GitHub Actions a un job Linux por cambio sustantivo, cero runs para commits documentales, Docker solo por cambios de runtime/contenedor y deploy manual mientras siga desactivado.
 - [2026-07-11] Agrandar el icono de barra de tareas con una composicion compacta no deformada para capas de 16 a 64 px; pasar de 10x14 a 14x14 visibles en la capa activa de 16 px.
 - [2026-07-11] Corregir el fondo negro del icono pequeno: regenerar las nueve capas ICO como DIB BGRA de 32 bits con alfa/mascara AND, recompilar el lanzador y verificar la ventana activa.

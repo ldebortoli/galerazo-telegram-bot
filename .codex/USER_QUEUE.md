@@ -4,6 +4,8 @@ No hay pedidos sin procesar.
 
 # Procesadas
 
+- [2026-07-11] Verificar si la cuenta de GitHub tiene medio de pago y si GitHub Actions podria generar cobros.
+- [2026-07-11] Corregir el texto cortado del estado del canal de logging en la pestaña Configuracion del panel.
 - [2026-07-11] Hacer que las UIs de control cierren su proceso administrado al cerrar la ventana, en este proyecto y globalmente para UIs equivalentes.
 - [2026-07-11] Extender triggers a todos los tipos de mensaje que el bot pueda volver a enviar y rechazar eventos no reproducibles.
 - [2026-07-11] En `/debug`, enviar archivos sin caption y nombrarlos `Debug de la update {update_id}`.

@@ -121,6 +121,8 @@ git diff --check
 
 La suite automatizada usa `unittest` y cubre enrutamiento, permisos, config, Galeraza, ruleta, triggers, migraciones con colisiones, paginacion, serializacion de debug, logging, panel e instancia unica.
 
+El panel usa un cliente inicial de `760x720`, minimo `680x700`; la pestaña Configuracion reserva altura completa para el estado del canal de logging.
+
 ## Convenciones de codigo
 
 - ASCII por defecto en archivos nuevos.
