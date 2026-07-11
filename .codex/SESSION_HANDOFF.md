@@ -49,6 +49,7 @@ No hay tareas autonomas en curso. Solo quedan los bloqueos externos de Google Sh
 - GitHub Actions Quality `29142895279`: success con un unico job Linux.
 - GitHub Actions Docker Quality `29142895267`: success; se disparo una vez por la creacion del workflow y en adelante solo corre para cambios de runtime/contenedor.
 - El push `f58718a` no genero ningun run de Deploy; el workflow desactivado quedo exclusivamente manual.
+- El push documental `fbde709` genero cero runs, confirmando que `.codex`/Markdown ya no consumen Actions.
 
 ## Proximos pasos
 
