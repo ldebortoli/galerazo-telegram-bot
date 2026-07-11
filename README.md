@@ -308,11 +308,11 @@ El ranking se ordena de mayor a menor puntaje. Usa el nombre visible guardado en
 
 ### Orden y consistencia
 
-El bot corre con `concurrent_updates(False)` para procesar un update por vez. Esto es importante para La Galeraza y para cualquier comando que liste datos: primero se procesan los efectos del mensaje entrante y despues se ejecuta el comando correspondiente, de modo que `/galerazas` y las demas listas lean la base ya actualizada.
+El bot usa un `PerChatUpdateProcessor` basado en `BaseUpdateProcessor` de `python-telegram-bot`. Las updates de un mismo chat se procesan en orden FIFO, por lo que primero se aplican los efectos del mensaje entrante y despues se ejecuta un `/galerazas` posterior. Chats distintos pueden avanzar en paralelo y no se bloquean entre si.
 
-El premio diario usa una insercion atomica en SQLite (`INSERT OR IGNORE`) por chat y fecha. Si llegan dos mensajes candidatos muy cerca, solo el primero que se procese para ese chat y dia suma el punto.
+El premio diario usa una transaccion `BEGIN IMMEDIATE` y una insercion atomica en SQLite (`INSERT OR IGNORE`) por chat y fecha. Si llegan dos mensajes candidatos muy cerca, solo el primero que se procese para ese chat y dia suma el punto. Las migraciones a supergrupo unen la secuencia del ID viejo con la del nuevo.
 
-La fecha se calcula exclusivamente desde `message.date` de Telegram, convertido a `America/Argentina/Buenos_Aires` mediante `tzdata`; no usa la hora de recepción ni el reloj local de Windows. Esto permite procesar updates pendientes después de una suspensión sin mover mensajes al día equivocado. Ediciones, bots, posts de canal y eventos de servicio no compiten por La Galeraza.
+La fecha se calcula exclusivamente desde `message.date` de Telegram, convertido a `America/Argentina/Buenos_Aires` mediante `tzdata`; no usa la hora de recepción, el reloj local ni el timezone configurado en Windows, Docker o el servidor. Esto permite procesar updates pendientes después de una suspensión sin mover mensajes al día equivocado. Ediciones, bots, posts de canal y eventos de servicio no compiten por La Galeraza.
 
 ## Configuracion por grupo
 

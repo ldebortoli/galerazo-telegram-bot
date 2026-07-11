@@ -53,6 +53,7 @@ from .logging_utils import configure_logging
 from .pagination import BUTTON_PREFIX, build_keyboard, parse_callback_data, render_page
 from .roles import BackupResult, RussianRouletteHitResult, TriggerPayload, UserLevel
 from .runtime import ensure_python_version
+from .update_processor import PerChatUpdateProcessor
 
 
 logger = logging.getLogger(__name__)
@@ -91,13 +92,7 @@ def main() -> None:
 
     try:
         db = Database(settings.database_path)
-        application = (
-            ApplicationBuilder()
-            .token(settings.telegram_bot_token)
-            .post_init(_post_init)
-            .concurrent_updates(False)
-            .build()
-        )
+        application = _build_application(settings.telegram_bot_token, db)
         application.bot_data["settings"] = settings
         application.bot_data["db"] = db
 
@@ -108,6 +103,16 @@ def main() -> None:
         application.run_polling(**POLLING_OPTIONS)
     finally:
         instance.release()
+
+
+def _build_application(token: str, db: Database) -> Application:
+    return (
+        ApplicationBuilder()
+        .token(token)
+        .post_init(_post_init)
+        .concurrent_updates(PerChatUpdateProcessor(db.resolve_chat_id))
+        .build()
+    )
 
 
 def _register_handlers(application: Application) -> None:
@@ -1096,10 +1101,16 @@ def _register_chat_from_message(message: Message, db: Database) -> None:
 
 
 def _handle_chat_migration(message: Message, db: Database) -> bool:
-    old_chat_id = message.chat.id if message.chat is not None else None
-    new_chat_id = message.migrate_to_chat_id
+    if message.chat is None:
+        return False
 
-    if old_chat_id is None or new_chat_id is None:
+    if message.migrate_to_chat_id is not None:
+        old_chat_id = message.chat.id
+        new_chat_id = message.migrate_to_chat_id
+    elif message.migrate_from_chat_id is not None:
+        old_chat_id = message.migrate_from_chat_id
+        new_chat_id = message.chat.id
+    else:
         return False
 
     db.migrate_chat_id(old_chat_id=str(old_chat_id), new_chat_id=str(new_chat_id))

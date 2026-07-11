@@ -6,7 +6,7 @@ Mantener y ampliar Galerazo Bot como bot de Telegram modular y reanudable, con S
 
 ## Tarea actual
 
-No hay tareas autonomas en curso. Falta input del usuario para reasignar el punto historico incorrecto y para los dos bloqueos externos preexistentes.
+No hay tareas autonomas en curso. Solo quedan los bloqueos externos de Google Sheets real y activacion explicita de Railway.
 
 ## Estado actual
 
@@ -24,7 +24,10 @@ No hay tareas autonomas en curso. Falta input del usuario para reasignar el punt
 - El panel abierto usa un ICO multirresolucion DIB valido; el icono pequeno leido desde `WM_GETICON` muestra el conejo con galera.
 - El canal de logging esta verificado como accesible en `data/integration-status.json`.
 - `/ruletarusa`, triggers ampliados, prefijos, help agrupado, debug JSON y listas sin menciones estan implementados.
-- La Galeraza usa el timestamp Telegram con timezone argentino y el bot fue reiniciado con ese codigo bajo PID de control `14572`.
+- La Galeraza usa el timestamp Telegram con timezone argentino y el bot fue reiniciado con ese codigo bajo PID de control `10416`.
+- `PerChatUpdateProcessor` serializa FIFO cada chat, permite que chats distintos avancen en paralelo y conserva el orden durante migraciones del ID de grupo al de supergrupo.
+- `try_award_daily_galeraza` usa `BEGIN IMMEDIATE` ademas de la clave unica por chat/fecha.
+- El ganador historico de Dankgentina del 2026-07-11 fue corregido a [Lewito] Leonardo (360780605), mensaje 1337843, timestamp Telegram `2026-07-11T03:08:17+00:00`; backup previo en `data/backups/galerazo-backup-20260711-030434.sqlite3`.
 - El panel Galerazo fue reabierto con cierre propietario del bot; Spider Tracker recibio la misma politica y fue pusheado en `cc17958`.
 - La base real ya tiene `galeraza_daily_winners.message_date` y `triggers.payload_json`.
 - Los seis pedidos nuevos de USER_QUEUE estan implementados y probados.
@@ -35,19 +38,18 @@ No hay tareas autonomas en curso. Falta input del usuario para reasignar el punt
 
 - `.venv\Scripts\python.exe --version`: Python 3.14.6.
 - `python scripts/runtime_versions.py`: runtime alineado.
-- `python -m unittest discover -s tests -v`: 54 pruebas OK.
+- `python -m unittest discover -s tests -v`: 59 pruebas OK.
 - `python -m compileall app.py control_panel.py galerazo_bot scripts`: OK.
 - `python -m pip check`: sin dependencias rotas.
 - `python -m pip list --outdated --format=json`: `[]`.
 - Lanzador Galerazo recompilado correctamente.
-- Checkpoint posterior al reinicio: sin errores nuevos.
+- Checkpoint posterior al reinicio PID 10416: bytes 172406..179931 sin errores nuevos.
 - GitHub Actions Quality `29141960498`: success, incluidos build y 54 tests en Docker.
 - GitHub Actions Deploy: skipped intencionalmente.
 
 ## Proximos pasos
 
-1. Cuando el usuario identifique al ganador correcto del 2026-07-11, corregir ganador y puntajes en una transaccion con backup previo.
-2. Mantener bloqueados Google Sheets real y Railway hasta recibir el input correspondiente.
+1. Mantener bloqueados Google Sheets real y Railway hasta recibir el input correspondiente.
 
 ## Riesgos y bloqueos
 
@@ -70,6 +72,8 @@ No hay tareas autonomas en curso. Falta input del usuario para reasignar el punt
 - `scripts/runtime_versions.py`
 - `galerazo_bot/runtime.py`
 - `galerazo_bot/telegram_bot.py`
+- `galerazo_bot/update_processor.py`
+- `galerazo_bot/database.py`
 - `galerazo_bot/control_panel.py`
 - `launcher/GalerazoBotControlLauncher.cs`
 - `README.md`
@@ -79,3 +83,5 @@ No hay tareas autonomas en curso. Falta input del usuario para reasignar el punt
 - `assets/galerazo-bot-icon.ico`
 - `build_control_panel.ps1`
 - `tests/test_windows_icon.py`
+- `tests/test_update_processor.py`
+- `tests/test_galeraza.py`

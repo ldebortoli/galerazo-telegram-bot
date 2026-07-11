@@ -10,6 +10,8 @@ data/bot.pid
 data/bot.log
 data/bot-log-checkpoint.json
 data/integration-status.json
+data/backups/*.sqlite3
+data/backups/*.sqlite3-*
 backups/*.sqlite3
 backups/*.sqlite3-*
 debug/*.json

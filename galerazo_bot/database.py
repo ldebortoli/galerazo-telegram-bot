@@ -1064,6 +1064,7 @@ class Database:
         chat_id = self.resolve_chat_id(chat_id)
         self.get_or_create_user(user_id)
         with self._connect() as conn:
+            conn.execute("BEGIN IMMEDIATE")
             cursor = conn.execute(
                 """
                 INSERT OR IGNORE INTO galeraza_daily_winners (

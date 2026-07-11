@@ -3,7 +3,6 @@
 ## P1
 
 - [BLOCKED: falta que el usuario confirme spreadsheet ID, worksheet y credenciales de service account] Conectar el sistema de gastos con el Google Sheet real.
-- [BLOCKED: falta que el usuario indique el user ID/nombre o enlace al verdadero primer mensaje] Corregir el punto historico mal asignado en Dankgentina para el 2026-07-11; el ganador incorrecto identificado es Luke Inverse (240524686), mensaje 1337832.
 
 ## P2
 
@@ -15,6 +14,8 @@ No hay tareas en curso.
 
 # DONE
 
+- [2026-07-11] Reemplazar la serializacion global por orden FIFO por chat usando `PerChatUpdateProcessor`, mantener paralelismo entre chats, coordinar migraciones a supergrupo y reforzar La Galeraza con una transaccion SQLite inmediata.
+- [2026-07-11] Corregir con backup previo el ganador historico de Dankgentina del 2026-07-11: [Lewito] Leonardo (360780605), mensaje 1337843, reemplazo a Luke Inverse sin dejar el punto duplicado.
 - [2026-07-11] Corregir La Galeraza para usar `message.date` de Telegram convertido con `tzdata` a `America/Argentina/Buenos_Aires`, ignorando bots, ediciones y eventos de servicio.
 - [2026-07-11] Hacer que cerrar los paneles Galerazo y Spider Tracker apague sus procesos administrados y establecer la regla global para proyectos futuros.
 - [2026-07-11] Extender triggers con animaciones, contactos, ubicaciones, lugares y encuestas, ademas de los tipos multimedia existentes; rechazar eventos no reproducibles y validar todo en una suite de 54 pruebas.

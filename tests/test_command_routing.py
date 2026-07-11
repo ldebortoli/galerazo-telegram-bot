@@ -9,7 +9,8 @@ from telegram.ext import CommandHandler
 
 from galerazo_bot.commands import handle_command_async
 from galerazo_bot.database import Database
-from galerazo_bot.telegram_bot import POLLING_OPTIONS, _register_handlers
+from galerazo_bot.telegram_bot import POLLING_OPTIONS, _build_application, _register_handlers
+from galerazo_bot.update_processor import PerChatUpdateProcessor
 
 
 class CapturingApplication:
@@ -23,6 +24,14 @@ class CapturingApplication:
 class CommandRoutingTests(unittest.TestCase):
     def test_polling_keeps_pending_updates(self) -> None:
         self.assertFalse(POLLING_OPTIONS["drop_pending_updates"])
+
+    def test_application_uses_per_chat_update_processor(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            db = Database(Path(directory) / "test.sqlite3")
+            application = _build_application("123456:TEST_TOKEN", db)
+
+        self.assertIsInstance(application.update_processor, PerChatUpdateProcessor)
+        self.assertEqual(application.concurrent_updates, 256)
 
     def test_registered_commands_have_no_unknown_command_fallback(self) -> None:
         application = CapturingApplication()

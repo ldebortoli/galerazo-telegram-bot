@@ -2,8 +2,10 @@ from __future__ import annotations
 
 import tempfile
 import unittest
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 from pathlib import Path
+from threading import Barrier
 
 from telegram import Chat, Message, Update, User
 
@@ -108,6 +110,33 @@ class GalerazaAwardTests(unittest.TestCase):
                 ).fetchone()
 
             self.assertEqual(row["message_date"], message_date)
+
+    def test_concurrent_database_candidates_create_only_one_winner(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            db = Database(Path(directory) / "test.sqlite3")
+            db.register_chat("-1", "group", "Group")
+            barrier = Barrier(2)
+
+            def attempt(user_id: str, message_id: str) -> bool:
+                barrier.wait()
+                return db.try_award_daily_galeraza(
+                    "-1",
+                    "2026-07-11",
+                    user_id,
+                    message_id,
+                    "2026-07-11T03:00:00+00:00",
+                )
+
+            with ThreadPoolExecutor(max_workers=2) as executor:
+                results = list(
+                    executor.map(
+                        lambda args: attempt(*args),
+                        [("1", "10"), ("2", "11")],
+                    )
+                )
+
+            self.assertEqual(results.count(True), 1)
+            self.assertEqual(sum(score.points for score in db.get_galeraza_scores("-1")), 1)
 
 
 if __name__ == "__main__":

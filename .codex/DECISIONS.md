@@ -240,3 +240,12 @@ Este archivo es append-only a nivel conceptual: no borrar decisiones anteriores.
 - Fecha: 2026-07-11.
 - Decision: `WM_DELETE_WINDOW` ejecuta `stop_bot` antes de destruir la UI. La misma politica se registro globalmente y se aplico al panel de Spider Tracker.
 - Motivo: evitar procesos administrados sin una UI visible para controlarlos.
+
+## D-031 - Orden por chat con paralelismo entre chats
+
+- Estado: vigente; reemplaza D-002.
+- Fecha: 2026-07-11.
+- Decision: usar un `BaseUpdateProcessor` de PTB que serializa FIFO todas las updates del mismo chat, permite hasta 256 updates activas de chats distintos y une la secuencia del ID viejo/nuevo durante migraciones a supergrupo.
+- Persistencia: la adjudicacion diaria ejecuta `BEGIN IMMEDIATE` y conserva la restriccion unica `(chat_id, game_date)` para que dos candidatos nunca sumen dos puntos.
+- Rendimiento: el bloqueo solo dura el procesamiento de una update de ese chat; no bloquea llamadas de otros chats y la resolucion canonica del `chat_id` se cachea en memoria.
+- Motivo: preservar el primer mensaje y el orden causal de callbacks/comandos sin convertir un chat lento en un bloqueo global del bot.

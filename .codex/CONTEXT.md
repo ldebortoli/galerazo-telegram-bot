@@ -53,9 +53,9 @@ La misma politica se aplica globalmente desde `C:\Users\calei\.codex\AGENTS.md`.
 - Cada operacion abre una conexion corta mediante un context manager y garantiza commit/rollback y cierre explicito.
 - Todos los datos asociados a un `chat_id` deben migrarse cuando Telegram convierte un grupo en supergrupo.
 - `Database.migrate_chat_id` es el punto central de esa migracion.
-- El bot usa `concurrent_updates(False)` para procesar updates secuencialmente.
+- El bot usa `PerChatUpdateProcessor`: conserva orden FIFO dentro de cada chat y permite procesar chats distintos en paralelo.
 - El polling fija `drop_pending_updates=False` para consumir updates que Telegram todavia conserve.
-- Los callbacks de botoneras se procesan en el mismo flujo secuencial.
+- Los callbacks de botoneras se procesan en la misma secuencia del chat correspondiente.
 - La Galeraza usa una insercion atomica para garantizar un ganador por chat y dia.
 - La fecha de La Galeraza sale exclusivamente de `message.date` de Telegram convertido a `America/Argentina/Buenos_Aires`; bots, ediciones y eventos de servicio no compiten.
 - La ruleta rusa usa `BEGIN IMMEDIATE` para consumir atomicamente una recamara por usuario/chat; viene deshabilitada por defecto y migra con el chat.
