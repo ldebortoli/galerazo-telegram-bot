@@ -33,6 +33,7 @@ La misma politica se aplica globalmente desde `C:\Users\calei\.codex\AGENTS.md`.
 - `galerazo_bot/chat_config.py`: menus y grupos de comandos configurables.
 - `galerazo_bot/i18n.py`: textos en espanol e ingles. Los nombres de comandos no se traducen.
 - `galerazo_bot/galeraza.py`: reglas y formato del juego diario.
+- `galerazo_bot/command_handlers/ruletarusa.py`: juego persistente de seis recamaras y seleccion de objetivo por nivel.
 - `galerazo_bot/expenses.py` y `google_sheets.py`: gastos, formato y sincronizacion.
 - `galerazo_bot/control_panel.py`: UI local, manejo del proceso, `.env` y logs.
 - `launcher/GalerazoBotControlLauncher.cs`: lanzador Windows.
@@ -55,6 +56,7 @@ La misma politica se aplica globalmente desde `C:\Users\calei\.codex\AGENTS.md`.
 - El polling fija `drop_pending_updates=False` para consumir updates que Telegram todavia conserve.
 - Los callbacks de botoneras se procesan en el mismo flujo secuencial.
 - La Galeraza usa una insercion atomica para garantizar un ganador por chat y dia.
+- La ruleta rusa usa `BEGIN IMMEDIATE` para consumir atomicamente una recamara por usuario/chat; viene deshabilitada por defecto y migra con el chat.
 - Los datos de chats no se eliminan cuando el bot es expulsado o bloqueado; solo cambia su estado de actividad.
 
 ## Configuracion
@@ -114,7 +116,7 @@ python -m galerazo_bot.log_checkpoint
 git diff --check
 ```
 
-La suite automatizada usa `unittest` y cubre enrutamiento, config, Galeraza, serializacion de debug, logging de errores, redaccion de secretos, checkpoint incremental e instancia unica.
+La suite automatizada usa `unittest` y cubre enrutamiento, permisos, config, Galeraza, ruleta, triggers, migraciones con colisiones, paginacion, serializacion de debug, logging, panel e instancia unica.
 
 ## Convenciones de codigo
 
@@ -127,6 +129,7 @@ La suite automatizada usa `unittest` y cubre enrutamiento, config, Galeraza, ser
 - Las listas de usuarios muestran siempre el user ID entre parentesis.
 - Las listas largas usan la paginacion reutilizable y nunca cortan un renglon.
 - Los comandos conservan sus nombres originales en todos los idiomas.
+- Los comandos aceptan `/`, `!`, `.`, `>`, `$`, `galerazobot` y `galerazo_bot` como prefijos.
 - Los comandos inexistentes se ignoran silenciosamente; no registrar fallbacks en grupos posteriores de PTB que vuelvan a procesar comandos validos.
 - Antes de cerrar cada pedido se ejecuta `python -m galerazo_bot.log_checkpoint`; los errores nuevos se investigan antes de reconocer y avanzar el offset.
 - Los rankings usan nombres visibles cacheados en `users` y user IDs; no generan menciones ni hacen requests de nombres al renderizar.

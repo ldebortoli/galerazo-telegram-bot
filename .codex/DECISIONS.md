@@ -183,3 +183,36 @@ Este archivo es append-only a nivel conceptual: no borrar decisiones anteriores.
 - Automatizacion: Quality valida entorno nativo y Docker; Runtime Update busca actualizaciones semanalmente y solo las fusiona despues de pasar ambas validaciones.
 - Rollback: si una actualizacion falla durante validacion no modifica `main`; si aparece una regresion posterior, revertir el commit de runtime, recrear `.venv` desde el lock restaurado y volver a validar antes de pushear.
 - Motivo: eliminar diferencias entre Windows y deploy sin renunciar a releases estables recientes.
+
+## D-024 - ICO multirresolucion nativo para el panel
+
+- Estado: vigente.
+- Fecha: 2026-07-10.
+- Decision: generar `assets/galerazo-bot-icon.ico` desde el PNG fuente durante `build_control_panel.ps1`, con capas DIB nativas para 16, 20, 24, 32, 40, 48, 64, 128 y 256 pixeles.
+- Motivo: GDI corrompia visualmente las capas pequenas comprimidas como PNG aunque el directorio ICO fuera valido; la barra de titulo de Tk necesita representaciones nativas compatibles.
+- Validacion: extraccion correcta de la capa de 16 pixeles, lectura del `WM_GETICON` de la ventana activa y prueba estructural automatizada.
+
+## D-025 - Estado explicito para cada tarea de USER_QUEUE
+
+- Estado: vigente; refuerza D-019.
+- Fecha: 2026-07-10.
+- Decision: toda tarea incorporada desde `USER_QUEUE` debe figurar en `IN PROGRESS`, `DONE` o con `[BLOCKED: causa exacta]` en su propia linea del backlog; no puede quedar como pendiente P1/P2 sin calificacion.
+- Cierre: antes de finalizar un run se auditan todas las entradas procesadas contra esos estados. Si se agota la cuota durante una tarea, queda en `IN PROGRESS` y el handoff registra el siguiente paso exacto.
+- Alcance: regla global en `C:\Users\calei\.codex\AGENTS.md` y en el inicializador de proyectos futuros.
+
+## D-026 - Ruleta rusa atomica y deshabilitada por defecto
+
+- Estado: vigente.
+- Fecha: 2026-07-10.
+- Decision: `/ruletarusa` mantiene una recamara aleatoria y cantidad de disparos por `chat_id`/`user_id` en SQLite; cada jugada usa `BEGIN IMMEDIATE` y elimina el estado al acertar.
+- Configuracion: pertenece al grupo `ruletarusa`, deshabilitado por defecto. Antes de consumir estado se valida que el bot sea admin con permiso para restringir miembros.
+- Protecciones: common solo se apunta a si mismo; admin/dev puede apuntar al usuario respondido; bot, admines y devs no son expulsados.
+- Migracion: `russian_roulette_states` forma parte obligatoria de `Database.migrate_chat_id`.
+
+## D-027 - Sin dependencia adicional para comandos y listas
+
+- Estado: vigente.
+- Fecha: 2026-07-10.
+- Decision: no agregar otra libreria para prefijos, listas, usuarios, media o ruleta. `python-telegram-bot`, SQLite y la libreria estandar ya cubren las APIs necesarias.
+- Simplificacion aplicada: `user_display.py` concentra resolucion y formato `nombre (id)` para blacklist, restricciones y gastos; se eliminaron helpers duplicados y el helper de gastos obsoleto.
+- Motivo: una dependencia nueva no reemplazaria logica significativa y aumentaria mantenimiento.

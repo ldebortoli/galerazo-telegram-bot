@@ -6,7 +6,7 @@ Mantener y ampliar Galerazo Bot como bot de Telegram modular y reanudable, con S
 
 ## Tarea actual
 
-No hay tarea activa. El runtime y las dependencias quedaron actualizados y validados localmente; falta confirmar los checks Docker de GitHub Actions despues del push.
+No hay tareas autonomas pendientes. Solo quedan dos tareas bloqueadas por input o autorizacion explicita del usuario.
 
 ## Estado actual
 
@@ -21,30 +21,35 @@ No hay tarea activa. El runtime y las dependencias quedaron actualizados y valid
 - Quality prueba Python nativo y Docker; Runtime Update busca estables semanalmente y fusiona solo despues de validar.
 - Railway continua desactivado.
 - `.env` sigue ignorado y nunca debe imprimirse ni versionarse.
+- El panel abierto usa un ICO multirresolucion DIB valido; el icono pequeno leido desde `WM_GETICON` muestra el conejo con galera.
+- El bot fue reiniciado con el codigo actual y esta activo bajo el PID de control `5076`; polling, logging y startup respondieron HTTP 200.
+- El canal de logging esta verificado como accesible en `data/integration-status.json`.
+- `/ruletarusa`, triggers ampliados, prefijos, help agrupado, debug JSON y listas sin menciones estan implementados.
 
 ## Validacion reciente
 
 - `.venv\Scripts\python.exe --version`: Python 3.14.6.
 - `python scripts/runtime_versions.py`: runtime alineado.
-- `python -m unittest discover -s tests -v`: 20 pruebas OK.
+- `python -m unittest discover -s tests -v`: 44 pruebas OK.
 - `python -m compileall app.py control_panel.py galerazo_bot scripts`: OK.
 - `python -m pip check`: sin dependencias rotas.
 - `python -m pip list --outdated --format=json`: `[]`.
 - Lanzador Galerazo recompilado correctamente.
+- Checkpoint posterior al reinicio: sin errores nuevos.
 - Docker local no esta instalado; confirmar build y tests con GitHub Actions.
 
 ## Proximos pasos
 
-1. Pushear cambios y verificar ambos jobs del workflow Quality.
-2. Si Docker falla por Python o dependencias, corregir o revertir esta actualizacion antes de darla por terminada.
-3. Atender el proximo pedido o una entrada nueva de `USER_QUEUE.md`.
+1. Cuando el usuario provea spreadsheet ID, worksheet y credenciales, conectar el Google Sheet real.
+2. Cuando el usuario pida activar Railway, verificar sus secrets y habilitar el workflow.
 
 ## Riesgos y bloqueos
 
 - Docker no puede validarse en esta maquina porque el comando no esta instalado.
 - La creacion/fusion automatica de PRs depende de que el repositorio permita `GITHUB_TOKEN` con `contents` y `pull-requests` write; un fallo deja `main` sin cambios.
-- El canal de logging sigue respondiendo `Chat not found` hasta corregir ID/permisos externos.
 - No activar Railway ni exponer `.env` o credenciales.
+- Google Sheets real esta bloqueado hasta que el usuario confirme spreadsheet ID, worksheet y credenciales de service account.
+- Railway esta bloqueado por decision explicita: solo se activa cuando el usuario lo pida y existan sus secrets.
 
 ## Archivos principales modificados
 
@@ -64,3 +69,7 @@ No hay tarea activa. El runtime y las dependencias quedaron actualizados y valid
 - `README.md`
 - `AGENTS.md`
 - `tests/test_runtime_versions.py`
+- `scripts/build_windows_icon.ps1`
+- `assets/galerazo-bot-icon.ico`
+- `build_control_panel.ps1`
+- `tests/test_windows_icon.py`

@@ -5,10 +5,22 @@ from ..database import Database
 from ..roles import CommandContext
 
 
+HELP_GROUPS = (
+    ("general", {"help", "start", "hola", "nivel", "chats", "reportar"}),
+    ("blocking", {"bloquear", "desbloquear", "desloquear", "listanegra", "bloqueados"}),
+    ("chat_admin", {"config", "restringir", "habilitar", "restringidos", "salir"}),
+    ("galeraza", {"galerazas"}),
+    ("triggers", {"agregartrigger", "agrtrigger", "borrartrigger", "eliminartrigger", "eltrigger", "triggers"}),
+    ("games", {"ruletarusa"}),
+    ("expenses", {"habilitargastos", "deshabilitargastos", "gasto", "ultimosgastos", "estadogastos", "sincronizargastos"}),
+    ("dev", {"novedad", "backup", "debug"}),
+)
+
+
 def handle(context: CommandContext, _db: Database) -> str:
     from ..commands import iter_commands
 
-    lines = [context.t("help.header")]
+    available = []
     for command in iter_commands():
         if command.hidden or context.user_level < command.min_level:
             continue
@@ -19,7 +31,23 @@ def handle(context: CommandContext, _db: Database) -> str:
             and not _db.is_command_group_enabled(context.chat_id, command.configurable_group)
         ):
             continue
-        lines.append(f"/{command.name}: {context.t(f'help.{command.command_key}')}")
+        available.append(command)
+
+    lines = [context.t("help.header")]
+    rendered_names: set[str] = set()
+    for group_key, command_keys in HELP_GROUPS:
+        group_commands = [command for command in available if command.command_key in command_keys]
+        if not group_commands:
+            continue
+        lines.extend(("", context.t(f"help.group.{group_key}")))
+        for command in group_commands:
+            rendered_names.add(command.name)
+            lines.append(f"/{command.name}: {context.t(f'help.{command.command_key}')}")
+
+    remaining = [command for command in available if command.name not in rendered_names]
+    if remaining:
+        lines.extend(("", context.t("help.group.other")))
+        lines.extend(f"/{command.name}: {context.t(f'help.{command.command_key}')}" for command in remaining)
     return "\n".join(lines)
 
 

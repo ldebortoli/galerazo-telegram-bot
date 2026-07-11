@@ -76,7 +76,7 @@ class ConfigMenuTests(unittest.IsolatedAsyncioTestCase):
 
         message.delete.assert_not_awaited()
         update.callback_query.answer.assert_awaited_once_with(
-            "No tenes permisos suficientes para usar esta botonera."
+            "No tenés permisos suficientes para usar esta botonera."
         )
 
     async def test_admin_and_dev_can_close_config_menu(self) -> None:

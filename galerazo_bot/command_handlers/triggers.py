@@ -5,7 +5,7 @@ from ..database import Database, Trigger
 from ..roles import CommandContext
 
 
-MIN_TRIGGER_NAME_LENGTH = 6
+MIN_TRIGGER_NAME_LENGTH = 5
 MAX_TRIGGER_NAME_LENGTH = 32
 
 
@@ -76,10 +76,8 @@ def triggers(context: CommandContext, db: Database) -> str:
 
 
 def _parse_trigger_name(context: CommandContext) -> str | None:
-    parts = context.args.split(maxsplit=1)
-    if len(parts) != 1:
-        return None
-    return parts[0].strip()
+    trigger_name = " ".join(context.args.split())
+    return trigger_name or None
 
 
 def _is_valid_trigger_name(trigger_name: str) -> bool:
@@ -116,6 +114,20 @@ COMMANDS = {
         "borrartrigger",
         "borra un trigger del grupo",
         borrartrigger,
+        configurable_group="triggers",
+    ),
+    "eliminartrigger": Command(
+        "eliminartrigger",
+        "borra un trigger del grupo",
+        borrartrigger,
+        hidden=True,
+        configurable_group="triggers",
+    ),
+    "eltrigger": Command(
+        "eltrigger",
+        "borra un trigger del grupo",
+        borrartrigger,
+        hidden=True,
         configurable_group="triggers",
     ),
     "triggers": Command(

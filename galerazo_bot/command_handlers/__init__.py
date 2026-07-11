@@ -14,6 +14,7 @@ from .nivel import COMMANDS as NIVEL_COMMANDS
 from .novedad import COMMANDS as NOVEDAD_COMMANDS
 from .reportar import COMMANDS as REPORTAR_COMMANDS
 from .restrictions import COMMANDS as RESTRICTIONS_COMMANDS
+from .ruletarusa import COMMANDS as RUSSIAN_ROULETTE_COMMANDS
 from .salir import COMMANDS as SALIR_COMMANDS
 from .start import COMMANDS as START_COMMANDS
 from .triggers import COMMANDS as TRIGGERS_COMMANDS
@@ -28,6 +29,7 @@ COMMANDS: dict[str, Command] = {
     **NOVEDAD_COMMANDS,
     **REPORTAR_COMMANDS,
     **RESTRICTIONS_COMMANDS,
+    **RUSSIAN_ROULETTE_COMMANDS,
     **BACKUP_COMMANDS,
     **DEBUG_COMMANDS,
     **GASTOS_COMMANDS,

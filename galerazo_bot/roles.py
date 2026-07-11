@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from enum import IntEnum
+from enum import IntEnum, StrEnum
 from pathlib import Path
 from typing import Awaitable, Callable
 
@@ -21,6 +21,14 @@ class UserLevel(IntEnum):
             UserLevel.ADMIN: "admin",
             UserLevel.DEV: "dev",
         }[self]
+
+
+class RussianRouletteHitResult(StrEnum):
+    BANNED = "banned"
+    BOT_IMMUNE = "bot_immune"
+    ADMIN_IMMUNE = "admin_immune"
+    DEV_IMMUNE = "dev_immune"
+    FAILED = "failed"
 
 
 @dataclass(frozen=True)
@@ -61,6 +69,8 @@ class CommandContext:
     send_galerazas: Callable[[], Awaitable[bool]] | None = None
     send_config_menu: Callable[[], Awaitable[bool]] | None = None
     leave_chat: Callable[[], Awaitable[bool]] | None = None
+    can_run_russian_roulette: Callable[[], Awaitable[bool]] | None = None
+    resolve_russian_roulette_hit: Callable[[str], Awaitable[RussianRouletteHitResult]] | None = None
     reply_to_user_id: str | None = None
     reply_to_username: str | None = None
     reply_to_display_name: str | None = None

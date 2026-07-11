@@ -1,0 +1,57 @@
+from __future__ import annotations
+
+import tempfile
+import unittest
+from pathlib import Path
+
+from galerazo_bot.database import Database, RussianRouletteShot
+
+
+class DatabaseMigrationTests(unittest.TestCase):
+    def test_group_data_survives_supergroup_migration(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            db = Database(Path(directory) / "test.sqlite3")
+            db.get_or_create_user("1", "Owner")
+            db.get_or_create_user("2", "Member")
+            db.register_chat("-1", "group", "Group", "1")
+            db.set_chat_language("-1", "en")
+            db.set_command_group_enabled("-1", "triggers", False)
+            db.restrict_user_in_chat("-1", "2", "1")
+            db.try_award_daily_galeraza("-1", "2026-07-10", "2", "100")
+            db.save_paginated_message_state("-1", "200", "test", "1", '{"lines": []}')
+            db.add_trigger("-1", "saludo", "Saludo", "Hola", None, None, None, "1")
+            db.add_expense("-1", "2", 1234, "ARS", "efectivo", "kiosco", "agua")
+            db.play_russian_roulette("-1", "2", bullet_position=5)
+            db.register_chat("-1001", "supergroup", "Supergroup", "1")
+            db.try_award_daily_galeraza("-1001", "2026-07-10", "1", "999")
+            db.save_paginated_message_state(
+                "-1001",
+                "200",
+                "destination",
+                "1",
+                '{"destination": true}',
+            )
+
+            db.migrate_chat_id("-1", "-1001")
+
+            self.assertEqual(db.resolve_chat_id("-1"), "-1001")
+            self.assertEqual(db.get_chat_settings("-1001").language, "en")
+            self.assertFalse(db.is_command_group_enabled("-1001", "triggers"))
+            self.assertTrue(db.is_user_restricted_in_chat("-1001", "2"))
+            self.assertEqual(
+                {score.user_id: score.points for score in db.get_galeraza_scores("-1001")},
+                {"1": 1, "2": 1},
+            )
+            pagination = db.get_paginated_message_state("-1001", "200")
+            self.assertEqual(pagination.chat_id, "-1001")
+            self.assertEqual(pagination.list_type, "destination")
+            self.assertEqual(db.list_triggers("-1001")[0].display_name, "Saludo")
+            self.assertEqual(db.list_recent_expenses("-1001")[0].description, "agua")
+            self.assertEqual(
+                db.play_russian_roulette("-1001", "2"),
+                RussianRouletteShot(False, 4),
+            )
+
+
+if __name__ == "__main__":
+    unittest.main()

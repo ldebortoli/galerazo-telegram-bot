@@ -13,6 +13,8 @@ from .roles import CommandContext, UserLevel
 CommandResult = Union[Optional[str], Awaitable[Optional[str]]]
 CommandHandler = Callable[[CommandContext, Database], CommandResult]
 DEFAULT_PERMISSION_ERROR_KEY = "permission_denied"
+SYMBOL_COMMAND_PREFIXES = ("!", "/", ".", ">", "$")
+WORD_COMMAND_PREFIXES = ("galerazobot", "galerazo_bot")
 
 
 @dataclass(frozen=True)
@@ -34,15 +36,14 @@ class Command:
 
 
 def normalize_command(text: str) -> str:
-    command = text.strip().lower()
-    if command.startswith(("!", "/")):
-        command = command[1:]
+    command, _prefix = _strip_command_prefix(text)
+    command = command.lower()
     command_name = command.split(maxsplit=1)[0] if command else ""
     return command_name.split("@", maxsplit=1)[0]
 
 
 def command_args(text: str) -> str:
-    stripped = text.strip()
+    stripped, _prefix = _strip_command_prefix(text)
     if not stripped:
         return ""
 
@@ -51,11 +52,27 @@ def command_args(text: str) -> str:
 
 
 def is_command_invocation(text: str) -> bool:
+    stripped, prefix = _strip_command_prefix(text)
+    if not stripped:
+        return prefix is not None
+
+    return prefix is not None or normalize_command(stripped) in COMMANDS
+
+
+def _strip_command_prefix(text: str) -> tuple[str, str | None]:
     stripped = text.strip()
     if not stripped:
-        return False
+        return "", None
+    if stripped.startswith(SYMBOL_COMMAND_PREFIXES):
+        return stripped[1:].lstrip(), stripped[0]
 
-    return stripped.startswith(("!", "/")) or normalize_command(stripped) in COMMANDS
+    lowered = stripped.casefold()
+    for prefix in WORD_COMMAND_PREFIXES:
+        if lowered == prefix:
+            return "", prefix
+        if lowered.startswith(prefix) and len(stripped) > len(prefix) and stripped[len(prefix)].isspace():
+            return stripped[len(prefix) :].lstrip(), prefix
+    return stripped, None
 
 
 def command_exists(text: str) -> bool:
@@ -134,6 +151,8 @@ def handle_command(
     send_galerazas=None,
     send_config_menu=None,
     leave_chat=None,
+    can_run_russian_roulette=None,
+    resolve_russian_roulette_hit=None,
     language: str | None = None,
 ) -> str | None:
     return asyncio.run(
@@ -161,6 +180,8 @@ def handle_command(
             send_galerazas=send_galerazas,
             send_config_menu=send_config_menu,
             leave_chat=leave_chat,
+            can_run_russian_roulette=can_run_russian_roulette,
+            resolve_russian_roulette_hit=resolve_russian_roulette_hit,
             language=language,
         )
     )
@@ -190,6 +211,8 @@ async def handle_command_async(
     send_galerazas=None,
     send_config_menu=None,
     leave_chat=None,
+    can_run_russian_roulette=None,
+    resolve_russian_roulette_hit=None,
     language: str | None = None,
 ) -> str | None:
     context = CommandContext(
@@ -213,6 +236,8 @@ async def handle_command_async(
         send_galerazas=send_galerazas,
         send_config_menu=send_config_menu,
         leave_chat=leave_chat,
+        can_run_russian_roulette=can_run_russian_roulette,
+        resolve_russian_roulette_hit=resolve_russian_roulette_hit,
         reply_to_user_id=reply_to_user_id,
         reply_to_username=reply_to_username,
         reply_to_display_name=reply_to_display_name,

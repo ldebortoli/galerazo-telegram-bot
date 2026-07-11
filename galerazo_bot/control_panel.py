@@ -9,6 +9,7 @@ from pathlib import Path
 from tkinter import messagebox, ttk
 
 from .instance_lock import SingleInstance
+from .integration_status import load_logging_status
 from .runtime import ensure_python_version
 
 
@@ -136,6 +137,37 @@ class ControlPanel(tk.Tk):
             self.iconphoto(True, self.window_icon)
         if os.name == "nt" and ICON_ICO_PATH.exists():
             self.iconbitmap(default=str(ICON_ICO_PATH))
+            self.update_idletasks()
+            self._set_native_window_icon()
+
+    def _set_native_window_icon(self) -> None:
+        from ctypes import wintypes
+
+        image_icon = 1
+        load_from_file = 0x0010
+        wm_seticon = 0x0080
+        user32 = ctypes.WinDLL("user32", use_last_error=True)
+        user32.LoadImageW.argtypes = (
+            wintypes.HINSTANCE,
+            wintypes.LPCWSTR,
+            wintypes.UINT,
+            ctypes.c_int,
+            ctypes.c_int,
+            wintypes.UINT,
+        )
+        user32.LoadImageW.restype = ctypes.c_void_p
+        user32.SendMessageW.argtypes = (wintypes.HWND, wintypes.UINT, wintypes.WPARAM, wintypes.LPARAM)
+        user32.SendMessageW.restype = ctypes.c_void_p
+        user32.GetParent.argtypes = (wintypes.HWND,)
+        user32.GetParent.restype = ctypes.c_void_p
+        internal_hwnd = self.winfo_id()
+        window_hwnd = user32.GetParent(internal_hwnd) or internal_hwnd
+        self.native_icon_handles = []
+        for icon_type, size in ((1, 32), (0, 16)):
+            handle = user32.LoadImageW(None, str(ICON_ICO_PATH), image_icon, size, size, load_from_file)
+            if handle:
+                self.native_icon_handles.append(handle)
+                user32.SendMessageW(window_hwnd, wm_seticon, icon_type, handle)
 
     def _configure_styles(self) -> None:
         style = ttk.Style(self)
@@ -175,7 +207,7 @@ class ControlPanel(tk.Tk):
         self.config_tab = ttk.Frame(self.notebook, padding=(4, 20))
         self.logs_tab = ttk.Frame(self.notebook, padding=(4, 20))
         self.notebook.add(self.control_tab, text="Control")
-        self.notebook.add(self.config_tab, text="Configuracion")
+        self.notebook.add(self.config_tab, text="Configuración")
         self.notebook.add(self.logs_tab, text="Logs")
         self._build_control_tab(self.control_tab)
         self._build_config_tab(self.config_tab)
@@ -204,7 +236,7 @@ class ControlPanel(tk.Tk):
         self.restart_button.grid(row=0, column=2, sticky="ew", padx=(6, 0))
 
         ttk.Button(parent, text="Actualizar estado", command=self.refresh_status).pack(fill="x")
-        ttk.Label(parent, text="Cerrar este panel no apaga el bot. Usa el boton Apagar.", style="Muted.TLabel").pack(anchor="w", pady=(18, 0))
+        ttk.Label(parent, text="Cerrar este panel no apaga el bot. Usá el botón Apagar.", style="Muted.TLabel").pack(anchor="w", pady=(18, 0))
 
     def _build_config_tab(self, parent: ttk.Frame) -> None:
         form = ttk.Frame(parent)
@@ -220,9 +252,12 @@ class ControlPanel(tk.Tk):
                 ttk.Button(form, text="Mostrar", width=9, command=lambda item=entry: self._toggle_secret(item)).grid(row=row, column=2, padx=(8, 0))
         actions = ttk.Frame(parent)
         actions.pack(fill="x", pady=(16, 0))
-        ttk.Button(actions, text="Guardar configuracion", command=self.save_configuration).pack(side="left")
+        ttk.Button(actions, text="Guardar configuración", command=self.save_configuration).pack(side="left")
         ttk.Button(actions, text="Recargar", command=self.load_configuration).pack(side="left", padx=8)
         ttk.Button(actions, text="Abrir carpeta", command=self.open_project).pack(side="right")
+        self.logging_status_label = ttk.Label(parent, text="", style="Muted.TLabel", wraplength=640)
+        self.logging_status_label.pack(fill="x", pady=(14, 0))
+        self.refresh_logging_status()
 
     def _build_logs_tab(self, parent: ttk.Frame) -> None:
         actions = ttk.Frame(parent)
@@ -246,12 +281,12 @@ class ControlPanel(tk.Tk):
     def save_configuration(self, notify: bool = True) -> bool:
         token = self.variables["TELEGRAM_BOT_TOKEN"].get().strip()
         if not token or token == "replace-me":
-            messagebox.showwarning("Configuracion incompleta", "Configura un token valido de Telegram antes de guardar.")
+            messagebox.showwarning("Configuración incompleta", "Configurá un token válido de Telegram antes de guardar.")
             self.notebook.select(self.config_tab)
             return False
         _write_env({key: variable.get().strip() for key, variable in self.variables.items()})
         if notify:
-            messagebox.showinfo("Configuracion", "La configuracion se guardo correctamente.")
+            messagebox.showinfo("Configuración", "La configuración se guardó correctamente.")
         return True
 
     def start_bot(self) -> None:
@@ -278,7 +313,7 @@ class ControlPanel(tk.Tk):
             PID_PATH.write_text(str(process.pid), encoding="ascii")
             self.status_dot.itemconfigure(self.status_circle, fill=self.AMBER)
             self.status_label.configure(text="INICIANDO...")
-            self.detail_label.configure(text=f"Validando configuracion y conexion - PID {process.pid}")
+            self.detail_label.configure(text=f"Validando configuración y conexión - PID {process.pid}")
             self.start_button.configure(state="disabled")
             self.stop_button.configure(state="normal")
             self.restart_button.configure(state="disabled")
@@ -336,16 +371,34 @@ class ControlPanel(tk.Tk):
         starting = running and self.starting_process is not None and self.starting_process.pid == pid
         color = self.AMBER if starting else self.GREEN if running else self.RED
         label = "INICIANDO..." if starting else "BOT ENCENDIDO" if running else "BOT APAGADO"
-        detail = f"Validando configuracion y conexion - PID {pid}" if starting else f"Proceso local activo - PID {pid}" if running else "No hay ningun proceso del bot activo."
+        detail = f"Validando configuración y conexión - PID {pid}" if starting else f"Proceso local activo - PID {pid}" if running else "No hay ningún proceso del bot activo."
         self.status_dot.itemconfigure(self.status_circle, fill=color)
         self.status_label.configure(text=label)
         self.detail_label.configure(text=detail)
         self.start_button.configure(state="disabled" if running else "normal")
         self.stop_button.configure(state="normal" if running else "disabled")
         self.restart_button.configure(state="normal" if running and not starting else "disabled")
+        self.refresh_logging_status()
+
+    def refresh_logging_status(self) -> None:
+        if not hasattr(self, "logging_status_label"):
+            return
+        status = load_logging_status()
+        if status is None:
+            self.logging_status_label.configure(
+                text="Canal de logging: todavía no verificado.",
+                foreground=self.MUTED,
+            )
+            return
+        ok = bool(status.get("ok"))
+        detail = str(status.get("detail") or "Sin detalle.")
+        self.logging_status_label.configure(
+            text=f"Canal de logging: {'OK' if ok else 'ALERTA'} - {detail}",
+            foreground=self.GREEN if ok else self.RED,
+        )
 
     def refresh_logs(self) -> None:
-        content = "Todavia no hay logs locales."
+        content = "Todavía no hay logs locales."
         if LOG_PATH.exists():
             with LOG_PATH.open("r", encoding="utf-8", errors="replace") as log:
                 log.seek(0, 2)
@@ -380,7 +433,6 @@ def main() -> None:
     _configure_windows_app_identity()
     instance = SingleInstance(f"control-panel:{PROJECT_ROOT}")
     if not instance.acquire():
-        messagebox.showinfo("Galerazo Bot", "El panel de control ya esta abierto.")
         return
     try:
         ControlPanel().mainloop()

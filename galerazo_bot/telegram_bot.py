@@ -49,9 +49,10 @@ from .galeraza import build_galeraza_lines, render_galeraza_page
 from .google_sheets import GoogleSheetsConfig, GoogleSheetsExpenseWriter
 from .i18n import DEFAULT_LANGUAGE, t
 from .instance_lock import SingleInstance
+from .integration_status import save_logging_status
 from .logging_utils import configure_logging
 from .pagination import BUTTON_PREFIX, build_keyboard, parse_callback_data, render_page
-from .roles import BackupResult, TriggerPayload, UserLevel
+from .roles import BackupResult, RussianRouletteHitResult, TriggerPayload, UserLevel
 from .runtime import ensure_python_version
 
 
@@ -232,6 +233,12 @@ async def _send_trigger_message(bot: Bot, chat_id: int, trigger: Trigger) -> Non
     if trigger.media_type == "video_note" and trigger.file_id:
         await bot.send_video_note(chat_id=chat_id, video_note=trigger.file_id)
         return
+    if trigger.media_type == "sticker" and trigger.file_id:
+        await bot.send_sticker(chat_id=chat_id, sticker=trigger.file_id)
+        return
+    if trigger.media_type == "dice" and trigger.text:
+        await bot.send_dice(chat_id=chat_id, emoji=trigger.text)
+        return
     if trigger.text:
         await bot.send_message(chat_id=chat_id, text=trigger.text[:TELEGRAM_MESSAGE_LIMIT_CHARS])
 
@@ -336,6 +343,18 @@ async def _handle_command_update(update: Update, context: ContextTypes.DEFAULT_T
         send_galerazas=lambda: _send_galerazas(state.db, message, str(user.id)),
         send_config_menu=lambda: _send_config_menu(state.db, message),
         leave_chat=lambda: _leave_chat(state.db, context.bot, chat.id),
+        can_run_russian_roulette=lambda: _bot_can_ban_members(
+            context.bot,
+            chat.id,
+            state.bot_user_id,
+        ),
+        resolve_russian_roulette_hit=lambda target_user_id: _resolve_russian_roulette_hit(
+            context.bot,
+            chat.id,
+            target_user_id,
+            state.bot_user_id,
+            state.settings.telegram_dev_user_ids,
+        ),
     )
     if response is None:
         return
@@ -506,6 +525,10 @@ def _trigger_payload_from_message(message: Message | None) -> TriggerPayload | N
         return TriggerPayload(media_type="document", file_id=message.document.file_id, caption=message.caption)
     if message.video_note:
         return TriggerPayload(media_type="video_note", file_id=message.video_note.file_id)
+    if message.sticker:
+        return TriggerPayload(media_type="sticker", file_id=message.sticker.file_id)
+    if message.dice:
+        return TriggerPayload(text=message.dice.emoji, media_type="dice")
     return None
 
 
@@ -1060,6 +1083,52 @@ async def _is_chat_admin(chat_id: int, user_id: str, bot: Bot) -> bool:
     return any(str(admin.user.id) == user_id for admin in administrators)
 
 
+async def _bot_can_ban_members(bot: Bot, chat_id: int, bot_user_id: str) -> bool:
+    try:
+        member = await bot.get_chat_member(chat_id, int(bot_user_id))
+    except TelegramError as exc:
+        logger.warning("No pude validar permisos de ruleta rusa en chat %s: %s", chat_id, exc)
+        return False
+
+    if member.status == ChatMember.OWNER:
+        return True
+    return member.status == ChatMember.ADMINISTRATOR and bool(
+        getattr(member, "can_restrict_members", False)
+    )
+
+
+async def _resolve_russian_roulette_hit(
+    bot: Bot,
+    chat_id: int,
+    target_user_id: str,
+    bot_user_id: str,
+    dev_user_ids: frozenset[str],
+) -> RussianRouletteHitResult:
+    if target_user_id == bot_user_id:
+        return RussianRouletteHitResult.BOT_IMMUNE
+    if target_user_id in dev_user_ids:
+        return RussianRouletteHitResult.DEV_IMMUNE
+
+    try:
+        member = await bot.get_chat_member(chat_id, int(target_user_id))
+        if member.status in {ChatMember.OWNER, ChatMember.ADMINISTRATOR}:
+            return RussianRouletteHitResult.ADMIN_IMMUNE
+        await bot.ban_chat_member(
+            chat_id=chat_id,
+            user_id=int(target_user_id),
+            revoke_messages=False,
+        )
+    except TelegramError as exc:
+        logger.warning(
+            "No pude resolver el disparo de ruleta rusa para %s en chat %s: %s",
+            target_user_id,
+            chat_id,
+            exc,
+        )
+        return RussianRouletteHitResult.FAILED
+    return RussianRouletteHitResult.BANNED
+
+
 async def _send_unhandled_error_event(
     bot: Bot,
     log_chat_id: str | None,
@@ -1091,6 +1160,7 @@ async def _send_log_text_with_truncation(
     truncation_notice: str | None = None,
 ) -> bool:
     if not log_chat_id:
+        save_logging_status(False, "El canal de logging no está configurado.")
         return False
 
     try:
@@ -1101,8 +1171,13 @@ async def _send_log_text_with_truncation(
         )
         if was_truncated and truncation_notice:
             await bot.send_message(chat_id=_parse_chat_id(log_chat_id), text=truncation_notice)
+        save_logging_status(True, "Canal de logging accesible.")
     except (TelegramError, ValueError) as exc:
         logger.warning("No pude enviar evento al canal de logging: %s", exc)
+        save_logging_status(
+            False,
+            "No se pudo acceder al canal configurado. Verificá que el bot sea miembro y tenga permiso para enviar mensajes.",
+        )
         return False
 
     return True
@@ -1167,12 +1242,11 @@ async def _send_debug_update(
     update: Update,
 ) -> bool:
     debug_json = _serialize_update(update)
-    wrapped_json = f"```json\n{debug_json}\n```"
 
     try:
-        if len(wrapped_json) <= TELEGRAM_MESSAGE_LIMIT_CHARS:
+        if len(debug_json) <= TELEGRAM_MESSAGE_LIMIT_CHARS:
             await message.reply_text(
-                text=wrapped_json,
+                text=debug_json,
                 do_quote=True,
             )
             return True

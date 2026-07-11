@@ -2,13 +2,11 @@
 
 ## P1
 
-- Conectar el sistema de gastos con el Google Sheet real cuando el usuario proporcione o confirme el spreadsheet ID, worksheet y credenciales de service account.
-- Corregir `TELEGRAM_LOG_CHAT_ID` o los permisos del bot: Telegram responde `Chat not found` al enviar eventos de inicio.
+- [BLOCKED: falta que el usuario confirme spreadsheet ID, worksheet y credenciales de service account] Conectar el sistema de gastos con el Google Sheet real.
 
 ## P2
 
-- Activar el deploy automatico de Railway solo cuando el usuario lo pida y despues de verificar `RAILWAY_TOKEN` y `RAILWAY_SERVICE_ID`.
-- Ampliar la suite automatizada para base de datos, permisos, migraciones de chat, paginacion y panel de control.
+- [BLOCKED: requiere pedido explicito del usuario y luego verificar RAILWAY_TOKEN y RAILWAY_SERVICE_ID] Activar el deploy automatico de Railway.
 
 # IN PROGRESS
 
@@ -16,6 +14,18 @@ No hay tareas en curso.
 
 # DONE
 
+- [2026-07-10] Impedir bloquear al propio bot y responder `Ni se te ocurra...`.
+- [2026-07-10] Hacer que `/debug` envie JSON puro sin fences Markdown.
+- [2026-07-10] Unificar listas de usuarios con nombre sin `@`, ID y alias `/bloqueados`, conservando paginacion.
+- [2026-07-10] Agrupar `/help` por familias y filtrar comandos segun nivel/configuracion.
+- [2026-07-10] Corregir tildes y adaptar los textos visibles en espanol a voseo argentino, con prueba de regresion.
+- [2026-07-10] Extender triggers con aliases de borrado, nombres con espacios de 5 a 32 caracteres, stickers y dados animados.
+- [2026-07-10] Aceptar `.`, `>`, `$`, `galerazobot` y `galerazo_bot` como prefijos de comandos.
+- [2026-07-10] Implementar `/ruletarusa` persistente, configurable, deshabilitada por defecto, migrable y con protecciones de bot/admin/dev.
+- [2026-07-10] Ampliar la suite a 44 pruebas para base, permisos, migraciones con colisiones, paginacion, panel, triggers y ruleta.
+- [2026-07-10] Revisar librerias y simplificar el formato/resolucion comun de usuarios sin agregar dependencias innecesarias.
+- [2026-07-10] Corregir el icono pequeno de la barra de titulo con un ICO multirresolucion nativo y verificar el recurso asignado a la ventana activa.
+- [2026-07-10] Corregir el icono nativo del panel Galerazo y el acceso directo; mostrar alerta de canal de logging inaccesible en Configuracion.
 - [2026-07-10] Unificar Windows, Docker y CI en Python 3.14.6, actualizar y fijar todas las librerias, automatizar upgrades validados y documentar rollback.
 - [2026-07-10] Agrandar la pestana seleccionada del panel y fijar identidad AppUserModelID/icono del conejo en Windows.
 - [2026-07-10] Mostrar `/comando` en `/help`, agregar `/start` bilingue y fijar `drop_pending_updates=False`.

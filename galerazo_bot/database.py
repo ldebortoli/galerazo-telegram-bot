@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import secrets
 import sqlite3
 from collections.abc import Iterator
 from contextlib import contextmanager
@@ -106,6 +107,12 @@ class Expense:
     sheet_error: str | None
     created_at: str
     synced_at: str | None
+
+
+@dataclass(frozen=True)
+class RussianRouletteShot:
+    hit: bool
+    remaining_shots: int
 
 
 class Database:
@@ -322,6 +329,21 @@ class Database:
                     sheet_error TEXT,
                     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
                     synced_at TEXT,
+                    FOREIGN KEY (chat_id) REFERENCES chats (chat_id),
+                    FOREIGN KEY (user_id) REFERENCES users (user_id)
+                )
+                """
+            )
+            conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS russian_roulette_states (
+                    chat_id TEXT NOT NULL,
+                    user_id TEXT NOT NULL,
+                    bullet_position INTEGER NOT NULL CHECK (bullet_position BETWEEN 0 AND 5),
+                    shots_fired INTEGER NOT NULL DEFAULT 0 CHECK (shots_fired BETWEEN 0 AND 5),
+                    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    PRIMARY KEY (chat_id, user_id),
                     FOREIGN KEY (chat_id) REFERENCES chats (chat_id),
                     FOREIGN KEY (user_id) REFERENCES users (user_id)
                 )
@@ -582,9 +604,21 @@ class Database:
                 )
             conn.execute("DELETE FROM chat_restricted_users WHERE chat_id = ?", (old_chat_id,))
             conn.execute(
-                "UPDATE galeraza_daily_winners SET chat_id = ? WHERE chat_id = ?",
+                """
+                INSERT OR IGNORE INTO galeraza_daily_winners (
+                    chat_id,
+                    game_date,
+                    user_id,
+                    message_id,
+                    created_at
+                )
+                SELECT ?, game_date, user_id, message_id, created_at
+                FROM galeraza_daily_winners
+                WHERE chat_id = ?
+                """,
                 (new_chat_id, old_chat_id),
             )
+            conn.execute("DELETE FROM galeraza_daily_winners WHERE chat_id = ?", (old_chat_id,))
             old_scores = conn.execute(
                 """
                 SELECT user_id, points
@@ -606,9 +640,34 @@ class Database:
                 )
             conn.execute("DELETE FROM galeraza_scores WHERE chat_id = ?", (old_chat_id,))
             conn.execute(
-                "UPDATE paginated_message_states SET chat_id = ? WHERE chat_id = ?",
+                """
+                INSERT OR IGNORE INTO paginated_message_states (
+                    chat_id,
+                    message_id,
+                    list_type,
+                    requester_user_id,
+                    content_json,
+                    unlocked,
+                    current_page,
+                    created_at,
+                    updated_at
+                )
+                SELECT
+                    ?,
+                    message_id,
+                    list_type,
+                    requester_user_id,
+                    content_json,
+                    unlocked,
+                    current_page,
+                    created_at,
+                    CURRENT_TIMESTAMP
+                FROM paginated_message_states
+                WHERE chat_id = ?
+                """,
                 (new_chat_id, old_chat_id),
             )
+            conn.execute("DELETE FROM paginated_message_states WHERE chat_id = ?", (old_chat_id,))
             conn.execute(
                 "UPDATE expenses SET chat_id = ? WHERE chat_id = ?",
                 (new_chat_id, old_chat_id),
@@ -657,6 +716,23 @@ class Database:
                     ),
                 )
             conn.execute("DELETE FROM triggers WHERE chat_id = ?", (old_chat_id,))
+            conn.execute(
+                """
+                INSERT OR IGNORE INTO russian_roulette_states (
+                    chat_id,
+                    user_id,
+                    bullet_position,
+                    shots_fired,
+                    created_at,
+                    updated_at
+                )
+                SELECT ?, user_id, bullet_position, shots_fired, created_at, CURRENT_TIMESTAMP
+                FROM russian_roulette_states
+                WHERE chat_id = ?
+                """,
+                (new_chat_id, old_chat_id),
+            )
+            conn.execute("DELETE FROM russian_roulette_states WHERE chat_id = ?", (old_chat_id,))
             conn.execute(
                 """
                 INSERT INTO chat_migrations (old_chat_id, new_chat_id)
@@ -738,7 +814,7 @@ class Database:
                 (chat_id, command_group),
             ).fetchone()
         if row is None:
-            return False if command_group == "gastos" else True
+            return command_group not in {"gastos", "ruletarusa"}
         return bool(row["enabled"])
 
     def set_command_group_enabled(self, chat_id: str, command_group: str, enabled: bool) -> None:
@@ -1304,6 +1380,66 @@ class Database:
                 (chat_id,),
             ).fetchall()
         return [_trigger_from_row(row) for row in rows]
+
+    def play_russian_roulette(
+        self,
+        chat_id: str,
+        user_id: str,
+        *,
+        bullet_position: int | None = None,
+    ) -> RussianRouletteShot:
+        if bullet_position is not None and not 0 <= bullet_position <= 5:
+            raise ValueError("bullet_position must be between 0 and 5")
+
+        chat_id = self.resolve_chat_id(chat_id)
+        self.get_or_create_user(user_id)
+        with self._connect() as conn:
+            conn.execute("BEGIN IMMEDIATE")
+            row = conn.execute(
+                """
+                SELECT bullet_position, shots_fired
+                FROM russian_roulette_states
+                WHERE chat_id = ? AND user_id = ?
+                """,
+                (chat_id, user_id),
+            ).fetchone()
+
+            if row is None:
+                selected_position = secrets.randbelow(6) if bullet_position is None else bullet_position
+                shots_fired = 0
+                conn.execute(
+                    """
+                    INSERT INTO russian_roulette_states (
+                        chat_id,
+                        user_id,
+                        bullet_position,
+                        shots_fired
+                    )
+                    VALUES (?, ?, ?, 0)
+                    """,
+                    (chat_id, user_id, selected_position),
+                )
+            else:
+                selected_position = row["bullet_position"]
+                shots_fired = row["shots_fired"]
+
+            if shots_fired == selected_position:
+                conn.execute(
+                    "DELETE FROM russian_roulette_states WHERE chat_id = ? AND user_id = ?",
+                    (chat_id, user_id),
+                )
+                return RussianRouletteShot(hit=True, remaining_shots=0)
+
+            next_shot = shots_fired + 1
+            conn.execute(
+                """
+                UPDATE russian_roulette_states
+                SET shots_fired = ?, updated_at = CURRENT_TIMESTAMP
+                WHERE chat_id = ? AND user_id = ?
+                """,
+                (next_shot, chat_id, user_id),
+            )
+            return RussianRouletteShot(hit=False, remaining_shots=6 - next_shot)
 
     def add_expense(
         self,

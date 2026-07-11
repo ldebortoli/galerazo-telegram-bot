@@ -10,7 +10,7 @@ Base para un bot de Telegram con una version estable y reproducible de Python, `
 - `nivel`: muestra el nivel detectado para el usuario.
 - `bloquear`: bloquea un usuario. Solo devs.
 - `desbloquear` / `desloquear`: desbloquea un usuario. Solo devs.
-- `listanegra`: muestra los usuarios bloqueados. Solo devs.
+- `listanegra` / `bloqueados`: muestra los usuarios bloqueados. Solo devs.
 - `novedad`: envia una noticia al canal de anuncios. Solo devs.
 - `reportar`: envia un reporte de bug al canal de logging. Maximo 1 por usuario por dia.
 - `habilitargastos`: habilita el sistema de gastos en el chat actual. Solo admines del chat, quien agrego el bot o devs.
@@ -28,11 +28,12 @@ Base para un bot de Telegram con una version estable y reproducible de Python, `
 - `config`: abre el tablero de configuracion del grupo. Solo admines del chat, quien agrego el bot o devs.
 - `galerazas`: muestra el ranking de La Galeraza en grupos/supergrupos.
 - `agregartrigger` / `agrtrigger`: agrega un trigger respondiendo a un mensaje en grupos/supergrupos.
-- `borrartrigger`: borra un trigger por nombre en grupos/supergrupos.
+- `borrartrigger` / `eliminartrigger` / `eltrigger`: borra un trigger por nombre en grupos/supergrupos.
 - `triggers`: lista los triggers del grupo o supergrupo.
+- `ruletarusa`: juega a la ruleta rusa en el grupo o supergrupo, si el conjunto está habilitado.
 - `salir`: hace que el bot salga de un grupo o supergrupo. Solo devs.
 
-Tambien acepta comandos con prefijo, por ejemplo `!help`, `/ayuda` o `/hola`.
+También acepta los prefijos `/`, `!`, `.`, `>`, `$`, `galerazobot` y `galerazo_bot`. Por ejemplo: `!help`, `.hola` o `galerazobot ayuda`.
 
 Los comandos que no existen se ignoran silenciosamente. Cada comando implementado se procesa una sola vez y no cae en un handler generico posterior.
 
@@ -75,7 +76,7 @@ El panel guarda el PID en `data/bot.pid`. Cerrar la ventana no apaga el bot. El 
 
 Durante el arranque el estado queda en amarillo mientras se valida la configuracion y la conexion con Telegram. Si el proceso falla, el panel abre la pestana de logs y muestra el error de inicio.
 
-Para reconstruir el lanzador de Windows ejecuta `powershell -ExecutionPolicy Bypass -File build_control_panel.ps1`.
+Para reconstruir el lanzador de Windows ejecutá `powershell -ExecutionPolicy Bypass -File build_control_panel.ps1`. El build regenera el ICO multirresolución desde el PNG fuente, compila el lanzador y actualiza el acceso directo de `CODEX APPS`.
 
 Las dependencias directas se declaran en `requirements.in`. `requirements.txt` fija todas las versiones directas y transitivas para que Windows y Docker instalen el mismo conjunto reproducible.
 
@@ -325,14 +326,14 @@ Todos los niveles del menu incluyen una X roja para cerrar y eliminar el mensaje
 
 El idioma por defecto siempre es español. Si un grupo cambia a inglés, los textos que el bot muestra o envia en ese grupo pasan a inglés: respuestas de comandos, menús, popups de botoneras, backups/debug captions y mensajes de La Galeraza.
 
-Por ahora los conjuntos configurables son `Galeraza`, `Triggers` y `Gastos`. Cada submenu muestra:
+Los conjuntos configurables son `Galeraza`, `Triggers`, `Gastos` y `Ruleta rusa`. Cada submenú muestra:
 
 ```text
 ¿Habilitado?
 [ Sí ] - No
 ```
 
-`Galeraza` y `Triggers` vienen habilitados por defecto. `Gastos` viene deshabilitado hasta que un admin o dev del chat lo habilite. La configuracion se guarda en SQLite y se migra si Telegram convierte un grupo en supergrupo.
+`Galeraza` y `Triggers` vienen habilitados por defecto. `Gastos` y `Ruleta rusa` vienen deshabilitados hasta que un admin o dev del chat los habilite. La configuración se guarda en SQLite y se migra si Telegram convierte un grupo en supergrupo.
 
 Si el ranking o cualquier lista configurable supera el limite maximo de caracteres por mensaje de Telegram, el bot lo pagina sin cortar renglones. La botonera tiene hasta 5 botones de paginas. Ejemplos:
 
@@ -371,16 +372,16 @@ Los triggers funcionan solo en grupos y supergrupos. Se pueden deshabilitar por 
 Para agregar uno:
 
 ```powershell
-/agregartrigger nombretrigger
+/agregartrigger nombre del trigger
 ```
 
 Tambien existe el alias:
 
 ```powershell
-/agrtrigger nombretrigger
+/agrtrigger nombre del trigger
 ```
 
-El comando se usa respondiendo a un mensaje valido. `nombretrigger` tiene que tener entre 6 y 32 caracteres, no puede tener espacios y no puede repetirse en el mismo chat. El bot guarda el contenido para enviar un mensaje nuevo cuando otro mensaje del chat contenga ese texto.
+El comando se usa respondiendo a un mensaje válido. El nombre tiene que tener entre 5 y 32 caracteres, puede contener espacios y no puede repetirse en el mismo chat. El bot guarda el contenido para enviar un mensaje nuevo cuando otro mensaje del chat contenga ese texto.
 
 Tipos soportados:
 
@@ -390,13 +391,17 @@ Tipos soportados:
 - Audios y musica.
 - Documentos.
 - Videomensajes.
+- Stickers.
+- Dados y otros emojis animados soportados por `send_dice` de Telegram.
 
 Si el mensaje tiene caption, el bot tambien guarda esa caption. Para media, se guarda el `file_id` de Telegram y el tipo interno de media para saber que metodo usar al enviarlo.
 
 Para borrar:
 
 ```powershell
-/borrartrigger nombretrigger
+/borrartrigger nombre del trigger
+/eliminartrigger nombre del trigger
+/eltrigger nombre del trigger
 ```
 
 Para listar:
@@ -406,6 +411,22 @@ Para listar:
 ```
 
 La lista se pagina automaticamente si supera el limite de Telegram. Si Telegram convierte el grupo en supergrupo, los triggers guardados se migran al nuevo `chat_id`.
+
+## Ruleta rusa
+
+La ruleta rusa funciona solo en grupos y supergrupos y viene deshabilitada por defecto. Un admin o dev puede habilitarla desde `/config`, en `Comandos -> Ruleta rusa`.
+
+```powershell
+/ruletarusa
+```
+
+- Cada usuario y chat conserva una partida persistente de seis recámaras con una bala aleatoria.
+- Cada uso consume la siguiente recámara y muestra cuántos intentos quedan como máximo.
+- Si sale la bala, el estado se reinicia y el bot expulsa al objetivo. La expulsión es reversible por un admin.
+- Usuarios comunes siempre se apuntan a sí mismos. Admines y devs pueden responder al mensaje de otro usuario para apuntarlo.
+- El bot, los admines y los devs son inmunes al efecto de expulsión.
+- Antes de cada jugada, el bot verifica que sea administrador y tenga permiso para restringir usuarios.
+- El estado se migra al nuevo `chat_id` cuando un grupo pasa a supergrupo.
 
 ## Gastos
 
@@ -482,12 +503,13 @@ Los comandos de lista negra solo responden a devs:
 /desbloquear @alias
 /desbloquear 123456789
 /listanegra
+/bloqueados
 ```
 
 `/bloquear` y `/desbloquear` sin argumentos se usan respondiendo al mensaje del usuario objetivo.
 Los `@alias` se resuelven contra usuarios que el bot ya haya visto.
 Si `/listanegra` supera el limite de caracteres de Telegram, el bot pagina la lista con botonera.
-Las listas de usuarios muestran siempre el id entre parentesis, por ejemplo `@usuario (123456789)`.
+Las listas de usuarios muestran siempre el nombre visible y el ID entre paréntesis, por ejemplo `Nombre visible (123456789)`. No incluyen `@`, así que no generan menciones.
 
 ## Restricciones por chat
 

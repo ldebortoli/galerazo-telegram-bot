@@ -54,6 +54,22 @@ class CommandRoutingTests(unittest.TestCase):
                 )
                 self.assertIsNone(response)
 
+    def test_supported_command_prefixes(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            db = Database(Path(directory) / "test.sqlite3")
+            db.get_or_create_user("1", "Test User")
+
+            for text in (
+                ".hola",
+                ">hola",
+                "$hola",
+                "galerazobot hola",
+                "Galerazo_Bot hola",
+            ):
+                with self.subTest(text=text):
+                    response = asyncio.run(handle_command_async(text, "1", db))
+                    self.assertIn("Test User", response)
+
     def test_galerazas_handler_returns_no_second_response(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             db = Database(Path(directory) / "test.sqlite3")

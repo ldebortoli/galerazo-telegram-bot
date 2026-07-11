@@ -130,10 +130,6 @@ def fallback_sheet_detail(language: str, configured: bool, ready: bool) -> str:
     return t(language, "expenses.sheet_ready")
 
 
-def unknown_user_label(language: str, user_id: str) -> str:
-    return f"{t(language, 'user.unknown')} ({user_id})"
-
-
 def expense_usage_example(language: str = DEFAULT_LANGUAGE) -> str:
     return t(
         language,

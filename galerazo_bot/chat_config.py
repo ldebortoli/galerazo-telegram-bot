@@ -27,6 +27,7 @@ COMMAND_GROUPS = (
     CommandGroupOption("galeraza", "Galeraza"),
     CommandGroupOption("triggers", "Triggers"),
     CommandGroupOption("gastos", "Gastos"),
+    CommandGroupOption("ruletarusa", "Ruleta rusa"),
 )
 
 

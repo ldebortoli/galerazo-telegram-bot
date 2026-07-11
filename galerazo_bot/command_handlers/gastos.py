@@ -8,9 +8,9 @@ from ..expenses import (
     expense_usage_example,
     parse_expense_command_args,
     sync_status_label,
-    unknown_user_label,
 )
 from ..roles import CommandContext, UserLevel
+from ..user_display import format_user
 
 
 def habilitargastos(context: CommandContext, db: Database) -> str:
@@ -125,11 +125,7 @@ async def sincronizargastos(context: CommandContext, db: Database) -> str:
 
 
 def _expense_user_label(context: CommandContext, expense) -> str:
-    if expense.username:
-        return f"@{expense.username} ({expense.user_id})"
-    if expense.display_name:
-        return f"{expense.display_name} ({expense.user_id})"
-    return unknown_user_label(context.language, expense.user_id)
+    return format_user(expense, context)
 
 
 def _format_amount(context: CommandContext, amount_cents: int, currency: str) -> str:
