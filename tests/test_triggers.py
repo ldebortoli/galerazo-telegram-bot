@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import json
 import tempfile
 import unittest
 from pathlib import Path
@@ -18,12 +19,17 @@ def _message(**changes):
         "text": None,
         "photo": None,
         "video": None,
+        "animation": None,
         "audio": None,
         "voice": None,
         "document": None,
         "video_note": None,
         "sticker": None,
         "dice": None,
+        "contact": None,
+        "location": None,
+        "venue": None,
+        "poll": None,
         "caption": None,
     }
     values.update(changes)
@@ -91,6 +97,141 @@ class TriggerTests(unittest.TestCase):
 
         bot.send_sticker.assert_awaited_once_with(chat_id=-1, sticker="sticker-id")
         bot.send_dice.assert_awaited_once_with(chat_id=-1, emoji="🎲")
+
+    def test_structured_and_animation_payloads_are_recreated(self) -> None:
+        contact = SimpleNamespace(
+            phone_number="123",
+            first_name="Ada",
+            last_name="Lovelace",
+            vcard=None,
+        )
+        contact_payload = _trigger_payload_from_message(_message(contact=contact))
+        animation_payload = _trigger_payload_from_message(
+            _message(animation=SimpleNamespace(file_id="animation-id"), caption="caption")
+        )
+
+        self.assertEqual(contact_payload.media_type, "contact")
+        self.assertEqual(
+            contact_payload.data,
+            {"phone_number": "123", "first_name": "Ada", "last_name": "Lovelace"},
+        )
+        self.assertEqual(
+            animation_payload,
+            TriggerPayload(
+                media_type="animation",
+                file_id="animation-id",
+                caption="caption",
+            ),
+        )
+
+        bot = SimpleNamespace(send_contact=AsyncMock(), send_animation=AsyncMock())
+        asyncio.run(
+            _send_trigger_message(
+                bot,
+                -1,
+                Trigger(
+                    "-1",
+                    "contacto",
+                    "Contacto",
+                    None,
+                    "contact",
+                    None,
+                    None,
+                    "1",
+                    "now",
+                    json.dumps(contact_payload.data),
+                ),
+            )
+        )
+        asyncio.run(
+            _send_trigger_message(
+                bot,
+                -1,
+                Trigger(
+                    "-1",
+                    "animacion",
+                    "Animación",
+                    None,
+                    "animation",
+                    "animation-id",
+                    "caption",
+                    "1",
+                    "now",
+                ),
+            )
+        )
+
+        bot.send_contact.assert_awaited_once_with(
+            chat_id=-1,
+            phone_number="123",
+            first_name="Ada",
+            last_name="Lovelace",
+        )
+        bot.send_animation.assert_awaited_once_with(
+            chat_id=-1,
+            animation="animation-id",
+            caption="caption",
+        )
+
+    def test_service_message_is_not_a_valid_trigger_payload(self) -> None:
+        self.assertIsNone(_trigger_payload_from_message(_message()))
+
+    def test_location_venue_and_poll_payloads_are_sent(self) -> None:
+        bot = SimpleNamespace(
+            send_location=AsyncMock(),
+            send_venue=AsyncMock(),
+            send_poll=AsyncMock(),
+        )
+        cases = (
+            (
+                "location",
+                {"latitude": -34.6, "longitude": -58.4},
+                bot.send_location,
+            ),
+            (
+                "venue",
+                {
+                    "latitude": -34.6,
+                    "longitude": -58.4,
+                    "title": "Lugar",
+                    "address": "Dirección",
+                },
+                bot.send_venue,
+            ),
+            (
+                "poll",
+                {
+                    "question": "¿Sí o no?",
+                    "options": ["Sí", "No"],
+                    "is_anonymous": True,
+                    "type": "regular",
+                    "allows_multiple_answers": False,
+                },
+                bot.send_poll,
+            ),
+        )
+
+        for media_type, payload, method in cases:
+            with self.subTest(media_type=media_type):
+                asyncio.run(
+                    _send_trigger_message(
+                        bot,
+                        -1,
+                        Trigger(
+                            "-1",
+                            media_type,
+                            media_type,
+                            None,
+                            media_type,
+                            None,
+                            None,
+                            "1",
+                            "now",
+                            json.dumps(payload, ensure_ascii=False),
+                        ),
+                    )
+                )
+                method.assert_awaited_once_with(chat_id=-1, **payload)
 
 
 if __name__ == "__main__":

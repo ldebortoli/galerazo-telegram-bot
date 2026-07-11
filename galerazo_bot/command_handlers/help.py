@@ -6,7 +6,7 @@ from ..roles import CommandContext
 
 
 HELP_GROUPS = (
-    ("general", {"help", "start", "hola", "nivel", "chats", "reportar"}),
+    ("general", {"help", "ayuda", "start", "hola", "lil", "nivel", "chats", "reportar"}),
     ("blocking", {"bloquear", "desbloquear", "desloquear", "listanegra", "bloqueados"}),
     ("chat_admin", {"config", "restringir", "habilitar", "restringidos", "salir"}),
     ("galeraza", {"galerazas"}),
@@ -23,13 +23,6 @@ def handle(context: CommandContext, _db: Database) -> str:
     available = []
     for command in iter_commands():
         if command.hidden or context.user_level < command.min_level:
-            continue
-        if (
-            context.chat_id is not None
-            and context.chat_type in {"group", "supergroup"}
-            and command.configurable_group is not None
-            and not _db.is_command_group_enabled(context.chat_id, command.configurable_group)
-        ):
             continue
         available.append(command)
 
@@ -53,5 +46,5 @@ def handle(context: CommandContext, _db: Database) -> str:
 
 COMMANDS = {
     "help": Command("help", "muestra esta ayuda", handle, list_response=True),
-    "ayuda": Command("ayuda", "muestra esta ayuda", handle, hidden=True, list_response=True),
+    "ayuda": Command("ayuda", "muestra esta ayuda", handle, command_key="help", list_response=True),
 }

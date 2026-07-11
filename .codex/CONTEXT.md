@@ -15,6 +15,7 @@ La misma politica se aplica globalmente desde `C:\Users\calei\.codex\AGENTS.md`.
 - SQLite mediante `sqlite3` de la libreria estandar.
 - `gspread` y `google-auth` para Google Sheets.
 - `python-dotenv` para configuracion local desde `.env`.
+- `tzdata==2026.3` para convertir timestamps de Telegram al timezone IANA argentino tambien en Windows.
 - Tkinter para el panel de escritorio de Windows.
 - Un lanzador minimo en C#/.NET Framework para abrir el panel sin consola.
 - Docker para deploy.
@@ -56,6 +57,7 @@ La misma politica se aplica globalmente desde `C:\Users\calei\.codex\AGENTS.md`.
 - El polling fija `drop_pending_updates=False` para consumir updates que Telegram todavia conserve.
 - Los callbacks de botoneras se procesan en el mismo flujo secuencial.
 - La Galeraza usa una insercion atomica para garantizar un ganador por chat y dia.
+- La fecha de La Galeraza sale exclusivamente de `message.date` de Telegram convertido a `America/Argentina/Buenos_Aires`; bots, ediciones y eventos de servicio no compiten.
 - La ruleta rusa usa `BEGIN IMMEDIATE` para consumir atomicamente una recamara por usuario/chat; viene deshabilitada por defecto y migra con el chat.
 - Los datos de chats no se eliminan cuando el bot es expulsado o bloqueado; solo cambia su estado de actividad.
 
@@ -134,6 +136,7 @@ La suite automatizada usa `unittest` y cubre enrutamiento, permisos, config, Gal
 - Antes de cerrar cada pedido se ejecuta `python -m galerazo_bot.log_checkpoint`; los errores nuevos se investigan antes de reconocer y avanzar el offset.
 - Los rankings usan nombres visibles cacheados en `users` y user IDs; no generan menciones ni hacen requests de nombres al renderizar.
 - Todas las pantallas de `/config` incluyen `config:close`; los permisos se validan antes de ejecutar cualquier callback.
+- Cerrar el panel de control apaga el arbol de procesos local del bot antes de destruir la ventana.
 - Los niveles se validan al invocar comandos o tocar botones, no como clasificacion global permanente.
 
 ## Git y deploy

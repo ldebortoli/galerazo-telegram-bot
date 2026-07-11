@@ -89,6 +89,7 @@ class Trigger:
     caption: str | None
     created_by_user_id: str
     created_at: str
+    payload_json: str | None = None
 
 
 @dataclass(frozen=True)
@@ -257,6 +258,7 @@ class Database:
                     game_date TEXT NOT NULL,
                     user_id TEXT NOT NULL,
                     message_id TEXT,
+                    message_date TEXT,
                     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
                     PRIMARY KEY (chat_id, game_date),
                     FOREIGN KEY (chat_id) REFERENCES chats (chat_id),
@@ -264,6 +266,7 @@ class Database:
                 )
                 """
             )
+            _ensure_column(conn, "galeraza_daily_winners", "message_date", "TEXT")
             conn.execute(
                 """
                 CREATE TABLE IF NOT EXISTS galeraza_scores (
@@ -305,6 +308,7 @@ class Database:
                     media_type TEXT,
                     file_id TEXT,
                     caption TEXT,
+                    payload_json TEXT,
                     created_by_user_id TEXT NOT NULL,
                     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
                     updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -314,6 +318,7 @@ class Database:
                 )
                 """
             )
+            _ensure_column(conn, "triggers", "payload_json", "TEXT")
             conn.execute(
                 """
                 CREATE TABLE IF NOT EXISTS expenses (
@@ -610,9 +615,10 @@ class Database:
                     game_date,
                     user_id,
                     message_id,
+                    message_date,
                     created_at
                 )
-                SELECT ?, game_date, user_id, message_id, created_at
+                SELECT ?, game_date, user_id, message_id, message_date, created_at
                 FROM galeraza_daily_winners
                 WHERE chat_id = ?
                 """,
@@ -674,7 +680,7 @@ class Database:
             )
             old_triggers = conn.execute(
                 """
-                SELECT trigger_name, display_name, text, media_type, file_id, caption, created_by_user_id
+                SELECT trigger_name, display_name, text, media_type, file_id, caption, payload_json, created_by_user_id
                 FROM triggers
                 WHERE chat_id = ?
                 """,
@@ -691,16 +697,18 @@ class Database:
                         media_type,
                         file_id,
                         caption,
+                        payload_json,
                         created_by_user_id,
                         updated_at
                     )
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
                     ON CONFLICT(chat_id, trigger_name) DO UPDATE SET
                         display_name = excluded.display_name,
                         text = excluded.text,
                         media_type = excluded.media_type,
                         file_id = excluded.file_id,
                         caption = excluded.caption,
+                        payload_json = excluded.payload_json,
                         created_by_user_id = excluded.created_by_user_id,
                         updated_at = CURRENT_TIMESTAMP
                     """,
@@ -712,6 +720,7 @@ class Database:
                         trigger["media_type"],
                         trigger["file_id"],
                         trigger["caption"],
+                        trigger["payload_json"],
                         trigger["created_by_user_id"],
                     ),
                 )
@@ -1050,6 +1059,7 @@ class Database:
         game_date: str,
         user_id: str,
         message_id: str,
+        message_date: str | None = None,
     ) -> bool:
         chat_id = self.resolve_chat_id(chat_id)
         self.get_or_create_user(user_id)
@@ -1060,11 +1070,12 @@ class Database:
                     chat_id,
                     game_date,
                     user_id,
-                    message_id
+                    message_id,
+                    message_date
                 )
-                VALUES (?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?)
                 """,
-                (chat_id, game_date, user_id, message_id),
+                (chat_id, game_date, user_id, message_id, message_date),
             )
             if cursor.rowcount == 0:
                 return False
@@ -1314,6 +1325,7 @@ class Database:
         file_id: str | None,
         caption: str | None,
         created_by_user_id: str,
+        payload_json: str | None = None,
     ) -> bool:
         chat_id = self.resolve_chat_id(chat_id)
         self.get_or_create_user(created_by_user_id)
@@ -1328,9 +1340,10 @@ class Database:
                     media_type,
                     file_id,
                     caption,
+                    payload_json,
                     created_by_user_id
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     chat_id,
@@ -1340,6 +1353,7 @@ class Database:
                     media_type,
                     file_id,
                     caption,
+                    payload_json,
                     created_by_user_id,
                 ),
             )
@@ -1359,7 +1373,7 @@ class Database:
         with self._connect() as conn:
             row = conn.execute(
                 """
-                SELECT chat_id, trigger_name, display_name, text, media_type, file_id, caption, created_by_user_id, created_at
+                SELECT chat_id, trigger_name, display_name, text, media_type, file_id, caption, payload_json, created_by_user_id, created_at
                 FROM triggers
                 WHERE chat_id = ? AND trigger_name = ?
                 """,
@@ -1372,7 +1386,7 @@ class Database:
         with self._connect() as conn:
             rows = conn.execute(
                 """
-                SELECT chat_id, trigger_name, display_name, text, media_type, file_id, caption, created_by_user_id, created_at
+                SELECT chat_id, trigger_name, display_name, text, media_type, file_id, caption, payload_json, created_by_user_id, created_at
                 FROM triggers
                 WHERE chat_id = ?
                 ORDER BY lower(display_name) ASC
@@ -1621,6 +1635,7 @@ def _trigger_from_row(row: sqlite3.Row) -> Trigger:
         caption=row["caption"],
         created_by_user_id=row["created_by_user_id"],
         created_at=row["created_at"],
+        payload_json=row["payload_json"],
     )
 
 

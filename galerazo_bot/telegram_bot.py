@@ -3,10 +3,9 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
-import time
 import traceback
 from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
@@ -60,6 +59,7 @@ logger = logging.getLogger(__name__)
 TELEGRAM_DOCUMENT_UPLOAD_LIMIT_BYTES = 50 * 1024 * 1024
 TELEGRAM_MESSAGE_LIMIT_CHARS = 4096
 PAGINATED_METADATA_TTL = timedelta(days=14)
+ARGENTINA_TIMEZONE = ZoneInfo("America/Argentina/Buenos_Aires")
 POLLING_OPTIONS = {
     "allowed_updates": Update.ALL_TYPES,
     "drop_pending_updates": False,
@@ -171,11 +171,12 @@ async def _preprocess_message(update: Update, context: ContextTypes.DEFAULT_TYPE
     if _is_user_restricted_in_message_chat(state.db, message, str(user.id)):
         return
 
-    await _maybe_award_daily_galeraza(
-        db=state.db,
-        message=message,
-        user_id=str(user.id),
-    )
+    if _is_galeraza_candidate(update, message, user):
+        await _maybe_award_daily_galeraza(
+            db=state.db,
+            message=message,
+            user_id=str(user.id),
+        )
 
     text = message.text or message.caption
     if not text or is_command_invocation(text):
@@ -221,6 +222,9 @@ async def _send_trigger_message(bot: Bot, chat_id: int, trigger: Trigger) -> Non
     if trigger.media_type == "video" and trigger.file_id:
         await bot.send_video(chat_id=chat_id, video=trigger.file_id, caption=trigger.caption)
         return
+    if trigger.media_type == "animation" and trigger.file_id:
+        await bot.send_animation(chat_id=chat_id, animation=trigger.file_id, caption=trigger.caption)
+        return
     if trigger.media_type == "audio" and trigger.file_id:
         await bot.send_audio(chat_id=chat_id, audio=trigger.file_id, caption=trigger.caption)
         return
@@ -239,8 +243,31 @@ async def _send_trigger_message(bot: Bot, chat_id: int, trigger: Trigger) -> Non
     if trigger.media_type == "dice" and trigger.text:
         await bot.send_dice(chat_id=chat_id, emoji=trigger.text)
         return
+    payload = _trigger_payload_data(trigger)
+    if trigger.media_type == "contact" and payload:
+        await bot.send_contact(chat_id=chat_id, **payload)
+        return
+    if trigger.media_type == "location" and payload:
+        await bot.send_location(chat_id=chat_id, **payload)
+        return
+    if trigger.media_type == "venue" and payload:
+        await bot.send_venue(chat_id=chat_id, **payload)
+        return
+    if trigger.media_type == "poll" and payload:
+        await bot.send_poll(chat_id=chat_id, **payload)
+        return
     if trigger.text:
         await bot.send_message(chat_id=chat_id, text=trigger.text[:TELEGRAM_MESSAGE_LIMIT_CHARS])
+
+
+def _trigger_payload_data(trigger: Trigger) -> dict[str, object] | None:
+    if not trigger.payload_json:
+        return None
+    try:
+        payload = json.loads(trigger.payload_json)
+    except (TypeError, json.JSONDecodeError):
+        return None
+    return payload if isinstance(payload, dict) else None
 
 
 async def _command_entrypoint(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -517,6 +544,8 @@ def _trigger_payload_from_message(message: Message | None) -> TriggerPayload | N
         return TriggerPayload(media_type="photo", file_id=message.photo[-1].file_id, caption=message.caption)
     if message.video:
         return TriggerPayload(media_type="video", file_id=message.video.file_id, caption=message.caption)
+    if message.animation:
+        return TriggerPayload(media_type="animation", file_id=message.animation.file_id, caption=message.caption)
     if message.audio:
         return TriggerPayload(media_type="audio", file_id=message.audio.file_id, caption=message.caption)
     if message.voice:
@@ -529,6 +558,64 @@ def _trigger_payload_from_message(message: Message | None) -> TriggerPayload | N
         return TriggerPayload(media_type="sticker", file_id=message.sticker.file_id)
     if message.dice:
         return TriggerPayload(text=message.dice.emoji, media_type="dice")
+    if message.contact:
+        return TriggerPayload(
+            media_type="contact",
+            data={
+                key: value
+                for key, value in {
+                    "phone_number": message.contact.phone_number,
+                    "first_name": message.contact.first_name,
+                    "last_name": message.contact.last_name,
+                    "vcard": message.contact.vcard,
+                }.items()
+                if value is not None
+            },
+        )
+    if message.venue:
+        return TriggerPayload(
+            media_type="venue",
+            data={
+                key: value
+                for key, value in {
+                    "latitude": message.venue.location.latitude,
+                    "longitude": message.venue.location.longitude,
+                    "title": message.venue.title,
+                    "address": message.venue.address,
+                    "foursquare_id": message.venue.foursquare_id,
+                    "foursquare_type": message.venue.foursquare_type,
+                    "google_place_id": message.venue.google_place_id,
+                    "google_place_type": message.venue.google_place_type,
+                }.items()
+                if value is not None
+            },
+        )
+    if message.location:
+        return TriggerPayload(
+            media_type="location",
+            data={
+                key: value
+                for key, value in {
+                    "latitude": message.location.latitude,
+                    "longitude": message.location.longitude,
+                    "horizontal_accuracy": message.location.horizontal_accuracy,
+                }.items()
+                if value is not None
+            },
+        )
+    if message.poll:
+        poll_data: dict[str, object] = {
+            "question": message.poll.question,
+            "options": [option.text for option in message.poll.options],
+            "is_anonymous": message.poll.is_anonymous,
+            "type": message.poll.type,
+            "allows_multiple_answers": message.poll.allows_multiple_answers,
+        }
+        if message.poll.correct_option_id is not None:
+            poll_data["correct_option_id"] = message.poll.correct_option_id
+        if message.poll.explanation:
+            poll_data["explanation"] = message.poll.explanation
+        return TriggerPayload(media_type="poll", data=poll_data)
     return None
 
 
@@ -542,12 +629,14 @@ async def _maybe_award_daily_galeraza(
     if not db.is_command_group_enabled(str(message.chat.id), "galeraza"):
         return
 
-    game_date = _today_key()
+    message_date = _telegram_message_datetime(message)
+    game_date = _galeraza_game_date(message)
     awarded = db.try_award_daily_galeraza(
         chat_id=str(message.chat.id),
         game_date=game_date,
         user_id=user_id,
         message_id=str(message.message_id),
+        message_date=message_date.isoformat(),
     )
     if not awarded:
         return
@@ -1253,11 +1342,12 @@ async def _send_debug_update(
 
         debug_dir = Path("debug")
         debug_dir.mkdir(parents=True, exist_ok=True)
-        debug_path = debug_dir / f"update-{message.message_id or int(time.time())}.json"
+        update_id = update.update_id if isinstance(update, Update) else None
+        update_label = str(update_id) if update_id is not None else "sin id"
+        debug_path = debug_dir / f"Debug de la update {update_label}"
         debug_path.write_text(debug_json, encoding="utf-8")
         await message.reply_document(
             document=debug_path,
-            caption=t(_chat_language(db, message.chat.id), "debug.caption"),
             do_quote=True,
         )
         return True
@@ -1317,9 +1407,18 @@ def _is_bot_removed_error(exc: TelegramError) -> bool:
     return any(marker in message for marker in markers)
 
 
-def _today_key() -> str:
-    try:
-        now = datetime.now(ZoneInfo("America/Argentina/Buenos_Aires"))
-    except Exception:
-        now = datetime.now().astimezone()
-    return now.date().isoformat()
+def _is_galeraza_candidate(update: Update, message: Message, user: User) -> bool:
+    if user.is_bot or update.message is not message:
+        return False
+    return not bool(filters.StatusUpdate.ALL.check_update(update))
+
+
+def _telegram_message_datetime(message: Message) -> datetime:
+    message_date = message.date
+    if message_date.tzinfo is None:
+        return message_date.replace(tzinfo=timezone.utc)
+    return message_date
+
+
+def _galeraza_game_date(message: Message) -> str:
+    return _telegram_message_datetime(message).astimezone(ARGENTINA_TIMEZONE).date().isoformat()

@@ -10,6 +10,7 @@ from .gastos import COMMANDS as GASTOS_COMMANDS
 from .galerazas import COMMANDS as GALERAZAS_COMMANDS
 from .help import COMMANDS as HELP_COMMANDS
 from .hola import COMMANDS as HOLA_COMMANDS
+from .lil import COMMANDS as LIL_COMMANDS
 from .nivel import COMMANDS as NIVEL_COMMANDS
 from .novedad import COMMANDS as NOVEDAD_COMMANDS
 from .reportar import COMMANDS as REPORTAR_COMMANDS
@@ -24,6 +25,7 @@ COMMANDS: dict[str, Command] = {
     **HELP_COMMANDS,
     **START_COMMANDS,
     **HOLA_COMMANDS,
+    **LIL_COMMANDS,
     **NIVEL_COMMANDS,
     **BLACKLIST_COMMANDS,
     **NOVEDAD_COMMANDS,

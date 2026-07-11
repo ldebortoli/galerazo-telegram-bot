@@ -1,7 +1,9 @@
 import json
+import tempfile
 import unittest
+from pathlib import Path
 from types import SimpleNamespace
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock, MagicMock, patch
 
 from telegram import Update
 
@@ -39,6 +41,36 @@ class DebugSerializationTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(json.loads(payload)["update_id"], 17)
         self.assertNotIn("```", payload)
         message.reply_document.assert_not_awaited()
+
+    async def test_large_debug_uses_requested_filename_without_caption(self) -> None:
+        message = SimpleNamespace(
+            chat=SimpleNamespace(id=-1),
+            message_id=10,
+            reply_text=AsyncMock(),
+            reply_document=AsyncMock(),
+        )
+        db = MagicMock()
+        with tempfile.TemporaryDirectory() as directory:
+            real_path = Path
+            with (
+                patch(
+                    "galerazo_bot.telegram_bot._serialize_update",
+                    return_value='{"data":"' + ("x" * 5000) + '"}',
+                ),
+                patch(
+                    "galerazo_bot.telegram_bot.Path",
+                    side_effect=lambda value: real_path(directory) / value,
+                ),
+            ):
+                sent = await _send_debug_update(db, message, Update(update_id=91))
+
+            document = message.reply_document.await_args.kwargs["document"]
+            self.assertEqual(document.name, "Debug de la update 91")
+            self.assertNotIn("caption", message.reply_document.await_args.kwargs)
+            self.assertTrue(document.exists())
+
+        self.assertTrue(sent)
+        message.reply_text.assert_not_awaited()
 
     async def test_unhandled_error_log_includes_update_json(self) -> None:
         bot = FakeBot()

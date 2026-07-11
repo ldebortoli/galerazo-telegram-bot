@@ -124,6 +124,7 @@ class ControlPanel(tk.Tk):
         self.variables: dict[str, tk.StringVar] = {}
         self.starting_process: subprocess.Popen[str] | None = None
         self.startup_log_offset = 0
+        self.protocol("WM_DELETE_WINDOW", self.close_panel)
         self._set_window_icon()
         self._configure_styles()
         self._build_ui()
@@ -236,7 +237,7 @@ class ControlPanel(tk.Tk):
         self.restart_button.grid(row=0, column=2, sticky="ew", padx=(6, 0))
 
         ttk.Button(parent, text="Actualizar estado", command=self.refresh_status).pack(fill="x")
-        ttk.Label(parent, text="Cerrar este panel no apaga el bot. Usá el botón Apagar.", style="Muted.TLabel").pack(anchor="w", pady=(18, 0))
+        ttk.Label(parent, text="Cerrar este panel también apaga el bot.", style="Muted.TLabel").pack(anchor="w", pady=(18, 0))
 
     def _build_config_tab(self, parent: ttk.Frame) -> None:
         form = ttk.Frame(parent)
@@ -364,6 +365,10 @@ class ControlPanel(tk.Tk):
     def restart_bot(self) -> None:
         self.stop_bot()
         self.after(350, self.start_bot)
+
+    def close_panel(self) -> None:
+        self.stop_bot()
+        self.destroy()
 
     def refresh_status(self) -> None:
         pid = _running_process_id()

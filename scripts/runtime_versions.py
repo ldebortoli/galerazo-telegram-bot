@@ -16,6 +16,7 @@ DIRECT_DEPENDENCIES = {
     "gspread",
     "python-dotenv",
     "python-telegram-bot",
+    "tzdata",
 }
 
 

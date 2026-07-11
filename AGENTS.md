@@ -30,6 +30,8 @@ Do not expose or version `.env`, credentials, databases, logs, backups or local 
 
 Never leave a queue-derived request as an unqualified `TODO`, `P1` or `P2` item. Its own backlog line must be in `IN PROGRESS`, in `DONE`, or include `[BLOCKED: exact reason]` beside its name. Before ending a run, audit every processed queue item against those states. If quota ends mid-task, preserve it in `IN PROGRESS` and record the exact continuation step in `SESSION_HANDOFF.md`.
 
+When a desktop UI controls a bot, server or background process, closing that UI must stop the full managed process tree before destroying the window whenever technically feasible. Any exception must be recorded inline as blocked in project memory.
+
 <!-- galerazo-bot-log-checkpoint -->
 ## Bot log checkpoint
 

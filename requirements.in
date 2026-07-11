@@ -2,3 +2,4 @@ python-telegram-bot
 python-dotenv
 gspread
 google-auth
+tzdata

@@ -19,7 +19,17 @@ class DatabaseMigrationTests(unittest.TestCase):
             db.restrict_user_in_chat("-1", "2", "1")
             db.try_award_daily_galeraza("-1", "2026-07-10", "2", "100")
             db.save_paginated_message_state("-1", "200", "test", "1", '{"lines": []}')
-            db.add_trigger("-1", "saludo", "Saludo", "Hola", None, None, None, "1")
+            db.add_trigger(
+                "-1",
+                "saludo",
+                "Saludo",
+                "Hola",
+                None,
+                None,
+                None,
+                "1",
+                '{"test": true}',
+            )
             db.add_expense("-1", "2", 1234, "ARS", "efectivo", "kiosco", "agua")
             db.play_russian_roulette("-1", "2", bullet_position=5)
             db.register_chat("-1001", "supergroup", "Supergroup", "1")
@@ -46,6 +56,7 @@ class DatabaseMigrationTests(unittest.TestCase):
             self.assertEqual(pagination.chat_id, "-1001")
             self.assertEqual(pagination.list_type, "destination")
             self.assertEqual(db.list_triggers("-1001")[0].display_name, "Saludo")
+            self.assertEqual(db.list_triggers("-1001")[0].payload_json, '{"test": true}')
             self.assertEqual(db.list_recent_expenses("-1001")[0].description, "agua")
             self.assertEqual(
                 db.play_russian_roulette("-1001", "2"),

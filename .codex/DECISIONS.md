@@ -216,3 +216,27 @@ Este archivo es append-only a nivel conceptual: no borrar decisiones anteriores.
 - Decision: no agregar otra libreria para prefijos, listas, usuarios, media o ruleta. `python-telegram-bot`, SQLite y la libreria estandar ya cubren las APIs necesarias.
 - Simplificacion aplicada: `user_display.py` concentra resolucion y formato `nombre (id)` para blacklist, restricciones y gastos; se eliminaron helpers duplicados y el helper de gastos obsoleto.
 - Motivo: una dependencia nueva no reemplazaria logica significativa y aumentaria mantenimiento.
+
+## D-028 - Fecha Telegram en timezone argentino para La Galeraza
+
+- Estado: vigente; reemplaza la parte temporal de D-002/D-022 que dependia del momento de procesamiento.
+- Fecha: 2026-07-11.
+- Decision: la clave diaria se obtiene de `message.date`, se interpreta como timestamp Telegram y se convierte con `ZoneInfo("America/Argentina/Buenos_Aires")`; nunca se usa la hora de recepcion ni el timezone local de Windows.
+- Dependencia: `tzdata` queda fijada para que la zona IANA exista de forma reproducible en Windows, Docker y CI.
+- Candidatos: solo updates `message` originales de usuarios reales; bots, `edited_message`, posts de canal y `filters.StatusUpdate.ALL` quedan excluidos.
+- Auditoria: `galeraza_daily_winners.message_date` conserva el timestamp Telegram del ganador.
+
+## D-029 - Payload estructurado para triggers reproducibles
+
+- Estado: vigente.
+- Fecha: 2026-07-11.
+- Decision: `triggers.payload_json` guarda datos estructurados para contactos, ubicaciones, lugares y encuestas; archivos y media siguen usando `file_id`.
+- Tipos: texto, foto, animacion, video, audio, voz, documento, videomensaje, sticker, dado, contacto, ubicacion, lugar y encuesta.
+- Limite: eventos de servicio y mensajes que dependen de configuracion externa no portable, como pagos o juegos ajenos, se rechazan.
+
+## D-030 - El panel es propietario del proceso local
+
+- Estado: vigente; reemplaza la parte de D-010 que permitia cerrar el panel sin apagar el bot.
+- Fecha: 2026-07-11.
+- Decision: `WM_DELETE_WINDOW` ejecuta `stop_bot` antes de destruir la UI. La misma politica se registro globalmente y se aplico al panel de Spider Tracker.
+- Motivo: evitar procesos administrados sin una UI visible para controlarlos.

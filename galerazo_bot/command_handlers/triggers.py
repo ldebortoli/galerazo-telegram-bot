@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import json
+
 from ..commands import Command
 from ..database import Database, Trigger
 from ..roles import CommandContext
@@ -35,6 +37,11 @@ def agregartrigger(context: CommandContext, db: Database) -> str:
         file_id=context.reply_to_trigger_payload.file_id,
         caption=context.reply_to_trigger_payload.caption,
         created_by_user_id=context.sender_id,
+        payload_json=(
+            json.dumps(context.reply_to_trigger_payload.data, ensure_ascii=False)
+            if context.reply_to_trigger_payload.data is not None
+            else None
+        ),
     )
     if not was_added:
         return context.t("triggers.duplicate", trigger=trigger_name)
@@ -89,7 +96,7 @@ def _normalize_trigger_name(trigger_name: str) -> str:
 
 
 def _is_valid_payload(payload) -> bool:
-    return bool(payload.text or payload.file_id)
+    return bool(payload.text or payload.file_id or payload.data)
 
 
 def _trigger_line(trigger: Trigger) -> str:
@@ -107,7 +114,7 @@ COMMANDS = {
         "agrtrigger",
         "agrega un trigger al grupo",
         agregartrigger,
-        hidden=True,
+        command_key="agregartrigger",
         configurable_group="triggers",
     ),
     "borrartrigger": Command(
@@ -120,14 +127,14 @@ COMMANDS = {
         "eliminartrigger",
         "borra un trigger del grupo",
         borrartrigger,
-        hidden=True,
+        command_key="borrartrigger",
         configurable_group="triggers",
     ),
     "eltrigger": Command(
         "eltrigger",
         "borra un trigger del grupo",
         borrartrigger,
-        hidden=True,
+        command_key="borrartrigger",
         configurable_group="triggers",
     ),
     "triggers": Command(

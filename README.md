@@ -7,6 +7,7 @@ Base para un bot de Telegram con una version estable y reproducible de Python, `
 - `/help` / `/ayuda`: muestra los comandos disponibles para tu nivel de usuario.
 - `/start`: saluda y muestra como abrir la ayuda.
 - `hola`: responde un saludo.
+- `lil`: responde `LIL`.
 - `nivel`: muestra el nivel detectado para el usuario.
 - `bloquear`: bloquea un usuario. Solo devs.
 - `desbloquear` / `desloquear`: desbloquea un usuario. Solo devs.
@@ -72,7 +73,7 @@ Ejecuta `pythonw control_panel.py` para abrir una interfaz de escritorio desde l
 - consultar el estado del proceso;
 - ver el log local guardado en `data/bot.log`.
 
-El panel guarda el PID en `data/bot.pid`. Cerrar la ventana no apaga el bot. El acceso directo `Galerazo Bot` se puede colocar dentro de `CODEX APPS` y apunta a este panel.
+El panel guarda el PID en `data/bot.pid`. Cerrar la ventana apaga primero el árbol de procesos del bot y después cierra el panel. El acceso directo `Galerazo Bot` se puede colocar dentro de `CODEX APPS` y apunta a este panel.
 
 Durante el arranque el estado queda en amarillo mientras se valida la configuracion y la conexion con Telegram. Si el proceso falla, el panel abre la pestana de logs y muestra el error de inicio.
 
@@ -253,7 +254,7 @@ Los devs pueden inspeccionar el update crudo de Telegram con:
 /debug
 ```
 
-Si el JSON entra en un mensaje de Telegram, el bot responde con texto. Si es demasiado largo, lo adjunta como archivo `.json`.
+Si el JSON entra en un mensaje de Telegram, el bot responde con texto. Si es demasiado largo, lo adjunta sin caption en un archivo llamado `Debug de la update {update_id}`.
 
 ## Estadisticas de chats
 
@@ -279,7 +280,7 @@ La Galeraza es un juego para grupos y supergrupos.
 Reglas:
 
 - Cada chat tiene su propia competencia.
-- El usuario que manda el primer mensaje del dia que recibe el bot en ese chat gana 1 punto.
+- El usuario que manda el primer mensaje del día según el timestamp de Telegram gana 1 punto.
 - El bot responde a ese mensaje con:
 
 ```text
@@ -311,6 +312,8 @@ El bot corre con `concurrent_updates(False)` para procesar un update por vez. Es
 
 El premio diario usa una insercion atomica en SQLite (`INSERT OR IGNORE`) por chat y fecha. Si llegan dos mensajes candidatos muy cerca, solo el primero que se procese para ese chat y dia suma el punto.
 
+La fecha se calcula exclusivamente desde `message.date` de Telegram, convertido a `America/Argentina/Buenos_Aires` mediante `tzdata`; no usa la hora de recepción ni el reloj local de Windows. Esto permite procesar updates pendientes después de una suspensión sin mover mensajes al día equivocado. Ediciones, bots, posts de canal y eventos de servicio no compiten por La Galeraza.
+
 ## Configuracion por grupo
 
 `/config` abre un tablero con opciones del grupo o supergrupo. Solo pueden usarlo admines del chat, quien agrego el bot o devs. Los botones del tablero tambien validan ese nivel de permisos cada vez que se tocan.
@@ -334,6 +337,8 @@ Los conjuntos configurables son `Galeraza`, `Triggers`, `Gastos` y `Ruleta rusa`
 ```
 
 `Galeraza` y `Triggers` vienen habilitados por defecto. `Gastos` y `Ruleta rusa` vienen deshabilitados hasta que un admin o dev del chat los habilite. La configuración se guarda en SQLite y se migra si Telegram convierte un grupo en supergrupo.
+
+`/help` muestra todos los comandos correspondientes al nivel del usuario, incluidos los conjuntos configurables que estén apagados. Que aparezcan en la ayuda no evita que el bot respete la configuración del chat al intentar ejecutarlos.
 
 Si el ranking o cualquier lista configurable supera el limite maximo de caracteres por mensaje de Telegram, el bot lo pagina sin cortar renglones. La botonera tiene hasta 5 botones de paginas. Ejemplos:
 
@@ -387,14 +392,20 @@ Tipos soportados:
 
 - Texto.
 - Imagenes.
+- Animaciones y GIFs.
 - Videos.
 - Audios y musica.
 - Documentos.
 - Videomensajes.
 - Stickers.
 - Dados y otros emojis animados soportados por `send_dice` de Telegram.
+- Contactos.
+- Ubicaciones y lugares.
+- Encuestas reproducibles.
 
 Si el mensaje tiene caption, el bot tambien guarda esa caption. Para media, se guarda el `file_id` de Telegram y el tipo interno de media para saber que metodo usar al enviarlo.
+
+Los eventos de servicio, como el ingreso de un usuario, no se pueden agregar porque el bot no puede recrearlos. Tampoco se aceptan mensajes que requieren configuración externa no portable, como facturas, pagos o juegos registrados por otro bot.
 
 Para borrar:
 

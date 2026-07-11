@@ -45,6 +45,7 @@ class TriggerPayload:
     media_type: str | None = None
     file_id: str | None = None
     caption: str | None = None
+    data: dict[str, object] | None = None
 
 
 @dataclass(frozen=True)

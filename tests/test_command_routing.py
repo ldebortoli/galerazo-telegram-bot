@@ -117,6 +117,15 @@ class CommandRoutingTests(unittest.TestCase):
             self.assertIn("Test User", response)
             self.assertIn("/help", response)
 
+    def test_lil_returns_lil(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            db = Database(Path(directory) / "test.sqlite3")
+            db.get_or_create_user("1", "Test User")
+
+            response = asyncio.run(handle_command_async("/lil", "1", db))
+
+            self.assertEqual(response, "LIL")
+
 
 if __name__ == "__main__":
     unittest.main()

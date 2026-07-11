@@ -1,11 +1,15 @@
 # Pendientes
 
-- quiero que para este proyecto y todos los que tengan una UI que se use para prender / apagar / configurar procesos, se defina el comportamiento de que el proceso / bot / servidor / lo que sea se cierre al cerrar la UI en lo posible
-- LOS TRIGGERS tienen que aceptar cualquier tipo de mensaje que el bot pueda enviar. por ejemplo los stickets, videomensajes, etc. un ejemplo de un mensaje que no puede aceptar es el de que un usuario entró al chat porque no lo puede enviar
-
+No hay pedidos sin procesar.
 
 # Procesadas
 
+- [2026-07-11] Hacer que las UIs de control cierren su proceso administrado al cerrar la ventana, en este proyecto y globalmente para UIs equivalentes.
+- [2026-07-11] Extender triggers a todos los tipos de mensaje que el bot pueda volver a enviar y rechazar eventos no reproducibles.
+- [2026-07-11] En `/debug`, enviar archivos sin caption y nombrarlos `Debug de la update {update_id}`.
+- [2026-07-11] Agregar `/lil` con respuesta `LIL`.
+- [2026-07-11] Agregar `/eliminartrigger` y `/eltrigger` como comandos para borrar triggers.
+- [2026-07-11] Agregar `/ruletarusa` y todos los comandos faltantes a `/help`, auditando lo que figura como procesado.
 - [2026-07-10] Resolver todo el backlog que no requiera ayuda o inputs y listar al final lo que permanezca pendiente.
 - [2026-07-10] Corregir el icono de Windows del panel Galerazo comparandolo con Spider Tracker y borrar `image.png` al terminar.
 - [2026-07-10] Mostrar en configuracion una alerta cuando el canal de logging no exista, el bot no sea miembro o no tenga permisos.

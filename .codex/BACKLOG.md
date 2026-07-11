@@ -3,6 +3,7 @@
 ## P1
 
 - [BLOCKED: falta que el usuario confirme spreadsheet ID, worksheet y credenciales de service account] Conectar el sistema de gastos con el Google Sheet real.
+- [BLOCKED: falta que el usuario indique el user ID/nombre o enlace al verdadero primer mensaje] Corregir el punto historico mal asignado en Dankgentina para el 2026-07-11; el ganador incorrecto identificado es Luke Inverse (240524686), mensaje 1337832.
 
 ## P2
 
@@ -14,6 +15,13 @@ No hay tareas en curso.
 
 # DONE
 
+- [2026-07-11] Corregir La Galeraza para usar `message.date` de Telegram convertido con `tzdata` a `America/Argentina/Buenos_Aires`, ignorando bots, ediciones y eventos de servicio.
+- [2026-07-11] Hacer que cerrar los paneles Galerazo y Spider Tracker apague sus procesos administrados y establecer la regla global para proyectos futuros.
+- [2026-07-11] Extender triggers con animaciones, contactos, ubicaciones, lugares y encuestas, ademas de los tipos multimedia existentes; rechazar eventos no reproducibles y validar todo en una suite de 54 pruebas.
+- [2026-07-11] En `/debug`, enviar archivos largos sin caption y nombrarlos `Debug de la update {update_id}`.
+- [2026-07-11] Agregar `/lil` con respuesta `LIL`.
+- [2026-07-11] Exponer y validar `/eliminartrigger` y `/eltrigger` como aliases de borrado en `/help`.
+- [2026-07-11] Mostrar `/ruletarusa`, aliases y comandos configurables apagados en `/help`, manteniendo el filtro por nivel.
 - [2026-07-10] Impedir bloquear al propio bot y responder `Ni se te ocurra...`.
 - [2026-07-10] Hacer que `/debug` envie JSON puro sin fences Markdown.
 - [2026-07-10] Unificar listas de usuarios con nombre sin `@`, ID y alias `/bloqueados`, conservando paginacion.

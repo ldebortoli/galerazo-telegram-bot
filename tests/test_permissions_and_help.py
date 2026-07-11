@@ -69,6 +69,33 @@ class PermissionsAndHelpTests(unittest.TestCase):
             self.assertIn("Comandos de desarrollo:", dev_help)
             self.assertIn("/debug:", dev_help)
 
+    def test_help_lists_aliases_and_disabled_configurable_commands(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            db = Database(Path(directory) / "test.sqlite3")
+            db.get_or_create_user("1", "User")
+            db.register_chat("-1", "group", "Group")
+            self.assertFalse(db.is_command_group_enabled("-1", "ruletarusa"))
+
+            response = asyncio.run(
+                handle_command_async(
+                    "/help",
+                    "1",
+                    db,
+                    chat_id="-1",
+                    chat_type="group",
+                )
+            )
+
+            for command in (
+                "/ayuda:",
+                "/agrtrigger:",
+                "/eliminartrigger:",
+                "/eltrigger:",
+                "/ruletarusa:",
+            ):
+                with self.subTest(command=command):
+                    self.assertIn(command, response)
+
 
 if __name__ == "__main__":
     unittest.main()
