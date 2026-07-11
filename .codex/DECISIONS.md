@@ -257,3 +257,11 @@ Este archivo es append-only a nivel conceptual: no borrar decisiones anteriores.
 - Decision: generar cada tamano del ICO como DIB BGRA de 32 bits, con alfa continuo y mascara AND que marca los pixeles totalmente transparentes.
 - Motivo: `Bitmap.GetHicon()` reducia las capas a 4 bits y el icono pequeno podia renderizar el fondo transparente como un rectangulo negro.
 - Validacion: la suite exige 32 bits, alfa 0..255 y esquinas transparentes en las nueve capas; la ventana activa devolvio por `WM_GETICON` un recurso 16x16 con alfa 0 en sus cuatro esquinas.
+
+## D-033 - Composicion compacta para iconos pequenos
+
+- Estado: vigente.
+- Fecha: 2026-07-11.
+- Decision: en capas de 16 a 64 px, recortar automaticamente el area superior cuadrada del arte para mostrar conejo, cara y ala de la galera sin deformacion; las capas de 128/256 px mantienen la ilustracion completa.
+- Motivo: el arte completo es alto y angosto, por lo que solo ocupaba 10 de 16 pixeles de ancho en la barra de tareas.
+- Validacion: la capa activa 16x16 ocupa 14x14 con un margen uniforme de un pixel; la suite exige al menos 75% de ocupacion horizontal y vertical en todas las capas pequenas.

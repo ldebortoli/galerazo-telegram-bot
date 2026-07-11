@@ -43,6 +43,19 @@ class WindowsIconTests(unittest.TestCase):
             self.assertEqual(min(alpha_values), 0)
             self.assertEqual(max(alpha_values), 255)
 
+            visible_pixels = [
+                (pixel_index % width, height - 1 - (pixel_index // width))
+                for pixel_index, alpha in enumerate(alpha_values)
+                if alpha > 8
+            ]
+            if width <= 64:
+                visible_x = [x for x, _ in visible_pixels]
+                visible_y = [y for _, y in visible_pixels]
+                visible_width = max(visible_x) - min(visible_x) + 1
+                visible_height = max(visible_y) - min(visible_y) + 1
+                self.assertGreaterEqual(visible_width, int(width * 0.75))
+                self.assertGreaterEqual(visible_height, int(height * 0.75))
+
             mask_offset = pixels_offset + (width * height * 4)
             mask_stride = ((width + 31) // 32) * 4
             for x, y in ((0, 0), (width - 1, 0), (0, height - 1), (width - 1, height - 1)):

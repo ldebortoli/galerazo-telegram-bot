@@ -38,7 +38,7 @@ La misma politica se aplica globalmente desde `C:\Users\calei\.codex\AGENTS.md`.
 - `galerazo_bot/expenses.py` y `google_sheets.py`: gastos, formato y sincronizacion.
 - `galerazo_bot/control_panel.py`: UI local, manejo del proceso, `.env` y logs.
 - `launcher/GalerazoBotControlLauncher.cs`: lanzador Windows.
-- `assets/`: PNG fuente e ICO multirresolucion del conejo con galera; todas las capas ICO son DIB BGRA de 32 bits con alfa y mascara AND.
+- `assets/`: PNG fuente e ICO multirresolucion del conejo con galera; todas las capas ICO son DIB BGRA de 32 bits con alfa y mascara AND. Las capas de 16 a 64 px usan una composicion compacta del conejo/cara/ala de la galera; 128 y 256 px conservan el arte completo.
 - `tests/`: pruebas `unittest` de regresion y comportamiento.
 - `.github/workflows/deploy.yml`: deploy Railway desactivado con `if: ${{ false }}`.
 - `.github/workflows/quality.yml`: tests nativos y dentro de Docker en cada push/PR.

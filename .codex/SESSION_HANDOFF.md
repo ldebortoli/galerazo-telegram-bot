@@ -21,7 +21,7 @@ No hay tareas autonomas en curso. Solo quedan los bloqueos externos de Google Sh
 - Quality prueba Python nativo y Docker; Runtime Update busca estables semanalmente y fusiona solo despues de validar.
 - Railway continua desactivado.
 - `.env` sigue ignorado y nunca debe imprimirse ni versionarse.
-- El panel abierto bajo PID `9676` usa un ICO con nueve capas DIB BGRA de 32 bits; el icono 16x16 leido desde `WM_GETICON` tiene alfa 0 en las cuatro esquinas y se ve sin fondo negro.
+- El panel abierto bajo PID `1376` usa un ICO con nueve capas DIB BGRA de 32 bits; las capas 16..64 usan composicion compacta y el icono 16x16 activo ocupa 14x14 con margen transparente uniforme de un pixel.
 - El canal de logging esta verificado como accesible en `data/integration-status.json`.
 - `/ruletarusa`, triggers ampliados, prefijos, help agrupado, debug JSON y listas sin menciones estan implementados.
 - La Galeraza usa el timestamp Telegram con timezone argentino y el bot fue reiniciado con ese codigo bajo PID de control `10416`.

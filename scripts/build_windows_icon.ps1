@@ -14,6 +14,35 @@ using System.IO;
 
 public static class NativeIconPayload
 {
+    public static Rectangle FindAlphaBounds(Bitmap bitmap)
+    {
+        int minX = bitmap.Width;
+        int minY = bitmap.Height;
+        int maxX = -1;
+        int maxY = -1;
+
+        for (int y = 0; y < bitmap.Height; y++)
+        {
+            for (int x = 0; x < bitmap.Width; x++)
+            {
+                if (bitmap.GetPixel(x, y).A <= 8)
+                {
+                    continue;
+                }
+                minX = Math.Min(minX, x);
+                minY = Math.Min(minY, y);
+                maxX = Math.Max(maxX, x);
+                maxY = Math.Max(maxY, y);
+            }
+        }
+
+        if (maxX < minX || maxY < minY)
+        {
+            throw new InvalidOperationException("The source icon has no visible pixels.");
+        }
+        return Rectangle.FromLTRB(minX, minY, maxX + 1, maxY + 1);
+    }
+
     public static byte[] Create(Bitmap bitmap)
     {
         int width = bitmap.Width;
@@ -67,7 +96,22 @@ public static class NativeIconPayload
 "@
 
 $sizes = @(16, 20, 24, 32, 40, 48, 64, 128, 256)
-$source = [System.Drawing.Image]::FromFile((Resolve-Path -LiteralPath $InputPath))
+$source = [System.Drawing.Bitmap]::FromFile((Resolve-Path -LiteralPath $InputPath))
+$contentBounds = [NativeIconPayload]::FindAlphaBounds($source)
+[int]$cropPadding = [Math]::Max(1, [Math]::Round($contentBounds.Width * 0.045))
+[int]$compactCropSize = $contentBounds.Width + (2 * $cropPadding)
+[int]$compactCropX = [Math]::Max(0, $contentBounds.X - $cropPadding)
+[int]$compactCropY = [Math]::Max(0, $contentBounds.Y - [Math]::Round($cropPadding * 0.8))
+[int]$compactCropSize = [Math]::Min(
+    $compactCropSize,
+    [Math]::Min($source.Width - $compactCropX, $source.Height - $compactCropY)
+)
+$compactSource = [System.Drawing.Rectangle]::new(
+    $compactCropX,
+    $compactCropY,
+    $compactCropSize,
+    $compactCropSize
+)
 $images = New-Object System.Collections.Generic.List[object]
 
 try {
@@ -85,7 +129,24 @@ try {
             $graphics.InterpolationMode = [System.Drawing.Drawing2D.InterpolationMode]::HighQualityBicubic
             $graphics.PixelOffsetMode = [System.Drawing.Drawing2D.PixelOffsetMode]::HighQuality
             $graphics.SmoothingMode = [System.Drawing.Drawing2D.SmoothingMode]::HighQuality
-            $graphics.DrawImage($source, 0, 0, $size, $size)
+            if ($size -le 64) {
+                [int]$targetPadding = [Math]::Max(1, [Math]::Round($size * 0.03))
+                $target = [System.Drawing.Rectangle]::new(
+                    $targetPadding,
+                    $targetPadding,
+                    $size - (2 * $targetPadding),
+                    $size - (2 * $targetPadding)
+                )
+                $graphics.DrawImage(
+                    $source,
+                    $target,
+                    $compactSource,
+                    [System.Drawing.GraphicsUnit]::Pixel
+                )
+            }
+            else {
+                $graphics.DrawImage($source, 0, 0, $size, $size)
+            }
             $images.Add([pscustomobject]@{
                 Payload = [NativeIconPayload]::Create($bitmap)
                 Planes = 1
