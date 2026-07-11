@@ -249,3 +249,11 @@ Este archivo es append-only a nivel conceptual: no borrar decisiones anteriores.
 - Persistencia: la adjudicacion diaria ejecuta `BEGIN IMMEDIATE` y conserva la restriccion unica `(chat_id, game_date)` para que dos candidatos nunca sumen dos puntos.
 - Rendimiento: el bloqueo solo dura el procesamiento de una update de ese chat; no bloquea llamadas de otros chats y la resolucion canonica del `chat_id` se cachea en memoria.
 - Motivo: preservar el primer mensaje y el orden causal de callbacks/comandos sin convertir un chat lento en un bloqueo global del bot.
+
+## D-032 - Capas ICO nativas con alfa completo
+
+- Estado: vigente; refina D-024.
+- Fecha: 2026-07-11.
+- Decision: generar cada tamano del ICO como DIB BGRA de 32 bits, con alfa continuo y mascara AND que marca los pixeles totalmente transparentes.
+- Motivo: `Bitmap.GetHicon()` reducia las capas a 4 bits y el icono pequeno podia renderizar el fondo transparente como un rectangulo negro.
+- Validacion: la suite exige 32 bits, alfa 0..255 y esquinas transparentes en las nueve capas; la ventana activa devolvio por `WM_GETICON` un recurso 16x16 con alfa 0 en sus cuatro esquinas.

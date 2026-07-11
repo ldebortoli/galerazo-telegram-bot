@@ -14,6 +14,7 @@ No hay tareas en curso.
 
 # DONE
 
+- [2026-07-11] Corregir el fondo negro del icono pequeno: regenerar las nueve capas ICO como DIB BGRA de 32 bits con alfa/mascara AND, recompilar el lanzador y verificar la ventana activa.
 - [2026-07-11] Reemplazar la serializacion global por orden FIFO por chat usando `PerChatUpdateProcessor`, mantener paralelismo entre chats, coordinar migraciones a supergrupo y reforzar La Galeraza con una transaccion SQLite inmediata.
 - [2026-07-11] Corregir con backup previo el ganador historico de Dankgentina del 2026-07-11: [Lewito] Leonardo (360780605), mensaje 1337843, reemplazo a Luke Inverse sin dejar el punto duplicado.
 - [2026-07-11] Corregir La Galeraza para usar `message.date` de Telegram convertido con `tzdata` a `America/Argentina/Buenos_Aires`, ignorando bots, ediciones y eventos de servicio.

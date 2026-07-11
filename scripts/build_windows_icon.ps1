@@ -7,14 +7,62 @@ param(
 
 $ErrorActionPreference = "Stop"
 Add-Type -AssemblyName System.Drawing
-Add-Type @"
+Add-Type -ReferencedAssemblies System.Drawing -TypeDefinition @"
 using System;
-using System.Runtime.InteropServices;
+using System.Drawing;
+using System.IO;
 
-public static class NativeIconMethods
+public static class NativeIconPayload
 {
-    [DllImport("user32.dll", SetLastError = true)]
-    public static extern bool DestroyIcon(IntPtr handle);
+    public static byte[] Create(Bitmap bitmap)
+    {
+        int width = bitmap.Width;
+        int height = bitmap.Height;
+        int maskStride = ((width + 31) / 32) * 4;
+
+        using (MemoryStream stream = new MemoryStream())
+        using (BinaryWriter writer = new BinaryWriter(stream))
+        {
+            writer.Write((uint)40);
+            writer.Write(width);
+            writer.Write(height * 2);
+            writer.Write((ushort)1);
+            writer.Write((ushort)32);
+            writer.Write((uint)0);
+            writer.Write((uint)(width * height * 4));
+            writer.Write(0);
+            writer.Write(0);
+            writer.Write((uint)0);
+            writer.Write((uint)0);
+
+            for (int y = height - 1; y >= 0; y--)
+            {
+                for (int x = 0; x < width; x++)
+                {
+                    Color color = bitmap.GetPixel(x, y);
+                    writer.Write(color.B);
+                    writer.Write(color.G);
+                    writer.Write(color.R);
+                    writer.Write(color.A);
+                }
+            }
+
+            for (int y = height - 1; y >= 0; y--)
+            {
+                byte[] maskRow = new byte[maskStride];
+                for (int x = 0; x < width; x++)
+                {
+                    if (bitmap.GetPixel(x, y).A == 0)
+                    {
+                        maskRow[x / 8] |= (byte)(0x80 >> (x % 8));
+                    }
+                }
+                writer.Write(maskRow);
+            }
+
+            return stream.ToArray();
+        }
+    }
 }
 "@
 
@@ -30,42 +78,22 @@ try {
             [System.Drawing.Imaging.PixelFormat]::Format32bppArgb
         )
         $graphics = [System.Drawing.Graphics]::FromImage($bitmap)
-        $stream = New-Object System.IO.MemoryStream
-        $iconHandle = [IntPtr]::Zero
-        $icon = $null
         try {
             $graphics.Clear([System.Drawing.Color]::Transparent)
+            $graphics.CompositingMode = [System.Drawing.Drawing2D.CompositingMode]::SourceCopy
             $graphics.CompositingQuality = [System.Drawing.Drawing2D.CompositingQuality]::HighQuality
             $graphics.InterpolationMode = [System.Drawing.Drawing2D.InterpolationMode]::HighQualityBicubic
             $graphics.PixelOffsetMode = [System.Drawing.Drawing2D.PixelOffsetMode]::HighQuality
             $graphics.SmoothingMode = [System.Drawing.Drawing2D.SmoothingMode]::HighQuality
             $graphics.DrawImage($source, 0, 0, $size, $size)
-            $iconHandle = $bitmap.GetHicon()
-            $icon = [System.Drawing.Icon]::FromHandle($iconHandle)
-            $icon.Save($stream)
-
-            $singleIcon = $stream.ToArray()
-            $payloadSize = [System.BitConverter]::ToUInt32($singleIcon, 14)
-            $payloadOffset = [System.BitConverter]::ToUInt32($singleIcon, 18)
-            $payload = [byte[]]$singleIcon[$payloadOffset..($payloadOffset + $payloadSize - 1)]
-            $planes = [System.BitConverter]::ToUInt16($payload, 12)
-            $bitCount = [System.BitConverter]::ToUInt16($payload, 14)
-            $colorCount = if ($bitCount -lt 8) { 1 -shl $bitCount } else { 0 }
             $images.Add([pscustomobject]@{
-                Payload = $payload
-                Planes = $planes
-                BitCount = $bitCount
-                ColorCount = $colorCount
+                Payload = [NativeIconPayload]::Create($bitmap)
+                Planes = 1
+                BitCount = 32
+                ColorCount = 0
             })
         }
         finally {
-            if ($icon) {
-                $icon.Dispose()
-            }
-            if ($iconHandle -ne [IntPtr]::Zero) {
-                [NativeIconMethods]::DestroyIcon($iconHandle) | Out-Null
-            }
-            $stream.Dispose()
             $graphics.Dispose()
             $bitmap.Dispose()
         }

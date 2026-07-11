@@ -21,7 +21,7 @@ No hay tareas autonomas en curso. Solo quedan los bloqueos externos de Google Sh
 - Quality prueba Python nativo y Docker; Runtime Update busca estables semanalmente y fusiona solo despues de validar.
 - Railway continua desactivado.
 - `.env` sigue ignorado y nunca debe imprimirse ni versionarse.
-- El panel abierto usa un ICO multirresolucion DIB valido; el icono pequeno leido desde `WM_GETICON` muestra el conejo con galera.
+- El panel abierto bajo PID `9676` usa un ICO con nueve capas DIB BGRA de 32 bits; el icono 16x16 leido desde `WM_GETICON` tiene alfa 0 en las cuatro esquinas y se ve sin fondo negro.
 - El canal de logging esta verificado como accesible en `data/integration-status.json`.
 - `/ruletarusa`, triggers ampliados, prefijos, help agrupado, debug JSON y listas sin menciones estan implementados.
 - La Galeraza usa el timestamp Telegram con timezone argentino y el bot fue reiniciado con ese codigo bajo PID de control `10416`.
@@ -43,6 +43,7 @@ No hay tareas autonomas en curso. Solo quedan los bloqueos externos de Google Sh
 - `python -m pip check`: sin dependencias rotas.
 - `python -m pip list --outdated --format=json`: `[]`.
 - Lanzador Galerazo recompilado correctamente.
+- Acceso `CODEX APPS\\Galerazo Bot.lnk` actualizado al ICO corregido; el bot siguio activo bajo PID `10416` durante el reinicio del panel.
 - Checkpoint posterior al reinicio PID 10416: bytes 172406..179931 sin errores nuevos.
 - GitHub Actions Quality `29142341591`: success, incluidos build y 59 tests en Docker.
 - GitHub Actions Deploy: skipped intencionalmente.
