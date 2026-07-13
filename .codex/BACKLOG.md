@@ -11,10 +11,11 @@
 
 # IN PROGRESS
 
-- [2026-07-13] Reparar el workflow semanal fallido `29249239004`, actualizar `anyio` 4.14.1 -> 4.14.2 y `google-auth` 2.55.2 -> 2.56.0, y validar el lock en Windows y Docker/CI.
+No hay tareas en curso.
 
 # DONE
 
+- [2026-07-13] Reparar el workflow semanal fallido `29249239004`, actualizar `anyio` 4.14.1 -> 4.14.2 y `google-auth` 2.55.2 -> 2.56.0, y validar 61 pruebas en Windows, Quality y Docker Quality.
 - [2026-07-11] Corregir el texto truncado del estado de logging: ampliar el panel, ajustar padding y agregar una prueba Tk nativa que confirma 21/21 px de altura asignada.
 - [2026-07-11] Reducir GitHub Actions a un job Linux por cambio sustantivo, cero runs para commits documentales, Docker solo por cambios de runtime/contenedor y deploy manual mientras siga desactivado.
 - [2026-07-11] Agrandar el icono de barra de tareas con una composicion compacta no deformada para capas de 16 a 64 px; pasar de 10x14 a 14x14 visibles en la capa activa de 16 px.

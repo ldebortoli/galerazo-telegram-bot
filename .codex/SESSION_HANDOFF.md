@@ -6,7 +6,7 @@ Mantener y ampliar Galerazo Bot como bot de Telegram modular y reanudable, con S
 
 ## Tarea actual
 
-Investigar y reparar el workflow semanal fallido `29249239004`, actualizar `anyio` y `google-auth` a sus ultimas versiones estables y validar el lock en Windows y Docker/CI. Quedan bloqueados Google Sheets real, Railway y la comprobacion visual del medio de pago de GitHub.
+No hay tareas autonomas en curso. Quedan bloqueados Google Sheets real, Railway y la comprobacion visual del medio de pago de GitHub.
 
 ## Estado actual
 
@@ -51,15 +51,16 @@ Investigar y reparar el workflow semanal fallido `29249239004`, actualizar `anyi
 - GitHub Actions Docker Quality `29142895267`: success; se disparo una vez por la creacion del workflow y en adelante solo corre para cambios de runtime/contenedor.
 - El push `f58718a` no genero ningun run de Deploy; el workflow desactivado quedo exclusivamente manual.
 - El push documental `fbde709` genero cero runs, confirmando que `.codex`/Markdown ya no consumen Actions.
-- Checkpoint mas reciente: bytes 193931..249232 sin errores nuevos.
-- El run semanal `29249239004` del 2026-07-13 fallo y `pip list --outdated` detecto `anyio` 4.14.2 y `google-auth` 2.56.0; su diagnostico y actualizacion estan en curso.
-- Validacion local de la reparacion: 61 pruebas OK, compileall OK, runtime alineado, `pip check` OK y `pip list --outdated` vacio. Falta confirmar Quality y Docker Quality en GitHub tras el push.
+- Checkpoint mas reciente: no habia entradas posteriores al rango 249232..249957, ya revisado sin errores.
+- El run semanal `29249239004` del 2026-07-13 habia validado entorno y Docker, pero fallo porque el repositorio no permitio crear el PR automatico. El workflow ahora publica un commit normal en `main` despues de validar y tiene una prueba contra regresiones de permisos/force push.
+- `anyio` 4.14.2 y `google-auth` 2.56.0 quedaron instalados y bloqueados. Validacion: 61 pruebas locales OK, compileall OK, runtime alineado, `pip check` OK y `pip list --outdated` vacio.
+- Commit funcional `b8361e5` pusheado. Quality `29279845566` paso; Docker Quality `29279845453` encontro un HTTP 500 transitorio de Docker Hub y su reejecucion aislada paso completa.
+- La rama remota temporal `automation/runtime-update` que habia dejado el run fallido fue eliminada despues de validar `main`.
 
 ## Proximos pasos
 
-1. Inspeccionar los logs del run `29249239004`, corregir el workflow y actualizar/validar el lock.
-2. Para confirmar el medio de pago, iniciar sesion en GitHub en el navegador disponible o autorizar explicitamente `gh auth refresh -h github.com -s user`; no ampliar scopes sin confirmacion.
-3. Mantener bloqueados Google Sheets real y Railway hasta recibir el input correspondiente.
+1. Para confirmar el medio de pago, iniciar sesion en GitHub en el navegador disponible o autorizar explicitamente `gh auth refresh -h github.com -s user`; no ampliar scopes sin confirmacion.
+2. Mantener bloqueados Google Sheets real y Railway hasta recibir el input correspondiente.
 
 ## Riesgos y bloqueos
 
