@@ -11,7 +11,7 @@
 
 # IN PROGRESS
 
-No hay tareas en curso.
+- [2026-07-13] Reparar el workflow semanal fallido `29249239004`, actualizar `anyio` 4.14.1 -> 4.14.2 y `google-auth` 2.55.2 -> 2.56.0, y validar el lock en Windows y Docker/CI.
 
 # DONE
 

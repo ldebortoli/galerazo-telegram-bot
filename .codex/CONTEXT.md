@@ -43,7 +43,7 @@ La misma politica se aplica globalmente desde `C:\Users\calei\.codex\AGENTS.md`.
 - `.github/workflows/deploy.yml`: deploy Railway desactivado y disponible solo por ejecucion manual.
 - `.github/workflows/quality.yml`: suite Linux para cambios sustantivos; ignora documentacion/memoria y cancela runs obsoletos.
 - `.github/workflows/docker-quality.yml`: build y tests Docker solo cuando cambia el runtime o la configuracion del contenedor.
-- `.github/workflows/runtime-update.yml`: actualizacion semanal de Python/dependencias; salta validaciones costosas cuando no hay cambios.
+- `.github/workflows/runtime-update.yml`: actualizacion semanal de Python/dependencias; salta validaciones cuando no hay cambios y, despues de validar entorno nativo y Docker, publica un commit normal sobre `main` sin force push ni permisos de pull request.
 - `requirements.in`: dependencias directas; `requirements.txt`: lock completo reproducible.
 - `scripts/runtime_versions.py`: valida y sincroniza la version exacta entre runtime y Docker.
 - `scripts/sync_windows_runtime.ps1`: instala/verifica el Python exacto con winget, recrea `.venv` e instala/valida el lock.

@@ -284,3 +284,12 @@ Este archivo es append-only a nivel conceptual: no borrar decisiones anteriores.
 - Decision: el panel abre en `760x720`, no permite menos de `680x700` y reduce el padding vertical de Configuracion a 16 px.
 - Motivo: con el layout anterior el label de logging solicitaba 21 px pero Tk solo le asignaba 14, cortando el texto inferior.
 - Validacion: una prueba nativa de Windows instancia Tk a la altura minima y exige que `winfo_height >= winfo_reqheight` para el label.
+
+## D-036 - Runtime Update publica el commit validado directamente
+
+- Estado: vigente; reemplaza la creacion/fusion de PR automatica de D-023.
+- Fecha: 2026-07-13.
+- Decision: cuando cambian versiones, el workflow semanal valida primero el entorno nativo y la imagen Docker, crea un commit y hace un push normal de `HEAD` a `main`.
+- Seguridad: no usa force push; si `main` avanzo durante el job, el push se rechaza sin sobrescribir cambios. El token conserva solo `contents: write` y los pushes hechos con `GITHUB_TOKEN` no encadenan nuevas ejecuciones de Actions.
+- Motivo: el repositorio no permite que GitHub Actions cree pull requests con su configuracion actual; el run `29249239004` habia validado correctamente pero fallo al intentar crear el PR.
+- Versiones validadas: Python 3.14.6, `anyio` 4.14.2 y `google-auth` 2.56.0; una prueba impide reintroducir permisos/CLI de pull request o force push.

@@ -6,7 +6,7 @@ Mantener y ampliar Galerazo Bot como bot de Telegram modular y reanudable, con S
 
 ## Tarea actual
 
-No hay tareas autonomas en curso. Quedan bloqueados Google Sheets real, Railway y la comprobacion visual del medio de pago de GitHub.
+Investigar y reparar el workflow semanal fallido `29249239004`, actualizar `anyio` y `google-auth` a sus ultimas versiones estables y validar el lock en Windows y Docker/CI. Quedan bloqueados Google Sheets real, Railway y la comprobacion visual del medio de pago de GitHub.
 
 ## Estado actual
 
@@ -14,15 +14,15 @@ No hay tareas autonomas en curso. Quedan bloqueados Google Sheets real, Railway 
 - Python 3.14.6 esta instalado en Windows y `.venv` fue creado con esa version.
 - `.python-version`, Docker y GitHub Actions usan Python 3.14.6 exacto.
 - El alias global `python` de la terminal existente puede resolver 3.13; usar `.venv\Scripts\python.exe` o activar `.venv`. El bot rechaza un runtime distinto.
-- Dependencias directas actuales: python-telegram-bot 22.8, python-dotenv 1.2.2, gspread 6.2.1, google-auth 2.55.2 y tzdata 2026.3.
+- Dependencias directas actuales: python-telegram-bot 22.8, python-dotenv 1.2.2, gspread 6.2.1, google-auth 2.56.0 y tzdata 2026.3. El lock tambien fija anyio 4.14.2.
 - `requirements.txt` fija tambien todas las dependencias transitivas y `pip list --outdated` devuelve una lista vacia.
 - El lanzador compilado prioriza `.venv\Scripts\pythonw.exe`.
 - `scripts/sync_windows_runtime.ps1` fue probado de punta a punta y recrea/valida el entorno local desde `.python-version`.
-- Quality prueba Python en Linux; Docker Quality valida el contenedor cuando cambia su runtime; Runtime Update busca estables semanalmente y fusiona solo despues de validar.
+- Quality prueba Python en Linux; Docker Quality valida el contenedor cuando cambia su runtime; Runtime Update busca estables semanalmente y publica un commit normal en `main` solo despues de validar entorno nativo y Docker.
 - Quality quedo reducido a un job Linux por cambio sustantivo; Docker corre por separado solo ante cambios de runtime/contenedor, y commits documentales no disparan CI.
 - Railway continua desactivado.
 - `.env` sigue ignorado y nunca debe imprimirse ni versionarse.
-- El panel abierto bajo PID `18228` usa un ICO con nueve capas DIB BGRA de 32 bits; las capas 16..64 usan composicion compacta y el icono 16x16 activo ocupa 14x14 con margen transparente uniforme de un pixel.
+- El panel abierto usa el launcher de venv PID `18812` y su interprete hijo PID `18900`; esta dupla padre/hijo es el funcionamiento normal del launcher de Python en Windows. Usa un ICO con nueve capas DIB BGRA de 32 bits; las capas 16..64 usan composicion compacta y el icono 16x16 activo ocupa 14x14 con margen transparente uniforme de un pixel.
 - El panel abre en 760x720 (minimo 680x700); el label de logging recibe sus 21 px requeridos y muestra completo `Canal de logging: OK - Canal de logging accesible.`
 - El canal de logging esta verificado como accesible en `data/integration-status.json`.
 - `/ruletarusa`, triggers ampliados, prefijos, help agrupado, debug JSON y listas sin menciones estan implementados.
@@ -52,11 +52,14 @@ No hay tareas autonomas en curso. Quedan bloqueados Google Sheets real, Railway 
 - El push `f58718a` no genero ningun run de Deploy; el workflow desactivado quedo exclusivamente manual.
 - El push documental `fbde709` genero cero runs, confirmando que `.codex`/Markdown ya no consumen Actions.
 - Checkpoint mas reciente: bytes 193931..249232 sin errores nuevos.
+- El run semanal `29249239004` del 2026-07-13 fallo y `pip list --outdated` detecto `anyio` 4.14.2 y `google-auth` 2.56.0; su diagnostico y actualizacion estan en curso.
+- Validacion local de la reparacion: 61 pruebas OK, compileall OK, runtime alineado, `pip check` OK y `pip list --outdated` vacio. Falta confirmar Quality y Docker Quality en GitHub tras el push.
 
 ## Proximos pasos
 
-1. Para confirmar el medio de pago, iniciar sesion en GitHub en el navegador disponible o autorizar explicitamente `gh auth refresh -h github.com -s user`; no ampliar scopes sin confirmacion.
-2. Mantener bloqueados Google Sheets real y Railway hasta recibir el input correspondiente.
+1. Inspeccionar los logs del run `29249239004`, corregir el workflow y actualizar/validar el lock.
+2. Para confirmar el medio de pago, iniciar sesion en GitHub en el navegador disponible o autorizar explicitamente `gh auth refresh -h github.com -s user`; no ampliar scopes sin confirmacion.
+3. Mantener bloqueados Google Sheets real y Railway hasta recibir el input correspondiente.
 
 ## Riesgos y bloqueos
 

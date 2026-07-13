@@ -11,7 +11,6 @@ concurrency:
 
 permissions:
   contents: write
-  pull-requests: write
 
 jobs:
   update:
@@ -65,17 +64,11 @@ jobs:
           docker run --rm galerazo-bot:update-test python -m unittest discover -s tests -v
           docker run --rm galerazo-bot:update-test python scripts/runtime_versions.py
 
-      - name: Create and merge validated update
+      - name: Commit validated update
         if: steps.changes.outputs.changed == 'true'
-        env:
-          GH_TOKEN: ${{ github.token }}
         run: |
-          branch="automation/runtime-update"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git checkout -B "$branch"
           git add .python-version Dockerfile requirements.txt
           git commit -m "Update Python runtime and dependencies"
-          git push --force-with-lease origin "$branch"
-          pr_url=$(gh pr create --base main --head "$branch" --title "Update Python runtime and dependencies" --body "Automated stable runtime update. Native and Docker test suites passed before this PR was created." 2>/dev/null || gh pr view "$branch" --json url --jq .url)
-          gh pr merge "$pr_url" --squash --delete-branch
+          git push origin HEAD:main

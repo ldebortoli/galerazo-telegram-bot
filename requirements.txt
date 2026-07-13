@@ -1,9 +1,9 @@
-anyio==4.14.1
+anyio==4.14.2
 certifi==2026.6.17
 cffi==2.1.0
 charset-normalizer==3.4.9
 cryptography==49.0.0
-google-auth==2.55.2
+google-auth==2.56.0
 google-auth-oauthlib==1.4.0
 gspread==6.2.1
 h11==0.16.0
