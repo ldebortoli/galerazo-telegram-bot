@@ -22,11 +22,11 @@ No hay tareas autonomas en curso. Quedan bloqueados Google Sheets real, Railway 
 - Quality quedo reducido a un job Linux por cambio sustantivo; Docker corre por separado solo ante cambios de runtime/contenedor, y commits documentales no disparan CI.
 - Railway continua desactivado.
 - `.env` sigue ignorado y nunca debe imprimirse ni versionarse.
-- El panel abierto usa el launcher de venv PID `19728` y su interprete hijo PID `5368`; el bot esta activo mediante launcher PID `21296` e interprete hijo PID `7720`. Usa un ICO con nueve capas DIB BGRA de 32 bits; las capas 16..64 usan composicion compacta y el icono 16x16 activo ocupa 14x14 con margen transparente uniforme de un pixel.
+- El panel abierto usa el launcher de venv PID `19728` y su interprete hijo PID `5368`; el bot esta activo mediante launcher `pythonw` PID `19352` e interprete hijo PID `9240`. Usa un ICO con nueve capas DIB BGRA de 32 bits; las capas 16..64 usan composicion compacta y el icono 16x16 activo ocupa 14x14 con margen transparente uniforme de un pixel.
 - El panel abre en 760x720 (minimo 680x700); el label de logging recibe sus 21 px requeridos y muestra completo `Canal de logging: OK - Canal de logging accesible.`
 - El canal de logging esta verificado como accesible en `data/integration-status.json`.
 - `/ruletarusa`, triggers ampliados, prefijos, help agrupado, debug JSON y listas sin menciones estan implementados.
-- La Galeraza usa el timestamp Telegram con timezone argentino. Todo mensaje original con usuario humano compite, incluidos eventos de servicio como altas al chat; bots, ediciones y updates sin usuario no compiten. El bot esta activo y `data/bot.pid` contiene `21296`.
+- La Galeraza usa el timestamp Telegram con timezone argentino. Todo mensaje original con usuario humano compite, incluidos eventos de servicio como altas al chat; bots, ediciones y updates sin usuario no compiten. El bot esta activo y `data/bot.pid` contiene `19352`.
 - `PerChatUpdateProcessor` serializa FIFO cada chat, permite que chats distintos avancen en paralelo y conserva el orden durante migraciones del ID de grupo al de supergrupo.
 - `try_award_daily_galeraza` usa `BEGIN IMMEDIATE` ademas de la clave unica por chat/fecha.
 - El ganador historico de Dankgentina del 2026-07-11 fue corregido a [Lewito] Leonardo (360780605), mensaje 1337843, timestamp Telegram `2026-07-11T03:08:17+00:00`; backup previo en `data/backups/galerazo-backup-20260711-030434.sqlite3`.
@@ -56,7 +56,8 @@ No hay tareas autonomas en curso. Quedan bloqueados Google Sheets real, Railway 
 - `anyio` 4.14.2 y `google-auth` 2.56.0 quedaron instalados y bloqueados. Validacion: 61 pruebas locales OK, compileall OK, runtime alineado, `pip check` OK y `pip list --outdated` vacio.
 - Commit funcional `b8361e5` pusheado. Quality `29279845566` paso; Docker Quality `29279845453` encontro un HTTP 500 transitorio de Docker Hub y su reejecucion aislada paso completa.
 - La rama remota temporal `automation/runtime-update` que habia dejado el run fallido fue eliminada despues de validar `main`.
-- Checkpoint posterior al reinicio PID 21296: bytes 254486..255211 sin errores nuevos.
+- Cambio funcional pusheado en `700811d`; Quality `29460027552` paso con el unico job Linux esperado.
+- Checkpoint posterior al reinicio final PID 19352: bytes 258111..258936 sin errores nuevos.
 
 ## Proximos pasos
 
