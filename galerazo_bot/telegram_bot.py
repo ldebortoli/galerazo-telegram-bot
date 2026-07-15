@@ -1419,9 +1419,7 @@ def _is_bot_removed_error(exc: TelegramError) -> bool:
 
 
 def _is_galeraza_candidate(update: Update, message: Message, user: User) -> bool:
-    if user.is_bot or update.message is not message:
-        return False
-    return not bool(filters.StatusUpdate.ALL.check_update(update))
+    return not user.is_bot and update.message is message
 
 
 def _telegram_message_datetime(message: Message) -> datetime:

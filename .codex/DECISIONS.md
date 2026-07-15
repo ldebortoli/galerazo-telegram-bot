@@ -293,3 +293,12 @@ Este archivo es append-only a nivel conceptual: no borrar decisiones anteriores.
 - Seguridad: no usa force push; si `main` avanzo durante el job, el push se rechaza sin sobrescribir cambios. El token conserva solo `contents: write` y los pushes hechos con `GITHUB_TOKEN` no encadenan nuevas ejecuciones de Actions.
 - Motivo: el repositorio no permite que GitHub Actions cree pull requests con su configuracion actual; el run `29249239004` habia validado correctamente pero fallo al intentar crear el PR.
 - Versiones validadas: Python 3.14.6, `anyio` 4.14.2 y `google-auth` 2.56.0; una prueba impide reintroducir permisos/CLI de pull request o force push.
+
+## D-037 - Eventos de servicio humanos compiten por La Galeraza
+
+- Estado: vigente; reemplaza la exclusion de eventos de servicio establecida en D-028.
+- Fecha: 2026-07-15.
+- Decision: todo `Update.message` original de grupo o supergrupo con `effective_user` humano compite por el punto diario, incluidos mensajes de servicio como `new_chat_members`.
+- Exclusiones: bots, `edited_message`, updates sin usuario, usuarios globalmente bloqueados y usuarios restringidos en ese chat siguen sin competir.
+- Consistencia: se mantienen el timestamp de Telegram, el timezone `America/Argentina/Buenos_Aires`, el orden FIFO por chat y la adjudicacion atomica de un unico ganador.
+- Validacion: la regresion construye un mensaje `new_chat_members`, comprueba que PTB conserva su usuario efectivo y exige que sea candidato.

@@ -64,7 +64,7 @@ class GalerazaAwardTests(unittest.TestCase):
         self.assertEqual(_galeraza_game_date(before_midnight), "2026-07-10")
         self.assertEqual(_galeraza_game_date(at_midnight), "2026-07-11")
 
-    def test_only_original_user_messages_are_candidates(self) -> None:
+    def test_all_original_human_messages_are_candidates(self) -> None:
         sent_at = datetime(2026, 7, 11, 4, 0, tzinfo=timezone.utc)
         user = User(id=1, first_name="User", is_bot=False)
         message = self._message(sent_at, user, text="original")
@@ -81,9 +81,11 @@ class GalerazaAwardTests(unittest.TestCase):
         )
 
         service_message = self._message(sent_at, user, new_chat_members=(user,))
-        self.assertFalse(
+        service_update = Update(4, message=service_message)
+        self.assertEqual(service_update.effective_user, user)
+        self.assertTrue(
             _is_galeraza_candidate(
-                Update(4, message=service_message),
+                service_update,
                 service_message,
                 user,
             )

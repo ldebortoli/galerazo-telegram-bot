@@ -58,7 +58,7 @@ La misma politica se aplica globalmente desde `C:\Users\calei\.codex\AGENTS.md`.
 - El polling fija `drop_pending_updates=False` para consumir updates que Telegram todavia conserve.
 - Los callbacks de botoneras se procesan en la misma secuencia del chat correspondiente.
 - La Galeraza usa una insercion atomica para garantizar un ganador por chat y dia.
-- La fecha de La Galeraza sale exclusivamente de `message.date` de Telegram convertido a `America/Argentina/Buenos_Aires`; bots, ediciones y eventos de servicio no compiten.
+- La fecha de La Galeraza sale exclusivamente de `message.date` de Telegram convertido a `America/Argentina/Buenos_Aires`; todo `message` original de grupo/supergrupo con autor humano compite, incluidos los eventos de servicio. Bots, ediciones y updates sin usuario no compiten.
 - La ruleta rusa usa `BEGIN IMMEDIATE` para consumir atomicamente una recamara por usuario/chat; viene deshabilitada por defecto y migra con el chat.
 - Los datos de chats no se eliminan cuando el bot es expulsado o bloqueado; solo cambia su estado de actividad.
 
