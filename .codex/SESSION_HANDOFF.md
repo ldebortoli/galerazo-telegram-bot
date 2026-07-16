@@ -6,7 +6,7 @@ Mantener y ampliar Galerazo Bot como bot de Telegram modular y reanudable, con S
 
 ## Tarea actual
 
-La cobertura exhaustiva de eventos de servicio esta implementada y validada localmente; falta commit, push y Quality remoto. Quedan bloqueados Google Sheets real, Railway y la comprobacion visual del medio de pago de GitHub.
+No hay tareas autonomas en curso. Quedan bloqueados Google Sheets real, Railway y la comprobacion visual del medio de pago de GitHub.
 
 ## Estado actual
 
@@ -58,12 +58,12 @@ La cobertura exhaustiva de eventos de servicio esta implementada y validada loca
 - La rama remota temporal `automation/runtime-update` que habia dejado el run fallido fue eliminada despues de validar `main`.
 - Cambio funcional pusheado en `700811d`; Quality `29460027552` paso con el unico job Linux esperado.
 - Checkpoint posterior al reinicio final PID 19352: bytes 258111..258936 sin errores nuevos.
+- Cobertura exhaustiva pusheada en `07e7514`; las 64 pruebas locales y Quality `29460516323` pasaron. El checkpoint 259236..264136 no encontro errores y el bot siguio activo bajo PID 19352.
 
 ## Proximos pasos
 
-1. Enumerar los eventos de `filters.StatusUpdate` de PTB 22.8 y agregar fixtures/cobertura representativa para todos los subtipos con `effective_user` humano.
-2. Para confirmar el medio de pago, iniciar sesion en GitHub en el navegador disponible o autorizar explicitamente `gh auth refresh -h github.com -s user`; no ampliar scopes sin confirmacion.
-3. Mantener bloqueados Google Sheets real y Railway hasta recibir el input correspondiente.
+1. Para confirmar el medio de pago, iniciar sesion en GitHub en el navegador disponible o autorizar explicitamente `gh auth refresh -h github.com -s user`; no ampliar scopes sin confirmacion.
+2. Mantener bloqueados Google Sheets real y Railway hasta recibir el input correspondiente.
 
 ## Riesgos y bloqueos
 

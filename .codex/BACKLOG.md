@@ -11,10 +11,11 @@
 
 # IN PROGRESS
 
-- [2026-07-15] Validar explicitamente que pin, altas, bajas y los demas eventos de servicio con usuario humano compitan por La Galeraza.
+No hay tareas en curso.
 
 # DONE
 
+- [2026-07-15] Auditar las 46 categorias de `filters.StatusUpdate` y validar explicitamente que pin, altas y bajas llegan al preprocesador y compiten con autor humano; 64 pruebas locales y Quality OK.
 - [2026-07-15] Hacer que todo mensaje original de grupo/supergrupo con un usuario humano, incluidos eventos de servicio como `new_chat_members`, compita por La Galeraza; validar 61 pruebas y reiniciar el bot.
 - [2026-07-13] Reparar el workflow semanal fallido `29249239004`, actualizar `anyio` 4.14.1 -> 4.14.2 y `google-auth` 2.55.2 -> 2.56.0, y validar 61 pruebas en Windows, Quality y Docker Quality.
 - [2026-07-11] Corregir el texto truncado del estado de logging: ampliar el panel, ajustar padding y agregar una prueba Tk nativa que confirma 21/21 px de altura asignada.
