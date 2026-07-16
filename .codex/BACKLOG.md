@@ -11,7 +11,7 @@
 
 # IN PROGRESS
 
-No hay tareas en curso.
+- [2026-07-15] Validar explicitamente que pin, altas, bajas y los demas eventos de servicio con usuario humano compitan por La Galeraza.
 
 # DONE
 

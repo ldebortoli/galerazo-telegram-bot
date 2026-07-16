@@ -302,3 +302,11 @@ Este archivo es append-only a nivel conceptual: no borrar decisiones anteriores.
 - Exclusiones: bots, `edited_message`, updates sin usuario, usuarios globalmente bloqueados y usuarios restringidos en ese chat siguen sin competir.
 - Consistencia: se mantienen el timestamp de Telegram, el timezone `America/Argentina/Buenos_Aires`, el orden FIFO por chat y la adjudicacion atomica de un unico ganador.
 - Validacion: la regresion construye un mensaje `new_chat_members`, comprueba que PTB conserva su usuario efectivo y exige que sea candidato.
+
+## D-038 - Auditoria exhaustiva de StatusUpdate
+
+- Estado: vigente; refuerza D-037.
+- Fecha: 2026-07-15.
+- Decision: mantener en tests un mapa explicito de todas las constantes de `filters.StatusUpdate` disponibles en la version bloqueada de PTB; actualmente son 46 categorias.
+- Regresion: cada categoria debe ser reconocida por su filtro especifico, por `StatusUpdate.ALL`, conservar un `effective_user` humano y ser candidata. La igualdad exacta entre el mapa y la biblioteca obliga a auditar categorias nuevas al actualizar PTB.
+- Ruta: otra prueba verifica que el `MessageHandler` de preprocesamiento recibe especificamente eventos de pin, miembros agregados y miembros que salen.

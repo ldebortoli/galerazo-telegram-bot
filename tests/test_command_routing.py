@@ -3,9 +3,11 @@ from __future__ import annotations
 import asyncio
 import tempfile
 import unittest
+from datetime import datetime, timezone
 from pathlib import Path
 
-from telegram.ext import CommandHandler
+from telegram import Chat, Message, Update, User
+from telegram.ext import CommandHandler, MessageHandler
 
 from galerazo_bot.commands import handle_command_async
 from galerazo_bot.database import Database
@@ -47,6 +49,44 @@ class CommandRoutingTests(unittest.TestCase):
             and "galerazas" in handler.commands
         ]
         self.assertEqual(len(galerazas_handlers), 1)
+
+    def test_preprocessor_receives_pin_add_and_leave_events(self) -> None:
+        application = CapturingApplication()
+        _register_handlers(application)
+        preprocessors = [
+            handler
+            for group, handler in application.handlers
+            if group == 0 and isinstance(handler, MessageHandler)
+        ]
+        self.assertEqual(len(preprocessors), 1)
+
+        sent_at = datetime(2026, 7, 15, tzinfo=timezone.utc)
+        actor = User(id=1, first_name="Actor", is_bot=False)
+        other_user = User(id=2, first_name="Other", is_bot=False)
+        pinned_message = Message(
+            message_id=9,
+            date=sent_at,
+            chat=Chat(id=-1, type="group"),
+            from_user=other_user,
+            text="pinned",
+        )
+        cases = (
+            {"pinned_message": pinned_message},
+            {"new_chat_members": (other_user,)},
+            {"left_chat_member": other_user},
+        )
+        for update_id, kwargs in enumerate(cases, start=10):
+            with self.subTest(field=next(iter(kwargs))):
+                message = Message(
+                    message_id=update_id,
+                    date=sent_at,
+                    chat=Chat(id=-1, type="group"),
+                    from_user=actor,
+                    **kwargs,
+                )
+                self.assertTrue(
+                    preprocessors[0].check_update(Update(update_id, message=message))
+                )
 
     def test_unknown_commands_are_ignored(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

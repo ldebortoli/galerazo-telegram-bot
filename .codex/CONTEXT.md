@@ -119,7 +119,7 @@ python -m galerazo_bot.log_checkpoint
 git diff --check
 ```
 
-La suite automatizada usa `unittest` y cubre enrutamiento, permisos, config, Galeraza, ruleta, triggers, migraciones con colisiones, paginacion, serializacion de debug, logging, panel e instancia unica.
+La suite automatizada usa `unittest` y cubre enrutamiento, permisos, config, Galeraza, ruleta, triggers, migraciones con colisiones, paginacion, serializacion de debug, logging, panel e instancia unica. La cobertura de Galeraza audita las 46 categorias actuales de `filters.StatusUpdate` y falla si PTB agrega una nueva sin mapear.
 
 El panel usa un cliente inicial de `760x720`, minimo `680x700`; la pestaña Configuracion reserva altura completa para el estado del canal de logging.
 

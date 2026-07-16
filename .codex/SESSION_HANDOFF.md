@@ -6,7 +6,7 @@ Mantener y ampliar Galerazo Bot como bot de Telegram modular y reanudable, con S
 
 ## Tarea actual
 
-No hay tareas autonomas en curso. Quedan bloqueados Google Sheets real, Railway y la comprobacion visual del medio de pago de GitHub.
+La cobertura exhaustiva de eventos de servicio esta implementada y validada localmente; falta commit, push y Quality remoto. Quedan bloqueados Google Sheets real, Railway y la comprobacion visual del medio de pago de GitHub.
 
 ## Estado actual
 
@@ -40,7 +40,7 @@ No hay tareas autonomas en curso. Quedan bloqueados Google Sheets real, Railway 
 
 - `.venv\Scripts\python.exe --version`: Python 3.14.6.
 - `python scripts/runtime_versions.py`: runtime alineado.
-- `python -m unittest discover -s tests -v`: 61 pruebas OK, incluida la regresion de `new_chat_members` y la geometria Tk nativa de Windows.
+- `python -m unittest discover -s tests -v`: 64 pruebas OK, incluida la auditoria de las 46 categorias de `StatusUpdate`, la ruta para pin/altas/bajas y la geometria Tk nativa de Windows.
 - `python -m compileall app.py control_panel.py galerazo_bot scripts`: OK.
 - `python -m pip check`: sin dependencias rotas.
 - `python -m pip list --outdated --format=json`: `[]`.
@@ -61,8 +61,9 @@ No hay tareas autonomas en curso. Quedan bloqueados Google Sheets real, Railway 
 
 ## Proximos pasos
 
-1. Para confirmar el medio de pago, iniciar sesion en GitHub en el navegador disponible o autorizar explicitamente `gh auth refresh -h github.com -s user`; no ampliar scopes sin confirmacion.
-2. Mantener bloqueados Google Sheets real y Railway hasta recibir el input correspondiente.
+1. Enumerar los eventos de `filters.StatusUpdate` de PTB 22.8 y agregar fixtures/cobertura representativa para todos los subtipos con `effective_user` humano.
+2. Para confirmar el medio de pago, iniciar sesion en GitHub en el navegador disponible o autorizar explicitamente `gh auth refresh -h github.com -s user`; no ampliar scopes sin confirmacion.
+3. Mantener bloqueados Google Sheets real y Railway hasta recibir el input correspondiente.
 
 ## Riesgos y bloqueos
 
