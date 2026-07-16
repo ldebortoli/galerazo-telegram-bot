@@ -27,6 +27,7 @@ No hay tareas autonomas en curso. Quedan bloqueados Google Sheets real, Railway 
 - El canal de logging esta verificado como accesible en `data/integration-status.json`.
 - `/ruletarusa`, triggers ampliados, prefijos, help agrupado, debug JSON y listas sin menciones estan implementados.
 - La Galeraza usa el timestamp Telegram con timezone argentino. Todo mensaje original con usuario humano compite, incluidos eventos de servicio como altas al chat; bots, ediciones y updates sin usuario no compiten. El bot esta activo y `data/bot.pid` contiene `19352`.
+- El usuario confirmo que no hace falta corregir retroactivamente el evento de servicio omitido antes de este arreglo; no existe una tarea pendiente por ese punto.
 - `PerChatUpdateProcessor` serializa FIFO cada chat, permite que chats distintos avancen en paralelo y conserva el orden durante migraciones del ID de grupo al de supergrupo.
 - `try_award_daily_galeraza` usa `BEGIN IMMEDIATE` ademas de la clave unica por chat/fecha.
 - El ganador historico de Dankgentina del 2026-07-11 fue corregido a [Lewito] Leonardo (360780605), mensaje 1337843, timestamp Telegram `2026-07-11T03:08:17+00:00`; backup previo en `data/backups/galerazo-backup-20260711-030434.sqlite3`.
@@ -59,6 +60,7 @@ No hay tareas autonomas en curso. Quedan bloqueados Google Sheets real, Railway 
 - Cambio funcional pusheado en `700811d`; Quality `29460027552` paso con el unico job Linux esperado.
 - Checkpoint posterior al reinicio final PID 19352: bytes 258111..258936 sin errores nuevos.
 - Cobertura exhaustiva pusheada en `07e7514`; las 64 pruebas locales y Quality `29460516323` pasaron. El checkpoint 259236..264136 no encontro errores y el bot siguio activo bajo PID 19352.
+- Checkpoint posterior a la confirmacion: bytes 264436..264836 sin errores nuevos.
 
 ## Proximos pasos
 
