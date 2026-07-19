@@ -22,11 +22,11 @@ No hay tareas autonomas en curso. Quedan bloqueados Google Sheets real, Railway 
 - Quality quedo reducido a un job Linux por cambio sustantivo; Docker corre por separado solo ante cambios de runtime/contenedor, y commits documentales no disparan CI.
 - Railway continua desactivado.
 - `.env` sigue ignorado y nunca debe imprimirse ni versionarse.
-- El panel abierto usa el launcher de venv PID `19728` y su interprete hijo PID `5368`; el bot esta activo mediante launcher `pythonw` PID `19352` e interprete hijo PID `9240`. Usa un ICO con nueve capas DIB BGRA de 32 bits; las capas 16..64 usan composicion compacta y el icono 16x16 activo ocupa 14x14 con margen transparente uniforme de un pixel.
+- Al iniciar la investigacion de hosting del 2026-07-19 no habia `data/bot.pid` ni proceso administrado del bot activo. El panel y el bot que figuraban en el handoff anterior ya no estaban en ejecucion. El panel usa un ICO con nueve capas DIB BGRA de 32 bits; las capas 16..64 usan composicion compacta y el icono 16x16 activo ocupa 14x14 con margen transparente uniforme de un pixel.
 - El panel abre en 760x720 (minimo 680x700); el label de logging recibe sus 21 px requeridos y muestra completo `Canal de logging: OK - Canal de logging accesible.`
 - El canal de logging esta verificado como accesible en `data/integration-status.json`.
 - `/ruletarusa`, triggers ampliados, prefijos, help agrupado, debug JSON y listas sin menciones estan implementados.
-- La Galeraza usa el timestamp Telegram con timezone argentino. Todo mensaje original con usuario humano compite, incluidos eventos de servicio como altas al chat; bots, ediciones y updates sin usuario no compiten. El bot esta activo y `data/bot.pid` contiene `19352`.
+- La Galeraza usa el timestamp Telegram con timezone argentino. Todo mensaje original con usuario humano compite, incluidos eventos de servicio como altas al chat; bots, ediciones y updates sin usuario no compiten.
 - El usuario confirmo que no hace falta corregir retroactivamente el evento de servicio omitido antes de este arreglo; no existe una tarea pendiente por ese punto.
 - `PerChatUpdateProcessor` serializa FIFO cada chat, permite que chats distintos avancen en paralelo y conserva el orden durante migraciones del ID de grupo al de supergrupo.
 - `try_award_daily_galeraza` usa `BEGIN IMMEDIATE` ademas de la clave unica por chat/fecha.
@@ -36,9 +36,12 @@ No hay tareas autonomas en curso. Quedan bloqueados Google Sheets real, Railway 
 - Los seis pedidos nuevos de USER_QUEUE estan implementados y probados.
 - Los cambios funcionales fueron pusheados en `56c7aaf` y la prueba portable de panel en `493c815`.
 - La regla global exige que cada tarea procesada de USER_QUEUE quede DONE, IN PROGRESS o con bloqueo inline; tambien se actualizo el inicializador de proyectos futuros.
+- La investigacion de hosting del 2026-07-19 confirmo que no hacen falta dominio, IP publica ni puertos entrantes: el polling solo requiere salida a Internet, un proceso siempre activo y persistencia para SQLite. La base real ocupa 172032 bytes, todos los archivos locales bajo `data` 856990 bytes y una sonda local de solo importacion uso 54,2 MiB de RAM.
+- Opciones investigadas sin activar ningun deploy: Google Compute Engine `e2-micro` puede quedar en USD 0 con IPv6 y 30 GB persistentes; Railway Hobby cuesta USD 5/mes y es el despliegue mas simple para el repositorio; Fly.io con 256 MB mas 1 GB persistente ronda USD 2,17/mes en una region economica; DigitalOcean parte de USD 4/mes y el backup semanal agrega 20%; hardware domestico solo mejora claramente el costo si ya existe o se amortiza durante varios anos. Railway Free tiene solo USD 1/mes de credito y queda demasiado cerca del consumo estimado para prometer 24/7; Oracle Always Free puede recuperar instancias ociosas.
 
 ## Validacion reciente
 
+- La investigacion de hosting del 2026-07-19 paso `runtime_versions.py`, las 64 pruebas y `git diff --check`. El checkpoint detecto dos `502 Bad Gateway` transitorios de la API de Telegram ocurridos el 2026-07-16 durante `getUpdates`; el polling recupero respuestas `200 OK` inmediatamente, por lo que no quedo un defecto local ni perdida persistente que corregir.
 - `.venv\Scripts\python.exe --version`: Python 3.14.6.
 - `python scripts/runtime_versions.py`: runtime alineado.
 - `python -m unittest discover -s tests -v`: 64 pruebas OK, incluida la auditoria de las 46 categorias de `StatusUpdate`, la ruta para pin/altas/bajas y la geometria Tk nativa de Windows.

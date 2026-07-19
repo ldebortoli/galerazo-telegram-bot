@@ -15,6 +15,7 @@ No hay tareas en curso.
 
 # DONE
 
+- [2026-07-19] Investigar hosting 24/7 gratuito o de bajo costo para Galerazo Bot. El bot necesita proceso siempre activo y disco persistente, pero no dominio/IP publica; la base real ocupa 172032 bytes, todos los datos locales 856990 bytes y una sonda de importacion uso 54,2 MiB. Resultado: Google Compute Engine `e2-micro` es la opcion estable de costo cero con IPv6; Railway Hobby (USD 5/mes) es la mas simple por la preparacion existente; Fly.io ronda USD 2,17/mes con 256 MB y 1 GB persistente; DigitalOcean parte de USD 4/mes mas USD 0,80 por backup semanal; un mini PC domestico conviene solo con hardware ya disponible o a varios anos y requiere contemplar electricidad, cortes, Internet y UPS. No se activo ningun deploy.
 - [2026-07-15] Auditar las 46 categorias de `filters.StatusUpdate` y validar explicitamente que pin, altas y bajas llegan al preprocesador y compiten con autor humano; 64 pruebas locales y Quality OK.
 - [2026-07-15] Hacer que todo mensaje original de grupo/supergrupo con un usuario humano, incluidos eventos de servicio como `new_chat_members`, compita por La Galeraza; validar 61 pruebas y reiniciar el bot.
 - [2026-07-13] Reparar el workflow semanal fallido `29249239004`, actualizar `anyio` 4.14.1 -> 4.14.2 y `google-auth` 2.55.2 -> 2.56.0, y validar 61 pruebas en Windows, Quality y Docker Quality.
