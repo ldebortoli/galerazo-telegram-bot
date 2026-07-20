@@ -56,6 +56,26 @@ Los comandos que pertenecen a un conjunto configurable usan `configurable_group`
 
 ## Instalacion
 
+### Instalador local de Windows
+
+La opcion recomendada para una PC nueva es hacer doble clic en:
+
+```text
+instaladores\Instalar Galerazo Bot.cmd
+```
+
+El instalador prepara la version exacta de Python, crea o reutiliza `.venv`, instala todas las dependencias bloqueadas, ejecuta las pruebas, crea `.env` si falta, compila la UI y sus iconos, instala accesos directos en `CODEX APPS` y el Escritorio, y finalmente abre el panel para probarlo localmente. Si `.env` ya existe, nunca lo reemplaza.
+
+El mismo flujo se puede iniciar desde PowerShell:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/setup.ps1
+```
+
+Usa `-NoLaunch` para no abrir el panel, `-SkipTests` para omitir temporalmente la suite o `-ForceRecreate` para reconstruir `.venv`. El instalador es un puente hacia los scripts del repositorio: no copia el bot a otra ubicacion, no instala Docker y no incluye credenciales.
+
+### Preparacion manual del runtime
+
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts/sync_windows_runtime.ps1
 .\.venv\Scripts\Activate.ps1
@@ -79,6 +99,8 @@ El panel guarda el PID en `data/bot.pid`. Cerrar la ventana apaga primero el ár
 Durante el arranque el estado queda en amarillo mientras se valida la configuracion y la conexion con Telegram. Si el proceso falla, el panel abre la pestana de logs y muestra el error de inicio.
 
 Para reconstruir el lanzador de Windows ejecutá `powershell -ExecutionPolicy Bypass -File build_control_panel.ps1`. El build regenera el ICO multirresolución desde el PNG fuente, compila el lanzador y actualiza el acceso directo de `CODEX APPS`.
+
+El build tambien actualiza `Galerazo Bot.lnk` en el Escritorio. Volve a ejecutar el setup si moves el repositorio, cambias el runtime o necesitas regenerar los accesos con las rutas actuales.
 
 Las dependencias directas se declaran en `requirements.in`. `requirements.txt` fija todas las versiones directas y transitivas para que Windows y Docker instalen el mismo conjunto reproducible.
 

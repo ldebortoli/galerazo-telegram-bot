@@ -6,55 +6,50 @@ Mantener y ampliar Galerazo Bot como bot de Telegram modular y reanudable, con S
 
 ## Tarea actual
 
-La moderacion multimedia al crear triggers esta implementada y validada. Falta unicamente que el usuario cargue su clave restringida desde el panel para activarla en una ejecucion real.
+El setup integral y el instalador local de Windows estan implementados, ejecutados y listos para publicar.
 
 ## Estado actual
 
 - Rama `main`, tracking `origin/main`.
-- Python 3.14.6 exacto en `.venv`, Docker y CI. `scripts/runtime_versions.py` esta alineado.
-- Dependencias directas nuevas: `av==18.0.0`, `Pillow==12.3.0` y `httpx==0.28.1`; el lock completo no tiene paquetes desactualizados ni dependencias rotas.
-- `OPENAI_API_KEY` es opcional, se carga como secreto desde la pestaña Configuracion y se guarda solo en `.env`. No hay una clave configurada actualmente.
-- Con clave, `/agregartrigger` modera fotos, documentos de imagen y stickers; videos, documentos de video y videomensajes usan cuatro frames al 20%, 40%, 60% y 80%. Sin clave se conserva el comportamiento previo.
-- La moderacion ocurre antes de `db.add_trigger`; un bloqueo, error o archivo mayor al limite descargable de 20 MB no se persiste. Triggers ya aceptados se reproducen sin volver a moderar.
-- Todo procesamiento usa memoria. Los buffers descargados, imagenes normalizadas y frames mutables se sobrescriben y vacian en `finally`; no se crean temporales ni nuevas columnas SQLite.
-- `PerChatUpdateProcessor` mantiene el orden por chat mientras `asyncio.to_thread` evita bloquear el event loop durante Pillow/PyAV.
-- El panel ahora abre en 760x750, minimo 680x730, para alojar el nuevo campo secreto.
-- No hay proceso administrado del bot activo al cierre de esta tarea.
+- Python 3.14.6 exacto en `.venv`, Docker y CI; lock sin paquetes desactualizados.
+- `scripts/setup.ps1` compone sincronizacion de runtime, configuracion inicial, directorios locales, build, accesos directos y apertura del panel.
+- `scripts/sync_windows_runtime.ps1` conserva una `.venv` con la version exacta, instala el lock y solo recrea ante ausencia, version incorrecta o `-ForceRecreate`. Rechaza borrar enlaces/junctions.
+- `build_control_panel.ps1` valida icono/compilador/resultado y crea `Galerazo Bot.lnk` en `CODEX APPS` y Escritorio.
+- `instaladores/Instalar Galerazo Bot.cmd` es el instalador de doble clic y delega al setup versionado.
+- El setup crea `.env` desde `.env.example` solo cuando falta. La ejecucion real conservo el `.env` existente y no expuso secretos.
+- El setup real conservo `.venv`, verifico dependencias, paso 82 pruebas, recompilo `bin/GalerazoBotControl.exe`, creo ambos accesos y abrio la UI.
+- La ventana `Galerazo Bot - Control` esta abierta bajo `pythonw` PID 10416. No se inicio el bot automaticamente.
 - `USER_QUEUE.md` no tiene pedidos sin procesar.
 
 ## Validacion reciente
 
-- `.venv\Scripts\python.exe scripts\runtime_versions.py`: OK, Python 3.14.6 y lock completo.
-- `.venv\Scripts\python.exe -m unittest discover -s tests -v`: 78 pruebas OK.
-- `.venv\Scripts\python.exe -m compileall -q app.py control_panel.py galerazo_bot scripts tests`: OK antes de la ampliacion final; repetir antes del commit.
-- `.venv\Scripts\python.exe -m pip check`: sin dependencias rotas.
-- `.venv\Scripts\python.exe -m pip list --outdated --format=columns`: vacio.
-- Se genero un MP4 en memoria y PyAV extrajo exactamente cuatro JPEG sin FFmpeg del sistema.
-- Docker no esta instalado en esta PC. Docker Quality `29760094058`, ejecutado una sola vez manualmente sobre el ajuste final, paso build, 78 pruebas y verificacion del runtime dentro de la imagen.
-- Quality `29760074101` paso sobre `74a929a`. El Docker Quality inicial `29759959727` habia detectado que una prueba portable importaba Tk sin sus librerias Linux; se corrigio con inspeccion AST sin agregar Tk al contenedor.
-- Cambios funcionales publicados en `a2aea20`; ajuste portable publicado en `74a929a`.
+- Parser PowerShell: sintaxis OK para `scripts/setup.ps1`, `scripts/sync_windows_runtime.ps1` y `build_control_panel.ps1`.
+- `powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\setup.ps1`: OK de punta a punta.
+- Suite ejecutada por el setup: 82 pruebas OK.
+- `scripts/runtime_versions.py`: Python 3.14.6 y lock alineados.
+- `pip check`: sin dependencias rotas.
+- El setup tambien ejecuta `compileall` sobre entrypoints, paquete y scripts.
+- Accesos verificados: ambos apuntan a `bin/GalerazoBotControl.exe`, usan el root como working directory y el ICO correcto.
+- `git diff --check`: limpio antes del cierre final.
 
 ## Proximos pasos
 
-1. Cargar una API key de proyecto restringida con escritura solo en `/v1/moderations` desde el panel y reiniciar el bot.
-2. Hacer una prueba real de alta con una imagen segura y un video corto menor a 20 MB.
+1. Para una nueva instalacion, abrir `instaladores\Instalar Galerazo Bot.cmd`; para actualizar esta PC, se puede volver a ejecutar el mismo archivo.
+2. Cargar una API key restringida a `/v1/moderations` desde el panel cuando se quiera activar moderacion real.
 3. Mantener bloqueados Google Sheets real y Railway hasta recibir los inputs/autorizacion correspondientes.
 
 ## Riesgos y bloqueos
 
-- La moderacion detecta contenido sexual general; no es un detector especializado ni garantiza deteccion de CSAM.
-- El Bot API oficial no permite descargar media mayor a 20 MB. Con moderacion activa, esos triggers se rechazan explicitamente.
-- Docker local no esta disponible; la validacion de imagen queda a cargo del workflow acotado de GitHub.
+- El instalador es nativo de Windows y depende de `winget` solo si falta el Python exacto. No instala Docker ni produce un paquete autonomo.
 - Google Sheets real esta bloqueado hasta que el usuario confirme spreadsheet ID, worksheet y credenciales de service account.
 - Railway requiere pedido explicito y los secrets correspondientes.
 - La consulta del medio de pago de GitHub requiere iniciar sesion o autorizar ampliar el scope de `gh`; no se ampliaron permisos.
 
 ## Archivos modificados
 
-- `.env.example`, `README.md`, `requirements.in`, `requirements.txt`
-- `galerazo_bot/media_moderation.py`
-- `galerazo_bot/telegram_bot.py`, `roles.py`, `commands.py`, `config.py`, `control_panel.py`, `i18n.py`
-- `galerazo_bot/command_handlers/triggers.py`
-- `scripts/runtime_versions.py`
-- `tests/test_media_moderation.py`, `tests/test_triggers.py`, `tests/test_control_panel.py`
+- `scripts/setup.ps1`, `scripts/sync_windows_runtime.ps1`
+- `build_control_panel.ps1`
+- `instaladores/Instalar Galerazo Bot.cmd`, `instaladores/README.md`
+- `tests/test_setup.py`
+- `README.md`
 - `.codex/CONTEXT.md`, `.codex/DECISIONS.md`, `.codex/BACKLOG.md`, `.codex/SESSION_HANDOFF.md`

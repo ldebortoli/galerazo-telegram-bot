@@ -346,3 +346,12 @@ Este archivo es append-only a nivel conceptual: no borrar decisiones anteriores.
 - Errores: sin clave, omitir el escaneo para conservar D-040. Con clave configurada, cualquier error de descarga, decodificacion o API rechaza solo ese intento de alta para no persistir media sin verificar.
 - Credencial: guardar una clave de proyecto restringida con escritura solo para `/v1/moderations` en `.env`; el panel la muestra como campo secreto. No versionarla ni registrarla.
 - Limite: se bloquea la categoria sexual disponible para imagenes. Esta integracion no se presenta como detector especializado ni garantia de deteccion de CSAM.
+
+## D-043 - Setup e instalador local componibles para Windows
+
+- Estado: vigente.
+- Fecha: 2026-07-20.
+- Decision: usar `scripts/setup.ps1` como orquestador idempotente de la instalacion local y `instaladores/Instalar Galerazo Bot.cmd` como puente de doble clic, siguiendo el patron de Dankiebot sin duplicar codigo ni artefactos del proyecto.
+- Composicion: el setup reutiliza `scripts/sync_windows_runtime.ps1` y `build_control_panel.ps1`; crea `.env` solo cuando falta, prepara directorios locales, valida el runtime, compila la UI, crea accesos en `CODEX APPS` y Escritorio y abre el panel salvo `-NoLaunch`.
+- Entorno: una `.venv` con el Python exacto se conserva y actualiza desde el lock; se recrea solo si falta, usa otra version o se pide `-ForceRecreate`. Antes de cualquier borrado se verifica que sea una carpeta real dentro del repositorio y no un reparse point.
+- Distribucion: el instalador no crea un paquete autonomo, no copia el repositorio, no instala Docker y nunca incorpora o reemplaza secretos. Las actualizaciones siguen siendo Git mas una nueva ejecucion del setup.

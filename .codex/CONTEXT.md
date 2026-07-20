@@ -48,7 +48,9 @@ La misma politica se aplica globalmente desde `C:\Users\calei\.codex\AGENTS.md`.
 - `.github/workflows/runtime-update.yml`: actualizacion semanal de Python/dependencias; salta validaciones cuando no hay cambios y, despues de validar entorno nativo y Docker, publica un commit normal sobre `main` sin force push ni permisos de pull request.
 - `requirements.in`: dependencias directas; `requirements.txt`: lock completo reproducible.
 - `scripts/runtime_versions.py`: valida y sincroniza la version exacta entre runtime y Docker.
-- `scripts/sync_windows_runtime.ps1`: instala/verifica el Python exacto con winget, recrea `.venv` e instala/valida el lock.
+- `scripts/sync_windows_runtime.ps1`: instala/verifica el Python exacto con winget, conserva una `.venv` valida o la recrea cuando corresponde, e instala/valida el lock.
+- `scripts/setup.ps1`: setup integral e idempotente de Windows; compone runtime, configuracion local, validacion, build, accesos directos y apertura del panel.
+- `instaladores/Instalar Galerazo Bot.cmd`: puente de doble clic hacia el setup versionado; no copia el repo ni contiene secretos.
 
 ## Persistencia y consistencia
 
@@ -85,11 +87,10 @@ Copiar `.env.example` a `.env`. Variables:
 Instalar:
 
 ```powershell
-py -3.14 -m venv .venv
-.\.venv\Scripts\Activate.ps1
-python -m pip install --requirement requirements.txt
-Copy-Item .env.example .env
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\setup.ps1
 ```
+
+Alternativa de doble clic: `instaladores\Instalar Galerazo Bot.cmd`.
 
 Ejecutar bot:
 
@@ -108,6 +109,8 @@ Reconstruir lanzador Windows:
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\build_control_panel.ps1
 ```
+
+El build crea `Galerazo Bot.lnk` tanto en el directorio hermano `CODEX APPS` como en el Escritorio del usuario.
 
 Validaciones disponibles:
 
