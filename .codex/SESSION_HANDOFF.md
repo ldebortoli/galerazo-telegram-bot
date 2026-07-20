@@ -6,7 +6,7 @@ Mantener y ampliar Galerazo Bot como bot de Telegram modular y reanudable, con S
 
 ## Tarea actual
 
-Definir la politica y los proveedores gratuitos de moderacion para imagenes y videos de triggers. La implementacion esta bloqueada hasta que el usuario confirme si se aplica inmediatamente el modo estricto (bloquear toda imagen y video sin escanear). OpenAI Moderation es gratuito y permite analizar imagenes o fotogramas, pero requiere API key y no detecta de manera fiable CSAM; PhotoDNA Cloud es gratuito previa aprobacion y actualmente cubre solo imagenes. No se identifico una cobertura especializada gratuita confirmada para video.
+No hay una tarea autonoma de moderacion en curso. Por decision explicita del usuario, los triggers de imagen y video permanecen habilitados sin escaner mientras el bot opere en grupos confiables; no se debe introducir bloqueo estricto ni cambiar su funcionamiento actual.
 
 ## Estado actual
 
@@ -26,6 +26,7 @@ Definir la politica y los proveedores gratuitos de moderacion para imagenes y vi
 - El panel abre en 760x720 (minimo 680x700); el label de logging recibe sus 21 px requeridos y muestra completo `Canal de logging: OK - Canal de logging accesible.`
 - El canal de logging esta verificado como accesible en `data/integration-status.json`.
 - `/ruletarusa`, triggers ampliados, prefijos, help agrupado, debug JSON y listas sin menciones estan implementados.
+- La moderacion automatica de multimedia esta pospuesta. Imagenes y videos se guardan y reproducen como hasta ahora; el usuario acepta temporalmente el riesgo residual porque el bot esta en grupos confiables.
 - La Galeraza usa el timestamp Telegram con timezone argentino. Todo mensaje original con usuario humano compite, incluidos eventos de servicio como altas al chat; bots, ediciones y updates sin usuario no compiten.
 - El usuario confirmo que no hace falta corregir retroactivamente el evento de servicio omitido antes de este arreglo; no existe una tarea pendiente por ese punto.
 - `PerChatUpdateProcessor` serializa FIFO cada chat, permite que chats distintos avancen en paralelo y conserva el orden durante migraciones del ID de grupo al de supergrupo.
@@ -44,6 +45,7 @@ Definir la politica y los proveedores gratuitos de moderacion para imagenes y vi
 
 ## Validacion reciente
 
+- La decision de mantener habilitados los triggers multimedia del 2026-07-20 no modifico codigo. Runtime alineado en Python 3.14.6, 64 pruebas locales OK y `git diff --check` OK.
 - La recomendacion del dashboard multi-bot del 2026-07-20 no modifico codigo; runtime alineado en Python 3.14.6, 64 pruebas OK, `git diff --check` limpio y checkpoint sin entradas nuevas.
 - La investigacion de costos de moderacion del 2026-07-20 no modifico codigo: OpenAI Moderation es gratuito pero no recibe video, PhotoDNA Cloud es gratuito previa aprobacion y solo cubre imagenes, Google Vision cobra al superar su franquicia y Thorn no publica un nivel gratuito confirmado. Runtime Python 3.14.6 alineado, 64 pruebas locales OK y `git diff --check` OK.
 - La consulta de moderacion de triggers del 2026-07-19 no modifico codigo. Runtime alineado en Python 3.14.6, 64 pruebas locales OK fuera del sandbox (el sandbox restringio artificialmente los directorios temporales de SQLite), `git diff --check` OK y checkpoint sin entradas nuevas.
@@ -74,16 +76,14 @@ Definir la politica y los proveedores gratuitos de moderacion para imagenes y vi
 
 ## Proximos pasos
 
-1. Confirmar si se activa ya el modo estricto que rechaza todos los triggers de imagen y video mientras no haya escaneres gratuitos configurados.
-2. Si se acepta usar una API key de OpenAI, integrar Moderation para imagenes y fotogramas de video sin consumo facturable.
-3. Solicitar acceso gratuito a PhotoDNA Cloud para cotejar imagenes de CSAM conocido; su servicio cloud no cubre video actualmente.
-4. No integrar Thorn Safer ni otro servicio sin precio gratuito confirmado; no enviar multimedia sospechosa al canal de logging.
-5. Para confirmar el medio de pago, iniciar sesion en GitHub en el navegador disponible o autorizar explicitamente `gh auth refresh -h github.com -s user`; no ampliar scopes sin confirmacion.
-6. Mantener bloqueados Google Sheets real y Railway hasta recibir el input correspondiente.
+1. Mantener sin cambios los triggers de imagen y video; retomar moderacion solo ante un nuevo pedido explicito del usuario.
+2. Al retomarla, usar un servicio sin costo confirmado y no activar rechazo estricto sin nueva autorizacion.
+3. Para confirmar el medio de pago, iniciar sesion en GitHub en el navegador disponible o autorizar explicitamente `gh auth refresh -h github.com -s user`; no ampliar scopes sin confirmacion.
+4. Mantener bloqueados Google Sheets real y Railway hasta recibir el input correspondiente.
 
 ## Riesgos y bloqueos
 
-- Los clasificadores NSFW generales pueden bloquear pornografia en imagenes y fotogramas, pero no garantizan detectar material de abuso sexual infantil nuevo. PhotoDNA Cloud gratuito solo cubre imagenes conocidas y requiere aprobacion. Hasta configurar cobertura especializada para cada formato, permitir triggers de imagen o video conserva riesgo residual; la unica politica cerrada y sin costo es rechazarlos todos.
+- Imagenes y videos pueden contener material no deseado y actualmente no se escanean. El usuario acepta temporalmente ese riesgo porque el bot opera en grupos confiables; no aplicar bloqueos preventivos sin una nueva indicacion.
 - Docker no esta instalado localmente; la imagen y la suite se validaron correctamente en GitHub Actions.
 - Runtime Update hace un push normal despues de validar; si `main` avanza durante el job, el push se rechaza sin sobrescribir cambios.
 - No activar Railway ni exponer `.env` o credenciales.

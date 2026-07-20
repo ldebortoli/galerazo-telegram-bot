@@ -318,3 +318,11 @@ Este archivo es append-only a nivel conceptual: no borrar decisiones anteriores.
 - Decision: la moderacion de triggers debe cubrir imagenes y videos sin generar cargos ni habilitar servicios pagos. Ninguna integracion puede contratarse, superar una capa gratuita o requerir consumo facturable sin una nueva autorizacion explicita del usuario.
 - Alcance tecnico: OpenAI Moderation puede analizar gratis imagenes y fotogramas extraidos de videos, pero no recibe video directamente ni reemplaza un detector especializado de CSAM. PhotoDNA Cloud es gratuito para organizaciones aprobadas y actualmente se limita a imagenes.
 - Politica pendiente: hasta disponer de cobertura especializada gratuita para cada tipo, se debe confirmar con el usuario si el bot rechaza de forma cerrada toda imagen o video no escaneable.
+
+## D-040 - Triggers multimedia permanecen habilitados sin escaner
+
+- Estado: vigente; resuelve la politica pendiente de D-039 mientras el bot opere en grupos confiables.
+- Fecha: 2026-07-20.
+- Decision: no bloquear, rechazar ni alterar triggers de imagen o video por falta de moderacion configurada. El comportamiento actual se conserva y la integracion de escaneres queda pospuesta.
+- Motivo: el usuario confirmo que, por ahora, el bot participa en grupos confiables y no quiere perder funcionalidad multimedia.
+- Riesgo aceptado: hasta retomar la integracion no existe deteccion automatica de pornografia o CSAM en esos triggers. Una futura moderacion debe seguir sin generar cargos y no puede activar un modo estricto sin una nueva indicacion del usuario.
