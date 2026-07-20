@@ -11,7 +11,7 @@
 
 # IN PROGRESS
 
-- Sin tareas activas.
+- [2026-07-20] Paso 2 del setup GCP: configurar un presupuesto mensual de USD 1 para `bot-fleet-production`, con alertas tempranas, Free Tier incluido y promociones excluidas del calculo; esperando que el usuario complete y confirme la configuracion en la consola.
 
 # DONE
 

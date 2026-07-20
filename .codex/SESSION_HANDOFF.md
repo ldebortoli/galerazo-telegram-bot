@@ -6,7 +6,7 @@ Mantener Galerazo Bot reproducible en Windows, CI y Docker, con SQLite persisten
 
 ## Tarea actual
 
-La preparacion local para Google Compute Engine esta completa y el setup remoto se esta realizando paso a paso con el usuario. El paso 1 esta completo: proyecto `bot-fleet-production` seleccionado y facturacion vinculada mediante la prueba gratuita. No se crearon VM, registros, credenciales, imagenes remotas ni deploys reales.
+La preparacion local para Google Compute Engine esta completa y el setup remoto se esta realizando paso a paso con el usuario. El paso 1 esta completo y el paso 2 esta en curso: configurar el presupuesto y las alertas de `bot-fleet-production`. No se crearon VM, registros, credenciales, imagenes remotas ni deploys reales.
 
 ## Estado actual
 
@@ -36,7 +36,7 @@ La preparacion local para Google Compute Engine esta completa y el setup remoto 
 
 ## Proximo paso exacto
 
-Esperar que el usuario diga `siguiente` y continuar unicamente con el paso 2 de la lista guiada, sin adelantar pasos posteriores. El proyecto GCP ya no debe volver a crearse. Antes de migrar el token/base en una etapa posterior, apagar el bot local.
+Esperar la confirmacion o captura del presupuesto mensual de USD 1 para `bot-fleet-production`: alcance solo al proyecto, Free Tier incluido, promociones excluidas, alertas reales al 10/50/100%, pronostico al 100% y correos habilitados. No configurar Pub/Sub ni apagado automatico todavia. Antes de migrar el token/base en una etapa posterior, apagar el bot local.
 
 ## Riesgos y bloqueos
 
