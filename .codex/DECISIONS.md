@@ -373,3 +373,12 @@ Este archivo es append-only a nivel conceptual: no borrar decisiones anteriores.
 - Decision: usar `bot-fleet-production` como proyecto GCP generico para los bots personales y aislar cada bot mediante nombres de recursos, service accounts, contenedores, directorios, secretos y bases separados.
 - Excepcion: crear proyectos distintos cuando cambien el cliente, el responsable de pago o los permisos y riesgos necesiten aislamiento fuerte.
 - Motivo: centralizar presupuesto, operacion y dashboard sin multiplicar proyectos; crear proyectos adicionales no multiplica el Free Tier asociado a la cuenta de facturacion.
+
+## D-046 - Guardarrail mensual de costos GCP
+
+- Estado: vigente.
+- Fecha: 2026-07-20.
+- Decision: mantener el presupuesto `Bot Fleet - Monthly Guardrail` en USD 1 mensual sobre la cuenta de facturacion, actualmente vinculada solo a `bot-fleet-production`.
+- Calculo: incluir Free Tier y los demas ahorros, pero excluir creditos promocionales, para advertir el costo que persistiria despues de la prueba gratuita.
+- Alertas: gasto real al 10%, 50% y 100%, pronostico al 100%, con correo a administradores y usuarios de facturacion.
+- Limite: el presupuesto no es un hard cap; Pub/Sub, Monitoring y cualquier apagado automatico permanecen sin configurar hasta una etapa posterior.

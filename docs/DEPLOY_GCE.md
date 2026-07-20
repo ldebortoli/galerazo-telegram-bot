@@ -59,6 +59,13 @@ bot. Reservar un proyecto por bot para clientes, responsables de pago o
 permisos que necesiten aislamiento fuerte. El proyecto necesita facturacion
 habilitada aunque el uso quede dentro del Free Tier.
 
+Antes de crear recursos, configurar un presupuesto mensual de USD 1 sobre la
+cuenta o el proyecto correspondiente. Incluir los creditos de Free Tier,
+excluir los creditos promocionales y alertar por gasto real al 10%, 50% y 100%,
+mas gasto previsto al 100%. Esto permite ver el costo que persistiria despues
+de la prueba gratuita. El presupuesto solo alerta: no limita el consumo ni
+detiene recursos, y sus datos pueden llegar con demora.
+
 ```powershell
 gcloud services enable compute.googleapis.com artifactregistry.googleapis.com iap.googleapis.com iamcredentials.googleapis.com
 

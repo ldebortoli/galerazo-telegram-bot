@@ -6,7 +6,7 @@ Mantener Galerazo Bot reproducible en Windows, CI y Docker, con SQLite persisten
 
 ## Tarea actual
 
-La preparacion local para Google Compute Engine esta completa y el setup remoto se esta realizando paso a paso con el usuario. El paso 1 esta completo y el paso 2 esta en curso: configurar el presupuesto y las alertas de `bot-fleet-production`. No se crearon VM, registros, credenciales, imagenes remotas ni deploys reales.
+La preparacion local para Google Compute Engine esta completa y el setup remoto se esta realizando paso a paso con el usuario. Los pasos 1 y 2 estan completos: proyecto/facturacion y presupuesto/alertas. No se crearon VM, registros, credenciales, imagenes remotas ni deploys reales.
 
 ## Estado actual
 
@@ -20,6 +20,7 @@ La preparacion local para Google Compute Engine esta completa y el setup remoto 
 - GitHub `Publish GCE image` es exclusivamente manual, usa WIF y no contiene deploy automatico.
 - Railway permanece desactivado y no fue modificado.
 - La consola confirmo `bot-fleet-production` con USD 300 de credito de prueba sin uso y vencimiento mostrado para el 19 de octubre de 2026; no se pulso `Actualizar` ni se convirtio manualmente la cuenta a modalidad paga.
+- `Bot Fleet - Monthly Guardrail` esta activo en USD, con presupuesto mensual de USD 1, USD 0 consumidos, promociones excluidas, Free Tier incluido y alertas real 10/50/100% mas pronostico 100%. Cubre la cuenta de facturacion, que actualmente tiene un solo proyecto; no es un corte automatico.
 - `USER_QUEUE.md` no tiene pedidos sin procesar.
 
 ## Validacion reciente
@@ -36,7 +37,7 @@ La preparacion local para Google Compute Engine esta completa y el setup remoto 
 
 ## Proximo paso exacto
 
-Esperar la confirmacion o captura del presupuesto mensual de USD 1 para `bot-fleet-production`: alcance solo al proyecto, Free Tier incluido, promociones excluidas, alertas reales al 10/50/100%, pronostico al 100% y correos habilitados. No configurar Pub/Sub ni apagado automatico todavia. Antes de migrar el token/base en una etapa posterior, apagar el bot local.
+Esperar que el usuario diga `siguiente` y continuar unicamente con el paso 3 de la lista guiada. No configurar Pub/Sub ni apagado automatico antes de su etapa correspondiente. Antes de migrar el token/base en una etapa posterior, apagar el bot local.
 
 ## Riesgos y bloqueos
 

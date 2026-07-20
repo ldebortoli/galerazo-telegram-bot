@@ -11,10 +11,11 @@
 
 # IN PROGRESS
 
-- [2026-07-20] Paso 2 del setup GCP: configurar un presupuesto mensual de USD 1 para `bot-fleet-production`, con alertas tempranas, Free Tier incluido y promociones excluidas del calculo; esperando que el usuario complete y confirme la configuracion en la consola.
+- Sin tareas activas.
 
 # DONE
 
+- [2026-07-20] Completar el paso 2 del setup GCP: crear `Bot Fleet - Monthly Guardrail`, presupuesto mensual de USD 1 para la cuenta de facturacion que actualmente contiene solo `bot-fleet-production`; Free Tier y demas ahorros incluidos, promociones excluidas, alertas de gasto real al 10/50/100%, pronostico al 100% y correos a administradores/usuarios de facturacion. Pub/Sub y canales de Monitoring permanecen desactivados; gasto confirmado en USD 0.
 - [2026-07-20] Completar el paso 1 del setup GCP: crear y seleccionar el proyecto compartido `bot-fleet-production` y verificar en la consola la prueba gratuita activa con facturacion vinculada; no se crearon todavia VM, registros ni otros recursos consumibles.
 - [2026-07-20] Preparar deploy reproducible en Google Compute Engine: Docker multi-stage no root, Compose endurecido con persistencia, healthcheck SQLite, backup previo, rollback automatico, build/publicacion local, imagen manual desde GitHub Actions con WIF, bootstrap/deploy por IAP y guia completa sin secretos. Validacion: 89 pruebas nativas y dentro del contenedor, compileall, runtime, pip check, PowerShell/Bash syntax y diff-check OK; Quality `29779348254` y Docker Quality `29779348273` pasaron sobre `9ac8cc4`.
 - [2026-07-20] Crear setup integral e idempotente para Windows e instalador de doble clic al estilo Dankiebot. `scripts/setup.ps1` instala/sincroniza Python y dependencias, conserva `.venv` y `.env` validos, ejecuta tests, compila la UI, crea accesos en `CODEX APPS` y Escritorio y abre el panel. `instaladores/Instalar Galerazo Bot.cmd` expone el flujo por doble clic. Ejecucion real: 82 pruebas OK, ambos accesos verificados y ventana local abierta.
