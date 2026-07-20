@@ -30,8 +30,9 @@ La moderacion multimedia al crear triggers esta implementada y validada. Falta u
 - `.venv\Scripts\python.exe -m pip check`: sin dependencias rotas.
 - `.venv\Scripts\python.exe -m pip list --outdated --format=columns`: vacio.
 - Se genero un MP4 en memoria y PyAV extrajo exactamente cuatro JPEG sin FFmpeg del sistema.
-- Docker no esta instalado en esta PC. El cambio de dependencias activa una unica ejecucion de Docker Quality en GitHub Actions despues del push.
-- Quality `29759959420` paso. Docker Quality `29759959727` construyo la imagen y paso toda la moderacion, pero fallo porque una prueba portable importaba Tk sin sus librerias Linux; la prueba se corrigio para inspeccionar `FIELDS` mediante AST sin agregar Tk al contenedor. Revalidar y pushear este ajuste.
+- Docker no esta instalado en esta PC. Docker Quality `29760094058`, ejecutado una sola vez manualmente sobre el ajuste final, paso build, 78 pruebas y verificacion del runtime dentro de la imagen.
+- Quality `29760074101` paso sobre `74a929a`. El Docker Quality inicial `29759959727` habia detectado que una prueba portable importaba Tk sin sus librerias Linux; se corrigio con inspeccion AST sin agregar Tk al contenedor.
+- Cambios funcionales publicados en `a2aea20`; ajuste portable publicado en `74a929a`.
 
 ## Proximos pasos
 
