@@ -6,7 +6,7 @@ Mantener y ampliar Galerazo Bot como bot de Telegram modular y reanudable, con S
 
 ## Tarea actual
 
-El setup integral y el instalador local de Windows estan implementados, ejecutados y listos para publicar.
+El setup integral y el instalador local de Windows estan implementados, ejecutados y publicados.
 
 ## Estado actual
 
@@ -31,6 +31,7 @@ El setup integral y el instalador local de Windows estan implementados, ejecutad
 - El setup tambien ejecuta `compileall` sobre entrypoints, paquete y scripts.
 - Accesos verificados: ambos apuntan a `bin/GalerazoBotControl.exe`, usan el root como working directory y el ICO correcto.
 - `git diff --check`: limpio antes del cierre final.
+- Commit `6ab45b4` publicado en `main`; Quality `29760863385` paso completo. Docker Quality no se disparo porque no cambiaron el runtime ni el lock.
 
 ## Proximos pasos
 
