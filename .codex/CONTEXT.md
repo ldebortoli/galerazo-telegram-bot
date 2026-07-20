@@ -162,3 +162,4 @@ El panel usa un cliente inicial de `760x750`, minimo `680x730`; la pestaña Conf
 - Antes de cerrar una sesion, actualizar `.codex/`, validar, committear y pushear si el remoto sigue configurado.
 - No activar `.github/workflows/deploy.yml` hasta que el usuario lo pida explicitamente y existan los secrets de Railway.
 - El camino recomendado de produccion es GCE + Docker Compose + Artifact Registry. Construir/publicar localmente es el default para no consumir Actions; GitHub solo publica imagenes por `workflow_dispatch`.
+- El proyecto GCP personal para la flota es `bot-fleet-production`; cada bot conserva VM/contenedor, service account, datos y secretos con nombres especificos. Un proyecto separado se reserva para clientes, facturacion o permisos que requieran aislamiento fuerte.

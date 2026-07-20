@@ -6,7 +6,7 @@ Mantener Galerazo Bot reproducible en Windows, CI y Docker, con SQLite persisten
 
 ## Tarea actual
 
-La preparacion local para Google Compute Engine esta completa. No se crearon recursos GCP, credenciales, imagenes remotas ni deploys reales.
+La preparacion local para Google Compute Engine esta completa y el setup remoto se esta realizando paso a paso con el usuario. El paso 1 esta completo: proyecto `bot-fleet-production` seleccionado y facturacion vinculada mediante la prueba gratuita. No se crearon VM, registros, credenciales, imagenes remotas ni deploys reales.
 
 ## Estado actual
 
@@ -19,6 +19,7 @@ La preparacion local para Google Compute Engine esta completa. No se crearon rec
 - El deploy remoto crea backup consistente, usa tag inmutable, espera healthcheck y restaura la imagen anterior si falla.
 - GitHub `Publish GCE image` es exclusivamente manual, usa WIF y no contiene deploy automatico.
 - Railway permanece desactivado y no fue modificado.
+- La consola confirmo `bot-fleet-production` con USD 300 de credito de prueba sin uso y vencimiento mostrado para el 19 de octubre de 2026; no se pulso `Actualizar` ni se convirtio manualmente la cuenta a modalidad paga.
 - `USER_QUEUE.md` no tiene pedidos sin procesar.
 
 ## Validacion reciente
@@ -35,7 +36,7 @@ La preparacion local para Google Compute Engine esta completa. No se crearon rec
 
 ## Proximo paso exacto
 
-Seguir `docs/DEPLOY_GCE.md`: instalar Docker Desktop y Google Cloud CLI, crear proyecto/Artifact Registry/VM con service account, ejecutar `Initialize-GceHost.ps1`, completar `/etc/galerazo/bot.env`, publicar una imagen desde la PC y hacer el primer deploy con `Deploy-Gce.ps1`. Antes de migrar el token/base, apagar el bot local.
+Esperar que el usuario diga `siguiente` y continuar unicamente con el paso 2 de la lista guiada, sin adelantar pasos posteriores. El proyecto GCP ya no debe volver a crearse. Antes de migrar el token/base en una etapa posterior, apagar el bot local.
 
 ## Riesgos y bloqueos
 

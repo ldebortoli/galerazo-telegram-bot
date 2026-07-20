@@ -53,8 +53,10 @@ alguno. No instalan Docker Desktop ni `gcloud` automaticamente.
 
 ## 2. Crear el proyecto y el registro
 
-Conviene usar un proyecto GCP exclusivo para poder aplicar presupuestos, cuotas
-y permisos sin mezclar otros servicios. El proyecto necesita facturacion
+Para una flota personal de bots conviene usar un proyecto GCP generico y
+compartido, con nombres, service accounts, directorios y datos separados por
+bot. Reservar un proyecto por bot para clientes, responsables de pago o
+permisos que necesiten aislamiento fuerte. El proyecto necesita facturacion
 habilitada aunque el uso quede dentro del Free Tier.
 
 ```powershell

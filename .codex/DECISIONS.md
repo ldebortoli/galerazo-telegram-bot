@@ -365,3 +365,11 @@ Este archivo es append-only a nivel conceptual: no borrar decisiones anteriores.
 - Seguridad: imagen runtime minima y no root, filesystem de solo lectura, capabilities eliminadas, sin puertos, secretos en `/etc/galerazo`, SQLite/backups en bind mounts y autenticacion CI por Workload Identity Federation sin claves JSON persistentes.
 - Deploy: una accion local confirmada copia scripts por IAP, crea un backup SQLite consistente, descarga antes de recrear, espera el healthcheck y restaura automaticamente la imagen anterior ante fallo. Las etiquetas usan commit/tag inmutable, no `latest`.
 - Motivo: conservar costo bajo y control humano, evitar drift de runtime y hacer rollback sin reconstruir dentro de una VM de 1 GB.
+
+## D-045 - Proyecto GCP compartido para la flota personal
+
+- Estado: vigente; reemplaza la recomendacion de un proyecto exclusivo por bot en la guia de deploy.
+- Fecha: 2026-07-20.
+- Decision: usar `bot-fleet-production` como proyecto GCP generico para los bots personales y aislar cada bot mediante nombres de recursos, service accounts, contenedores, directorios, secretos y bases separados.
+- Excepcion: crear proyectos distintos cuando cambien el cliente, el responsable de pago o los permisos y riesgos necesiten aislamiento fuerte.
+- Motivo: centralizar presupuesto, operacion y dashboard sin multiplicar proyectos; crear proyectos adicionales no multiplica el Free Tier asociado a la cuenta de facturacion.
