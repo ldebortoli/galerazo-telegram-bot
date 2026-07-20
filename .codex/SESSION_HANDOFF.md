@@ -30,7 +30,8 @@ La preparacion local para Google Compute Engine esta completa. No se crearon rec
 - Parser PowerShell: cuatro scripts de deploy sin errores.
 - `bash -n`: bootstrap, deploy y rollback sin errores.
 - `git diff --check`: limpio.
-- Docker y gcloud no estan instalados en esta PC; no se construyo ni publico una imagen local y no se toco GCP. Docker Quality debe validar ambos targets despues del push.
+- Docker y gcloud no estan instalados en esta PC; no se publico una imagen local y no se toco GCP.
+- Quality `29779348254` y Docker Quality `29779348273` pasaron sobre `9ac8cc4`; Docker construyo el target de pruebas, ejecuto 89 tests y construyo el target runtime.
 
 ## Proximo paso exacto
 
