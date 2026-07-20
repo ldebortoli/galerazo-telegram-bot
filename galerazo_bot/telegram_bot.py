@@ -50,14 +50,16 @@ from .i18n import DEFAULT_LANGUAGE, t
 from .instance_lock import SingleInstance
 from .integration_status import save_logging_status
 from .logging_utils import configure_logging
+from .media_moderation import OpenAIMediaModerator, trigger_media_kind
 from .pagination import BUTTON_PREFIX, build_keyboard, parse_callback_data, render_page
-from .roles import BackupResult, RussianRouletteHitResult, TriggerPayload, UserLevel
+from .roles import BackupResult, RussianRouletteHitResult, TriggerModerationResult, TriggerPayload, UserLevel
 from .runtime import ensure_python_version
 from .update_processor import PerChatUpdateProcessor
 
 
 logger = logging.getLogger(__name__)
 TELEGRAM_DOCUMENT_UPLOAD_LIMIT_BYTES = 50 * 1024 * 1024
+TELEGRAM_FILE_DOWNLOAD_LIMIT_BYTES = 20 * 1024 * 1024
 TELEGRAM_MESSAGE_LIMIT_CHARS = 4096
 PAGINATED_METADATA_TTL = timedelta(days=14)
 ARGENTINA_TIMEZONE = ZoneInfo("America/Argentina/Buenos_Aires")
@@ -73,6 +75,7 @@ class BotState:
     settings: Settings
     bot_user_id: str
     expense_sheet_writer: GoogleSheetsExpenseWriter
+    media_moderator: OpenAIMediaModerator
 
 
 def main() -> None:
@@ -142,6 +145,7 @@ async def _post_init(application: Application) -> None:
                 worksheet_name=settings.google_sheets_worksheet_name,
             )
         ),
+        media_moderator=OpenAIMediaModerator(settings.openai_api_key),
     )
 
     await _cleanup_old_paginated_messages(db, application.bot)
@@ -387,6 +391,11 @@ async def _handle_command_update(update: Update, context: ContextTypes.DEFAULT_T
             state.bot_user_id,
             state.settings.telegram_dev_user_ids,
         ),
+        moderate_trigger_payload=lambda payload: _moderate_trigger_payload(
+            context.bot,
+            state.media_moderator,
+            payload,
+        ),
     )
     if response is None:
         return
@@ -546,9 +555,22 @@ def _trigger_payload_from_message(message: Message | None) -> TriggerPayload | N
     if message.text:
         return TriggerPayload(text=message.text)
     if message.photo:
-        return TriggerPayload(media_type="photo", file_id=message.photo[-1].file_id, caption=message.caption)
+        photo = message.photo[-1]
+        return TriggerPayload(
+            media_type="photo",
+            file_id=photo.file_id,
+            caption=message.caption,
+            mime_type="image/jpeg",
+            moderation_file_size=getattr(photo, "file_size", None),
+        )
     if message.video:
-        return TriggerPayload(media_type="video", file_id=message.video.file_id, caption=message.caption)
+        return TriggerPayload(
+            media_type="video",
+            file_id=message.video.file_id,
+            caption=message.caption,
+            mime_type=getattr(message.video, "mime_type", None) or "video/mp4",
+            moderation_file_size=getattr(message.video, "file_size", None),
+        )
     if message.animation:
         return TriggerPayload(media_type="animation", file_id=message.animation.file_id, caption=message.caption)
     if message.audio:
@@ -556,11 +578,33 @@ def _trigger_payload_from_message(message: Message | None) -> TriggerPayload | N
     if message.voice:
         return TriggerPayload(media_type="voice", file_id=message.voice.file_id, caption=message.caption)
     if message.document:
-        return TriggerPayload(media_type="document", file_id=message.document.file_id, caption=message.caption)
+        return TriggerPayload(
+            media_type="document",
+            file_id=message.document.file_id,
+            caption=message.caption,
+            mime_type=getattr(message.document, "mime_type", None),
+            moderation_file_size=getattr(message.document, "file_size", None),
+        )
     if message.video_note:
-        return TriggerPayload(media_type="video_note", file_id=message.video_note.file_id)
+        return TriggerPayload(
+            media_type="video_note",
+            file_id=message.video_note.file_id,
+            mime_type="video/mp4",
+            moderation_file_size=getattr(message.video_note, "file_size", None),
+        )
     if message.sticker:
-        return TriggerPayload(media_type="sticker", file_id=message.sticker.file_id)
+        thumbnail = getattr(message.sticker, "thumbnail", None)
+        return TriggerPayload(
+            media_type="sticker",
+            file_id=message.sticker.file_id,
+            mime_type="image/jpeg" if thumbnail is not None else "image/webp",
+            moderation_file_id=getattr(thumbnail, "file_id", None),
+            moderation_file_size=(
+                getattr(thumbnail, "file_size", None)
+                if thumbnail is not None
+                else getattr(message.sticker, "file_size", None)
+            ),
+        )
     if message.dice:
         return TriggerPayload(text=message.dice.emoji, media_type="dice")
     if message.contact:
@@ -622,6 +666,46 @@ def _trigger_payload_from_message(message: Message | None) -> TriggerPayload | N
             poll_data["explanation"] = message.poll.explanation
         return TriggerPayload(media_type="poll", data=poll_data)
     return None
+
+
+async def _moderate_trigger_payload(
+    bot: Bot,
+    moderator: OpenAIMediaModerator,
+    payload: TriggerPayload,
+) -> TriggerModerationResult:
+    if not moderator.enabled:
+        return TriggerModerationResult.SKIPPED
+
+    media_kind = trigger_media_kind(payload.media_type, payload.mime_type)
+    if media_kind is None:
+        return TriggerModerationResult.SKIPPED
+    if (
+        payload.moderation_file_size is not None
+        and payload.moderation_file_size > TELEGRAM_FILE_DOWNLOAD_LIMIT_BYTES
+    ):
+        return TriggerModerationResult.TOO_LARGE
+
+    file_id = payload.moderation_file_id or payload.file_id
+    if not file_id:
+        return TriggerModerationResult.ERROR
+
+    downloaded: bytearray | None = None
+    try:
+        telegram_file = await bot.get_file(file_id)
+        downloaded = await telegram_file.download_as_bytearray()
+        if media_kind == "image":
+            return await moderator.moderate_image(downloaded)
+        return await moderator.moderate_video(downloaded)
+    except TelegramError as exc:
+        logger.warning(
+            "No se pudo descargar media de Telegram para moderacion (%s).",
+            type(exc).__name__,
+        )
+        return TriggerModerationResult.ERROR
+    finally:
+        if downloaded is not None:
+            downloaded[:] = b"\x00" * len(downloaded)
+            downloaded.clear()
 
 
 async def _maybe_award_daily_galeraza(

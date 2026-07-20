@@ -31,6 +31,14 @@ class RussianRouletteHitResult(StrEnum):
     FAILED = "failed"
 
 
+class TriggerModerationResult(StrEnum):
+    SKIPPED = "skipped"
+    SAFE = "safe"
+    BLOCKED = "blocked"
+    TOO_LARGE = "too_large"
+    ERROR = "error"
+
+
 @dataclass(frozen=True)
 class BackupResult:
     path: Path
@@ -46,6 +54,9 @@ class TriggerPayload:
     file_id: str | None = None
     caption: str | None = None
     data: dict[str, object] | None = None
+    mime_type: str | None = None
+    moderation_file_id: str | None = None
+    moderation_file_size: int | None = None
 
 
 @dataclass(frozen=True)
@@ -72,6 +83,7 @@ class CommandContext:
     leave_chat: Callable[[], Awaitable[bool]] | None = None
     can_run_russian_roulette: Callable[[], Awaitable[bool]] | None = None
     resolve_russian_roulette_hit: Callable[[str], Awaitable[RussianRouletteHitResult]] | None = None
+    moderate_trigger_payload: Callable[[TriggerPayload], Awaitable[TriggerModerationResult]] | None = None
     reply_to_user_id: str | None = None
     reply_to_username: str | None = None
     reply_to_display_name: str | None = None

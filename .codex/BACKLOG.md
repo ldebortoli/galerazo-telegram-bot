@@ -2,21 +2,20 @@
 
 ## P1
 
-- [BLOCKED: falta que el usuario cree una API key de proyecto restringida a `/v1/moderations` y la guarde como `OPENAI_API_KEY` en `.env`; la variable no esta configurada y no se debe pedir ni exponer la clave en el chat] Implementar moderacion gratuita solo al ejecutar `/agregartrigger` sobre una imagen: descargarla temporalmente desde Telegram, consultar `omni-moderation-latest`, rechazar contenido sexual marcado y no volver a escanear al reproducir el trigger.
 - [BLOCKED: falta que el usuario confirme spreadsheet ID, worksheet y credenciales de service account] Conectar el sistema de gastos con el Google Sheet real.
 - [BLOCKED: el token `gh` no tiene scope `user`/Plan y el navegador disponible no tiene sesion GitHub; requiere iniciar sesion o autorizar explicitamente ampliar el scope] Confirmar visualmente si la cuenta personal tiene medio de pago cargado. La documentacion oficial confirma que, si no existe un medio valido, Actions se bloquea al agotar la cuota y no cobra excedentes.
 
 ## P2
 
-- [BLOCKED: el usuario priorizo primero imagenes; no existe una alternativa especializada gratuita confirmada para video y no se deben bloquear ni alterar los triggers actuales] Extender en el futuro la moderacion gratuita a videos de triggers.
 - [BLOCKED: requiere pedido explicito del usuario y luego verificar RAILWAY_TOKEN y RAILWAY_SERVICE_ID] Activar el deploy automatico de Railway.
 
 # IN PROGRESS
 
-No hay tareas en curso.
+- Sin tareas activas.
 
 # DONE
 
+- [2026-07-20] Implementar moderacion gratuita al agregar triggers: campo secreto `OPENAI_API_KEY` en el panel; fotos, documentos de imagen y stickers como imagen; videos, documentos de video y videomensajes mediante cuatro frames al 20/40/60/80%; rechazo previo a SQLite, sin reescaneo al reproducir y limpieza en memoria ante cualquier resultado. Se agrego manejo explicito del limite Telegram de 20 MB, PyAV/Pillow/httpx, documentacion bilingue y 78 pruebas locales.
 - [2026-07-20] Definir la arquitectura conceptual de un dashboard general para bots remotos. Recomendacion: crear una aplicacion separada y local-first, con registro de hosts/bots, adaptadores de transporte por proveedor (IAP/SSH para Google, SSH para VPS y API donde corresponda) y una interfaz comun de solo lectura para estado, logs, triggers y consultas SQLite seguras. Cada bot conserva su proceso, secretos, base y logs aislados; el dashboard no expone puertos publicos ni abre el archivo SQLite por red. Reinicio, deploy y escrituras se reservan para una fase posterior con permisos, confirmaciones y auditoria.
 - [2026-07-19] Aclarar acceso remoto a una VM Google y visualizacion local de SQLite/triggers. La VM puede administrarse por SSH mediante IAP sin IPv4 publica ni IP fija; la configuracion recomendada es IPv6 externa gratuita para la salida del bot, IAP restringido al puerto 22 y un dashboard de solo lectura ejecutado en la VM sobre localhost, visible desde la PC mediante port forwarding SSH. SQLite no debe montarse ni exponerse directamente por red; para datos en vivo conviene una API/dashboard remoto y para analisis local una copia consistente. El panel Tk actual solo controla procesos locales y requeriria una extension especifica para administrar la VM.
 - [2026-07-19] Aclarar la recomendacion de hosting, los limites de gasto y la capacidad multi-bot. Recomendacion final: Railway Hobby con hard limit de USD 5 si se priorizan simplicidad, corte de gasto nativo y varios servicios; Google Compute Engine Free si USD 0 es prioritario y se acepta configurar un proyecto exclusivo, una sola `e2-micro` elegible, `pd-standard` de hasta 30 GB, IPv6 sin IPv4, cuotas, alertas y apagado automatizado no instantaneo. Una `e2-micro` cobra por tipo/horas, no por porcentaje de CPU/RAM, y puede alojar prudentemente 3-5 bots Python livianos similares con procesos, entornos y SQLite separados; Railway Free queda razonablemente limitado a uno por el credito mensual de USD 1 y un solo volumen persistente.

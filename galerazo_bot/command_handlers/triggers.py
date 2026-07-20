@@ -4,14 +4,14 @@ import json
 
 from ..commands import Command
 from ..database import Database, Trigger
-from ..roles import CommandContext
+from ..roles import CommandContext, TriggerModerationResult
 
 
 MIN_TRIGGER_NAME_LENGTH = 5
 MAX_TRIGGER_NAME_LENGTH = 32
 
 
-def agregartrigger(context: CommandContext, db: Database) -> str:
+async def agregartrigger(context: CommandContext, db: Database) -> str:
     if context.chat_type not in {"group", "supergroup"}:
         return context.t("triggers.group_only")
 
@@ -26,6 +26,15 @@ def agregartrigger(context: CommandContext, db: Database) -> str:
         return context.t("triggers.reply_required")
     if not _is_valid_payload(context.reply_to_trigger_payload):
         return context.t("triggers.invalid_message")
+
+    if context.moderate_trigger_payload is not None:
+        moderation_result = await context.moderate_trigger_payload(context.reply_to_trigger_payload)
+        if moderation_result == TriggerModerationResult.BLOCKED:
+            return context.t("triggers.moderation_rejected")
+        if moderation_result == TriggerModerationResult.TOO_LARGE:
+            return context.t("triggers.moderation_too_large")
+        if moderation_result == TriggerModerationResult.ERROR:
+            return context.t("triggers.moderation_failed")
 
     normalized_name = _normalize_trigger_name(trigger_name)
     was_added = db.add_trigger(

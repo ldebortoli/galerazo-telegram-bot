@@ -6,116 +6,53 @@ Mantener y ampliar Galerazo Bot como bot de Telegram modular y reanudable, con S
 
 ## Tarea actual
 
-Implementar moderacion gratuita de imagenes solo durante `/agregartrigger`, nunca al reproducir. Esta bloqueada porque `OPENAI_API_KEY` no esta configurada: el usuario debe crear una key de proyecto restringida a escritura en `/v1/moderations` y guardarla localmente en `.env`, sin compartirla por chat ni Git.
+La moderacion multimedia al crear triggers esta implementada y validada. Falta unicamente que el usuario cargue su clave restringida desde el panel para activarla en una ejecucion real.
 
 ## Estado actual
 
 - Rama `main`, tracking `origin/main`.
-- Python 3.14.6 esta instalado en Windows y `.venv` fue creado con esa version.
-- `.python-version`, Docker y GitHub Actions usan Python 3.14.6 exacto.
-- El alias global `python` de la terminal existente puede resolver 3.13; usar `.venv\Scripts\python.exe` o activar `.venv`. El bot rechaza un runtime distinto.
-- Dependencias directas actuales: python-telegram-bot 22.8, python-dotenv 1.2.2, gspread 6.2.1, google-auth 2.56.0 y tzdata 2026.3. El lock tambien fija anyio 4.14.2.
-- `requirements.txt` fija tambien todas las dependencias transitivas y `pip list --outdated` devuelve una lista vacia.
-- El lanzador compilado prioriza `.venv\Scripts\pythonw.exe`.
-- `scripts/sync_windows_runtime.ps1` fue probado de punta a punta y recrea/valida el entorno local desde `.python-version`.
-- Quality prueba Python en Linux; Docker Quality valida el contenedor cuando cambia su runtime; Runtime Update busca estables semanalmente y publica un commit normal en `main` solo despues de validar entorno nativo y Docker.
-- Quality quedo reducido a un job Linux por cambio sustantivo; Docker corre por separado solo ante cambios de runtime/contenedor, y commits documentales no disparan CI.
-- Railway continua desactivado.
-- `.env` sigue ignorado y nunca debe imprimirse ni versionarse.
-- Al iniciar la investigacion de hosting del 2026-07-19 no habia `data/bot.pid` ni proceso administrado del bot activo. El panel y el bot que figuraban en el handoff anterior ya no estaban en ejecucion. El panel usa un ICO con nueve capas DIB BGRA de 32 bits; las capas 16..64 usan composicion compacta y el icono 16x16 activo ocupa 14x14 con margen transparente uniforme de un pixel.
-- El panel abre en 760x720 (minimo 680x700); el label de logging recibe sus 21 px requeridos y muestra completo `Canal de logging: OK - Canal de logging accesible.`
-- El canal de logging esta verificado como accesible en `data/integration-status.json`.
-- `/ruletarusa`, triggers ampliados, prefijos, help agrupado, debug JSON y listas sin menciones estan implementados.
-- La moderacion de imagenes fue retomada con alcance acotado a la creacion del trigger. Hasta que exista `OPENAI_API_KEY`, imagenes y videos se guardan y reproducen como hasta ahora; videos no forman parte de esta primera etapa.
-- La Galeraza usa el timestamp Telegram con timezone argentino. Todo mensaje original con usuario humano compite, incluidos eventos de servicio como altas al chat; bots, ediciones y updates sin usuario no compiten.
-- El usuario confirmo que no hace falta corregir retroactivamente el evento de servicio omitido antes de este arreglo; no existe una tarea pendiente por ese punto.
-- `PerChatUpdateProcessor` serializa FIFO cada chat, permite que chats distintos avancen en paralelo y conserva el orden durante migraciones del ID de grupo al de supergrupo.
-- `try_award_daily_galeraza` usa `BEGIN IMMEDIATE` ademas de la clave unica por chat/fecha.
-- El ganador historico de Dankgentina del 2026-07-11 fue corregido a [Lewito] Leonardo (360780605), mensaje 1337843, timestamp Telegram `2026-07-11T03:08:17+00:00`; backup previo en `data/backups/galerazo-backup-20260711-030434.sqlite3`.
-- El panel Galerazo fue reabierto con cierre propietario del bot; Spider Tracker recibio la misma politica y fue pusheado en `cc17958`.
-- La base real ya tiene `galeraza_daily_winners.message_date` y `triggers.payload_json`.
-- Los seis pedidos nuevos de USER_QUEUE estan implementados y probados.
-- Los cambios funcionales fueron pusheados en `56c7aaf` y la prueba portable de panel en `493c815`.
-- La regla global exige que cada tarea procesada de USER_QUEUE quede DONE, IN PROGRESS o con bloqueo inline; tambien se actualizo el inicializador de proyectos futuros.
-- La investigacion de hosting del 2026-07-19 confirmo que no hacen falta dominio, IP publica ni puertos entrantes: el polling solo requiere salida a Internet, un proceso siempre activo y persistencia para SQLite. La base real ocupa 172032 bytes, todos los archivos locales bajo `data` 856990 bytes y una sonda local de solo importacion uso 54,2 MiB de RAM.
-- Opciones investigadas sin activar ningun deploy: Google Compute Engine `e2-micro` puede quedar en USD 0 con IPv6 y 30 GB persistentes; Railway Hobby cuesta USD 5/mes y es el despliegue mas simple para el repositorio; Fly.io con 256 MB mas 1 GB persistente ronda USD 2,17/mes en una region economica; DigitalOcean parte de USD 4/mes y el backup semanal agrega 20%; hardware domestico solo mejora claramente el costo si ya existe o se amortiza durante varios anos. Railway Free tiene solo USD 1/mes de credito y queda demasiado cerca del consumo estimado para prometer 24/7; Oracle Always Free puede recuperar instancias ociosas.
-- Recomendacion refinada: Railway Hobby con hard limit de USD 5 para simplicidad, corte nativo y varios bots; Google Compute Engine Free para minimizar a USD 0 con mayor administracion. Google cobra una `e2-micro` por tipo y horas, no por porcentaje de CPU/RAM: una sola instancia elegible 24/7 sigue dentro del Free Tier, pero se paga por recursos fuera de franquicia como otra VM, IPv4, disco/snapshots extra o egress. Los budgets de Google solo alertan; una funcion puede detener la VM o deshabilitar billing, pero existe demora y no garantiza un tope exacto. Con el baseline de 54,2 MiB por importacion, estimar prudentemente 3-5 bots Python similares en la `e2-micro` de 1 GB, cada uno con token, proceso, configuracion y SQLite separados; Railway Free solo es razonable para uno por su credito de USD 1 y unico volumen.
-- Acceso recomendado para Google: no asignar IPv4 publica; usar IPv6 externa gratuita para la salida del bot y SSH por IAP sobre el IP interno. Para ver SQLite/triggers en vivo sin exponerlos, ejecutar en la VM un dashboard de solo lectura ligado a `127.0.0.1` y abrirlo desde la PC mediante port forwarding SSH/IAP. SQLite no es un servidor de red: para inspeccion local se debe descargar una copia consistente, no montar el archivo vivo. El panel Windows actual administra solo el proceso local y no controla una VM remota.
-- Arquitectura recomendada para administrar varios bots: una aplicacion separada, local-first y de solo lectura, con un registro declarativo de hosts y bots. El dashboard abre bajo demanda IAP/SSH o el adaptador del proveedor y consume una interfaz comun para salud, version, uso de recursos, logs, triggers y consultas SQLite limitadas a lectura. Cada bot mantiene aislados su token, proceso, base y logs; las operaciones de escritura, restart y deploy se agregarian despues con permisos y auditoria. Esta recomendacion todavia no autoriza crear el nuevo proyecto.
+- Python 3.14.6 exacto en `.venv`, Docker y CI. `scripts/runtime_versions.py` esta alineado.
+- Dependencias directas nuevas: `av==18.0.0`, `Pillow==12.3.0` y `httpx==0.28.1`; el lock completo no tiene paquetes desactualizados ni dependencias rotas.
+- `OPENAI_API_KEY` es opcional, se carga como secreto desde la pestaña Configuracion y se guarda solo en `.env`. No hay una clave configurada actualmente.
+- Con clave, `/agregartrigger` modera fotos, documentos de imagen y stickers; videos, documentos de video y videomensajes usan cuatro frames al 20%, 40%, 60% y 80%. Sin clave se conserva el comportamiento previo.
+- La moderacion ocurre antes de `db.add_trigger`; un bloqueo, error o archivo mayor al limite descargable de 20 MB no se persiste. Triggers ya aceptados se reproducen sin volver a moderar.
+- Todo procesamiento usa memoria. Los buffers descargados, imagenes normalizadas y frames mutables se sobrescriben y vacian en `finally`; no se crean temporales ni nuevas columnas SQLite.
+- `PerChatUpdateProcessor` mantiene el orden por chat mientras `asyncio.to_thread` evita bloquear el event loop durante Pillow/PyAV.
+- El panel ahora abre en 760x750, minimo 680x730, para alojar el nuevo campo secreto.
+- No hay proceso administrado del bot activo al cierre de esta tarea.
+- `USER_QUEUE.md` no tiene pedidos sin procesar.
 
 ## Validacion reciente
 
-- La definicion de activacion de moderacion de imagenes del 2026-07-20 no modifico codigo porque falta `OPENAI_API_KEY`. Runtime alineado en Python 3.14.6, 64 pruebas locales OK y `git diff --check` OK.
-- La decision de mantener habilitados los triggers multimedia del 2026-07-20 no modifico codigo. Runtime alineado en Python 3.14.6, 64 pruebas locales OK y `git diff --check` OK.
-- La recomendacion del dashboard multi-bot del 2026-07-20 no modifico codigo; runtime alineado en Python 3.14.6, 64 pruebas OK, `git diff --check` limpio y checkpoint sin entradas nuevas.
-- La investigacion de costos de moderacion del 2026-07-20 no modifico codigo: OpenAI Moderation es gratuito pero no recibe video, PhotoDNA Cloud es gratuito previa aprobacion y solo cubre imagenes, Google Vision cobra al superar su franquicia y Thorn no publica un nivel gratuito confirmado. Runtime Python 3.14.6 alineado, 64 pruebas locales OK y `git diff --check` OK.
-- La consulta de moderacion de triggers del 2026-07-19 no modifico codigo. Runtime alineado en Python 3.14.6, 64 pruebas locales OK fuera del sandbox (el sandbox restringio artificialmente los directorios temporales de SQLite), `git diff --check` OK y checkpoint sin entradas nuevas.
-- La aclaracion de acceso remoto del 2026-07-19 paso `runtime_versions.py`, las 64 pruebas y `git diff --check`; la primera ejecucion restringida no pudo escribir directorios temporales, la repeticion autorizada fuera del sandbox paso completa y sus residuos temporales fueron eliminados.
-- La investigacion de hosting del 2026-07-19 paso `runtime_versions.py`, las 64 pruebas y `git diff --check`. El checkpoint detecto dos `502 Bad Gateway` transitorios de la API de Telegram ocurridos el 2026-07-16 durante `getUpdates`; el polling recupero respuestas `200 OK` inmediatamente, por lo que no quedo un defecto local ni perdida persistente que corregir.
-- `.venv\Scripts\python.exe --version`: Python 3.14.6.
-- `python scripts/runtime_versions.py`: runtime alineado.
-- `python -m unittest discover -s tests -v`: 64 pruebas OK, incluida la auditoria de las 46 categorias de `StatusUpdate`, la ruta para pin/altas/bajas y la geometria Tk nativa de Windows.
-- `python -m compileall app.py control_panel.py galerazo_bot scripts`: OK.
-- `python -m pip check`: sin dependencias rotas.
-- `python -m pip list --outdated --format=json`: `[]`.
-- Lanzador Galerazo recompilado correctamente.
-- Acceso `CODEX APPS\\Galerazo Bot.lnk` actualizado al ICO corregido; el bot siguio activo bajo PID `10416` durante el reinicio del panel.
-- Checkpoint posterior al reinicio PID 10416: bytes 172406..179931 sin errores nuevos.
-- GitHub Actions Quality `29169437187`: success con un unico job Linux; el test visual Tk se ejecuta localmente en Windows y se omite en Linux.
-- GitHub Actions Docker Quality `29142895267`: success; se disparo una vez por la creacion del workflow y en adelante solo corre para cambios de runtime/contenedor.
-- El push `f58718a` no genero ningun run de Deploy; el workflow desactivado quedo exclusivamente manual.
-- El push documental `fbde709` genero cero runs, confirmando que `.codex`/Markdown ya no consumen Actions.
-- Checkpoint mas reciente: no habia entradas posteriores al rango 249232..249957, ya revisado sin errores.
-- El run semanal `29249239004` del 2026-07-13 habia validado entorno y Docker, pero fallo porque el repositorio no permitio crear el PR automatico. El workflow ahora publica un commit normal en `main` despues de validar y tiene una prueba contra regresiones de permisos/force push.
-- `anyio` 4.14.2 y `google-auth` 2.56.0 quedaron instalados y bloqueados. Validacion: 61 pruebas locales OK, compileall OK, runtime alineado, `pip check` OK y `pip list --outdated` vacio.
-- Commit funcional `b8361e5` pusheado. Quality `29279845566` paso; Docker Quality `29279845453` encontro un HTTP 500 transitorio de Docker Hub y su reejecucion aislada paso completa.
-- La rama remota temporal `automation/runtime-update` que habia dejado el run fallido fue eliminada despues de validar `main`.
-- Cambio funcional pusheado en `700811d`; Quality `29460027552` paso con el unico job Linux esperado.
-- Checkpoint posterior al reinicio final PID 19352: bytes 258111..258936 sin errores nuevos.
-- Cobertura exhaustiva pusheada en `07e7514`; las 64 pruebas locales y Quality `29460516323` pasaron. El checkpoint 259236..264136 no encontro errores y el bot siguio activo bajo PID 19352.
-- Checkpoint posterior a la confirmacion: bytes 264436..264836 sin errores nuevos.
+- `.venv\Scripts\python.exe scripts\runtime_versions.py`: OK, Python 3.14.6 y lock completo.
+- `.venv\Scripts\python.exe -m unittest discover -s tests -v`: 78 pruebas OK.
+- `.venv\Scripts\python.exe -m compileall -q app.py control_panel.py galerazo_bot scripts tests`: OK antes de la ampliacion final; repetir antes del commit.
+- `.venv\Scripts\python.exe -m pip check`: sin dependencias rotas.
+- `.venv\Scripts\python.exe -m pip list --outdated --format=columns`: vacio.
+- Se genero un MP4 en memoria y PyAV extrajo exactamente cuatro JPEG sin FFmpeg del sistema.
+- Docker no esta instalado en esta PC. El cambio de dependencias activa una unica ejecucion de Docker Quality en GitHub Actions despues del push.
 
 ## Proximos pasos
 
-1. El usuario debe crear un proyecto/key en OpenAI, restringirla a escritura en `/v1/moderations` y guardar `OPENAI_API_KEY` en `.env` o en el futuro campo secreto del panel.
-2. Cuando la clave exista, agregar el campo secreto al panel, descargar la foto solo en memoria, moderarla antes de `db.add_trigger`, traducir los resultados y probar que la reproduccion no hace requests.
-3. Mantener videos sin moderacion y sin bloqueo hasta que el usuario retome esa segunda etapa.
-4. Para confirmar el medio de pago, iniciar sesion en GitHub en el navegador disponible o autorizar explicitamente `gh auth refresh -h github.com -s user`; no ampliar scopes sin confirmacion.
-5. Mantener bloqueados Google Sheets real y Railway hasta recibir el input correspondiente.
+1. Cargar una API key de proyecto restringida con escritura solo en `/v1/moderations` desde el panel y reiniciar el bot.
+2. Hacer una prueba real de alta con una imagen segura y un video corto menor a 20 MB.
+3. Mantener bloqueados Google Sheets real y Railway hasta recibir los inputs/autorizacion correspondientes.
 
 ## Riesgos y bloqueos
 
-- Imagenes y videos pueden contener material no deseado y actualmente no se escanean. La futura capa de OpenAI solo cubrira contenido sexual general en imagenes nuevas al agregar triggers; no garantiza detectar CSAM y no cubrira videos en esta etapa.
-- Docker no esta instalado localmente; la imagen y la suite se validaron correctamente en GitHub Actions.
-- Runtime Update hace un push normal despues de validar; si `main` avanza durante el job, el push se rechaza sin sobrescribir cambios.
-- No activar Railway ni exponer `.env` o credenciales.
+- La moderacion detecta contenido sexual general; no es un detector especializado ni garantiza deteccion de CSAM.
+- El Bot API oficial no permite descargar media mayor a 20 MB. Con moderacion activa, esos triggers se rechazan explicitamente.
+- Docker local no esta disponible; la validacion de imagen queda a cargo del workflow acotado de GitHub.
 - Google Sheets real esta bloqueado hasta que el usuario confirme spreadsheet ID, worksheet y credenciales de service account.
-- Railway esta bloqueado por decision explicita: solo se activa cuando el usuario lo pida y existan sus secrets.
-- Facturacion personal GitHub no se pudo leer: la API devolvio 404 por falta de scope `user` y la sesion web disponible estaba deslogueada. Segun GitHub, sin medio de pago valido se bloquea el uso al agotar la cuota.
+- Railway requiere pedido explicito y los secrets correspondientes.
+- La consulta del medio de pago de GitHub requiere iniciar sesion o autorizar ampliar el scope de `gh`; no se ampliaron permisos.
 
-## Archivos principales modificados
+## Archivos modificados
 
-- `.python-version`
-- `requirements.in`
-- `requirements.txt`
-- `Dockerfile`
-- `.dockerignore`
-- `.github/workflows/quality.yml`
-- `.github/workflows/runtime-update.yml`
-- `.github/workflows/deploy.yml`
+- `.env.example`, `README.md`, `requirements.in`, `requirements.txt`
+- `galerazo_bot/media_moderation.py`
+- `galerazo_bot/telegram_bot.py`, `roles.py`, `commands.py`, `config.py`, `control_panel.py`, `i18n.py`
+- `galerazo_bot/command_handlers/triggers.py`
 - `scripts/runtime_versions.py`
-- `galerazo_bot/runtime.py`
-- `galerazo_bot/telegram_bot.py`
-- `galerazo_bot/update_processor.py`
-- `galerazo_bot/database.py`
-- `galerazo_bot/control_panel.py`
-- `launcher/GalerazoBotControlLauncher.cs`
-- `README.md`
-- `AGENTS.md`
-- `tests/test_runtime_versions.py`
-- `scripts/build_windows_icon.ps1`
-- `assets/galerazo-bot-icon.ico`
-- `build_control_panel.ps1`
-- `tests/test_windows_icon.py`
-- `tests/test_update_processor.py`
-- `tests/test_galeraza.py`
+- `tests/test_media_moderation.py`, `tests/test_triggers.py`, `tests/test_control_panel.py`
+- `.codex/CONTEXT.md`, `.codex/DECISIONS.md`, `.codex/BACKLOG.md`, `.codex/SESSION_HANDOFF.md`

@@ -335,3 +335,14 @@ Este archivo es append-only a nivel conceptual: no borrar decisiones anteriores.
 - Motivo: prevenir que se incorporen nuevas imagenes sexuales sin agregar latencia a cada activacion del trigger.
 - Activacion: usar una API key de proyecto restringida con acceso de escritura solo a `/v1/moderations`, guardada exclusivamente en `.env`. Sin clave, conservar el comportamiento actual y no bloquear imagenes.
 - Limite: esta capa usa `omni-moderation-latest` para contenido sexual general; no se presenta como detector fiable de CSAM. Videos siguen fuera de esta primera etapa.
+
+## D-042 - Moderacion multimedia en memoria al crear triggers
+
+- Estado: vigente; reemplaza el limite de videos de D-041 y concreta D-039/D-040.
+- Fecha: 2026-07-20.
+- Decision: con `OPENAI_API_KEY`, moderar antes de persistir fotos, documentos de imagen y stickers como imagen; para videos, documentos de video y videomensajes, extraer exactamente cuatro frames interiores al 20%, 40%, 60% y 80% de la duracion y enviarlos juntos a `omni-moderation-latest`.
+- Rendimiento: no moderar al reproducir triggers ni reescanear triggers existentes. PyAV y Pillow procesan bytes en memoria mediante `asyncio.to_thread`; otros chats pueden continuar y el chat del comando conserva su orden.
+- Privacidad local: no crear archivos temporales ni guardar bytes, frames o respuestas en SQLite. Sobrescribir y vaciar buffers mutables en `finally`, y liberar las copias internas al cerrar sus objetos.
+- Errores: sin clave, omitir el escaneo para conservar D-040. Con clave configurada, cualquier error de descarga, decodificacion o API rechaza solo ese intento de alta para no persistir media sin verificar.
+- Credencial: guardar una clave de proyecto restringida con escritura solo para `/v1/moderations` en `.env`; el panel la muestra como campo secreto. No versionarla ni registrarla.
+- Limite: se bloquea la categoria sexual disponible para imagenes. Esta integracion no se presenta como detector especializado ni garantia de deteccion de CSAM.

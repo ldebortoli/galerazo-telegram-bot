@@ -15,6 +15,7 @@ La misma politica se aplica globalmente desde `C:\Users\calei\.codex\AGENTS.md`.
 - SQLite mediante `sqlite3` de la libreria estandar.
 - `gspread` y `google-auth` para Google Sheets.
 - `python-dotenv` para configuracion local desde `.env`.
+- `httpx` para consultar OpenAI Moderation, `Pillow` para normalizar imagenes y `PyAV` para extraer frames de video completamente en memoria.
 - `tzdata==2026.3` para convertir timestamps de Telegram al timezone IANA argentino tambien en Windows.
 - Tkinter para el panel de escritorio de Windows.
 - Un lanzador minimo en C#/.NET Framework para abrir el panel sin consola.
@@ -34,6 +35,7 @@ La misma politica se aplica globalmente desde `C:\Users\calei\.codex\AGENTS.md`.
 - `galerazo_bot/chat_config.py`: menus y grupos de comandos configurables.
 - `galerazo_bot/i18n.py`: textos en espanol e ingles. Los nombres de comandos no se traducen.
 - `galerazo_bot/galeraza.py`: reglas y formato del juego diario.
+- `galerazo_bot/media_moderation.py`: normalizacion de imagenes, muestreo 20/40/60/80% de videos y cliente de moderacion; no persiste media.
 - `galerazo_bot/command_handlers/ruletarusa.py`: juego persistente de seis recamaras y seleccion de objetivo por nivel.
 - `galerazo_bot/expenses.py` y `google_sheets.py`: gastos, formato y sincronizacion.
 - `galerazo_bot/control_panel.py`: UI local, manejo del proceso, `.env` y logs.
@@ -74,6 +76,7 @@ Copiar `.env.example` a `.env`. Variables:
 - `GOOGLE_SHEETS_CREDENTIALS_JSON_PATH`
 - `GOOGLE_SHEETS_SPREADSHEET_ID`
 - `GOOGLE_SHEETS_WORKSHEET_NAME`
+- `OPENAI_API_KEY` opcional; debe ser una clave restringida a escritura en `/v1/moderations` y el panel la trata como secreto.
 
 `.env`, credenciales, bases, backups, logs y PID locales no se versionan.
 
@@ -121,7 +124,7 @@ git diff --check
 
 La suite automatizada usa `unittest` y cubre enrutamiento, permisos, config, Galeraza, ruleta, triggers, migraciones con colisiones, paginacion, serializacion de debug, logging, panel e instancia unica. La cobertura de Galeraza audita las 46 categorias actuales de `filters.StatusUpdate` y falla si PTB agrega una nueva sin mapear.
 
-El panel usa un cliente inicial de `760x720`, minimo `680x700`; la pestaña Configuracion reserva altura completa para el estado del canal de logging.
+El panel usa un cliente inicial de `760x750`, minimo `680x730`; la pestaña Configuracion reserva altura completa para el estado del canal de logging y el campo secreto de moderacion.
 
 ## Convenciones de codigo
 
@@ -141,6 +144,7 @@ El panel usa un cliente inicial de `760x720`, minimo `680x700`; la pestaña Conf
 - Todas las pantallas de `/config` incluyen `config:close`; los permisos se validan antes de ejecutar cualquier callback.
 - Cerrar el panel de control apaga el arbol de procesos local del bot antes de destruir la ventana.
 - Los niveles se validan al invocar comandos o tocar botones, no como clasificacion global permanente.
+- La media se modera solo al crear triggers. Sin clave se omite; con clave, un fallo impide guardar ese intento. Los buffers y frames se mantienen en memoria y se limpian siempre.
 
 ## Git y deploy
 

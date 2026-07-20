@@ -12,8 +12,11 @@ DOCKERFILE = ROOT / "Dockerfile"
 REQUIREMENTS_IN = ROOT / "requirements.in"
 REQUIREMENTS_LOCK = ROOT / "requirements.txt"
 DIRECT_DEPENDENCIES = {
+    "av",
     "google-auth",
     "gspread",
+    "httpx",
+    "pillow",
     "python-dotenv",
     "python-telegram-bot",
     "tzdata",

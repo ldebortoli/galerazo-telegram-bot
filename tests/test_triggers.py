@@ -10,7 +10,7 @@ from unittest.mock import AsyncMock
 
 from galerazo_bot.commands import handle_command_async
 from galerazo_bot.database import Database, Trigger
-from galerazo_bot.roles import TriggerPayload
+from galerazo_bot.roles import TriggerModerationResult, TriggerPayload
 from galerazo_bot.telegram_bot import _send_trigger_message, _trigger_payload_from_message
 
 
@@ -76,7 +76,10 @@ class TriggerTests(unittest.TestCase):
             _message(dice=SimpleNamespace(emoji="🎲"))
         )
 
-        self.assertEqual(sticker_payload, TriggerPayload(media_type="sticker", file_id="sticker-id"))
+        self.assertEqual(
+            sticker_payload,
+            TriggerPayload(media_type="sticker", file_id="sticker-id", mime_type="image/webp"),
+        )
         self.assertEqual(dice_payload, TriggerPayload(text="🎲", media_type="dice"))
 
         bot = SimpleNamespace(send_sticker=AsyncMock(), send_dice=AsyncMock())
@@ -175,6 +178,105 @@ class TriggerTests(unittest.TestCase):
 
     def test_service_message_is_not_a_valid_trigger_payload(self) -> None:
         self.assertIsNone(_trigger_payload_from_message(_message()))
+
+    def test_media_metadata_identifies_assets_that_require_moderation(self) -> None:
+        photo = _trigger_payload_from_message(
+            _message(photo=[SimpleNamespace(file_id="photo-id")])
+        )
+        video = _trigger_payload_from_message(
+            _message(video=SimpleNamespace(file_id="video-id", mime_type="video/webm"))
+        )
+        image_document = _trigger_payload_from_message(
+            _message(document=SimpleNamespace(file_id="document-id", mime_type="image/png"))
+        )
+        video_note = _trigger_payload_from_message(
+            _message(video_note=SimpleNamespace(file_id="note-id"))
+        )
+        sticker = _trigger_payload_from_message(
+            _message(
+                sticker=SimpleNamespace(
+                    file_id="sticker-id",
+                    thumbnail=SimpleNamespace(file_id="thumbnail-id"),
+                )
+            )
+        )
+
+        self.assertEqual(photo.mime_type, "image/jpeg")
+        self.assertEqual(video.mime_type, "video/webm")
+        self.assertEqual(image_document.mime_type, "image/png")
+        self.assertEqual(video_note.mime_type, "video/mp4")
+        self.assertEqual(sticker.moderation_file_id, "thumbnail-id")
+
+    def test_blocked_trigger_is_not_saved(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            db = Database(Path(directory) / "test.sqlite3")
+            db.get_or_create_user("1", "User")
+            db.register_chat("-1", "group", "Group")
+            moderator = AsyncMock(return_value=TriggerModerationResult.BLOCKED)
+
+            response = asyncio.run(
+                handle_command_async(
+                    "/agregartrigger contenido bloqueado",
+                    "1",
+                    db,
+                    chat_id="-1",
+                    chat_type="group",
+                    reply_to_trigger_payload=TriggerPayload(
+                        media_type="photo",
+                        file_id="photo-id",
+                        mime_type="image/jpeg",
+                    ),
+                    moderate_trigger_payload=moderator,
+                )
+            )
+
+            self.assertIn("contenido sexual", response)
+            self.assertIsNone(db.get_trigger("-1", "contenido bloqueado"))
+            moderator.assert_awaited_once()
+
+    def test_moderation_error_does_not_save_trigger(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            db = Database(Path(directory) / "test.sqlite3")
+            db.get_or_create_user("1", "User")
+            db.register_chat("-1", "group", "Group")
+
+            response = asyncio.run(
+                handle_command_async(
+                    "/agregartrigger moderacion falla",
+                    "1",
+                    db,
+                    chat_id="-1",
+                    chat_type="group",
+                    reply_to_trigger_payload=TriggerPayload(media_type="video", file_id="video-id"),
+                    moderate_trigger_payload=AsyncMock(return_value=TriggerModerationResult.ERROR),
+                )
+            )
+
+            self.assertIn("Probá de nuevo", response)
+            self.assertIsNone(db.get_trigger("-1", "moderacion falla"))
+
+    def test_oversized_media_returns_specific_error_and_is_not_saved(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            db = Database(Path(directory) / "test.sqlite3")
+            db.get_or_create_user("1", "User")
+            db.register_chat("-1", "group", "Group")
+
+            response = asyncio.run(
+                handle_command_async(
+                    "/agregartrigger video demasiado grande",
+                    "1",
+                    db,
+                    chat_id="-1",
+                    chat_type="group",
+                    reply_to_trigger_payload=TriggerPayload(media_type="video", file_id="video-id"),
+                    moderate_trigger_payload=AsyncMock(
+                        return_value=TriggerModerationResult.TOO_LARGE
+                    ),
+                )
+            )
+
+            self.assertIn("20 MB", response)
+            self.assertIsNone(db.get_trigger("-1", "video demasiado grande"))
 
     def test_location_venue_and_poll_payloads_are_sent(self) -> None:
         bot = SimpleNamespace(

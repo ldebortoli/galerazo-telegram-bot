@@ -21,6 +21,7 @@ class Settings:
     google_sheets_credentials_json_path: Path | None
     google_sheets_spreadsheet_id: str | None
     google_sheets_worksheet_name: str
+    openai_api_key: str | None = None
 
 
 def load_settings() -> Settings:
@@ -35,6 +36,7 @@ def load_settings() -> Settings:
         google_sheets_credentials_json_path=_optional_path(os.getenv("GOOGLE_SHEETS_CREDENTIALS_JSON_PATH")),
         google_sheets_spreadsheet_id=os.getenv("GOOGLE_SHEETS_SPREADSHEET_ID") or None,
         google_sheets_worksheet_name=os.getenv("GOOGLE_SHEETS_WORKSHEET_NAME", "Gastos"),
+        openai_api_key=os.getenv("OPENAI_API_KEY") or None,
     )
 
 

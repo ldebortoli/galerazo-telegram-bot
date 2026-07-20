@@ -24,6 +24,7 @@ WINDOWS_APP_ID = "GalerazoBot.ControlPanel"
 
 FIELDS = (
     ("TELEGRAM_BOT_TOKEN", "Token del bot", True),
+    ("OPENAI_API_KEY", "Clave de moderacion OpenAI", True),
     ("TELEGRAM_DEV_USER_IDS", "IDs de desarrolladores", False),
     ("TELEGRAM_LOG_CHAT_ID", "ID del canal de logs", False),
     ("TELEGRAM_ANNOUNCEMENTS_CHAT_ID", "ID del canal de anuncios", False),
@@ -118,8 +119,8 @@ class ControlPanel(tk.Tk):
     def __init__(self) -> None:
         super().__init__()
         self.title("Galerazo Bot - Control")
-        self.geometry("760x720")
-        self.minsize(680, 700)
+        self.geometry("760x750")
+        self.minsize(680, 730)
         self.configure(bg=self.BG)
         self.variables: dict[str, tk.StringVar] = {}
         self.starting_process: subprocess.Popen[str] | None = None

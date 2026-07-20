@@ -70,6 +70,7 @@ Ejecuta `pythonw control_panel.py` para abrir una interfaz de escritorio desde l
 
 - encender, apagar y reiniciar el bot local;
 - editar la configuracion de `.env`;
+- cargar y ocultar la clave restringida usada para moderar media nueva;
 - consultar el estado del proceso;
 - ver el log local guardado en `data/bot.log`.
 
@@ -192,6 +193,7 @@ Ejemplo:
 
 ```env
 TELEGRAM_BOT_TOKEN=token-de-botfather
+OPENAI_API_KEY=clave-restringida-de-moderacion
 TELEGRAM_DEV_USER_IDS=123456789
 TELEGRAM_LOG_CHAT_ID=-1001234567890
 TELEGRAM_ANNOUNCEMENTS_CHAT_ID=-1009876543210
@@ -214,6 +216,22 @@ GOOGLE_SHEETS_WORKSHEET_NAME=Gastos
 ```
 
 Si faltan credenciales o `GOOGLE_SHEETS_SPREADSHEET_ID`, el bot igual guarda los gastos en SQLite y los deja pendientes de sincronizacion para subirlos despues.
+
+### 8. Configurar moderacion de triggers
+
+La moderacion es opcional y usa el endpoint gratuito de OpenAI Moderation. Crea una API key de proyecto restringida, concede permiso de escritura solamente a `/v1/moderations` y cargala en la pestana `Configuracion` del panel, en `Clave de moderacion OpenAI`. Tambien se puede configurar directamente:
+
+```env
+OPENAI_API_KEY=clave-restringida-de-moderacion
+```
+
+La clave se guarda exclusivamente en `.env`, que esta ignorado por Git. Reinicia el bot despues de agregarla. Sin clave, el bot no escanea ni bloquea media y conserva el comportamiento anterior.
+
+La moderacion se ejecuta una sola vez al agregar el trigger. Fotos, documentos de imagen y stickers se analizan como imagen. Videos, documentos de video y videomensajes se analizan mediante cuatro frames ubicados al 20%, 40%, 60% y 80% de la duracion. El contenido descargado, las imagenes normalizadas y los frames viven solo en memoria y se liberan tanto ante exito como ante error; nunca se guardan en SQLite ni en archivos locales. Al reproducir un trigger no se vuelve a consultar la API.
+
+Esta capa detecta contenido sexual general. No es un detector especializado ni una garantia de deteccion de material de abuso sexual infantil.
+
+El Bot API oficial de Telegram limita `getFile` a 20 MB. Con moderacion activa, un archivo mayor se rechaza con un mensaje especifico porque el bot no puede descargarlo para analizarlo. Sin moderacion activa, ese limite no altera el guardado por `file_id`.
 
 ## Canales del bot
 
@@ -414,6 +432,8 @@ Tipos soportados:
 - Encuestas reproducibles.
 
 Si el mensaje tiene caption, el bot tambien guarda esa caption. Para media, se guarda el `file_id` de Telegram y el tipo interno de media para saber que metodo usar al enviarlo.
+
+Cuando `OPENAI_API_KEY` esta configurada, el bot modera la media antes de escribir el trigger. Una imagen marcada como sexual se rechaza. En videos y videomensajes se moderan cuatro frames equidistantes. Si la descarga, extraccion o consulta falla, ese intento no se guarda y se puede reintentar mas tarde. La reproduccion de triggers aceptados no agrega consultas ni latencia de moderacion.
 
 Los eventos de servicio, como el ingreso de un usuario, no se pueden agregar porque el bot no puede recrearlos. Tampoco se aceptan mensajes que requieren configuración externa no portable, como facturas, pagos o juegos registrados por otro bot.
 

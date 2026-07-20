@@ -153,6 +153,7 @@ def handle_command(
     leave_chat=None,
     can_run_russian_roulette=None,
     resolve_russian_roulette_hit=None,
+    moderate_trigger_payload=None,
     language: str | None = None,
 ) -> str | None:
     return asyncio.run(
@@ -182,6 +183,7 @@ def handle_command(
             leave_chat=leave_chat,
             can_run_russian_roulette=can_run_russian_roulette,
             resolve_russian_roulette_hit=resolve_russian_roulette_hit,
+            moderate_trigger_payload=moderate_trigger_payload,
             language=language,
         )
     )
@@ -213,6 +215,7 @@ async def handle_command_async(
     leave_chat=None,
     can_run_russian_roulette=None,
     resolve_russian_roulette_hit=None,
+    moderate_trigger_payload=None,
     language: str | None = None,
 ) -> str | None:
     context = CommandContext(
@@ -238,6 +241,7 @@ async def handle_command_async(
         leave_chat=leave_chat,
         can_run_russian_roulette=can_run_russian_roulette,
         resolve_russian_roulette_hit=resolve_russian_roulette_hit,
+        moderate_trigger_payload=moderate_trigger_payload,
         reply_to_user_id=reply_to_user_id,
         reply_to_username=reply_to_username,
         reply_to_display_name=reply_to_display_name,
