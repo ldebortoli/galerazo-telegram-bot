@@ -6,7 +6,8 @@ ENV PYTHONDONTWRITEBYTECODE=1
 WORKDIR /app
 
 RUN groupadd --gid 10001 galerazo \
-    && useradd --uid 10001 --gid galerazo --create-home --home-dir /home/galerazo galerazo
+    && useradd --uid 10001 --gid galerazo --create-home --home-dir /home/galerazo galerazo \
+    && install -d -o galerazo -g galerazo /app/data /app/backups
 
 COPY requirements.txt ./
 RUN python -m pip install --no-cache-dir --requirement requirements.txt

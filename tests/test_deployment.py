@@ -56,6 +56,7 @@ class ContainerRuntimeTests(unittest.TestCase):
         self.assertIn("AS test", dockerfile)
         self.assertIn("AS runtime", dockerfile)
         self.assertIn("USER galerazo", dockerfile)
+        self.assertIn("/app/data /app/backups", dockerfile)
         self.assertIn("galerazo_bot.healthcheck", dockerfile)
         runtime_section = dockerfile.split("FROM base AS runtime", 1)[1]
         self.assertNotIn("COPY --chown=galerazo:galerazo . .", runtime_section)
