@@ -612,138 +612,31 @@ python app.py
 El bot usa polling contra la Bot API de Telegram, asi que no necesitas exponer un webhook publico para empezar.
 El polling usa explicitamente `drop_pending_updates=False`: al volver a encenderse procesa las updates que Telegram todavia conserve. Las updates que Telegram ya haya descartado por antiguedad no se pueden recuperar.
 
-## Hosting gratuito
+## Hosting y deploy
 
-Para este bot hay dos requisitos importantes:
+La opcion recomendada es Google Compute Engine con una VM `e2-micro`, Docker
+Compose y disco persistente. El bot no publica puertos: Telegram se consulta por
+polling y la administracion entra por SSH encapsulado en IAP.
 
-- Un proceso Python que pueda quedar corriendo en polling.
-- Almacenamiento persistente para SQLite, porque la base vive en un archivo.
+El repositorio deja preparados dos productores de la misma imagen `linux/amd64`:
 
-Opciones evaluadas:
+- **Local, recomendado para ahorrar CI:** `scripts/deploy/Build-DockerImage.ps1`
+  prueba y construye en Docker Desktop; `Publish-DockerImage.ps1` la publica en
+  Artifact Registry desde la PC.
+- **GitHub manual:** `Publish GCE image` solo aparece bajo `workflow_dispatch`.
+  Nunca construye ni publica una release por cada push.
 
-- Railway: recomendado para empezar. Tiene volumen persistente en Free/Trial y alcanza para una SQLite chica. Monta el volumen en una ruta como `/data`.
-- Render: no es buena opcion gratuita para SQLite persistente, porque el filesystem del servicio es efimero y los persistent disks son para servicios pagos.
-- Koyeb: sirve para probar servicios gratis, pero las instancias free no pueden usar volumes y escalan a cero sin trafico; no encaja bien con polling + SQLite persistente.
-- PythonAnywhere: la cuenta gratis no sirve bien para un bot siempre encendido; las always-on tasks son de cuentas pagas.
-- Fly.io: tecnicamente sirve con volumes, pero hoy es trial/pay-as-you-go; no es la mejor opcion gratuita estable para este caso.
+En la VM, `compose.production.yaml` ejecuta el bot sin privilegios, con filesystem
+de solo lectura, volumenes persistentes, healthcheck, rotacion de logs y restart.
+Cada deploy crea un backup SQLite consistente y restaura la imagen anterior si
+la nueva no llega a estado healthy.
 
-Recomendacion actual: Railway con un volumen montado en `/data`.
+La preparacion completa de Google Cloud, los comandos locales, la publicacion
+manual desde GitHub, el primer deploy y el rollback estan en
+[`docs/DEPLOY_GCE.md`](docs/DEPLOY_GCE.md).
 
-## Deploy en Railway
-
-### 1. Preparar el repo
-
-El proyecto incluye:
-
-- `Dockerfile`: define como correr el bot.
-- `.dockerignore`: evita subir `.env`, bases y backups al build.
-- `.github/workflows/deploy.yml`: pipeline de deploy desactivado por ahora.
-
-### 2. Crear proyecto en Railway
-
-1. Crear una cuenta en Railway.
-2. Crear un nuevo Project.
-3. Crear un nuevo Service desde GitHub.
-4. Seleccionar este repo.
-5. Railway deberia detectar el `Dockerfile`.
-
-### 3. Crear volumen persistente
-
-1. En el proyecto de Railway, crear un Volume.
-2. Asociarlo al service del bot.
-3. Montarlo en:
-
-```text
-/data
-```
-
-4. Configurar la variable:
-
-```env
-DATABASE_PATH=/data/galerazo.sqlite3
-```
-
-Esto evita perder la base en redeploys.
-
-### 4. Variables de entorno en Railway
-
-Configurar estas variables en el service:
-
-```env
-TELEGRAM_BOT_TOKEN=token-de-botfather
-TELEGRAM_DEV_USER_IDS=123456789
-TELEGRAM_LOG_CHAT_ID=-1001234567890
-TELEGRAM_ANNOUNCEMENTS_CHAT_ID=-1009876543210
-DATABASE_PATH=/data/galerazo.sqlite3
-```
-
-`TELEGRAM_LOG_CHAT_ID` y `TELEGRAM_ANNOUNCEMENTS_CHAT_ID` pueden ser grupos o canales donde el bot tenga permiso para escribir.
-
-### 5. Comando de arranque
-
-El `Dockerfile` ya define:
-
-```dockerfile
-CMD ["python", "app.py"]
-```
-
-No hace falta configurar otro start command salvo que quieras sobrescribirlo desde Railway.
-
-### 6. Deploy manual inicial
-
-Para el primer deploy, usar el boton Deploy desde Railway.
-
-Despues revisar logs del service. Si arranco bien, deberias ver que el bot manda al canal de logging:
-
-```text
-Galerazo Bot iniciado.
-```
-
-### 7. GitHub Actions para deploy automatico
-
-El repo incluye `.github/workflows/deploy.yml`.
-
-El workflow corre con push a `main`, pero esta desactivado por este flag:
-
-```yaml
-if: ${{ false }}
-```
-
-Cuando quieras activarlo, cambiarlo a:
-
-```yaml
-if: ${{ true }}
-```
-
-Antes de activarlo, configurar estos secrets en GitHub:
-
-```text
-RAILWAY_TOKEN
-RAILWAY_SERVICE_ID
-```
-
-`RAILWAY_TOKEN` se crea en Railway desde Account Settings o Project Settings, segun el flujo que uses.
-`RAILWAY_SERVICE_ID` es el id del service del bot.
-
-El deploy automatico ejecuta:
-
-```bash
-railway up --service "$RAILWAY_SERVICE_ID" --detach
-```
-
-### 8. Checklist de deploy
-
-- Repo en GitHub.
-- Proyecto creado en Railway.
-- Service conectado al repo.
-- Volume creado y montado en `/data`.
-- `DATABASE_PATH=/data/galerazo.sqlite3`.
-- Variables de Telegram configuradas.
-- Bot agregado al canal de logging.
-- Bot agregado al canal de anuncios.
-- Primer deploy manual probado.
-- Secrets de GitHub configurados.
-- El workflow sigue con `if: ${{ false }}` hasta que decidas activarlo.
+Railway permanece como alternativa y su workflow historico sigue desactivado;
+no forma parte del camino recomendado actual.
 
 ## Checklist para arrancar
 

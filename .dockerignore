@@ -4,6 +4,9 @@
 .update-venv
 __pycache__/
 *.pyc
+bin/
 data/
 backups/
 debug/
+deploy/out/
+gha-creds-*.json

@@ -15,3 +15,5 @@ data/backups/*.sqlite3-*
 backups/*.sqlite3
 backups/*.sqlite3-*
 debug/*.json
+deploy/out/
+gha-creds-*.json

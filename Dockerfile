@@ -1,13 +1,34 @@
-FROM python:3.14.6-slim
+FROM python:3.14.6-slim AS base
 
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONDONTWRITEBYTECODE=1
 
 WORKDIR /app
 
-COPY requirements.txt .
-RUN if [ -s requirements.txt ]; then pip install --no-cache-dir -r requirements.txt; fi
+RUN groupadd --gid 10001 galerazo \
+    && useradd --uid 10001 --gid galerazo --create-home --home-dir /home/galerazo galerazo
 
-COPY . .
+COPY requirements.txt ./
+RUN python -m pip install --no-cache-dir --requirement requirements.txt
+
+FROM base AS test
+
+COPY --chown=galerazo:galerazo . .
+USER galerazo
+
+FROM base AS runtime
+
+LABEL org.opencontainers.image.title="Galerazo Bot"
+LABEL org.opencontainers.image.description="Bot de Telegram con persistencia SQLite"
+LABEL org.opencontainers.image.source="https://github.com/ldebortoli/galerazo-telegram-bot"
+
+COPY --chown=galerazo:galerazo app.py ./app.py
+COPY --chown=galerazo:galerazo galerazo_bot ./galerazo_bot
+
+USER galerazo
+
+STOPSIGNAL SIGTERM
+HEALTHCHECK --interval=30s --timeout=5s --start-period=45s --retries=3 \
+    CMD ["python", "-m", "galerazo_bot.healthcheck"]
 
 CMD ["python", "app.py"]

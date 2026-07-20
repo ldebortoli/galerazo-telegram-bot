@@ -37,8 +37,8 @@ def set_python_version(version: str) -> None:
     PYTHON_VERSION_FILE.write_text(f"{version}\n", encoding="ascii")
     docker_text = DOCKERFILE.read_text(encoding="utf-8")
     updated = re.sub(
-        r"(?m)^FROM python:\d+\.\d+\.\d+-slim$",
-        f"FROM python:{version}-slim",
+        r"(?m)^FROM python:\d+\.\d+\.\d+-slim(?P<stage>\s+AS\s+[A-Za-z0-9_-]+)?$",
+        rf"FROM python:{version}-slim\g<stage>",
         docker_text,
         count=1,
     )

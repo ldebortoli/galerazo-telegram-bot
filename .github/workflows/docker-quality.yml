@@ -27,10 +27,13 @@ jobs:
         uses: actions/checkout@v7
 
       - name: Build image
-        run: docker build --tag galerazo-bot:test .
+        run: docker build --target test --tag galerazo-bot:test .
 
       - name: Run tests in image
         run: docker run --rm galerazo-bot:test python -m unittest discover -s tests -v
 
       - name: Verify Docker Python
         run: docker run --rm galerazo-bot:test python scripts/runtime_versions.py
+
+      - name: Build production target
+        run: docker build --target runtime --tag galerazo-bot:runtime-test .

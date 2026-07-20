@@ -355,3 +355,13 @@ Este archivo es append-only a nivel conceptual: no borrar decisiones anteriores.
 - Composicion: el setup reutiliza `scripts/sync_windows_runtime.ps1` y `build_control_panel.ps1`; crea `.env` solo cuando falta, prepara directorios locales, valida el runtime, compila la UI, crea accesos en `CODEX APPS` y Escritorio y abre el panel salvo `-NoLaunch`.
 - Entorno: una `.venv` con el Python exacto se conserva y actualiza desde el lock; se recrea solo si falta, usa otra version o se pide `-ForceRecreate`. Antes de cualquier borrado se verifica que sea una carpeta real dentro del repositorio y no un reparse point.
 - Distribucion: el instalador no crea un paquete autonomo, no copia el repositorio, no instala Docker y nunca incorpora o reemplaza secretos. Las actualizaciones siguen siendo Git mas una nueva ejecucion del setup.
+
+## D-044 - Deploy GCE con imagenes reproducibles y publicacion manual
+
+- Estado: vigente; reemplaza a Railway como recomendacion principal sin activar ni borrar su workflow historico.
+- Fecha: 2026-07-20.
+- Decision: ejecutar produccion en una VM GCE `e2-micro` mediante Docker Compose, con imagen `linux/amd64` inmutable en Artifact Registry y acceso administrativo por IAP/SSH.
+- Construccion: el camino por defecto prueba, construye y publica desde la PC para consumir cero minutos de Actions. GitHub puede construir el mismo target solo mediante `workflow_dispatch`; nunca publica por cada push.
+- Seguridad: imagen runtime minima y no root, filesystem de solo lectura, capabilities eliminadas, sin puertos, secretos en `/etc/galerazo`, SQLite/backups en bind mounts y autenticacion CI por Workload Identity Federation sin claves JSON persistentes.
+- Deploy: una accion local confirmada copia scripts por IAP, crea un backup SQLite consistente, descarga antes de recrear, espera el healthcheck y restaura automaticamente la imagen anterior ante fallo. Las etiquetas usan commit/tag inmutable, no `latest`.
+- Motivo: conservar costo bajo y control humano, evitar drift de runtime y hacer rollback sin reconstruir dentro de una VM de 1 GB.

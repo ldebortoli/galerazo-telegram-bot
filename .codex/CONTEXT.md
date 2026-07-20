@@ -45,9 +45,14 @@ La misma politica se aplica globalmente desde `C:\Users\calei\.codex\AGENTS.md`.
 - `.github/workflows/deploy.yml`: deploy Railway desactivado y disponible solo por ejecucion manual.
 - `.github/workflows/quality.yml`: suite Linux para cambios sustantivos; ignora documentacion/memoria y cancela runs obsoletos.
 - `.github/workflows/docker-quality.yml`: build y tests Docker solo cuando cambia el runtime o la configuracion del contenedor.
+- `.github/workflows/publish-gce-image.yml`: publicacion manual del target Docker de produccion en Artifact Registry mediante Workload Identity Federation; nunca corre por push.
 - `.github/workflows/runtime-update.yml`: actualizacion semanal de Python/dependencias; salta validaciones cuando no hay cambios y, despues de validar entorno nativo y Docker, publica un commit normal sobre `main` sin force push ni permisos de pull request.
 - `requirements.in`: dependencias directas; `requirements.txt`: lock completo reproducible.
 - `scripts/runtime_versions.py`: valida y sincroniza la version exacta entre runtime y Docker.
+- `compose.production.yaml`: servicio de produccion sin puertos, no root, filesystem de solo lectura y volumenes persistentes para SQLite/backups.
+- `scripts/deploy/`: build y publicacion local, bootstrap de GCE, deploy por IAP y rollback desde Windows.
+- `deploy/gce/`: scripts remotos idempotentes para instalar Docker/Cloud CLI, desplegar con healthcheck y restaurar la imagen anterior.
+- `docs/DEPLOY_GCE.md`: setup completo de Free Tier, IPv6/IAP, Artifact Registry, secretos, migracion y operacion.
 - `scripts/sync_windows_runtime.ps1`: instala/verifica el Python exacto con winget, conserva una `.venv` valida o la recrea cuando corresponde, e instala/valida el lock.
 - `scripts/setup.ps1`: setup integral e idempotente de Windows; compone runtime, configuracion local, validacion, build, accesos directos y apertura del panel.
 - `instaladores/Instalar Galerazo Bot.cmd`: puente de doble clic hacia el setup versionado; no copia el repo ni contiene secretos.
@@ -156,3 +161,4 @@ El panel usa un cliente inicial de `760x750`, minimo `680x730`; la pestaña Conf
 - El flujo historico del proyecto usa commits directos a `main`; usar ramas `codex/<nombre>` si un trabajo futuro requiere PR o aislamiento.
 - Antes de cerrar una sesion, actualizar `.codex/`, validar, committear y pushear si el remoto sigue configurado.
 - No activar `.github/workflows/deploy.yml` hasta que el usuario lo pida explicitamente y existan los secrets de Railway.
+- El camino recomendado de produccion es GCE + Docker Compose + Artifact Registry. Construir/publicar localmente es el default para no consumir Actions; GitHub solo publica imagenes por `workflow_dispatch`.
