@@ -2,12 +2,13 @@
 
 ## P1
 
+- [BLOCKED: falta que el usuario cree una API key de proyecto restringida a `/v1/moderations` y la guarde como `OPENAI_API_KEY` en `.env`; la variable no esta configurada y no se debe pedir ni exponer la clave en el chat] Implementar moderacion gratuita solo al ejecutar `/agregartrigger` sobre una imagen: descargarla temporalmente desde Telegram, consultar `omni-moderation-latest`, rechazar contenido sexual marcado y no volver a escanear al reproducir el trigger.
 - [BLOCKED: falta que el usuario confirme spreadsheet ID, worksheet y credenciales de service account] Conectar el sistema de gastos con el Google Sheet real.
 - [BLOCKED: el token `gh` no tiene scope `user`/Plan y el navegador disponible no tiene sesion GitHub; requiere iniciar sesion o autorizar explicitamente ampliar el scope] Confirmar visualmente si la cuenta personal tiene medio de pago cargado. La documentacion oficial confirma que, si no existe un medio valido, Actions se bloquea al agotar la cuota y no cobra excedentes.
 
 ## P2
 
-- [BLOCKED: pospuesto por decision explicita del usuario mientras el bot permanezca en grupos confiables; no bloquear imagenes/videos ni cambiar el comportamiento actual, y retomar solo cuando el usuario solicite integrar un servicio gratuito y aporte sus accesos] Agregar moderacion opcional y sin costo para imagenes y videos de triggers, sin guardar ni enviar contenido marcado.
+- [BLOCKED: el usuario priorizo primero imagenes; no existe una alternativa especializada gratuita confirmada para video y no se deben bloquear ni alterar los triggers actuales] Extender en el futuro la moderacion gratuita a videos de triggers.
 - [BLOCKED: requiere pedido explicito del usuario y luego verificar RAILWAY_TOKEN y RAILWAY_SERVICE_ID] Activar el deploy automatico de Railway.
 
 # IN PROGRESS

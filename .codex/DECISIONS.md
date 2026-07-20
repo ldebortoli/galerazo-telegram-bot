@@ -326,3 +326,12 @@ Este archivo es append-only a nivel conceptual: no borrar decisiones anteriores.
 - Decision: no bloquear, rechazar ni alterar triggers de imagen o video por falta de moderacion configurada. El comportamiento actual se conserva y la integracion de escaneres queda pospuesta.
 - Motivo: el usuario confirmo que, por ahora, el bot participa en grupos confiables y no quiere perder funcionalidad multimedia.
 - Riesgo aceptado: hasta retomar la integracion no existe deteccion automatica de pornografia o CSAM en esos triggers. Una futura moderacion debe seguir sin generar cargos y no puede activar un modo estricto sin una nueva indicacion del usuario.
+
+## D-041 - Moderar imagenes solo al crear triggers
+
+- Estado: vigente; refina D-040 para la primera integracion de moderacion.
+- Fecha: 2026-07-20.
+- Decision: cuando exista `OPENAI_API_KEY`, analizar la imagen una unica vez al ejecutar `/agregartrigger`, antes de persistir el trigger. No analizar triggers al reproducirlos ni reescanear los ya guardados.
+- Motivo: prevenir que se incorporen nuevas imagenes sexuales sin agregar latencia a cada activacion del trigger.
+- Activacion: usar una API key de proyecto restringida con acceso de escritura solo a `/v1/moderations`, guardada exclusivamente en `.env`. Sin clave, conservar el comportamiento actual y no bloquear imagenes.
+- Limite: esta capa usa `omni-moderation-latest` para contenido sexual general; no se presenta como detector fiable de CSAM. Videos siguen fuera de esta primera etapa.

@@ -6,7 +6,7 @@ Mantener y ampliar Galerazo Bot como bot de Telegram modular y reanudable, con S
 
 ## Tarea actual
 
-No hay una tarea autonoma de moderacion en curso. Por decision explicita del usuario, los triggers de imagen y video permanecen habilitados sin escaner mientras el bot opere en grupos confiables; no se debe introducir bloqueo estricto ni cambiar su funcionamiento actual.
+Implementar moderacion gratuita de imagenes solo durante `/agregartrigger`, nunca al reproducir. Esta bloqueada porque `OPENAI_API_KEY` no esta configurada: el usuario debe crear una key de proyecto restringida a escritura en `/v1/moderations` y guardarla localmente en `.env`, sin compartirla por chat ni Git.
 
 ## Estado actual
 
@@ -26,7 +26,7 @@ No hay una tarea autonoma de moderacion en curso. Por decision explicita del usu
 - El panel abre en 760x720 (minimo 680x700); el label de logging recibe sus 21 px requeridos y muestra completo `Canal de logging: OK - Canal de logging accesible.`
 - El canal de logging esta verificado como accesible en `data/integration-status.json`.
 - `/ruletarusa`, triggers ampliados, prefijos, help agrupado, debug JSON y listas sin menciones estan implementados.
-- La moderacion automatica de multimedia esta pospuesta. Imagenes y videos se guardan y reproducen como hasta ahora; el usuario acepta temporalmente el riesgo residual porque el bot esta en grupos confiables.
+- La moderacion de imagenes fue retomada con alcance acotado a la creacion del trigger. Hasta que exista `OPENAI_API_KEY`, imagenes y videos se guardan y reproducen como hasta ahora; videos no forman parte de esta primera etapa.
 - La Galeraza usa el timestamp Telegram con timezone argentino. Todo mensaje original con usuario humano compite, incluidos eventos de servicio como altas al chat; bots, ediciones y updates sin usuario no compiten.
 - El usuario confirmo que no hace falta corregir retroactivamente el evento de servicio omitido antes de este arreglo; no existe una tarea pendiente por ese punto.
 - `PerChatUpdateProcessor` serializa FIFO cada chat, permite que chats distintos avancen en paralelo y conserva el orden durante migraciones del ID de grupo al de supergrupo.
@@ -45,6 +45,7 @@ No hay una tarea autonoma de moderacion en curso. Por decision explicita del usu
 
 ## Validacion reciente
 
+- La definicion de activacion de moderacion de imagenes del 2026-07-20 no modifico codigo porque falta `OPENAI_API_KEY`. Runtime alineado en Python 3.14.6, 64 pruebas locales OK y `git diff --check` OK.
 - La decision de mantener habilitados los triggers multimedia del 2026-07-20 no modifico codigo. Runtime alineado en Python 3.14.6, 64 pruebas locales OK y `git diff --check` OK.
 - La recomendacion del dashboard multi-bot del 2026-07-20 no modifico codigo; runtime alineado en Python 3.14.6, 64 pruebas OK, `git diff --check` limpio y checkpoint sin entradas nuevas.
 - La investigacion de costos de moderacion del 2026-07-20 no modifico codigo: OpenAI Moderation es gratuito pero no recibe video, PhotoDNA Cloud es gratuito previa aprobacion y solo cubre imagenes, Google Vision cobra al superar su franquicia y Thorn no publica un nivel gratuito confirmado. Runtime Python 3.14.6 alineado, 64 pruebas locales OK y `git diff --check` OK.
@@ -76,14 +77,15 @@ No hay una tarea autonoma de moderacion en curso. Por decision explicita del usu
 
 ## Proximos pasos
 
-1. Mantener sin cambios los triggers de imagen y video; retomar moderacion solo ante un nuevo pedido explicito del usuario.
-2. Al retomarla, usar un servicio sin costo confirmado y no activar rechazo estricto sin nueva autorizacion.
-3. Para confirmar el medio de pago, iniciar sesion en GitHub en el navegador disponible o autorizar explicitamente `gh auth refresh -h github.com -s user`; no ampliar scopes sin confirmacion.
-4. Mantener bloqueados Google Sheets real y Railway hasta recibir el input correspondiente.
+1. El usuario debe crear un proyecto/key en OpenAI, restringirla a escritura en `/v1/moderations` y guardar `OPENAI_API_KEY` en `.env` o en el futuro campo secreto del panel.
+2. Cuando la clave exista, agregar el campo secreto al panel, descargar la foto solo en memoria, moderarla antes de `db.add_trigger`, traducir los resultados y probar que la reproduccion no hace requests.
+3. Mantener videos sin moderacion y sin bloqueo hasta que el usuario retome esa segunda etapa.
+4. Para confirmar el medio de pago, iniciar sesion en GitHub en el navegador disponible o autorizar explicitamente `gh auth refresh -h github.com -s user`; no ampliar scopes sin confirmacion.
+5. Mantener bloqueados Google Sheets real y Railway hasta recibir el input correspondiente.
 
 ## Riesgos y bloqueos
 
-- Imagenes y videos pueden contener material no deseado y actualmente no se escanean. El usuario acepta temporalmente ese riesgo porque el bot opera en grupos confiables; no aplicar bloqueos preventivos sin una nueva indicacion.
+- Imagenes y videos pueden contener material no deseado y actualmente no se escanean. La futura capa de OpenAI solo cubrira contenido sexual general en imagenes nuevas al agregar triggers; no garantiza detectar CSAM y no cubrira videos en esta etapa.
 - Docker no esta instalado localmente; la imagen y la suite se validaron correctamente en GitHub Actions.
 - Runtime Update hace un push normal despues de validar; si `main` avanza durante el job, el push se rechaza sin sobrescribir cambios.
 - No activar Railway ni exponer `.env` o credenciales.
