@@ -2,6 +2,7 @@
 
 ## P1
 
+- [BLOCKED: requiere que el usuario confirme si se bloquean desde ahora todos los triggers de imagen y video hasta configurar servicios gratuitos; OpenAI Moderation no cobra pero necesita una API key y solo acepta imagenes, PhotoDNA Cloud es gratuito previa aprobacion pero hoy cubre solo imagenes, y no se identifico una cobertura especializada gratuita y aprobada para videos] Moderar imagenes y videos de triggers antes de guardarlos o reproducirlos, sin almacenar ni enviar contenido marcado, sin contratar servicios pagos y fallando de forma cerrada ante errores del escaner.
 - [BLOCKED: falta que el usuario confirme spreadsheet ID, worksheet y credenciales de service account] Conectar el sistema de gastos con el Google Sheet real.
 - [BLOCKED: el token `gh` no tiene scope `user`/Plan y el navegador disponible no tiene sesion GitHub; requiere iniciar sesion o autorizar explicitamente ampliar el scope] Confirmar visualmente si la cuenta personal tiene medio de pago cargado. La documentacion oficial confirma que, si no existe un medio valido, Actions se bloquea al agotar la cuota y no cobra excedentes.
 

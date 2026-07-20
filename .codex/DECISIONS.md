@@ -310,3 +310,11 @@ Este archivo es append-only a nivel conceptual: no borrar decisiones anteriores.
 - Decision: mantener en tests un mapa explicito de todas las constantes de `filters.StatusUpdate` disponibles en la version bloqueada de PTB; actualmente son 46 categorias.
 - Regresion: cada categoria debe ser reconocida por su filtro especifico, por `StatusUpdate.ALL`, conservar un `effective_user` humano y ser candidata. La igualdad exacta entre el mapa y la biblioteca obliga a auditar categorias nuevas al actualizar PTB.
 - Ruta: otra prueba verifica que el `MessageHandler` de preprocesamiento recibe especificamente eventos de pin, miembros agregados y miembros que salen.
+
+## D-039 - Moderacion multimedia sin costo
+
+- Estado: vigente como restriccion; la seleccion final de servicios sigue pendiente.
+- Fecha: 2026-07-20.
+- Decision: la moderacion de triggers debe cubrir imagenes y videos sin generar cargos ni habilitar servicios pagos. Ninguna integracion puede contratarse, superar una capa gratuita o requerir consumo facturable sin una nueva autorizacion explicita del usuario.
+- Alcance tecnico: OpenAI Moderation puede analizar gratis imagenes y fotogramas extraidos de videos, pero no recibe video directamente ni reemplaza un detector especializado de CSAM. PhotoDNA Cloud es gratuito para organizaciones aprobadas y actualmente se limita a imagenes.
+- Politica pendiente: hasta disponer de cobertura especializada gratuita para cada tipo, se debe confirmar con el usuario si el bot rechaza de forma cerrada toda imagen o video no escaneable.
