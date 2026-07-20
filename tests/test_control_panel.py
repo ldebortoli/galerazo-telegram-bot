@@ -53,11 +53,20 @@ class ControlPanelTests(unittest.TestCase):
         self.assertEqual(calls, ["stop_bot", "destroy"])
 
     def test_openai_key_is_a_secret_configuration_field(self) -> None:
-        from galerazo_bot.control_panel import FIELDS
+        module = ast.parse(
+            (PROJECT_ROOT / "galerazo_bot" / "control_panel.py").read_text(encoding="utf-8")
+        )
+        fields_assignment = next(
+            node
+            for node in module.body
+            if isinstance(node, ast.Assign)
+            and any(isinstance(target, ast.Name) and target.id == "FIELDS" for target in node.targets)
+        )
+        fields = ast.literal_eval(fields_assignment.value)
 
         self.assertIn(
             ("OPENAI_API_KEY", "Clave de moderacion OpenAI", True),
-            FIELDS,
+            fields,
         )
 
 
