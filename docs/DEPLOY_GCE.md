@@ -47,6 +47,60 @@ el proyecto y el registro, cambiando `ServiceAccountId` y el nombre visible.
 La vinculacion inicial de facturacion y el presupuesto se conservan como pasos
 explicitos porque dependen del titular y de la politica de costos de la cuenta.
 
+### Runbook reproducible de punta a punta
+
+Los unicos pasos deliberadamente manuales son los que requieren aceptar
+condiciones/costos o entregar secretos:
+
+1. **Manual, una vez por cuenta:** crear/iniciar la cuenta de Google, activar la
+   prueba o facturacion, aceptar sus condiciones y elegir el medio de pago.
+2. **Manual asistido, una vez por proyecto:** iniciar sesion con `gcloud auth
+   login`, elegir un Project ID globalmente unico, vincular la cuenta de
+   facturacion y crear el presupuesto/alertas. Si se usan comandos:
+
+   ```powershell
+   gcloud projects create TU_PROYECTO --name="Bot Hosting Production"
+   gcloud billing projects link TU_PROYECTO --billing-account=TU_BILLING_ACCOUNT
+   gcloud config set project TU_PROYECTO
+   ```
+
+   El presupuesto recomendado es USD 1 mensual, incluye Free Tier y otros
+   ahorros, excluye promociones, y alerta gasto real al 10/50/100% mas
+   pronostico al 100%. Confirmar tambien que la cuenta de facturacion no consume
+   ya las horas/disco gratuitos en otro proyecto.
+3. **Automatizado:** preparar APIs, registro, identidad, red, IAP, VM y host:
+
+   ```powershell
+   .\scripts\deploy\Invoke-GceBotLifecycle.ps1 `
+     -Action Prepare `
+     -ProjectId TU_PROYECTO `
+     -AcknowledgeBillableResource
+   ```
+
+4. **Manual y secreto, una vez por bot:** completar
+   `/etc/galerazo/bot.env`; apagar el proceso local que usa el mismo token; crear
+   una copia consistente de SQLite y subirla a
+   `/srv/galerazo/data/galerazo.sqlite3`. Las instrucciones exactas estan en la
+   seccion de migracion de esta guia.
+5. **Automatizado:** probar, construir, publicar y desplegar la release:
+
+   ```powershell
+   .\scripts\deploy\Invoke-GceBotLifecycle.ps1 `
+     -Action Release `
+     -ProjectId TU_PROYECTO `
+     -AcknowledgeProductionDeploy
+   ```
+
+6. **Releases futuras:** repetir solo el comando `Release`. Para volver a la
+   imagen anterior usar `-Action Rollback -AcknowledgeProductionDeploy`.
+
+El orquestador tambien permite ejecutar cada bloque de forma independiente con
+`Foundation`, `Infrastructure`, `Prepare`, `Publish`, `Deploy`, `Release` o
+`Rollback`. Antes de desplegar, verifica que el bot local este apagado, que los
+secretos/base remotos existan y que la imagen tenga un tag inmutable distinto
+de `latest`. Esto permite que Bot Control Center invoque `Release` mas adelante
+sin duplicar la logica de deploy.
+
 ## Costos y minutos de CI
 
 La imagen no necesita generarse en GitHub. El camino local usa Docker Desktop y
@@ -300,6 +354,27 @@ No arrancar local y remoto simultaneamente con el mismo token. Para migrar:
 7. dejar apagada la instancia local mientras produccion use ese token.
 
 No copiar directamente los archivos `-wal`/`-shm` de una base activa.
+
+Una vez elegido un backup consistente y con el bot local apagado:
+
+```powershell
+$backup = "C:\ruta\al\backup-consistente.sqlite3"
+
+gcloud compute scp $backup `
+  galerazo-prod:/tmp/galerazo.sqlite3 `
+  --project TU_PROYECTO `
+  --zone us-central1-a `
+  --tunnel-through-iap
+
+gcloud compute ssh galerazo-prod `
+  --project TU_PROYECTO `
+  --zone us-central1-a `
+  --tunnel-through-iap `
+  --command "sudo install -o 10001 -g 10001 -m 0600 /tmp/galerazo.sqlite3 /srv/galerazo/data/galerazo.sqlite3 && rm -f /tmp/galerazo.sqlite3"
+```
+
+No poner tokens, claves ni contenido de `bot.env` en los argumentos de estos
+comandos.
 
 ## 9. Operacion segura
 

@@ -6,7 +6,7 @@ Mantener Galerazo Bot reproducible en Windows, CI y Docker, con SQLite persisten
 
 ## Tarea actual
 
-La preparacion de Google Cloud avanza paso a paso con el usuario. Los pasos 1 a 5 estan completos: proyecto/facturacion, presupuesto/alertas, herramientas locales, APIs/Artifact Registry e identidad/permisos automatizados. No se crearon todavia VM, imagenes remotas ni deploys reales.
+La preparacion de Google Cloud avanza paso a paso con el usuario. Los pasos 1 a 6 estan completos: cuenta/proyecto/costos, herramientas, registro/identidad y red/IAP/VM reproducibles. La VM esta encendida pero todavia no se preparo el host, no se publicaron imagenes y no se hizo deploy del bot.
 
 ## Estado actual
 
@@ -29,16 +29,20 @@ La preparacion de Google Cloud avanza paso a paso con el usuario. Los pasos 1 a 
 - `galerazo-vm` existe y esta habilitada. Tiene exactamente un binding `roles/artifactregistry.reader` sobre `bots`, cero roles directos a nivel proyecto y cero claves administradas por el usuario.
 - La cuenta humana activa de `gcloud` tiene exactamente un binding `roles/artifactregistry.writer` sobre `bots`; su identidad no se registra en la memoria ni en el repositorio.
 - `scripts/deploy/Initialize-GcpBot.ps1` automatiza de forma idempotente APIs, registro e identidad/permisos por bot, encuentra `gcloud` instalado por usuario y no crea VM. Se ejecuto dos veces consecutivas con exito contra el proyecto real.
-- Compute Engine tenia 0 VM al finalizar el paso 5.
+- La VPC custom `bot-fleet` contiene la subred `bots-us-central1` (`10.20.0.0/24`, `IPV4_IPV6`, IPv6 externo, Private Google Access) y exactamente una regla propia: tcp/22 desde IAP `35.235.240.0/20` al tag `iap-ssh`.
+- `galerazo-prod` esta `RUNNING` en `us-central1-a`: `e2-micro`, Debian 12, disco de 30 GB `pd-standard`, sin IPv4 externa, con IPv6 efimera, `galerazo-vm`, OS Login, Shielded Secure Boot/vTPM/integrity monitoring y deletion protection.
+- No hay Cloud Router/NAT ni direcciones reservadas. Se valido SSH por IAP, ruta IPv6 y conexion real por IPv6 a Telegram y por Private Google Access a Artifact Registry.
+- `scripts/deploy/New-GceBotInstance.ps1` crea/valida esa infraestructura de forma idempotente y exige `-AcknowledgeBillableResource`. `Invoke-GceBotLifecycle.ps1` orquesta Foundation/Infrastructure/Prepare/Publish/Deploy/Release/Rollback y mantiene pausas manuales antes de costos y secretos/datos.
+- `docs/DEPLOY_GCE.md` documenta la reproduccion en otra cuenta: alta/facturacion/login/presupuesto manuales, `Prepare` automatizado, carga manual de secretos y backup SQLite, y `Release` automatizado para el primer deploy y releases futuras.
 - `USER_QUEUE.md` no tiene pedidos sin procesar.
 
 ## Validacion reciente
 
-- 90 pruebas nativas OK.
+- 92 pruebas nativas OK.
 - `compileall` OK para app, panel, paquete, scripts y tests.
 - `scripts/runtime_versions.py`: runtime alineado.
 - `pip check`: sin dependencias rotas.
-- Parser PowerShell: los seis scripts de deploy sin errores.
+- Parser PowerShell: los ocho scripts de deploy sin errores.
 - `bash -n`: bootstrap, deploy y rollback sin errores.
 - `git diff --check`: limpio.
 - Docker y `gcloud` estan instalados y validados; no se publico ninguna imagen del bot.
@@ -47,11 +51,11 @@ La preparacion de Google Cloud avanza paso a paso con el usuario. Los pasos 1 a 
 
 ## Proximo paso exacto
 
-Esperar que el usuario diga `siguiente` y continuar unicamente con el paso 6: preparar la red/subred dual-stack elegible y crear `galerazo-prod` como `e2-micro` con `pd-standard`, sin IPv4 externa y usando `galerazo-vm`. No desplegar todavia el bot. Antes de migrar el token/base en una etapa posterior, apagar el bot local.
+Esperar que el usuario diga `siguiente` y continuar unicamente con el paso 7: ejecutar el bootstrap del host en `galerazo-prod` para instalar Docker Engine/Compose/Cloud CLI y crear directorios/plantilla secreta. No cargar todavia el token ni desplegar el bot. Antes de migrar el token/base en una etapa posterior, apagar el bot local.
 
 ## Riesgos y bloqueos
 
 - La VM `e2-micro` tiene 1 GB: limitar la moderacion de video concurrente hasta medir PyAV.
-- IPv6 externo debe tener salida real hacia repositorios, Telegram y Artifact Registry; si algo requiere IPv4, Cloud NAT o IPv4 externa pueden agregar costo.
+- La salida IPv6/Private Google Access fue validada; si una dependencia futura exige IPv4, Cloud NAT o IPv4 externa pueden agregar costo y requieren una nueva decision.
 - Google Sheets real sigue bloqueado hasta recibir spreadsheet/worksheet/credenciales.
 - No ejecutar el bot local y remoto simultaneamente con el mismo token.

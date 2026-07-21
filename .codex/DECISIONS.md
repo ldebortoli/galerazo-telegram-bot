@@ -407,3 +407,21 @@ Este archivo es append-only a nivel conceptual: no borrar decisiones anteriores.
 - Permisos: `galerazo-vm` recibe `roles/artifactregistry.reader`; la cuenta local activa recibe `roles/artifactregistry.writer`. Ninguno de esos bindings se concede a nivel proyecto.
 - Credenciales: la automatizacion usa la sesion humana de `gcloud`, no crea claves JSON y falla si detecta claves administradas por el usuario en la identidad de runtime.
 - Repeticion: proyecto, facturacion, presupuesto, APIs y registro son infraestructura compartida; identidad, VM, secretos y datos son por bot. El script se puede ejecutar nuevamente sin duplicar recursos o bindings y nunca crea VM.
+
+## D-050 - VPC dedicada dual-stack y VM sin IPv4 publica
+
+- Estado: vigente.
+- Fecha: 2026-07-20.
+- Decision: ejecutar `galerazo-prod` como `e2-micro` no Spot en `us-central1-a`, Debian 12 y disco `pd-standard` de 30 GB, conectado a la VPC custom `bot-fleet` y subred `bots-us-central1` dual-stack con IPv6 externo efimero y Private Google Access.
+- Entrada: ninguna regla publica general. La unica regla de `bot-fleet` permite tcp/22 desde `35.235.240.0/20` solo a instancias con tag `iap-ssh`; la administracion usa IAP y OS Login.
+- Salida: no usar IPv4 externa, IP reservada, Cloud Router ni Cloud NAT mientras Telegram, repositorios y Artifact Registry sean accesibles por IPv6/Private Google Access. Cualquier fallback que pueda cobrar requiere una nueva decision.
+- Protecciones: Shielded Secure Boot, vTPM, integrity monitoring y deletion protection activados; la service account es `galerazo-vm` con scope `cloud-platform` y permisos IAM minimos a nivel recurso.
+
+## D-051 - Runbook por etapas con pausas manuales de seguridad
+
+- Estado: vigente.
+- Fecha: 2026-07-20.
+- Decision: `Invoke-GceBotLifecycle.ps1` es el orquestador canonico para reproducir Foundation, Infrastructure, Prepare, Publish, Deploy, Release y Rollback sin duplicar la logica de los scripts especializados.
+- Manual inevitable: alta/prueba/facturacion y login de Google; eleccion del proyecto/presupuesto; ingreso del token y secretos; seleccion de un backup SQLite consistente. Los secretos nunca se pasan por argumentos.
+- Guardas: la infraestructura exige aceptar el posible costo; Release/Deploy/Rollback exigen confirmacion de produccion; el deploy rechaza `latest`, un bot local activo y la ausencia de `bot.env` o base remotos.
+- Reutilizacion: en la misma cuenta/proyecto se repiten solo los recursos por bot. En otra cuenta se repite el bloque manual de cuenta/proyecto y luego el mismo orquestador. Bot Control Center podra invocar `Release` sin reimplementar el deploy.

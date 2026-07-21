@@ -75,6 +75,65 @@ class ContainerRuntimeTests(unittest.TestCase):
 
 
 class DeploymentAutomationTests(unittest.TestCase):
+    def test_lifecycle_orchestrator_preserves_manual_safety_gates(self) -> None:
+        lifecycle = (
+            PROJECT_ROOT / "scripts" / "deploy" / "Invoke-GceBotLifecycle.ps1"
+        ).read_text(encoding="utf-8")
+
+        for action in (
+            "Foundation",
+            "Infrastructure",
+            "Prepare",
+            "Publish",
+            "Deploy",
+            "Release",
+            "Rollback",
+        ):
+            self.assertIn(f'"{action}"', lifecycle)
+        for script in (
+            "Initialize-GcpBot.ps1",
+            "New-GceBotInstance.ps1",
+            "Initialize-GceHost.ps1",
+            "Publish-DockerImage.ps1",
+            "Deploy-Gce.ps1",
+            "Rollback-Gce.ps1",
+        ):
+            self.assertIn(script, lifecycle)
+        self.assertIn("AcknowledgeBillableResource", lifecycle)
+        self.assertIn("AcknowledgeProductionDeploy", lifecycle)
+        self.assertIn("data\\bot.pid", lifecycle)
+        self.assertIn("/etc/galerazo/bot.env", lifecycle)
+        self.assertIn("/srv/galerazo/data/galerazo.sqlite3", lifecycle)
+        self.assertIn("tunnel-through-iap", lifecycle)
+        self.assertIn('tag -eq "latest"', lifecycle)
+        self.assertNotIn("service-accounts keys create", lifecycle)
+
+    def test_gce_instance_setup_is_private_free_tier_scoped_and_idempotent(self) -> None:
+        infrastructure = (
+            PROJECT_ROOT / "scripts" / "deploy" / "New-GceBotInstance.ps1"
+        ).read_text(encoding="utf-8")
+
+        self.assertIn("AcknowledgeBillableResource", infrastructure)
+        self.assertIn('"us-west1", "us-central1", "us-east1"', infrastructure)
+        self.assertIn('"compute", "networks", "describe"', infrastructure)
+        self.assertIn('"compute", "networks", "create"', infrastructure)
+        self.assertIn("--stack-type=IPV4_IPV6", infrastructure)
+        self.assertIn("--ipv6-access-type=EXTERNAL", infrastructure)
+        self.assertIn("--enable-private-ip-google-access", infrastructure)
+        self.assertIn("35.235.240.0/20", infrastructure)
+        self.assertIn("roles/iap.tunnelResourceAccessor", infrastructure)
+        self.assertIn("roles/compute.osAdminLogin", infrastructure)
+        self.assertIn("roles/iam.serviceAccountUser", infrastructure)
+        self.assertIn("no-address", infrastructure)
+        self.assertIn("--machine-type=e2-micro", infrastructure)
+        self.assertIn("--boot-disk-type=pd-standard", infrastructure)
+        self.assertIn("--image-family=debian-12", infrastructure)
+        self.assertIn("--shielded-secure-boot", infrastructure)
+        self.assertIn("--deletion-protection", infrastructure)
+        self.assertIn("enable-oslogin=TRUE", infrastructure)
+        self.assertNotIn("compute instances delete", infrastructure)
+        self.assertNotIn("compute routers nats", infrastructure)
+
     def test_gcp_bot_foundation_is_idempotent_scoped_and_keyless(self) -> None:
         foundation = (
             PROJECT_ROOT / "scripts" / "deploy" / "Initialize-GcpBot.ps1"
