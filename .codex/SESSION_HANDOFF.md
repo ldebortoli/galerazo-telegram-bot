@@ -6,7 +6,7 @@ Mantener Galerazo Bot reproducible en Windows, CI y Docker, con SQLite persisten
 
 ## Tarea actual
 
-La preparacion de Google Cloud avanza paso a paso con el usuario. Los pasos 1 a 9 estan completos: infraestructura, host, secretos y SQLite remoto. Todavia no se publico ninguna imagen ni se hizo deploy del bot.
+Los pasos 1 a 10 están completos: infraestructura, host, secretos, SQLite y primera imagen publicada. Todavía no se desplegó ni inició el bot remoto.
 
 ## Estado actual
 
@@ -25,7 +25,7 @@ La preparacion de Google Cloud avanza paso a paso con el usuario. Los pasos 1 a 
 - La consola confirmo `bot-fleet-production` con USD 300 de credito de prueba sin uso y vencimiento mostrado para el 19 de octubre de 2026; no se pulso `Actualizar` ni se convirtio manualmente la cuenta a modalidad paga.
 - `Bot Fleet - Monthly Guardrail` esta activo en USD, con presupuesto mensual de USD 1, USD 0 consumidos, promociones excluidas, Free Tier incluido y alertas real 10/50/100% mas pronostico 100%. Cubre la cuenta de facturacion, que actualmente tiene un solo proyecto; no es un corte automatico.
 - Estan habilitadas `compute.googleapis.com`, `artifactregistry.googleapis.com`, `iap.googleapis.com` e `iamcredentials.googleapis.com`.
-- Artifact Registry contiene el repositorio Docker `bots` en `us-central1`, cifrado con clave administrada por Google. Al validarlo tenia 0 bytes y 0 imagenes.
+- Artifact Registry contiene `us-central1-docker.pkg.dev/bot-fleet-production/bots/galerazobot:e63c0e8ee924`, digest `sha256:21581c63d742902a2f13e2a987284531cdaee5469d09d7e93195cf7d1523e840`. Es la primera imagen publicada y usa el commit como tag.
 - `galerazo-vm` existe y esta habilitada. Tiene exactamente un binding `roles/artifactregistry.reader` sobre `bots`, cero roles directos a nivel proyecto y cero claves administradas por el usuario.
 - La cuenta humana activa de `gcloud` tiene exactamente un binding `roles/artifactregistry.writer` sobre `bots`; su identidad no se registra en la memoria ni en el repositorio.
 - `scripts/deploy/Initialize-GcpBot.ps1` automatiza de forma idempotente APIs, registro e identidad/permisos por bot, encuentra `gcloud` instalado por usuario y no crea VM. Se ejecuto dos veces consecutivas con exito contra el proyecto real.
@@ -52,14 +52,15 @@ La preparacion de Google Cloud avanza paso a paso con el usuario. Los pasos 1 a 
 - Parser PowerShell: todos los scripts de deploy sin errores.
 - `bash -n`: bootstrap, instaladores de configuracion/base, verificador, deploy y rollback sin errores.
 - `git diff --check`: limpio.
+- El paso 10 ejecutó 96 pruebas dentro del target Docker (una prueba Tk omitida por ser Linux), validó Python 3.14.6 y construyó producción Linux/amd64. La imagen local y Artifact Registry coinciden en el digest `sha256:21581c...e840`.
 - Lectura real desde Galerazo y Bot Control Center confirmó sólo ocho booleanos. Un no-op real mantuvo ausente `GOOGLE_SHEETS_SPREADSHEET_ID`, pasó el verificador remoto y no inició ni desplegó el bot.
-- Docker y `gcloud` estan instalados y validados; no se publico ninguna imagen del bot.
-- Las cuatro APIs requeridas y el repositorio Docker `bots` se validaron mediante `gcloud`; el registro estaba vacio y no habia VM.
+- Docker y `gcloud` están instalados y validados; `deploy/out/last-image.txt` apunta a la imagen publicada y permanece ignorado por Git.
+- Después de publicar se confirmó por IAP que la VM sigue con cero imágenes, cero contenedores y sin `/opt/galerazo/compose.yaml`.
 - Quality `29779348254` y Docker Quality `29779348273` pasaron sobre `9ac8cc4`; Docker construyo el target de pruebas, ejecuto 89 tests y construyo el target runtime.
 
 ## Proximo paso exacto
 
-Paso 10: publicar desde la PC la primera imagen Linux/amd64 inmutable en Artifact Registry mediante `Publish-DockerImage.ps1`. No desplegarla todavía; validar primero tests, tag y presencia en `bots`.
+Paso 11: hacer el primer deploy controlado de `galerazobot:e63c0e8ee924` en `galerazo-prod`, preferentemente desde Bot Control Center. Antes, confirmar que el bot local está apagado; después validar healthcheck, logs y comandos básicos sin ejecutar simultáneamente el mismo token en local.
 
 ## Riesgos y bloqueos
 
