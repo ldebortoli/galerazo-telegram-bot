@@ -1,7 +1,7 @@
 [CmdletBinding()]
 param(
     [Parameter(Mandatory = $true)]
-    [ValidateSet("Foundation", "Infrastructure", "Prepare", "Publish", "Deploy", "Release", "Rollback")]
+    [ValidateSet("Foundation", "Infrastructure", "Prepare", "Configure", "Publish", "Deploy", "Release", "Rollback")]
     [string]$Action,
     [Parameter(Mandatory = $true)][string]$ProjectId,
     [string]$Location = "us-central1",
@@ -13,9 +13,11 @@ param(
     [string]$Instance = "galerazo-prod",
     [string]$ServiceAccountId = "galerazo-vm",
     [string]$ServiceAccountDisplayName = "Galerazo production VM",
+    [string]$EnvFile = ".env",
     [string]$Image,
     [switch]$SkipTests,
     [switch]$AcknowledgeBillableResource,
+    [switch]$AcknowledgeSecretUpload,
     [switch]$AcknowledgeProductionDeploy
 )
 
@@ -26,6 +28,7 @@ $projectRoot = (Resolve-Path (Join-Path $PSScriptRoot "..\..")).Path
 $foundationScript = Join-Path $PSScriptRoot "Initialize-GcpBot.ps1"
 $infrastructureScript = Join-Path $PSScriptRoot "New-GceBotInstance.ps1"
 $hostScript = Join-Path $PSScriptRoot "Initialize-GceHost.ps1"
+$secretsScript = Join-Path $PSScriptRoot "Set-GceBotSecrets.ps1"
 $publishScript = Join-Path $PSScriptRoot "Publish-DockerImage.ps1"
 $deployScript = Join-Path $PSScriptRoot "Deploy-Gce.ps1"
 $rollbackScript = Join-Path $PSScriptRoot "Rollback-Gce.ps1"
@@ -76,9 +79,18 @@ function Invoke-Prepare {
     Invoke-Infrastructure
     & $hostScript -ProjectId $ProjectId -Zone $Zone -Instance $Instance
     Write-Host "Pausa manual obligatoria antes del primer deploy:" -ForegroundColor Yellow
-    Write-Host "1. Completa /etc/galerazo/bot.env sin versionar secretos." -ForegroundColor Yellow
+    Write-Host "1. Ejecuta -Action Configure -AcknowledgeSecretUpload para transferir .env por IAP." -ForegroundColor Yellow
     Write-Host "2. Apaga el bot local y migra la base a /srv/galerazo/data/galerazo.sqlite3." -ForegroundColor Yellow
     Write-Host "3. Ejecuta este orquestador con -Action Release y -AcknowledgeProductionDeploy." -ForegroundColor Yellow
+}
+
+function Invoke-Configure {
+    & $secretsScript `
+        -ProjectId $ProjectId `
+        -Zone $Zone `
+        -Instance $Instance `
+        -EnvFile $EnvFile `
+        -AcknowledgeSecretUpload:$AcknowledgeSecretUpload
 }
 
 function Invoke-Publish {
@@ -187,6 +199,7 @@ switch ($Action) {
     "Foundation" { Invoke-Foundation }
     "Infrastructure" { Invoke-Infrastructure }
     "Prepare" { Invoke-Prepare }
+    "Configure" { Invoke-Configure }
     "Publish" { Invoke-Publish }
     "Deploy" { Invoke-Deploy }
     "Release" { Invoke-Release }

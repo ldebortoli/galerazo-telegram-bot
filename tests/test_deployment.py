@@ -84,6 +84,7 @@ class DeploymentAutomationTests(unittest.TestCase):
             "Foundation",
             "Infrastructure",
             "Prepare",
+            "Configure",
             "Publish",
             "Deploy",
             "Release",
@@ -94,12 +95,14 @@ class DeploymentAutomationTests(unittest.TestCase):
             "Initialize-GcpBot.ps1",
             "New-GceBotInstance.ps1",
             "Initialize-GceHost.ps1",
+            "Set-GceBotSecrets.ps1",
             "Publish-DockerImage.ps1",
             "Deploy-Gce.ps1",
             "Rollback-Gce.ps1",
         ):
             self.assertIn(script, lifecycle)
         self.assertIn("AcknowledgeBillableResource", lifecycle)
+        self.assertIn("AcknowledgeSecretUpload", lifecycle)
         self.assertIn("AcknowledgeProductionDeploy", lifecycle)
         self.assertIn("data\\bot.pid", lifecycle)
         self.assertIn("/etc/galerazo/bot.env", lifecycle)
@@ -153,9 +156,33 @@ class DeploymentAutomationTests(unittest.TestCase):
         ):
             self.assertIn(protected_path, verifier)
         self.assertIn("--expect-pristine", verifier)
+        self.assertIn("--expect-configured", verifier)
         self.assertIn("TOKEN_STATE=", verifier)
         self.assertNotIn("cat /etc/galerazo/bot.env", verifier)
         self.assertNotIn("set -x", verifier)
+
+    def test_gce_secret_upload_uses_private_files_and_never_cli_values(self) -> None:
+        uploader = (
+            PROJECT_ROOT / "scripts" / "deploy" / "Set-GceBotSecrets.ps1"
+        ).read_text(encoding="utf-8")
+        installer = (
+            PROJECT_ROOT / "deploy" / "gce" / "install-config.sh"
+        ).read_text(encoding="utf-8")
+
+        self.assertIn("AcknowledgeSecretUpload", uploader)
+        self.assertIn("WriteAllText", uploader)
+        self.assertIn('$lines -join "`n"', uploader)
+        self.assertIn("tunnel-through-iap", uploader)
+        self.assertIn("umask 077", uploader)
+        self.assertNotIn("${Instance}:~/", uploader)
+        self.assertIn("/app/data/galerazo.sqlite3", uploader)
+        self.assertIn("[System.IO.File]::Delete", uploader)
+        self.assertNotIn('"--command", $token', uploader)
+        self.assertNotIn("TELEGRAM_BOT_TOKEN=$token", uploader)
+        self.assertIn("modo 0700", installer)
+        self.assertIn("bot.env.previous", installer)
+        self.assertIn("--expect-configured", installer)
+        self.assertNotIn("cat \"${env_upload}\"", installer)
 
     def test_gcp_bot_foundation_is_idempotent_scoped_and_keyless(self) -> None:
         foundation = (

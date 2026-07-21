@@ -77,9 +77,19 @@ condiciones/costos o entregar secretos:
      -AcknowledgeBillableResource
    ```
 
-4. **Manual y secreto, una vez por bot:** completar
-   `/etc/galerazo/bot.env`; apagar el proceso local que usa el mismo token; crear
-   una copia consistente de SQLite y subirla a
+4. **Manual asistido y secreto, una vez por bot:** completar `.env` solo en la
+   PC y transferir su lista permitida de variables mediante IAP:
+
+   ```powershell
+   .\scripts\deploy\Invoke-GceBotLifecycle.ps1 `
+     -Action Configure `
+     -ProjectId TU_PROYECTO `
+     -AcknowledgeSecretUpload
+   ```
+
+   El valor de cada secreto viaja dentro de un archivo temporal, nunca como
+   argumento. Despues apagar el proceso local que usa el mismo token, crear una
+   copia consistente de SQLite y subirla a
    `/srv/galerazo/data/galerazo.sqlite3`. Las instrucciones exactas estan en la
    seccion de migracion de esta guia.
 5. **Automatizado:** probar, construir, publicar y desplegar la release:
@@ -95,11 +105,11 @@ condiciones/costos o entregar secretos:
    imagen anterior usar `-Action Rollback -AcknowledgeProductionDeploy`.
 
 El orquestador tambien permite ejecutar cada bloque de forma independiente con
-`Foundation`, `Infrastructure`, `Prepare`, `Publish`, `Deploy`, `Release` o
-`Rollback`. Antes de desplegar, verifica que el bot local este apagado, que los
-secretos/base remotos existan y que la imagen tenga un tag inmutable distinto
-de `latest`. Esto permite que Bot Control Center invoque `Release` mas adelante
-sin duplicar la logica de deploy.
+`Foundation`, `Infrastructure`, `Prepare`, `Configure`, `Publish`, `Deploy`,
+`Release` o `Rollback`. Antes de desplegar, verifica que el bot local este
+apagado, que los secretos/base remotos existan y que la imagen tenga un tag
+inmutable distinto de `latest`. Esto permite que Bot Control Center invoque
+`Release` mas adelante sin duplicar la logica de deploy.
 
 ## Costos y minutos de CI
 
@@ -261,16 +271,31 @@ La pestaña **Observabilidad** de la VM permite revisar CPU, red y disco. La RAM
 no aparece en Cloud Monitoring sin instalar el Ops Agent; no se instala en este
 setup para evitar carga adicional innecesaria en la `e2-micro`.
 
-Entrar por IAP y completar los secretos manualmente:
+Completar `.env` localmente y ejecutar la transferencia confirmada:
 
-```bash
-sudo nano /etc/galerazo/bot.env
+```powershell
+.\scripts\deploy\Set-GceBotSecrets.ps1 `
+  -ProjectId TU_PROYECTO `
+  -Zone us-central1-a `
+  -Instance galerazo-prod `
+  -AcknowledgeSecretUpload
 ```
 
-Nunca pasar el token como argumento de `gcloud`, subir `.env` ni guardarlo en
-GitHub. Para Google Sheets, copiar el JSON a
-`/etc/galerazo/secrets/google-service-account.json` y configurar dentro de
-`bot.env`:
+El script acepta solo las variables de `.env.example`, fuerza
+`DATABASE_PATH=/app/data/galerazo.sqlite3`, crea una copia temporal local,
+transfiere por IAP a un directorio remoto `0700`, instala `bot.env` como
+`root:root`/`0600`, valida sin imprimir valores y elimina los temporales. Antes
+de reemplazar una configuracion existente conserva `bot.env.previous` con los
+mismos permisos para rollback.
+
+Nunca pasar el token como argumento de `gcloud`, copiar el `.env` completo de
+forma indiscriminada ni guardarlo en GitHub. Como alternativa de emergencia se
+puede entrar por IAP y usar `sudo nano /etc/galerazo/bot.env`.
+
+Para Google Sheets, si la variable local
+`GOOGLE_SHEETS_CREDENTIALS_JSON_PATH` apunta a un JSON valido, el mismo script
+lo copia a `/etc/galerazo/secrets/google-service-account.json` y configura
+automaticamente dentro de `bot.env`:
 
 ```env
 GOOGLE_SHEETS_CREDENTIALS_JSON_PATH=/app/secrets/google-service-account.json

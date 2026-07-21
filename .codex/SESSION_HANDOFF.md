@@ -6,7 +6,7 @@ Mantener Galerazo Bot reproducible en Windows, CI y Docker, con SQLite persisten
 
 ## Tarea actual
 
-La preparacion de Google Cloud avanza paso a paso con el usuario. Los pasos 1 a 7 estan completos: cuenta/proyecto/costos, herramientas, registro/identidad, red/IAP/VM y host preparado. No se publicaron imagenes ni se hizo deploy del bot.
+La preparacion de Google Cloud avanza paso a paso con el usuario. Los pasos 1 a 8 estan completos: infraestructura, host y configuracion secreta remota. Todavia no se migro SQLite, no se publicaron imagenes y no se hizo deploy del bot.
 
 ## Estado actual
 
@@ -33,6 +33,8 @@ La preparacion de Google Cloud avanza paso a paso con el usuario. Los pasos 1 a 
 - `galerazo-prod` esta `RUNNING` en `us-central1-a`: `e2-micro`, Debian 12, disco de 30 GB `pd-standard`, sin IPv4 externa, con IPv6 efimera, `galerazo-vm`, OS Login, Shielded Secure Boot/vTPM/integrity monitoring y deletion protection.
 - El host remoto tiene Docker Engine 29.6.2, Compose 5.3.1 y Google Cloud CLI 576.0.0; Docker esta activo/habilitado. `/srv/galerazo/{data,backups}` pertenece a 10001:10001, `/etc/galerazo` esta protegido y `bot.env` conserva el placeholder con modo 0600.
 - `deploy/gce/verify-host.sh` valida el host sin imprimir secretos; `Initialize-GceHost.ps1` lo copia y ejecuta automaticamente. `--expect-pristine` confirmo cero contenedores, imagenes, base y Compose antes del primer deploy.
+- `Set-GceBotSecrets.ps1` y la accion `Configure` transfieren solo las variables permitidas de `.env` mediante un temporal local, IAP y un directorio remoto 0700; `install-config.sh` instala como root 0600, conserva `bot.env.previous`, valida sin mostrar valores y limpia ambos temporales.
+- La configuracion real ya se instalo en `galerazo-prod`: token e IDs presentes; OpenAI y Google Sheets omitidos porque estaban vacios localmente. `--expect-configured` paso, no quedaron directorios temporales y todavia hay cero imagenes, contenedores, Compose y base remota.
 - No hay Cloud Router/NAT ni direcciones reservadas. Se valido SSH por IAP, ruta IPv6 y conexion real por IPv6 a Telegram y por Private Google Access a Artifact Registry.
 - `scripts/deploy/New-GceBotInstance.ps1` crea/valida esa infraestructura de forma idempotente y exige `-AcknowledgeBillableResource`. `Invoke-GceBotLifecycle.ps1` orquesta Foundation/Infrastructure/Prepare/Publish/Deploy/Release/Rollback y mantiene pausas manuales antes de costos y secretos/datos.
 - `docs/DEPLOY_GCE.md` documenta la reproduccion en otra cuenta: alta/facturacion/login/presupuesto manuales, `Prepare` automatizado, carga manual de secretos y backup SQLite, y `Release` automatizado para el primer deploy y releases futuras.
@@ -40,12 +42,12 @@ La preparacion de Google Cloud avanza paso a paso con el usuario. Los pasos 1 a 
 
 ## Validacion reciente
 
-- 93 pruebas nativas OK.
+- 94 pruebas nativas OK.
 - `compileall` OK para app, panel, paquete, scripts y tests.
 - `scripts/runtime_versions.py`: runtime alineado.
 - `pip check`: sin dependencias rotas.
 - Parser PowerShell: los ocho scripts de deploy sin errores.
-- `bash -n`: bootstrap, verificador, deploy y rollback sin errores.
+- `bash -n`: bootstrap, instalador de configuracion, verificador, deploy y rollback sin errores.
 - `git diff --check`: limpio.
 - Docker y `gcloud` estan instalados y validados; no se publico ninguna imagen del bot.
 - Las cuatro APIs requeridas y el repositorio Docker `bots` se validaron mediante `gcloud`; el registro estaba vacio y no habia VM.
@@ -53,7 +55,7 @@ La preparacion de Google Cloud avanza paso a paso con el usuario. Los pasos 1 a 
 
 ## Proximo paso exacto
 
-Esperar que el usuario diga `siguiente` y continuar unicamente con el paso 8: cargar manualmente los secretos reales en `/etc/galerazo/bot.env` mediante IAP, sin pasarlos como argumentos ni mostrarlos. No migrar todavia SQLite ni desplegar el bot; antes de usar el mismo token en produccion se debera apagar el proceso local.
+Esperar que el usuario diga `siguiente` y continuar unicamente con el paso 9: crear una copia SQLite consistente con el bot local apagado y migrarla a `/srv/galerazo/data/galerazo.sqlite3` con owner 10001:10001 y modo 0600. Validar integridad/estado sin publicar imagen ni desplegar todavia.
 
 ## Riesgos y bloqueos
 

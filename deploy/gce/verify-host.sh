@@ -1,13 +1,16 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-expect_pristine=false
-if [[ "${1:-}" == "--expect-pristine" ]]; then
-  expect_pristine=true
-elif [[ $# -ne 0 ]]; then
-  echo "Uso: $0 [--expect-pristine]" >&2
-  exit 2
-fi
+expected_state=any
+case "${1:-}" in
+  "") ;;
+  --expect-pristine) expected_state=pristine ;;
+  --expect-configured) expected_state=configured ;;
+  *)
+    echo "Uso: $0 [--expect-pristine|--expect-configured]" >&2
+    exit 2
+    ;;
+esac
 
 if [[ ${EUID} -ne 0 ]]; then
   echo "Este script debe ejecutarse como root." >&2
@@ -67,7 +70,9 @@ if [[ "${token_line_count}" != "1" ]]; then
   echo "bot.env debe contener exactamente una variable TELEGRAM_BOT_TOKEN." >&2
   exit 1
 fi
-if grep -qx 'TELEGRAM_BOT_TOKEN=replace-me' /etc/galerazo/bot.env; then
+if grep -qx 'TELEGRAM_BOT_TOKEN=' /etc/galerazo/bot.env; then
+  token_state=empty
+elif grep -qx 'TELEGRAM_BOT_TOKEN=replace-me' /etc/galerazo/bot.env; then
   token_state=placeholder
 else
   token_state=configured
@@ -85,13 +90,16 @@ printf 'IMAGES=%s\n' "${image_count}"
 printf 'DATABASE_PRESENT=%s\n' "${database_present}"
 printf 'COMPOSE_PRESENT=%s\n' "${compose_present}"
 
-if [[ "${expect_pristine}" == true ]]; then
+if [[ "${expected_state}" == pristine ]]; then
   [[ "${token_state}" == "placeholder" ]]
   [[ "${container_count}" == "0" ]]
   [[ "${image_count}" == "0" ]]
   [[ "${database_present}" == "no" ]]
   [[ "${compose_present}" == "no" ]]
   echo 'PRISTINE_STATE=yes'
+elif [[ "${expected_state}" == configured ]]; then
+  [[ "${token_state}" == "configured" ]]
+  echo 'CONFIGURED_STATE=yes'
 fi
 
 df -h /

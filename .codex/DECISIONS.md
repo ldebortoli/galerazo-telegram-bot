@@ -433,3 +433,11 @@ Este archivo es append-only a nivel conceptual: no borrar decisiones anteriores.
 - Decision: `Initialize-GceHost.ps1` copia y ejecuta `deploy/gce/verify-host.sh` despues del bootstrap para validar Docker/Compose/Cloud CLI, servicio, owners y modos sin imprimir valores de secretos.
 - Estado pristino: el flag manual `--expect-pristine` exige placeholder, cero imagenes/contenedores y ausencia de base/Compose antes de cargar los datos del primer deploy; la verificacion normal sigue siendo idempotente despues de configurar produccion.
 - Observabilidad: no instalar Ops Agent por defecto en la `e2-micro`; usar las metricas nativas de CPU, red y disco y consultar RAM por IAP cuando sea necesario, evitando carga permanente adicional en una VM de 1 GB.
+
+## D-053 - Transferencia de secretos por archivo privado e IAP
+
+- Estado: vigente; refina la pausa manual de D-051: el usuario completa `.env` y confirma la operacion, pero no pega secretos en SSH ni los pasa por argumentos.
+- Fecha: 2026-07-20.
+- Decision: agregar `Set-GceBotSecrets.ps1` y la accion `Configure` para aceptar solo las variables de `.env.example`, forzar el path SQLite del contenedor y transferir un archivo temporal por IAP a un directorio remoto modo 0700.
+- Instalacion: `install-config.sh` valida sin imprimir valores, conserva `bot.env.previous`, instala como root 0600 y ejecuta `verify-host.sh --expect-configured`; ante error restaura la configuracion anterior. Los temporales local/remoto siempre se eliminan.
+- Integraciones opcionales: si existe un JSON valido en `GOOGLE_SHEETS_CREDENTIALS_JSON_PATH`, se copia como secreto remoto y el path se adapta al contenedor; valores vacios de OpenAI o Sheets permanecen omitidos.
