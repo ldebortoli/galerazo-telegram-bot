@@ -217,13 +217,49 @@ Desde el root del repositorio:
 ```
 
 El bootstrap instala Docker Engine, Compose y Google Cloud CLI desde los
-repositorios oficiales. Luego crea:
+repositorios oficiales. Luego crea estas rutas protegidas:
 
 - `/opt/galerazo`: Compose y scripts de deploy;
 - `/srv/galerazo/data`: base persistente, UID/GID 10001;
 - `/srv/galerazo/backups`: backups persistentes;
 - `/etc/galerazo/bot.env`: variables secretas, modo `0600`;
 - `/etc/galerazo/secrets`: credenciales opcionales, modo `0700`.
+
+Al final ejecuta `deploy/gce/verify-host.sh` para comprobar versiones, servicio
+Docker y permisos sin imprimir secretos. Tambien se puede ejecutar manualmente
+con `--expect-pristine` antes de cargar datos para exigir que no haya imagenes,
+contenedores ni base remota.
+
+### Checklist visual en Google Cloud Console
+
+Despues de `Prepare`, revisar estas pantallas. El bootstrap no debe crear
+recursos nuevos en Google Cloud: solo instala software y crea archivos dentro
+de la VM.
+
+- **Compute Engine > Instancias de VM:** `galerazo-prod` debe estar `RUNNING`,
+  en `us-central1-a`, como `e2-micro`, sin IPv4 externa y con IPv6 externa
+  efimera. En sus detalles deben figurar `galerazo-vm`, OS Login, Shielded VM,
+  deletion protection y el tag `iap-ssh`.
+- **Compute Engine > Discos:** un unico disco de arranque de 30 GB,
+  `pd-standard`, en `us-central1-a` y conectado a `galerazo-prod`.
+- **Red de VPC > Redes de VPC:** `bot-fleet` en modo custom y la subred
+  `bots-us-central1` (`10.20.0.0/24`), dual-stack, IPv6 externo y Private Google
+  Access habilitado.
+- **Red de VPC > Firewall:** para `bot-fleet`, la regla propia esperada es
+  `bot-fleet-allow-iap-ssh`: entrada TCP 22 desde `35.235.240.0/20`, dirigida al
+  tag `iap-ssh`. No debe existir una regla que publique SSH al mundo ni puertos
+  de la aplicacion.
+- **Artifact Registry > Repositorios:** `bots`, formato Docker y region
+  `us-central1`. Antes de `Publish` debe seguir sin imagenes.
+- **IAM y administracion > Cuentas de servicio:** `galerazo-vm` habilitada y
+  con cero claves administradas por el usuario.
+- **Facturacion > Presupuestos y alertas:** el presupuesto mensual debe estar
+  activo. Es una alerta, no un corte; el costo puede aparecer con varias horas
+  de demora.
+
+La pestaña **Observabilidad** de la VM permite revisar CPU, red y disco. La RAM
+no aparece en Cloud Monitoring sin instalar el Ops Agent; no se instala en este
+setup para evitar carga adicional innecesaria en la `e2-micro`.
 
 Entrar por IAP y completar los secretos manualmente:
 
@@ -392,6 +428,8 @@ comandos.
 - [IAP TCP forwarding](https://docs.cloud.google.com/iap/docs/tcp-forwarding-overview)
 - [Instancias IPv6](https://docs.cloud.google.com/compute/docs/instances/create-ipv6-instance)
 - [Artifact Registry: push y pull](https://docs.cloud.google.com/artifact-registry/docs/docker/pushing-and-pulling)
+- [Observar y supervisar VM](https://docs.cloud.google.com/compute/docs/instances/observe-monitor-vms)
+- [Presupuestos y alertas de Cloud Billing](https://docs.cloud.google.com/billing/docs/how-to/budgets)
 - [Workload Identity Federation para pipelines](https://docs.cloud.google.com/iam/docs/workload-identity-federation-with-deployment-pipelines)
 - [Docker Compose en produccion](https://docs.docker.com/compose/how-tos/production/)
 - [Facturacion de GitHub Actions](https://docs.github.com/en/billing/concepts/product-billing/github-actions)

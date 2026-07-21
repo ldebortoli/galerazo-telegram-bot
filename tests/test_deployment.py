@@ -134,6 +134,29 @@ class DeploymentAutomationTests(unittest.TestCase):
         self.assertNotIn("compute instances delete", infrastructure)
         self.assertNotIn("compute routers nats", infrastructure)
 
+    def test_gce_host_bootstrap_verifies_permissions_without_printing_secrets(self) -> None:
+        host_setup = (
+            PROJECT_ROOT / "scripts" / "deploy" / "Initialize-GceHost.ps1"
+        ).read_text(encoding="utf-8")
+        verifier = (
+            PROJECT_ROOT / "deploy" / "gce" / "verify-host.sh"
+        ).read_text(encoding="utf-8")
+
+        self.assertIn("verify-host.sh", host_setup)
+        self.assertIn("sudo bash /tmp/verify-host.sh", host_setup)
+        for protected_path in (
+            "/srv/galerazo/data",
+            "/srv/galerazo/backups",
+            "/etc/galerazo",
+            "/etc/galerazo/secrets",
+            "/etc/galerazo/bot.env",
+        ):
+            self.assertIn(protected_path, verifier)
+        self.assertIn("--expect-pristine", verifier)
+        self.assertIn("TOKEN_STATE=", verifier)
+        self.assertNotIn("cat /etc/galerazo/bot.env", verifier)
+        self.assertNotIn("set -x", verifier)
+
     def test_gcp_bot_foundation_is_idempotent_scoped_and_keyless(self) -> None:
         foundation = (
             PROJECT_ROOT / "scripts" / "deploy" / "Initialize-GcpBot.ps1"

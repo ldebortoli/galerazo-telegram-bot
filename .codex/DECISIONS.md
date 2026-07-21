@@ -425,3 +425,11 @@ Este archivo es append-only a nivel conceptual: no borrar decisiones anteriores.
 - Manual inevitable: alta/prueba/facturacion y login de Google; eleccion del proyecto/presupuesto; ingreso del token y secretos; seleccion de un backup SQLite consistente. Los secretos nunca se pasan por argumentos.
 - Guardas: la infraestructura exige aceptar el posible costo; Release/Deploy/Rollback exigen confirmacion de produccion; el deploy rechaza `latest`, un bot local activo y la ausencia de `bot.env` o base remotos.
 - Reutilizacion: en la misma cuenta/proyecto se repiten solo los recursos por bot. En otra cuenta se repite el bloque manual de cuenta/proyecto y luego el mismo orquestador. Bot Control Center podra invocar `Release` sin reimplementar el deploy.
+
+## D-052 - Verificacion automatica y liviana del host GCE
+
+- Estado: vigente.
+- Fecha: 2026-07-20.
+- Decision: `Initialize-GceHost.ps1` copia y ejecuta `deploy/gce/verify-host.sh` despues del bootstrap para validar Docker/Compose/Cloud CLI, servicio, owners y modos sin imprimir valores de secretos.
+- Estado pristino: el flag manual `--expect-pristine` exige placeholder, cero imagenes/contenedores y ausencia de base/Compose antes de cargar los datos del primer deploy; la verificacion normal sigue siendo idempotente despues de configurar produccion.
+- Observabilidad: no instalar Ops Agent por defecto en la `e2-micro`; usar las metricas nativas de CPU, red y disco y consultar RAM por IAP cuando sea necesario, evitando carga permanente adicional en una VM de 1 GB.

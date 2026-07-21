@@ -18,9 +18,10 @@ foreach ($value in @($ProjectId, $Zone, $Instance)) {
 }
 
 $bootstrap = (Resolve-Path (Join-Path $PSScriptRoot "..\..\deploy\gce\bootstrap.sh")).Path
-$target = "${Instance}:/tmp/galerazo-bootstrap.sh"
+$verifier = (Resolve-Path (Join-Path $PSScriptRoot "..\..\deploy\gce\verify-host.sh")).Path
+$target = "${Instance}:/tmp"
 
-& gcloud compute scp $bootstrap $target `
+& gcloud compute scp $bootstrap $verifier $target `
     --project $ProjectId --zone $Zone --tunnel-through-iap --quiet
 if ($LASTEXITCODE -ne 0) {
     throw "No se pudo copiar el bootstrap a la VM."
@@ -28,7 +29,7 @@ if ($LASTEXITCODE -ne 0) {
 
 & gcloud compute ssh $Instance `
     --project $ProjectId --zone $Zone --tunnel-through-iap `
-    --command "sudo bash /tmp/galerazo-bootstrap.sh"
+    --command "sudo bash /tmp/galerazo-bootstrap.sh && sudo bash /tmp/verify-host.sh"
 if ($LASTEXITCODE -ne 0) {
     throw "El bootstrap de la VM fallo."
 }
