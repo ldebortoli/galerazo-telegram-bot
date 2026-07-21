@@ -56,11 +56,12 @@ Los pasos 1 a 10 están completos: infraestructura, host, secretos, SQLite y pri
 - Lectura real desde Galerazo y Bot Control Center confirmó sólo ocho booleanos. Un no-op real mantuvo ausente `GOOGLE_SHEETS_SPREADSHEET_ID`, pasó el verificador remoto y no inició ni desplegó el bot.
 - Docker y `gcloud` están instalados y validados; `deploy/out/last-image.txt` apunta a la imagen publicada y permanece ignorado por Git.
 - Después de publicar se confirmó por IAP que la VM sigue con cero imágenes, cero contenedores y sin `/opt/galerazo/compose.yaml`.
+- Antes del paso 11, el chequeo canónico del panel devolvió `BOT_APAGADO`; no había procesos Python con `app.py`, `data/bot.pid` ni contenedores Docker locales de Galerazobot. Este estado debe volver a comprobarse justo antes de desplegar porque es temporal.
 - Quality `29779348254` y Docker Quality `29779348273` pasaron sobre `9ac8cc4`; Docker construyo el target de pruebas, ejecuto 89 tests y construyo el target runtime.
 
 ## Proximo paso exacto
 
-Paso 11: hacer el primer deploy controlado de `galerazobot:e63c0e8ee924` en `galerazo-prod`, preferentemente desde Bot Control Center. Antes, confirmar que el bot local está apagado; después validar healthcheck, logs y comandos básicos sin ejecutar simultáneamente el mismo token en local.
+Paso 11: abrir Bot Control Center desde el acceso de Windows, seleccionar Galerazo Bot > Deploy y usar `Deployar última imagen` para desplegar `galerazobot:e63c0e8ee924` en `galerazo-prod`. Reconfirmar antes que el bot local siga apagado; después validar healthcheck, logs reales por IAP y comandos básicos sin ejecutar simultáneamente el mismo token en local.
 
 ## Riesgos y bloqueos
 
