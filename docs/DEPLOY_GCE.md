@@ -22,6 +22,31 @@ No hay webhook ni puerto de aplicacion. SSH entra mediante IAP y no requiere una
 IPv4 publica. El flujo normal se ejecuta desde la PC para conservar una
 confirmacion humana antes de tocar produccion.
 
+## Que se configura una vez y que se repite
+
+| Alcance | Configuracion |
+| --- | --- |
+| Una vez por proyecto de flota | Proyecto, facturacion, presupuesto, APIs y repositorio `bots`. |
+| Una vez por bot | Service account, VM, secretos, directorios persistentes y primer deploy. |
+| Por release | Tests, build, publicacion de una imagen inmutable y deploy con healthcheck. |
+
+Los pasos tecnicos validados de APIs, Artifact Registry e identidad se pueden
+repetir de forma segura con:
+
+```powershell
+.\scripts\deploy\Initialize-GcpBot.ps1 `
+  -ProjectId bot-fleet-production `
+  -ServiceAccountId galerazo-vm `
+  -ServiceAccountDisplayName "Galerazo production VM"
+```
+
+El script es idempotente: comprueba el estado antes de crear, limita Reader y
+Writer al repositorio `bots`, verifica que la identidad no tenga claves
+administradas por el usuario y no crea ninguna VM. Para otro bot se reutilizan
+el proyecto y el registro, cambiando `ServiceAccountId` y el nombre visible.
+La vinculacion inicial de facturacion y el presupuesto se conservan como pasos
+explicitos porque dependen del titular y de la politica de costos de la cuenta.
+
 ## Costos y minutos de CI
 
 La imagen no necesita generarse en GitHub. El camino local usa Docker Desktop y
@@ -44,7 +69,6 @@ Instalar:
 
 ```powershell
 gcloud auth login
-gcloud auth application-default login
 gcloud config set project TU_PROYECTO
 ```
 
@@ -71,29 +95,23 @@ mas gasto previsto al 100%. Esto permite ver el costo que persistiria despues
 de la prueba gratuita. El presupuesto solo alerta: no limita el consumo ni
 detiene recursos, y sus datos pueden llegar con demora.
 
-```powershell
-gcloud services enable compute.googleapis.com artifactregistry.googleapis.com iap.googleapis.com iamcredentials.googleapis.com
-
-gcloud artifacts repositories create bots `
-  --repository-format=docker `
-  --location=us-central1 `
-  --description="Imagenes de bots"
-```
-
-Crear una service account para la VM y darle solo lectura sobre Artifact
-Registry:
+La ruta recomendada usa el script idempotente mostrado arriba. Como referencia,
+el equivalente manual para la identidad de la VM debe limitar el permiso al
+repositorio, no a todo el proyecto:
 
 ```powershell
 gcloud iam service-accounts create galerazo-vm `
   --display-name="Galerazo production VM"
 
-gcloud projects add-iam-policy-binding TU_PROYECTO `
+gcloud artifacts repositories add-iam-policy-binding bots `
+  --location=us-central1 `
   --member="serviceAccount:galerazo-vm@TU_PROYECTO.iam.gserviceaccount.com" `
   --role="roles/artifactregistry.reader"
 ```
 
 La cuenta humana que publique localmente necesita
-`roles/artifactregistry.writer` sobre el repositorio o proyecto.
+`roles/artifactregistry.writer` sobre el repositorio. El script lo concede a la
+cuenta activa de `gcloud` sin crear ni descargar claves JSON.
 
 ## 3. Crear la VM elegible para Free Tier
 

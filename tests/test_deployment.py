@@ -75,6 +75,30 @@ class ContainerRuntimeTests(unittest.TestCase):
 
 
 class DeploymentAutomationTests(unittest.TestCase):
+    def test_gcp_bot_foundation_is_idempotent_scoped_and_keyless(self) -> None:
+        foundation = (
+            PROJECT_ROOT / "scripts" / "deploy" / "Initialize-GcpBot.ps1"
+        ).read_text(encoding="utf-8")
+
+        for api in (
+            "compute.googleapis.com",
+            "artifactregistry.googleapis.com",
+            "iap.googleapis.com",
+            "iamcredentials.googleapis.com",
+        ):
+            self.assertIn(api, foundation)
+        self.assertIn('repositories", "describe"', foundation)
+        self.assertIn('repositories", "create"', foundation)
+        self.assertIn('"service-accounts", "describe"', foundation)
+        self.assertIn('service-accounts", "create"', foundation)
+        self.assertIn("repositories\", \"add-iam-policy-binding", foundation)
+        self.assertIn("roles/artifactregistry.reader", foundation)
+        self.assertIn("roles/artifactregistry.writer", foundation)
+        self.assertIn('"--managed-by=user"', foundation)
+        self.assertNotIn("service-accounts keys create", foundation)
+        self.assertNotIn("projects add-iam-policy-binding", foundation)
+        self.assertNotIn("compute instances create", foundation)
+
     def test_github_image_publication_is_manual_and_keyless(self) -> None:
         workflow = (
             PROJECT_ROOT / ".github" / "workflows" / "publish-gce-image.yml"

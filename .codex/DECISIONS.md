@@ -398,3 +398,12 @@ Este archivo es append-only a nivel conceptual: no borrar decisiones anteriores.
 - Decision: usar el repositorio Docker `bots` en `us-central1` dentro de `bot-fleet-production`; separar las imagenes por nombre de bot y tags inmutables, por ejemplo `bots/galerazobot:COMMIT`.
 - APIs habilitadas: Compute Engine, Artifact Registry, IAP e IAM Service Account Credentials.
 - Motivo: compartir la infraestructura base y el almacenamiento gratuito disponible sin mezclar identidades, contenedores, datos ni secretos de bots distintos.
+
+## D-049 - Fundacion GCP idempotente y permisos por repositorio
+
+- Estado: vigente.
+- Fecha: 2026-07-20.
+- Decision: usar `scripts/deploy/Initialize-GcpBot.ps1` para asegurar las APIs y el registro compartidos, crear la service account especifica de cada bot y configurar acceso de runtime/publicacion solo sobre el repositorio `bots`.
+- Permisos: `galerazo-vm` recibe `roles/artifactregistry.reader`; la cuenta local activa recibe `roles/artifactregistry.writer`. Ninguno de esos bindings se concede a nivel proyecto.
+- Credenciales: la automatizacion usa la sesion humana de `gcloud`, no crea claves JSON y falla si detecta claves administradas por el usuario en la identidad de runtime.
+- Repeticion: proyecto, facturacion, presupuesto, APIs y registro son infraestructura compartida; identidad, VM, secretos y datos son por bot. El script se puede ejecutar nuevamente sin duplicar recursos o bindings y nunca crea VM.

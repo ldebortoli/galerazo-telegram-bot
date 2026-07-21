@@ -6,7 +6,7 @@ Mantener Galerazo Bot reproducible en Windows, CI y Docker, con SQLite persisten
 
 ## Tarea actual
 
-La preparacion de Google Cloud avanza paso a paso con el usuario. Los pasos 1 a 4 estan completos: proyecto/facturacion, presupuesto/alertas, herramientas locales y APIs/Artifact Registry. No se crearon todavia VM, service accounts, imagenes remotas ni deploys reales.
+La preparacion de Google Cloud avanza paso a paso con el usuario. Los pasos 1 a 5 estan completos: proyecto/facturacion, presupuesto/alertas, herramientas locales, APIs/Artifact Registry e identidad/permisos automatizados. No se crearon todavia VM, imagenes remotas ni deploys reales.
 
 ## Estado actual
 
@@ -26,16 +26,19 @@ La preparacion de Google Cloud avanza paso a paso con el usuario. Los pasos 1 a 
 - `Bot Fleet - Monthly Guardrail` esta activo en USD, con presupuesto mensual de USD 1, USD 0 consumidos, promociones excluidas, Free Tier incluido y alertas real 10/50/100% mas pronostico 100%. Cubre la cuenta de facturacion, que actualmente tiene un solo proyecto; no es un corte automatico.
 - Estan habilitadas `compute.googleapis.com`, `artifactregistry.googleapis.com`, `iap.googleapis.com` e `iamcredentials.googleapis.com`.
 - Artifact Registry contiene el repositorio Docker `bots` en `us-central1`, cifrado con clave administrada por Google. Al validarlo tenia 0 bytes y 0 imagenes.
-- Compute Engine tenia 0 VM al finalizar el paso 4.
+- `galerazo-vm` existe y esta habilitada. Tiene exactamente un binding `roles/artifactregistry.reader` sobre `bots`, cero roles directos a nivel proyecto y cero claves administradas por el usuario.
+- La cuenta humana activa de `gcloud` tiene exactamente un binding `roles/artifactregistry.writer` sobre `bots`; su identidad no se registra en la memoria ni en el repositorio.
+- `scripts/deploy/Initialize-GcpBot.ps1` automatiza de forma idempotente APIs, registro e identidad/permisos por bot, encuentra `gcloud` instalado por usuario y no crea VM. Se ejecuto dos veces consecutivas con exito contra el proyecto real.
+- Compute Engine tenia 0 VM al finalizar el paso 5.
 - `USER_QUEUE.md` no tiene pedidos sin procesar.
 
 ## Validacion reciente
 
-- 89 pruebas nativas OK.
+- 90 pruebas nativas OK.
 - `compileall` OK para app, panel, paquete, scripts y tests.
 - `scripts/runtime_versions.py`: runtime alineado.
 - `pip check`: sin dependencias rotas.
-- Parser PowerShell: cuatro scripts de deploy sin errores.
+- Parser PowerShell: los seis scripts de deploy sin errores.
 - `bash -n`: bootstrap, deploy y rollback sin errores.
 - `git diff --check`: limpio.
 - Docker y `gcloud` estan instalados y validados; no se publico ninguna imagen del bot.
@@ -44,7 +47,7 @@ La preparacion de Google Cloud avanza paso a paso con el usuario. Los pasos 1 a 
 
 ## Proximo paso exacto
 
-Esperar que el usuario diga `siguiente` y continuar unicamente con el paso 5: crear la service account `galerazo-vm`, otorgarle lectura minima de Artifact Registry y verificar el permiso de publicacion local sin crear claves JSON. No crear todavia la VM. Antes de migrar el token/base en una etapa posterior, apagar el bot local.
+Esperar que el usuario diga `siguiente` y continuar unicamente con el paso 6: preparar la red/subred dual-stack elegible y crear `galerazo-prod` como `e2-micro` con `pd-standard`, sin IPv4 externa y usando `galerazo-vm`. No desplegar todavia el bot. Antes de migrar el token/base en una etapa posterior, apagar el bot local.
 
 ## Riesgos y bloqueos
 

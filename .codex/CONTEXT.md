@@ -50,7 +50,7 @@ La misma politica se aplica globalmente desde `C:\Users\calei\.codex\AGENTS.md`.
 - `requirements.in`: dependencias directas; `requirements.txt`: lock completo reproducible.
 - `scripts/runtime_versions.py`: valida y sincroniza la version exacta entre runtime y Docker.
 - `compose.production.yaml`: servicio de produccion sin puertos, no root, filesystem de solo lectura y volumenes persistentes para SQLite/backups.
-- `scripts/deploy/`: build y publicacion local, bootstrap de GCE, deploy por IAP y rollback desde Windows.
+- `scripts/deploy/`: fundacion GCP idempotente por bot, build y publicacion local, bootstrap de GCE, deploy por IAP y rollback desde Windows. `Initialize-GcpBot.ps1` asegura APIs/registro, crea la identidad de runtime, limita Reader/Writer a `bots` y rechaza claves administradas por el usuario; no crea VM.
 - `deploy/gce/`: scripts remotos idempotentes para instalar Docker/Cloud CLI, desplegar con healthcheck y restaurar la imagen anterior.
 - `docs/DEPLOY_GCE.md`: setup completo de Free Tier, IPv6/IAP, Artifact Registry, secretos, migracion y operacion.
 - `scripts/sync_windows_runtime.ps1`: instala/verifica el Python exacto con winget, conserva una `.venv` valida o la recrea cuando corresponde, e instala/valida el lock.
@@ -164,3 +164,4 @@ El panel usa un cliente inicial de `760x750`, minimo `680x730`; la pestaña Conf
 - El camino recomendado de produccion es GCE + Docker Compose + Artifact Registry. Construir/publicar localmente es el default para no consumir Actions; GitHub solo publica imagenes por `workflow_dispatch`.
 - El proyecto GCP personal para la flota es `bot-fleet-production`; cada bot conserva VM/contenedor, service account, datos y secretos con nombres especificos. Un proyecto separado se reserva para clientes, facturacion o permisos que requieran aislamiento fuerte.
 - En `bot-fleet-production` estan habilitadas las APIs de Compute Engine, Artifact Registry, IAP e IAM Service Account Credentials. El registro Docker compartido para la flota es `bots` en `us-central1`; cada bot usa su propio nombre de imagen.
+- `galerazo-vm` es la identidad de runtime de Galerazobot: esta habilitada, tiene solo `roles/artifactregistry.reader` sobre `bots`, ningun rol directo a nivel proyecto y cero claves administradas por el usuario. La cuenta local activa tiene `roles/artifactregistry.writer` solo sobre `bots`.
