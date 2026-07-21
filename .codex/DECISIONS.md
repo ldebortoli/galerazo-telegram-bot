@@ -390,3 +390,11 @@ Este archivo es append-only a nivel conceptual: no borrar decisiones anteriores.
 - Decision: usar Docker Desktop instalado por usuario con backend WSL 2 y contenedores Linux/amd64, junto con Google Cloud CLI autenticado mediante la cuenta humana local.
 - Proyecto predeterminado: `bot-fleet-production`.
 - Motivo: evitar privilegios administrativos permanentes, construir localmente la misma arquitectura que produccion y reutilizar la autenticacion segura de `gcloud` sin claves JSON locales.
+
+## D-048 - Artifact Registry compartido para la flota
+
+- Estado: vigente.
+- Fecha: 2026-07-20.
+- Decision: usar el repositorio Docker `bots` en `us-central1` dentro de `bot-fleet-production`; separar las imagenes por nombre de bot y tags inmutables, por ejemplo `bots/galerazobot:COMMIT`.
+- APIs habilitadas: Compute Engine, Artifact Registry, IAP e IAM Service Account Credentials.
+- Motivo: compartir la infraestructura base y el almacenamiento gratuito disponible sin mezclar identidades, contenedores, datos ni secretos de bots distintos.

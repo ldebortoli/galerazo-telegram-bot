@@ -15,6 +15,7 @@
 
 # DONE
 
+- [2026-07-20] Completar el paso 4 del setup GCP: habilitar Compute Engine, Artifact Registry, IAP e IAM Service Account Credentials y crear el repositorio Docker compartido `bots` en `us-central1`. Validacion: 4/4 APIs activas, formato `DOCKER`, 0 bytes, 0 imagenes y 0 VM.
 - [2026-07-20] Completar el paso 3 del setup GCP: instalar Docker Desktop 4.83.0 por usuario con WSL 2 y motor Linux/amd64, validar `hello-world`, instalar Google Cloud CLI 576.0.0, autenticar la cuenta local, fijar `bot-fleet-production` y leer el proyecto activo. No se habilitaron APIs ni se crearon recursos GCP.
 - [2026-07-20] Completar el paso 2 del setup GCP: crear `Bot Fleet - Monthly Guardrail`, presupuesto mensual de USD 1 para la cuenta de facturacion que actualmente contiene solo `bot-fleet-production`; Free Tier y demas ahorros incluidos, promociones excluidas, alertas de gasto real al 10/50/100%, pronostico al 100% y correos a administradores/usuarios de facturacion. Pub/Sub y canales de Monitoring permanecen desactivados; gasto confirmado en USD 0.
 - [2026-07-20] Completar el paso 1 del setup GCP: crear y seleccionar el proyecto compartido `bot-fleet-production` y verificar en la consola la prueba gratuita activa con facturacion vinculada; no se crearon todavia VM, registros ni otros recursos consumibles.

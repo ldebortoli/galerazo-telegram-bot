@@ -6,7 +6,7 @@ Mantener Galerazo Bot reproducible en Windows, CI y Docker, con SQLite persisten
 
 ## Tarea actual
 
-La preparacion local para Google Compute Engine esta completa y el setup remoto se esta realizando paso a paso con el usuario. Los pasos 1 a 3 estan completos: proyecto/facturacion, presupuesto/alertas y herramientas locales. No se crearon VM, registros, service accounts, imagenes remotas ni deploys reales.
+La preparacion de Google Cloud avanza paso a paso con el usuario. Los pasos 1 a 4 estan completos: proyecto/facturacion, presupuesto/alertas, herramientas locales y APIs/Artifact Registry. No se crearon todavia VM, service accounts, imagenes remotas ni deploys reales.
 
 ## Estado actual
 
@@ -24,6 +24,9 @@ La preparacion local para Google Compute Engine esta completa y el setup remoto 
 - Los instaladores agregaron Docker y Google Cloud CLI al PATH de usuario. La sesion de Codex abierta antes de instalarlos conserva un PATH viejo; terminales nuevas los encuentran normalmente y, en esta sesion, se validaron usando sus rutas instaladas.
 - La consola confirmo `bot-fleet-production` con USD 300 de credito de prueba sin uso y vencimiento mostrado para el 19 de octubre de 2026; no se pulso `Actualizar` ni se convirtio manualmente la cuenta a modalidad paga.
 - `Bot Fleet - Monthly Guardrail` esta activo en USD, con presupuesto mensual de USD 1, USD 0 consumidos, promociones excluidas, Free Tier incluido y alertas real 10/50/100% mas pronostico 100%. Cubre la cuenta de facturacion, que actualmente tiene un solo proyecto; no es un corte automatico.
+- Estan habilitadas `compute.googleapis.com`, `artifactregistry.googleapis.com`, `iap.googleapis.com` e `iamcredentials.googleapis.com`.
+- Artifact Registry contiene el repositorio Docker `bots` en `us-central1`, cifrado con clave administrada por Google. Al validarlo tenia 0 bytes y 0 imagenes.
+- Compute Engine tenia 0 VM al finalizar el paso 4.
 - `USER_QUEUE.md` no tiene pedidos sin procesar.
 
 ## Validacion reciente
@@ -35,12 +38,13 @@ La preparacion local para Google Compute Engine esta completa y el setup remoto 
 - Parser PowerShell: cuatro scripts de deploy sin errores.
 - `bash -n`: bootstrap, deploy y rollback sin errores.
 - `git diff --check`: limpio.
-- Docker y `gcloud` estan instalados y validados; no se publico una imagen del bot y no se crearon recursos GCP.
+- Docker y `gcloud` estan instalados y validados; no se publico ninguna imagen del bot.
+- Las cuatro APIs requeridas y el repositorio Docker `bots` se validaron mediante `gcloud`; el registro estaba vacio y no habia VM.
 - Quality `29779348254` y Docker Quality `29779348273` pasaron sobre `9ac8cc4`; Docker construyo el target de pruebas, ejecuto 89 tests y construyo el target runtime.
 
 ## Proximo paso exacto
 
-Esperar que el usuario diga `siguiente` y continuar unicamente con el paso 4: habilitar las APIs necesarias y crear Artifact Registry. Antes de migrar el token/base en una etapa posterior, apagar el bot local.
+Esperar que el usuario diga `siguiente` y continuar unicamente con el paso 5: crear la service account `galerazo-vm`, otorgarle lectura minima de Artifact Registry y verificar el permiso de publicacion local sin crear claves JSON. No crear todavia la VM. Antes de migrar el token/base en una etapa posterior, apagar el bot local.
 
 ## Riesgos y bloqueos
 
