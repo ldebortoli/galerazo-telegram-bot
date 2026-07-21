@@ -11,10 +11,11 @@
 
 # IN PROGRESS
 
-- [P0] Diagnosticar y corregir el primer deploy GCE fallido: la imagen `galerazobot:d8ae2ecc00f5` creó el contenedor, pero quedó `unhealthy`; preservar datos/secretos, mantener el bot local apagado y no reintentar hasta identificar la causa en healthcheck/logs remotos.
+- [P0] Completar el primer deploy GCE con la imagen corregida `galerazobot:db278a097b62`; esperar el reintento confirmado por el usuario desde `Deployar última imagen` y luego validar healthcheck, logs, reinicio y comandos de Telegram.
 
 # DONE
 
+- [2026-07-21] Diagnosticar el primer deploy fallido: el runtime omitía `.python-version` y fallaba antes de Telegram. Detener el contenedor en bucle, copiar el archivo al runtime, agregar smoke tests locales/CI, publicar `galerazobot:db278a097b62` (`sha256:115a350c...b7cf7`) y validar esa imagen en la VM contra SQLite real sin iniciar el bot. Corregir además el primer-fallo sin rollback para detener el contenedor automáticamente.
 - [2026-07-21] Completar el paso 10: construir desde `e63c0e8`, ejecutar 96 pruebas dentro del target Docker, crear la imagen de producción Linux/amd64 y publicarla en `bot-fleet-production/bots/galerazobot:e63c0e8ee924`. Verificar referencia local, digest `sha256:21581c63d742902a2f13e2a987284531cdaee5469d09d7e93195cf7d1523e840` y mantener `galerazo-prod` con cero imágenes, contenedores y Compose.
 - [2026-07-20] Exponer el contrato seguro de credenciales para Bot Control Center: inspector booleano, parche parcial privado por IAP, allowlist, preservación de valores omitidos, JSON opcional de Sheets, rollback y cero valores en argumentos/salida. Validar lectura real y un no-op real contra `galerazo-prod`; la configuración siguió válida y no se publicó ni desplegó imagen. Validación: 96 pruebas, runtime, pip, compileall, PowerShell/Bash y Control Center end-to-end OK.
 - [2026-07-20] Completar el paso 9: agregar `MigrateData` para rechazar bots/contenedores activos, crear un backup con la API SQLite, validar integridad, transferirlo por IAP privado, respaldar una base remota previa y restaurarla ante fallo. Migrar la base real a `galerazo-prod` como 10001:10001/0600, 176128 bytes, con tres controles de integridad OK, cero temporales/contenedores/imagenes y sin deploy. Documentar que Bot Control Center podra reutilizar `Configure` con campos enmascarados y sin lectura de valores remotos. Validacion: 95 pruebas, runtime, pip, compileall, PowerShell y Bash OK.

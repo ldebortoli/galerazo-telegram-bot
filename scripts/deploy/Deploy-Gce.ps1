@@ -42,7 +42,7 @@ $remoteCommand = "sudo bash /tmp/galerazo-deploy.sh '$Image'"
     --project $ProjectId --zone $Zone --tunnel-through-iap `
     --command $remoteCommand
 if ($LASTEXITCODE -ne 0) {
-    throw "El deploy fallo. El script remoto intento restaurar la imagen anterior."
+    throw "El deploy fallo. Revisa la salida anterior: el script remoto restauro la imagen previa cuando existia o detuvo el contenedor fallido."
 }
 
 Write-Host "Deploy completado con $Image" -ForegroundColor Green

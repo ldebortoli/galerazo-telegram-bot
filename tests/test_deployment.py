@@ -307,6 +307,8 @@ class DeploymentAutomationTests(unittest.TestCase):
         self.assertLess(backup_index, pull_index)
         self.assertIn("previous-image.env", deploy)
         self.assertIn("Restoring", deploy)
+        self.assertIn("No previous image exists", deploy)
+        self.assertIn('stop bot || true', deploy)
         self.assertIn("--wait-timeout 120", deploy)
         self.assertIn("previous-image.env", rollback)
 

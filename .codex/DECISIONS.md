@@ -471,3 +471,10 @@ Este archivo es append-only a nivel conceptual: no borrar decisiones anteriores.
 - Decision: la imagen minima de produccion debe copiar `.python-version` junto al codigo y ejecutar `ensure_python_version()` dentro del target runtime antes de considerarse publicable.
 - Aplicacion: el build/publicador local, Docker Quality y el workflow manual de Artifact Registry validan el target runtime real; el workflow manual carga, prueba y solo entonces publica exactamente esa imagen.
 - Motivo: las pruebas del target `test` no detectaron que el primer runtime publicado omitía `.python-version`, lo que provocó un bucle de reinicios antes de iniciar Telegram.
+
+## D-058 - Fallo seguro sin imagen anterior
+
+- Estado: vigente.
+- Fecha: 2026-07-21.
+- Decision: si un deploy falla y existe una imagen anterior saludable, restaurarla; si es el primer deploy y no existe una imagen anterior, detener explícitamente el contenedor fallido.
+- Motivo: evitar que `restart: unless-stopped` mantenga un bucle de reinicios y distinguir claramente en la salida si hubo rollback o sólo contención del fallo.

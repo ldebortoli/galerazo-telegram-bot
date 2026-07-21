@@ -76,5 +76,8 @@ if [[ -n "${old_image}" && -f "${previous_env}" ]]; then
   docker compose --env-file "${image_env}" -f "${compose_file}" \
     up -d --remove-orphans --wait --wait-timeout 120
   echo "Previous image restored." >&2
+else
+  echo "No previous image exists; stopping the failed container." >&2
+  docker compose --env-file "${image_env}" -f "${compose_file}" stop bot || true
 fi
 exit 1
