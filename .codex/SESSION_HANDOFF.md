@@ -6,7 +6,7 @@ Mantener Galerazo Bot reproducible en Windows, CI y Docker, con SQLite persisten
 
 ## Tarea actual
 
-La preparacion local para Google Compute Engine esta completa y el setup remoto se esta realizando paso a paso con el usuario. Los pasos 1 y 2 estan completos: proyecto/facturacion y presupuesto/alertas. No se crearon VM, registros, credenciales, imagenes remotas ni deploys reales.
+La preparacion local para Google Compute Engine esta completa y el setup remoto se esta realizando paso a paso con el usuario. Los pasos 1 a 3 estan completos: proyecto/facturacion, presupuesto/alertas y herramientas locales. No se crearon VM, registros, service accounts, imagenes remotas ni deploys reales.
 
 ## Estado actual
 
@@ -19,6 +19,9 @@ La preparacion local para Google Compute Engine esta completa y el setup remoto 
 - El deploy remoto crea backup consistente, usa tag inmutable, espera healthcheck y restaura la imagen anterior si falla.
 - GitHub `Publish GCE image` es exclusivamente manual, usa WIF y no contiene deploy automatico.
 - Railway permanece desactivado y no fue modificado.
+- Docker Desktop 4.83.0 esta instalado por usuario; Docker Engine 29.6.2 responde en contexto `desktop-linux` como Linux/amd64 sobre WSL 2.7.10. `hello-world` se ejecuto correctamente.
+- Google Cloud CLI 576.0.0 esta instalado y autenticado; `core/project` apunta a `bot-fleet-production`, que se verifico `ACTIVE` mediante una lectura. No versionar ni registrar la cuenta humana autenticada.
+- Los instaladores agregaron Docker y Google Cloud CLI al PATH de usuario. La sesion de Codex abierta antes de instalarlos conserva un PATH viejo; terminales nuevas los encuentran normalmente y, en esta sesion, se validaron usando sus rutas instaladas.
 - La consola confirmo `bot-fleet-production` con USD 300 de credito de prueba sin uso y vencimiento mostrado para el 19 de octubre de 2026; no se pulso `Actualizar` ni se convirtio manualmente la cuenta a modalidad paga.
 - `Bot Fleet - Monthly Guardrail` esta activo en USD, con presupuesto mensual de USD 1, USD 0 consumidos, promociones excluidas, Free Tier incluido y alertas real 10/50/100% mas pronostico 100%. Cubre la cuenta de facturacion, que actualmente tiene un solo proyecto; no es un corte automatico.
 - `USER_QUEUE.md` no tiene pedidos sin procesar.
@@ -32,12 +35,12 @@ La preparacion local para Google Compute Engine esta completa y el setup remoto 
 - Parser PowerShell: cuatro scripts de deploy sin errores.
 - `bash -n`: bootstrap, deploy y rollback sin errores.
 - `git diff --check`: limpio.
-- Docker y gcloud no estan instalados en esta PC; no se publico una imagen local y no se toco GCP.
+- Docker y `gcloud` estan instalados y validados; no se publico una imagen del bot y no se crearon recursos GCP.
 - Quality `29779348254` y Docker Quality `29779348273` pasaron sobre `9ac8cc4`; Docker construyo el target de pruebas, ejecuto 89 tests y construyo el target runtime.
 
 ## Proximo paso exacto
 
-Esperar que el usuario diga `siguiente` y continuar unicamente con el paso 3 de la lista guiada. No configurar Pub/Sub ni apagado automatico antes de su etapa correspondiente. Antes de migrar el token/base en una etapa posterior, apagar el bot local.
+Esperar que el usuario diga `siguiente` y continuar unicamente con el paso 4: habilitar las APIs necesarias y crear Artifact Registry. Antes de migrar el token/base en una etapa posterior, apagar el bot local.
 
 ## Riesgos y bloqueos
 

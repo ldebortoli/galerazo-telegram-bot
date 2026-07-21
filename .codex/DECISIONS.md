@@ -382,3 +382,11 @@ Este archivo es append-only a nivel conceptual: no borrar decisiones anteriores.
 - Calculo: incluir Free Tier y los demas ahorros, pero excluir creditos promocionales, para advertir el costo que persistiria despues de la prueba gratuita.
 - Alertas: gasto real al 10%, 50% y 100%, pronostico al 100%, con correo a administradores y usuarios de facturacion.
 - Limite: el presupuesto no es un hard cap; Pub/Sub, Monitoring y cualquier apagado automatico permanecen sin configurar hasta una etapa posterior.
+
+## D-047 - Herramientas locales de deploy en Windows
+
+- Estado: vigente.
+- Fecha: 2026-07-20.
+- Decision: usar Docker Desktop instalado por usuario con backend WSL 2 y contenedores Linux/amd64, junto con Google Cloud CLI autenticado mediante la cuenta humana local.
+- Proyecto predeterminado: `bot-fleet-production`.
+- Motivo: evitar privilegios administrativos permanentes, construir localmente la misma arquitectura que produccion y reutilizar la autenticacion segura de `gcloud` sin claves JSON locales.

@@ -51,6 +51,11 @@ gcloud config set project TU_PROYECTO
 Los scripts verifican estos comandos y fallan antes de modificar estado si falta
 alguno. No instalan Docker Desktop ni `gcloud` automaticamente.
 
+En Windows se recomienda Docker Desktop por usuario con backend WSL 2 y
+contenedores Linux. Google Cloud CLI debe autenticarse con `gcloud auth login`
+y usar el proyecto de la flota como `core/project`; no hace falta guardar una
+clave JSON local para estas operaciones interactivas.
+
 ## 2. Crear el proyecto y el registro
 
 Para una flota personal de bots conviene usar un proyecto GCP generico y
