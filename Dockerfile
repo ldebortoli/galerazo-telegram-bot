@@ -24,6 +24,7 @@ LABEL org.opencontainers.image.description="Bot de Telegram con persistencia SQL
 LABEL org.opencontainers.image.source="https://github.com/ldebortoli/galerazo-telegram-bot"
 
 COPY --chown=galerazo:galerazo app.py ./app.py
+COPY --chown=galerazo:galerazo .python-version ./.python-version
 COPY --chown=galerazo:galerazo galerazo_bot ./galerazo_bot
 
 USER galerazo

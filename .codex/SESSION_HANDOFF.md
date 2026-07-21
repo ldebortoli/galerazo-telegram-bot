@@ -6,7 +6,7 @@ Mantener Galerazo Bot reproducible en Windows, CI y Docker, con SQLite persisten
 
 ## Tarea actual
 
-Los pasos 1 a 10 están completos: infraestructura, host, secretos, SQLite y primera imagen publicada. Todavía no se desplegó ni inició el bot remoto.
+El primer deploy fue intentado desde Bot Control Center con el flujo completo, que publicó `galerazobot:d8ae2ecc00f5`. La causa del fallo está identificada: el target runtime no copiaba `/app/.python-version`, `ensure_python_version()` terminaba con `FileNotFoundError` antes de iniciar Telegram y `restart: unless-stopped` lo dejó reiniciando. El contenedor fallido fue detenido manualmente; base y configuración permanecen intactas. La corrección y su smoke test están en validación y no debe reintentarse todavía.
 
 ## Estado actual
 

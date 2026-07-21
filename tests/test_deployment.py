@@ -59,6 +59,10 @@ class ContainerRuntimeTests(unittest.TestCase):
         self.assertIn("/app/data /app/backups", dockerfile)
         self.assertIn("galerazo_bot.healthcheck", dockerfile)
         runtime_section = dockerfile.split("FROM base AS runtime", 1)[1]
+        self.assertIn(
+            "COPY --chown=galerazo:galerazo .python-version ./.python-version",
+            runtime_section,
+        )
         self.assertNotIn("COPY --chown=galerazo:galerazo . .", runtime_section)
 
     def test_production_compose_persists_data_without_public_ports(self) -> None:
@@ -285,6 +289,7 @@ class DeploymentAutomationTests(unittest.TestCase):
         self.assertIn('"linux/amd64"', build)
         self.assertIn('"--target", "runtime"', build)
         self.assertIn('"--target", "test"', build)
+        self.assertIn("ensure_python_version", build)
         self.assertIn("auth", publish)
         self.assertIn("configure-docker", publish)
         self.assertIn("last-image.txt", publish)

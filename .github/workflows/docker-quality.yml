@@ -37,3 +37,6 @@ jobs:
 
       - name: Build production target
         run: docker build --target runtime --tag galerazo-bot:runtime-test .
+
+      - name: Smoke test production target
+        run: docker run --rm galerazo-bot:runtime-test python -c "from galerazo_bot.runtime import ensure_python_version; ensure_python_version(); print('Runtime image version check OK')"

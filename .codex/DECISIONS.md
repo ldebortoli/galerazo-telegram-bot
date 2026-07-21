@@ -463,3 +463,11 @@ Este archivo es append-only a nivel conceptual: no borrar decisiones anteriores.
 - Fecha: 2026-07-20.
 - Decision: `Get-GceBotSecretStatus.ps1` copia por IAP un inspector root que devuelve exclusivamente booleanos. `Patch-GceBotSecrets.ps1` acepta un parche JSON local de hasta 32 KiB, lo transfiere por un directorio remoto 0700 y ejecuta una allowlist cerrada que preserva campos omitidos, impide borrar el token principal y soporta el JSON opcional de Sheets.
 - Seguridad: los valores no se pasan por argumentos ni aparecen en salida; temporales locales/remotos se eliminan, la configuracion anterior se conserva para rollback y `verify-host.sh --expect-configured` valida el resultado. La operacion no reinicia ni despliega el bot.
+
+## D-057 - Smoke test obligatorio de la imagen runtime
+
+- Estado: vigente.
+- Fecha: 2026-07-21.
+- Decision: la imagen minima de produccion debe copiar `.python-version` junto al codigo y ejecutar `ensure_python_version()` dentro del target runtime antes de considerarse publicable.
+- Aplicacion: el build/publicador local, Docker Quality y el workflow manual de Artifact Registry validan el target runtime real; el workflow manual carga, prueba y solo entonces publica exactamente esa imagen.
+- Motivo: las pruebas del target `test` no detectaron que el primer runtime publicado omitía `.python-version`, lo que provocó un bucle de reinicios antes de iniciar Telegram.

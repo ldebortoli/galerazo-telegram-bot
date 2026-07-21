@@ -70,6 +70,11 @@ try {
         "build", "--platform", "linux/amd64", "--target", "runtime",
         "--tag", $runtimeImage, "."
     )
+    Invoke-Native -Command "docker" -Arguments @(
+        "run", "--rm", $runtimeImage,
+        "python", "-c",
+        "from galerazo_bot.runtime import ensure_python_version; ensure_python_version(); print('Runtime image version check OK')"
+    )
 }
 finally {
     Pop-Location

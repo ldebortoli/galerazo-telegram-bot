@@ -11,6 +11,8 @@
 
 # IN PROGRESS
 
+- [P0] Diagnosticar y corregir el primer deploy GCE fallido: la imagen `galerazobot:d8ae2ecc00f5` creó el contenedor, pero quedó `unhealthy`; preservar datos/secretos, mantener el bot local apagado y no reintentar hasta identificar la causa en healthcheck/logs remotos.
+
 # DONE
 
 - [2026-07-21] Completar el paso 10: construir desde `e63c0e8`, ejecutar 96 pruebas dentro del target Docker, crear la imagen de producción Linux/amd64 y publicarla en `bot-fleet-production/bots/galerazobot:e63c0e8ee924`. Verificar referencia local, digest `sha256:21581c63d742902a2f13e2a987284531cdaee5469d09d7e93195cf7d1523e840` y mantener `galerazo-prod` con cero imágenes, contenedores y Compose.
