@@ -441,3 +441,18 @@ Este archivo es append-only a nivel conceptual: no borrar decisiones anteriores.
 - Decision: agregar `Set-GceBotSecrets.ps1` y la accion `Configure` para aceptar solo las variables de `.env.example`, forzar el path SQLite del contenedor y transferir un archivo temporal por IAP a un directorio remoto modo 0700.
 - Instalacion: `install-config.sh` valida sin imprimir valores, conserva `bot.env.previous`, instala como root 0600 y ejecuta `verify-host.sh --expect-configured`; ante error restaura la configuracion anterior. Los temporales local/remoto siempre se eliminan.
 - Integraciones opcionales: si existe un JSON valido en `GOOGLE_SHEETS_CREDENTIALS_JSON_PATH`, se copia como secreto remoto y el path se adapta al contenedor; valores vacios de OpenAI o Sheets permanecen omitidos.
+
+## D-054 - Migracion SQLite consistente, privada y reversible
+
+- Estado: vigente.
+- Fecha: 2026-07-20.
+- Decision: agregar `Migrate-GceBotDatabase.ps1` y la accion `MigrateData`; exigir confirmacion y que el bot local y todos los contenedores remotos esten apagados antes de reemplazar produccion.
+- Consistencia: crear la copia local mediante `sqlite3.Connection.backup`, ejecutar `PRAGMA integrity_check` antes y despues de transferir y no copiar archivos `-wal`/`-shm`.
+- Instalacion: transferir por IAP a un directorio 0700, instalar como 10001:10001/0600 y conservar una copia consistente de la base remota anterior en `/srv/galerazo/backups`; ante fallo restaurarla y limpiar temporales.
+
+## D-055 - Contrato de credenciales remotas para Bot Control Center
+
+- Estado: vigente como contrato; la pantalla aun no esta implementada en el proyecto separado Bot Control Center.
+- Fecha: 2026-07-20.
+- Decision: Bot Control Center reutilizara la accion `Configure` y su transporte IAP en vez de leer/escribir secretos por un protocolo propio.
+- UI y seguridad: mostrar solo estado presente/ausente, recibir reemplazos en campos enmascarados, pedir confirmacion y auditar la accion. Nunca recuperar valores secretos remotos ni acoplar su modificacion al boton normal de deploy.

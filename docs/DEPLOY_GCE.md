@@ -88,11 +88,18 @@ condiciones/costos o entregar secretos:
    ```
 
    El valor de cada secreto viaja dentro de un archivo temporal, nunca como
-   argumento. Despues apagar el proceso local que usa el mismo token, crear una
-   copia consistente de SQLite y subirla a
-   `/srv/galerazo/data/galerazo.sqlite3`. Las instrucciones exactas estan en la
-   seccion de migracion de esta guia.
-5. **Automatizado:** probar, construir, publicar y desplegar la release:
+   argumento.
+5. **Manual asistido y datos, una vez por bot:** apagar el proceso local que
+   usa el mismo token y migrar una copia consistente de SQLite:
+
+   ```powershell
+   .\scripts\deploy\Invoke-GceBotLifecycle.ps1 `
+     -Action MigrateData `
+     -ProjectId TU_PROYECTO `
+     -AcknowledgeDataMigration
+   ```
+
+6. **Automatizado:** probar, construir, publicar y desplegar la release:
 
    ```powershell
    .\scripts\deploy\Invoke-GceBotLifecycle.ps1 `
@@ -101,15 +108,15 @@ condiciones/costos o entregar secretos:
      -AcknowledgeProductionDeploy
    ```
 
-6. **Releases futuras:** repetir solo el comando `Release`. Para volver a la
+7. **Releases futuras:** repetir solo el comando `Release`. Para volver a la
    imagen anterior usar `-Action Rollback -AcknowledgeProductionDeploy`.
 
 El orquestador tambien permite ejecutar cada bloque de forma independiente con
-`Foundation`, `Infrastructure`, `Prepare`, `Configure`, `Publish`, `Deploy`,
-`Release` o `Rollback`. Antes de desplegar, verifica que el bot local este
-apagado, que los secretos/base remotos existan y que la imagen tenga un tag
-inmutable distinto de `latest`. Esto permite que Bot Control Center invoque
-`Release` mas adelante sin duplicar la logica de deploy.
+`Foundation`, `Infrastructure`, `Prepare`, `Configure`, `MigrateData`,
+`Publish`, `Deploy`, `Release` o `Rollback`. Antes de desplegar, verifica que el
+bot local este apagado, que los secretos/base remotos existan y que la imagen
+tenga un tag inmutable distinto de `latest`. Esto permite que Bot Control
+Center invoque estas acciones mas adelante sin duplicar la logica de deploy.
 
 ## Costos y minutos de CI
 
@@ -301,6 +308,15 @@ automaticamente dentro de `bot.env`:
 GOOGLE_SHEETS_CREDENTIALS_JSON_PATH=/app/secrets/google-service-account.json
 ```
 
+### Integracion futura con Bot Control Center
+
+Bot Control Center puede invocar la accion `Configure` para rotar credenciales
+sin implementar otro protocolo. La UI debe mostrar solamente si cada variable
+esta configurada, nunca recuperar el valor remoto; recibir valores nuevos en
+campos enmascarados, pedir confirmacion y transferirlos por IAP mediante el
+mismo archivo privado temporal. El deploy y la edicion de credenciales deben
+seguir siendo acciones separadas y auditables.
+
 ## 5A. Construir y publicar desde la PC — recomendado
 
 Construir la imagen y ejecutar las pruebas dentro del target Docker:
@@ -416,26 +432,22 @@ No arrancar local y remoto simultaneamente con el mismo token. Para migrar:
 
 No copiar directamente los archivos `-wal`/`-shm` de una base activa.
 
-Una vez elegido un backup consistente y con el bot local apagado:
+El camino recomendado crea el backup con la API de SQLite, valida integridad,
+rechaza la operacion si el bot local o cualquier contenedor remoto estan
+activos, transfiere por un directorio privado y conserva el backup local:
 
 ```powershell
-$backup = "C:\ruta\al\backup-consistente.sqlite3"
-
-gcloud compute scp $backup `
-  galerazo-prod:/tmp/galerazo.sqlite3 `
-  --project TU_PROYECTO `
-  --zone us-central1-a `
-  --tunnel-through-iap
-
-gcloud compute ssh galerazo-prod `
-  --project TU_PROYECTO `
-  --zone us-central1-a `
-  --tunnel-through-iap `
-  --command "sudo install -o 10001 -g 10001 -m 0600 /tmp/galerazo.sqlite3 /srv/galerazo/data/galerazo.sqlite3 && rm -f /tmp/galerazo.sqlite3"
+.\scripts\deploy\Migrate-GceBotDatabase.ps1 `
+  -ProjectId TU_PROYECTO `
+  -Zone us-central1-a `
+  -Instance galerazo-prod `
+  -AcknowledgeDataMigration
 ```
 
-No poner tokens, claves ni contenido de `bot.env` en los argumentos de estos
-comandos.
+La instalacion remota ejecuta `PRAGMA integrity_check`, usa owner 10001:10001 y
+modo 0600. Si ya existiera una base, primero crea un backup consistente en
+`/srv/galerazo/backups`; ante un fallo restaura la anterior. No copia archivos
+`-wal`/`-shm` ni inicia el contenedor.
 
 ## 9. Operacion segura
 

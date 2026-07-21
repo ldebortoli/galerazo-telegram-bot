@@ -1,7 +1,7 @@
 [CmdletBinding()]
 param(
     [Parameter(Mandatory = $true)]
-    [ValidateSet("Foundation", "Infrastructure", "Prepare", "Configure", "Publish", "Deploy", "Release", "Rollback")]
+    [ValidateSet("Foundation", "Infrastructure", "Prepare", "Configure", "MigrateData", "Publish", "Deploy", "Release", "Rollback")]
     [string]$Action,
     [Parameter(Mandatory = $true)][string]$ProjectId,
     [string]$Location = "us-central1",
@@ -14,10 +14,13 @@ param(
     [string]$ServiceAccountId = "galerazo-vm",
     [string]$ServiceAccountDisplayName = "Galerazo production VM",
     [string]$EnvFile = ".env",
+    [string]$DatabaseFile = "data\galerazo.sqlite3",
+    [string]$BackupsDirectory = "backups",
     [string]$Image,
     [switch]$SkipTests,
     [switch]$AcknowledgeBillableResource,
     [switch]$AcknowledgeSecretUpload,
+    [switch]$AcknowledgeDataMigration,
     [switch]$AcknowledgeProductionDeploy
 )
 
@@ -29,6 +32,7 @@ $foundationScript = Join-Path $PSScriptRoot "Initialize-GcpBot.ps1"
 $infrastructureScript = Join-Path $PSScriptRoot "New-GceBotInstance.ps1"
 $hostScript = Join-Path $PSScriptRoot "Initialize-GceHost.ps1"
 $secretsScript = Join-Path $PSScriptRoot "Set-GceBotSecrets.ps1"
+$databaseMigrationScript = Join-Path $PSScriptRoot "Migrate-GceBotDatabase.ps1"
 $publishScript = Join-Path $PSScriptRoot "Publish-DockerImage.ps1"
 $deployScript = Join-Path $PSScriptRoot "Deploy-Gce.ps1"
 $rollbackScript = Join-Path $PSScriptRoot "Rollback-Gce.ps1"
@@ -80,7 +84,7 @@ function Invoke-Prepare {
     & $hostScript -ProjectId $ProjectId -Zone $Zone -Instance $Instance
     Write-Host "Pausa manual obligatoria antes del primer deploy:" -ForegroundColor Yellow
     Write-Host "1. Ejecuta -Action Configure -AcknowledgeSecretUpload para transferir .env por IAP." -ForegroundColor Yellow
-    Write-Host "2. Apaga el bot local y migra la base a /srv/galerazo/data/galerazo.sqlite3." -ForegroundColor Yellow
+    Write-Host "2. Apaga el bot local y ejecuta -Action MigrateData -AcknowledgeDataMigration." -ForegroundColor Yellow
     Write-Host "3. Ejecuta este orquestador con -Action Release y -AcknowledgeProductionDeploy." -ForegroundColor Yellow
 }
 
@@ -91,6 +95,16 @@ function Invoke-Configure {
         -Instance $Instance `
         -EnvFile $EnvFile `
         -AcknowledgeSecretUpload:$AcknowledgeSecretUpload
+}
+
+function Invoke-MigrateData {
+    & $databaseMigrationScript `
+        -ProjectId $ProjectId `
+        -Zone $Zone `
+        -Instance $Instance `
+        -DatabaseFile $DatabaseFile `
+        -BackupsDirectory $BackupsDirectory `
+        -AcknowledgeDataMigration:$AcknowledgeDataMigration
 }
 
 function Invoke-Publish {
@@ -200,6 +214,7 @@ switch ($Action) {
     "Infrastructure" { Invoke-Infrastructure }
     "Prepare" { Invoke-Prepare }
     "Configure" { Invoke-Configure }
+    "MigrateData" { Invoke-MigrateData }
     "Publish" { Invoke-Publish }
     "Deploy" { Invoke-Deploy }
     "Release" { Invoke-Release }

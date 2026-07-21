@@ -85,6 +85,7 @@ class DeploymentAutomationTests(unittest.TestCase):
             "Infrastructure",
             "Prepare",
             "Configure",
+            "MigrateData",
             "Publish",
             "Deploy",
             "Release",
@@ -96,6 +97,7 @@ class DeploymentAutomationTests(unittest.TestCase):
             "New-GceBotInstance.ps1",
             "Initialize-GceHost.ps1",
             "Set-GceBotSecrets.ps1",
+            "Migrate-GceBotDatabase.ps1",
             "Publish-DockerImage.ps1",
             "Deploy-Gce.ps1",
             "Rollback-Gce.ps1",
@@ -103,6 +105,7 @@ class DeploymentAutomationTests(unittest.TestCase):
             self.assertIn(script, lifecycle)
         self.assertIn("AcknowledgeBillableResource", lifecycle)
         self.assertIn("AcknowledgeSecretUpload", lifecycle)
+        self.assertIn("AcknowledgeDataMigration", lifecycle)
         self.assertIn("AcknowledgeProductionDeploy", lifecycle)
         self.assertIn("data\\bot.pid", lifecycle)
         self.assertIn("/etc/galerazo/bot.env", lifecycle)
@@ -183,6 +186,27 @@ class DeploymentAutomationTests(unittest.TestCase):
         self.assertIn("bot.env.previous", installer)
         self.assertIn("--expect-configured", installer)
         self.assertNotIn("cat \"${env_upload}\"", installer)
+
+    def test_gce_database_migration_is_consistent_private_and_stopped(self) -> None:
+        migration = (
+            PROJECT_ROOT / "scripts" / "deploy" / "Migrate-GceBotDatabase.ps1"
+        ).read_text(encoding="utf-8")
+        installer = (
+            PROJECT_ROOT / "deploy" / "gce" / "install-database.sh"
+        ).read_text(encoding="utf-8")
+
+        self.assertIn("AcknowledgeDataMigration", migration)
+        self.assertIn("create_backup", migration)
+        self.assertIn("data\\bot.pid", migration)
+        self.assertIn("PRAGMA integrity_check", migration)
+        self.assertIn("tunnel-through-iap", migration)
+        self.assertIn("umask 077", migration)
+        self.assertNotIn("sqlite3-wal", migration)
+        self.assertIn("sudo docker ps -q", installer)
+        self.assertIn("source.backup(destination)", installer)
+        self.assertIn("10001 -g 10001 -m 0600", installer)
+        self.assertIn("PRAGMA integrity_check", installer)
+        self.assertNotIn("-wal", installer)
 
     def test_gcp_bot_foundation_is_idempotent_scoped_and_keyless(self) -> None:
         foundation = (
