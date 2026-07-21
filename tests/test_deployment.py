@@ -208,6 +208,33 @@ class DeploymentAutomationTests(unittest.TestCase):
         self.assertIn("PRAGMA integrity_check", installer)
         self.assertNotIn("-wal", installer)
 
+    def test_gce_remote_secret_contract_never_returns_existing_values(self) -> None:
+        status_script = (
+            PROJECT_ROOT / "scripts" / "deploy" / "Get-GceBotSecretStatus.ps1"
+        ).read_text(encoding="utf-8")
+        patch_script = (
+            PROJECT_ROOT / "scripts" / "deploy" / "Patch-GceBotSecrets.ps1"
+        ).read_text(encoding="utf-8")
+        inspector = (
+            PROJECT_ROOT / "deploy" / "gce" / "inspect-secrets.sh"
+        ).read_text(encoding="utf-8")
+        installer = (
+            PROJECT_ROOT / "deploy" / "gce" / "patch-config.sh"
+        ).read_text(encoding="utf-8")
+
+        self.assertIn("tunnel-through-iap", status_script)
+        self.assertIn("ConvertTo-Json -Compress", status_script)
+        self.assertIn("AcknowledgeSecretUpdate", patch_script)
+        self.assertIn("32768", patch_script)
+        self.assertIn("umask 077", patch_script)
+        self.assertIn("secret-patch.json", patch_script)
+        self.assertIn('bool(values.get(key))', inspector)
+        self.assertNotIn('print(values', inspector)
+        self.assertIn("TELEGRAM_BOT_TOKEN no se puede eliminar", installer)
+        self.assertIn("bot_env}.previous", installer)
+        self.assertIn("--expect-configured", installer)
+        self.assertNotIn("cat \"${patch_upload}\"", installer)
+
     def test_gcp_bot_foundation_is_idempotent_scoped_and_keyless(self) -> None:
         foundation = (
             PROJECT_ROOT / "scripts" / "deploy" / "Initialize-GcpBot.ps1"

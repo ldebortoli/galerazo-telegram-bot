@@ -11,10 +11,9 @@
 
 # IN PROGRESS
 
-- Sin tareas activas.
-
 # DONE
 
+- [2026-07-20] Exponer el contrato seguro de credenciales para Bot Control Center: inspector booleano, parche parcial privado por IAP, allowlist, preservación de valores omitidos, JSON opcional de Sheets, rollback y cero valores en argumentos/salida. Validar lectura real y un no-op real contra `galerazo-prod`; la configuración siguió válida y no se publicó ni desplegó imagen. Validación: 96 pruebas, runtime, pip, compileall, PowerShell/Bash y Control Center end-to-end OK.
 - [2026-07-20] Completar el paso 9: agregar `MigrateData` para rechazar bots/contenedores activos, crear un backup con la API SQLite, validar integridad, transferirlo por IAP privado, respaldar una base remota previa y restaurarla ante fallo. Migrar la base real a `galerazo-prod` como 10001:10001/0600, 176128 bytes, con tres controles de integridad OK, cero temporales/contenedores/imagenes y sin deploy. Documentar que Bot Control Center podra reutilizar `Configure` con campos enmascarados y sin lectura de valores remotos. Validacion: 95 pruebas, runtime, pip, compileall, PowerShell y Bash OK.
 - [2026-07-20] Completar el paso 8: agregar la accion `Configure` y una transferencia de secretos confirmada por IAP que acepta solo variables conocidas, fuerza el path SQLite de produccion, usa temporales privados, instala/valida `bot.env` como root 0600, conserva rollback y copia JSON opcional de Google Sheets. Ejecutarla contra `galerazo-prod`: token/IDs configurados sin mostrarlos, OpenAI/Sheets omitidos, cero temporales, imagenes, contenedores y base. Validacion: 94 pruebas, runtime, pip, compileall, PowerShell, Bash y verificacion remota OK.
 - [2026-07-20] Completar el paso 7: preparar `galerazo-prod` con Docker Engine 29.6.2, Compose 5.3.1 y Google Cloud CLI 576.0.0; crear y validar directorios protegidos/plantilla `bot.env` sin exponer secretos; confirmar estado pristino con cero imagenes, contenedores, base y Compose; integrar `verify-host.sh` al bootstrap y documentar la checklist de Google Cloud Console. Validacion: VM RUNNING, Docker activo, 93 pruebas, runtime, pip, compileall, PowerShell y Bash OK.

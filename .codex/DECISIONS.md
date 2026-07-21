@@ -456,3 +456,10 @@ Este archivo es append-only a nivel conceptual: no borrar decisiones anteriores.
 - Fecha: 2026-07-20.
 - Decision: Bot Control Center reutilizara la accion `Configure` y su transporte IAP en vez de leer/escribir secretos por un protocolo propio.
 - UI y seguridad: mostrar solo estado presente/ausente, recibir reemplazos en campos enmascarados, pedir confirmacion y auditar la accion. Nunca recuperar valores secretos remotos ni acoplar su modificacion al boton normal de deploy.
+
+## D-056 - Inspector booleano y parche parcial de secretos
+
+- Estado: vigente; implementa y refina D-055.
+- Fecha: 2026-07-20.
+- Decision: `Get-GceBotSecretStatus.ps1` copia por IAP un inspector root que devuelve exclusivamente booleanos. `Patch-GceBotSecrets.ps1` acepta un parche JSON local de hasta 32 KiB, lo transfiere por un directorio remoto 0700 y ejecuta una allowlist cerrada que preserva campos omitidos, impide borrar el token principal y soporta el JSON opcional de Sheets.
+- Seguridad: los valores no se pasan por argumentos ni aparecen en salida; temporales locales/remotos se eliminan, la configuracion anterior se conserva para rollback y `verify-host.sh --expect-configured` valida el resultado. La operacion no reinicia ni despliega el bot.

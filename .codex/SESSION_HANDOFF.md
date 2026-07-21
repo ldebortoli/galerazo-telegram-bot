@@ -37,7 +37,7 @@ La preparacion de Google Cloud avanza paso a paso con el usuario. Los pasos 1 a 
 - La configuracion real ya se instalo en `galerazo-prod`: token e IDs presentes; OpenAI y Google Sheets omitidos porque estaban vacios localmente. `--expect-configured` paso, no quedaron directorios temporales y todavia hay cero imagenes, contenedores, Compose y base remota.
 - `Migrate-GceBotDatabase.ps1` y la accion `MigrateData` exigen confirmacion, rechazan el bot local o contenedores remotos activos, crean un backup mediante la API SQLite, validan integridad y transfieren por un directorio IAP 0700. `install-database.sh` respalda/restaura una base remota previa y nunca copia WAL/SHM.
 - La base real esta en `/srv/galerazo/data/galerazo.sqlite3`, owner 10001:10001, modo 0600, 176128 bytes y `integrity_check=ok`; el backup local queda en `backups/`, ignorado por Git. No quedaron temporales y siguen existiendo cero imagenes/contenedores y ningun Compose remoto.
-- Bot Control Center puede reutilizar la accion `Configure` para credenciales futuras. La UI especifica aun debe implementarse en su proyecto separado: campos enmascarados, mostrar solo presente/ausente, confirmacion, IAP y auditoria; nunca lectura de valores remotos.
+- Bot Control Center ya dispone de una vista separada de credenciales. `Get-GceBotSecretStatus.ps1` devuelve sólo booleanos y `Patch-GceBotSecrets.ps1` aplica parches parciales por IAP sin valores en argumentos/salida, preserva campos omitidos, soporta el JSON opcional de Sheets, valida y limpia temporales.
 - No hay Cloud Router/NAT ni direcciones reservadas. Se valido SSH por IAP, ruta IPv6 y conexion real por IPv6 a Telegram y por Private Google Access a Artifact Registry.
 - `scripts/deploy/New-GceBotInstance.ps1` crea/valida esa infraestructura de forma idempotente y exige `-AcknowledgeBillableResource`. `Invoke-GceBotLifecycle.ps1` orquesta Foundation/Infrastructure/Prepare/Configure/MigrateData/Publish/Deploy/Release/Rollback y mantiene confirmaciones antes de costos, secretos, datos y produccion.
 - `docs/DEPLOY_GCE.md` documenta la reproduccion en otra cuenta: alta/facturacion/login/presupuesto manuales y acciones automatizadas `Prepare`, `Configure`, `MigrateData` y `Release` con confirmaciones.
@@ -45,20 +45,21 @@ La preparacion de Google Cloud avanza paso a paso con el usuario. Los pasos 1 a 
 
 ## Validacion reciente
 
-- 95 pruebas nativas OK.
+- 96 pruebas nativas OK.
 - `compileall` OK para app, panel, paquete, scripts y tests.
 - `scripts/runtime_versions.py`: runtime alineado.
 - `pip check`: sin dependencias rotas.
 - Parser PowerShell: todos los scripts de deploy sin errores.
 - `bash -n`: bootstrap, instaladores de configuracion/base, verificador, deploy y rollback sin errores.
 - `git diff --check`: limpio.
+- Lectura real desde Galerazo y Bot Control Center confirmó sólo ocho booleanos. Un no-op real mantuvo ausente `GOOGLE_SHEETS_SPREADSHEET_ID`, pasó el verificador remoto y no inició ni desplegó el bot.
 - Docker y `gcloud` estan instalados y validados; no se publico ninguna imagen del bot.
 - Las cuatro APIs requeridas y el repositorio Docker `bots` se validaron mediante `gcloud`; el registro estaba vacio y no habia VM.
 - Quality `29779348254` y Docker Quality `29779348273` pasaron sobre `9ac8cc4`; Docker construyo el target de pruebas, ejecuto 89 tests y construyo el target runtime.
 
 ## Proximo paso exacto
 
-Esperar que el usuario diga `siguiente` y continuar unicamente con el paso 10: ejecutar las pruebas/build Docker locales y publicar la primera imagen `linux/amd64` con tag inmutable en `bots/galerazobot` mediante `-Action Publish`. No desplegar ni iniciar el contenedor todavia.
+Paso 10: publicar desde la PC la primera imagen Linux/amd64 inmutable en Artifact Registry mediante `Publish-DockerImage.ps1`. No desplegarla todavía; validar primero tests, tag y presencia en `bots`.
 
 ## Riesgos y bloqueos
 

@@ -308,14 +308,16 @@ automaticamente dentro de `bot.env`:
 GOOGLE_SHEETS_CREDENTIALS_JSON_PATH=/app/secrets/google-service-account.json
 ```
 
-### Integracion futura con Bot Control Center
+### Integracion con Bot Control Center
 
-Bot Control Center puede invocar la accion `Configure` para rotar credenciales
-sin implementar otro protocolo. La UI debe mostrar solamente si cada variable
-esta configurada, nunca recuperar el valor remoto; recibir valores nuevos en
-campos enmascarados, pedir confirmacion y transferirlos por IAP mediante el
-mismo archivo privado temporal. El deploy y la edicion de credenciales deben
-seguir siendo acciones separadas y auditables.
+Bot Control Center ya dispone de una vista separada de credenciales. Consulta
+`Get-GceBotSecretStatus.ps1`, que devuelve solamente presencia/ausencia, y
+aplica parches parciales con `Patch-GceBotSecrets.ps1`. Los valores omitidos se
+preservan; el token principal no se puede borrar; el JSON opcional de Sheets se
+instala como archivo root `0600`. El parche viaja por IAP en temporales privados,
+se limpia en ambos extremos y nunca aparece en argumentos, respuesta o logs.
+La edicion no reinicia el bot: los cambios se toman en el proximo deploy o
+reinicio. Deploy y credenciales siguen siendo acciones separadas y auditables.
 
 ## 5A. Construir y publicar desde la PC — recomendado
 
