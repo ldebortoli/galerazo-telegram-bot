@@ -1,0 +1,15 @@
+{
+  "rule": [
+    {
+      "action": {
+        "type": "Delete"
+      },
+      "condition": {
+        "age": 400,
+        "matchesPrefix": [
+          "bots/"
+        ]
+      }
+    }
+  ]
+}
