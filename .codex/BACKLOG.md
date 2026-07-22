@@ -12,7 +12,7 @@
 
 # IN PROGRESS
 
-- Sin tareas activas.
+- [2026-07-22] Clasificar los `NetworkError` transitorios del polling sin update para que PTB los reintente sin enviar un falso "Error no handleado" al canal de logging; conservar el reporte de errores reales, validar 100% de cobertura y desplegar la correccion.
 
 # DONE
 

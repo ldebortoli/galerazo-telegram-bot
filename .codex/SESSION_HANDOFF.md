@@ -6,7 +6,7 @@ Mantener Galerazo Bot reproducible en Windows, CI y Docker, con SQLite persisten
 
 ## Tarea actual
 
-No hay una implementacion activa. `/debug` y el umbral obligatorio de cobertura al 100% quedaron corregidos, validados, publicados y desplegados en produccion.
+Se investiga un `telegram.error.NetworkError: httpx.ReadError` recibido desde el loop de `getUpdates` con `Update JSON: null`. La hipotesis a validar es que PTB ya reintenta este corte transitorio de polling, pero el error callback comun lo esta anunciando incorrectamente como no handleado.
 
 El mecanismo mensual de backups GCE ya tiene un runbook exhaustivo y enlazado desde README/deploy para Galerazobot y futuros bots. El job diario de gasto de Google Cloud quedo implementado y validado; su activacion real sigue bloqueada porque `bot-fleet-production` no tiene dataset ni tabla de exportacion.
 

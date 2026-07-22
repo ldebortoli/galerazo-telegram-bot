@@ -10,7 +10,7 @@ from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from telegram import Chat, ChatMember, Message, Update, User
-from telegram.error import BadRequest, Conflict, Forbidden, TelegramError
+from telegram.error import BadRequest, Conflict, Forbidden, NetworkError, TelegramError
 
 from galerazo_bot.cloud_billing import GoogleCloudBillingReader, GoogleCloudBillingReport
 from galerazo_bot.config import Settings
@@ -471,6 +471,24 @@ class CommandAndCallbackEntrypointTests(unittest.IsolatedAsyncioTestCase):
         with patch.object(tb, "_send_unhandled_error_event", AsyncMock()) as send:
             await tb._handle_error({"u": 1}, error_context)
         send.assert_awaited_once()
+
+        error_context.error = NetworkError("httpx.ReadError")
+        with patch.object(tb, "_send_unhandled_error_event", AsyncMock()) as send:
+            await tb._handle_error(None, error_context)
+        send.assert_not_awaited()
+
+        for source in ("update", "job", "coroutine"):
+            scoped_context = SimpleNamespace(
+                error=NetworkError("network failure"),
+                application=application,
+                bot=MagicMock(),
+                job=object() if source == "job" else None,
+                coroutine=object() if source == "coroutine" else None,
+            )
+            scoped_update = {"u": 2} if source == "update" else None
+            with patch.object(tb, "_send_unhandled_error_event", AsyncMock()) as send:
+                await tb._handle_error(scoped_update, scoped_context)
+            send.assert_awaited_once()
 
     def test_display_and_restriction_helpers(self) -> None:
         self.assertIsNone(tb._display_name(None))

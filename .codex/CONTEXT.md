@@ -53,7 +53,7 @@ La misma politica se aplica globalmente desde `C:\Users\calei\.codex\AGENTS.md`.
 - `.github/workflows/runtime-update.yml`: actualizacion semanal de Python/dependencias; salta validaciones cuando no hay cambios y, despues de validar entorno nativo y Docker, publica un commit normal sobre `main` sin force push ni permisos de pull request.
 - `requirements.in`: dependencias directas; `requirements.txt`: lock completo reproducible.
 - `scripts/runtime_versions.py`: valida y sincroniza la version exacta entre runtime y Docker.
-- `scripts/check_coverage.py`: exige 62% de sentencias y 36% de ramas sobre `galerazo_bot`.
+- `scripts/check_coverage.py`: exige 100% de sentencias y 100% de ramas sobre el nucleo multiplataforma de `galerazo_bot`.
 - `scripts/deploy/Initialize-GceBillingReport.ps1`: prepara BigQuery y permisos minimos con confirmacion de posible costo; la vinculacion de Billing se hace en consola.
 - `compose.production.yaml`: servicio de produccion sin puertos, no root, filesystem de solo lectura, volumenes persistentes para SQLite/backups y red de host para reutilizar la salida IPv6 de la VM sin IPv4 publica/NAT.
 - `scripts/deploy/`: ciclo GCP reproducible por etapas, build/publicacion local, bootstrap, configuracion secreta, migracion SQLite, deploy por IAP y rollback. El build prueba también el target runtime real con `ensure_python_version()` antes de publicarlo. Incluye inspeccion booleana y parches parciales de credenciales para Bot Control Center, y `Invoke-GceBotctl.ps1` para estado, triggers, multimedia, moderacion y detencion segura, siempre mediante scripts fijos y temporales privados. `Invoke-GceBotLifecycle.ps1` orquesta Foundation/Infrastructure/Prepare/Configure/MigrateData/Publish/Deploy/Release/Rollback con confirmaciones.
@@ -161,6 +161,7 @@ El panel usa un cliente inicial de `760x750`, minimo `680x730`; la pestaña Conf
 - Los comandos aceptan `/`, `!`, `.`, `>`, `$`, `galerazobot` y `galerazo_bot` como prefijos.
 - Los comandos inexistentes se ignoran silenciosamente; no registrar fallbacks en grupos posteriores de PTB que vuelvan a procesar comandos validos.
 - Antes de cerrar cada pedido se ejecuta `python -m galerazo_bot.log_checkpoint`; los errores nuevos se investigan antes de reconocer y avanzar el offset.
+- Los `NetworkError` transitorios de `getUpdates` llegan sin update/job/coroutine y PTB los reintenta; se registran como warning local sin anunciar un falso error no handleado. Errores de red asociados a trabajo real si se anuncian.
 - Los rankings usan nombres visibles cacheados en `users` y user IDs; no generan menciones ni hacen requests de nombres al renderizar.
 - Todas las pantallas de `/config` incluyen `config:close`; los permisos se validan antes de ejecutar cualquier callback.
 - Cerrar el panel de control apaga el arbol de procesos local del bot antes de destruir la ventana.

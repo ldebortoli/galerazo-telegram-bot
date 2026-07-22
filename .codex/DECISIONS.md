@@ -535,3 +535,10 @@ Este archivo es append-only a nivel conceptual: no borrar decisiones anteriores.
 - Los updates de debug que no entran en un mensaje se serializan a `BytesIO`; no se crean archivos temporales ni se depende de escritura local en el contenedor.
 - La subida del documento usa 30 segundos para los timeouts HTTP de PTB y reintenta una sola vez exclusivamente ante `telegram.error.TimedOut`.
 - Otros errores de Telegram, o un segundo timeout, conservan la respuesta localizada de fallo y se registran sin exponer el contenido del update.
+
+## D-066 - Errores transitorios de polling no son errores no handleados
+
+- Estado: vigente desde 2026-07-22.
+- `python-telegram-bot` reintenta indefinidamente los `NetworkError` producidos por `getUpdates` y entrega esos fallos al error handler con `update=None`, sin job ni coroutine.
+- Ese caso se registra localmente como warning resumido y no se envia al canal de logging, porque ya esta siendo manejado por el retry loop de PTB.
+- Un `NetworkError` asociado a un update, job o coroutine sigue el flujo normal de error no handleado. `Conflict` mantiene su tratamiento separado y detiene la instancia para evitar dos pollers con el mismo token.

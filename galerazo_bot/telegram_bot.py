@@ -11,7 +11,7 @@ from pathlib import Path
 from zoneinfo import ZoneInfo
 
 from telegram import Bot, Chat, ChatMember, Message, MessageEntity, Update, User
-from telegram.error import BadRequest, Conflict, Forbidden, TelegramError, TimedOut
+from telegram.error import BadRequest, Conflict, Forbidden, NetworkError, TelegramError, TimedOut
 from telegram.ext import (
     Application,
     ApplicationBuilder,
@@ -610,6 +610,18 @@ async def _my_chat_member_entrypoint(update: Update, context: ContextTypes.DEFAU
 
 
 async def _handle_error(update: object, context: ContextTypes.DEFAULT_TYPE) -> None:
+    if (
+        update is None
+        and isinstance(context.error, NetworkError)
+        and getattr(context, "job", None) is None
+        and getattr(context, "coroutine", None) is None
+    ):
+        logger.warning(
+            "Error transitorio de red durante polling; python-telegram-bot reintentara: %s",
+            context.error,
+        )
+        return
+
     logger.exception("Error no handleado procesando update.", exc_info=context.error)
     if isinstance(context.error, Conflict):
         logger.error(
