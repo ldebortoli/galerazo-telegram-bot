@@ -6,14 +6,14 @@ Mantener Galerazo Bot reproducible en Windows, CI y Docker, con SQLite persisten
 
 ## Tarea actual
 
-El usuario desplegó `galerazobot:db278a097b62`, pero `/lil` no respondió. El contenedor acumuló 3081 reinicios por `telegram.error.TimedOut` durante `getMe`: el bridge Docker sólo entregaba IPv4 y la VM no tiene IPv4 pública/NAT. El contenedor está detenido; la misma imagen con red de host resolvió IPv6 y obtuvo HTTP 200 de Telegram. `network_mode: host` está implementado y pendiente de validación/deploy; bot local apagado y datos/configuración intactos.
+El primer deploy de producción de `galerazobot:db278a097b62` quedó completado. El Compose usa `network_mode: host`, el contenedor está `running/healthy`, `/lil` respondió y Telegram mantiene polling y envíos HTTP 200. El bot local está apagado y los datos/configuración remotos permanecen intactos.
 
 ## Estado actual
 
 - Rama `main`, tracking `origin/main`.
 - Python 3.14.6 exacto y lock completo.
 - `Dockerfile` tiene targets `test` y `runtime`; produccion corre como UID/GID 10001, con healthcheck SQLite.
-- `compose.production.yaml` no publica puertos y persiste `/app/data` y `/app/backups` en `/srv/galerazo`.
+- `compose.production.yaml` no publica puertos, usa la red del host para salida IPv6 y persiste `/app/data` y `/app/backups` en `/srv/galerazo`.
 - Build/publicacion local: `scripts/deploy/Build-DockerImage.ps1` y `Publish-DockerImage.ps1`.
 - Host/deploy: `Initialize-GceHost.ps1`, `Deploy-Gce.ps1` y `Rollback-Gce.ps1`, todos por IAP.
 - El deploy remoto crea backup consistente, usa tag inmutable, espera healthcheck y restaura la imagen anterior si falla.
@@ -30,7 +30,7 @@ El usuario desplegó `galerazobot:db278a097b62`, pero `/lil` no respondió. El c
 - La cuenta humana activa de `gcloud` tiene exactamente un binding `roles/artifactregistry.writer` sobre `bots`; su identidad no se registra en la memoria ni en el repositorio.
 - `scripts/deploy/Initialize-GcpBot.ps1` automatiza de forma idempotente APIs, registro e identidad/permisos por bot, encuentra `gcloud` instalado por usuario y no crea VM. Se ejecuto dos veces consecutivas con exito contra el proyecto real.
 - La VPC custom `bot-fleet` contiene la subred `bots-us-central1` (`10.20.0.0/24`, `IPV4_IPV6`, IPv6 externo, Private Google Access) y exactamente una regla propia: tcp/22 desde IAP `35.235.240.0/20` al tag `iap-ssh`.
-- `galerazo-prod` esta `RUNNING` en `us-central1-a`: `e2-micro`, Debian 12, disco de 30 GB `pd-standard`, sin IPv4 externa, con IPv6 efimera, `galerazo-vm`, OS Login, Shielded Secure Boot/vTPM/integrity monitoring y deletion protection.
+- `galerazo-prod` esta `RUNNING` en `us-central1-a`: `e2-micro`, Debian 12, disco de 30 GB `pd-standard`, sin IPv4 externa, con IPv6 efimera, `galerazo-vm`, OS Login, Shielded Secure Boot/vTPM/integrity monitoring y deletion protection. El contenedor de Galerazobot está `running/healthy`, sin OOM, con `restart_policy=unless-stopped`; Docker está activo y habilitado.
 - El host remoto tiene Docker Engine 29.6.2, Compose 5.3.1 y Google Cloud CLI 576.0.0; Docker esta activo/habilitado. `/srv/galerazo/{data,backups}` pertenece a 10001:10001, `/etc/galerazo` esta protegido y `bot.env` real tiene modo 0600.
 - `deploy/gce/verify-host.sh` valida el host sin imprimir secretos; `Initialize-GceHost.ps1` lo copia y ejecuta automaticamente. `--expect-pristine` confirmo cero contenedores, imagenes, base y Compose antes del primer deploy.
 - `Set-GceBotSecrets.ps1` y la accion `Configure` transfieren solo las variables permitidas de `.env` mediante un temporal local, IAP y un directorio remoto 0700; `install-config.sh` instala como root 0600, conserva `bot.env.previous`, valida sin mostrar valores y limpia ambos temporales.
@@ -45,6 +45,8 @@ El usuario desplegó `galerazobot:db278a097b62`, pero `/lil` no respondió. El c
 
 ## Validacion reciente
 
+- Cierre del primer deploy: dos auditorías remotas por IAP confirmaron contenedor `running/healthy`, SQLite legible, cero OOM, reinicios estables en 1 y tráfico Telegram `getUpdates`/`sendMessage` HTTP 200. La VM conservaba 433 MB disponibles y 25 GB libres en disco.
+- Validación local posterior: 96 pruebas OK, runtime Python 3.14.6 alineado, `pip check`, `compileall`, `git diff --check` y checkpoint de logs sin novedades.
 - 96 pruebas nativas OK.
 - `compileall` OK para app, panel, paquete, scripts y tests.
 - `scripts/runtime_versions.py`: runtime alineado.
@@ -60,12 +62,12 @@ El usuario desplegó `galerazobot:db278a097b62`, pero `/lil` no respondió. El c
 - El primer intento publicó `d8ae2ecc00f5`, pero el runtime falló con `FileNotFoundError: /app/.python-version`. Se detuvo el reinicio continuo sin OOM; SQLite conservó 176128 bytes/mode 0600 y `bot.env` siguió root/0600.
 - `db278a097b62` está publicado con digest `sha256:115a350c...b7cf7`; ejecutó 96 pruebas Docker, smoke de versión y healthcheck remoto sobre la base real como UID 10001. No inició Telegram durante esas comprobaciones.
 - La inspección posterior encontró `db278a097b62` con 3081 reinicios y `telegram.error.TimedOut` durante `getMe`. La VM resolvió/alcanzó Telegram por IPv6; el bridge `galerazo_default` era `ipv6=false` y sólo resolvía `149.154.166.110`. La misma imagen con `--network host` resolvió también `2001:67c:4e8:f004::9` y obtuvo HTTP 200.
-- El contenedor fallido está detenido (`Exited 143`). El Compose candidato con `network_mode: host` pasó `docker compose config --quiet` en la VM; 96 pruebas nativas, runtime, pip, compileall y `git diff --check` pasaron localmente.
+- El Compose con `network_mode: host` fue desplegado. Dos auditorías por IAP confirmaron `running/healthy`, healthcheck SQLite correcto, polling `getUpdates` HTTP 200 y envíos `sendMessage` HTTP 200. `/lil` respondió; hubo un reinicio inicial y luego no se registraron reinicios nuevos ni OOM.
 - Quality `29779348254` y Docker Quality `29779348273` pasaron sobre `9ac8cc4`; Docker construyo el target de pruebas, ejecuto 89 tests y construyo el target runtime.
 
 ## Proximo paso exacto
 
-Guardar/publicar el cambio de Compose y, desde Bot Control Center, usar exclusivamente `Deployar última imagen` con `db278a097b62`; no hace falta publicar otra imagen. Después validar por IAP que el contenedor quede healthy y sin reinicios, revisar logs, comprobar la política de reinicio y pedir al usuario probar `/lil` sin ejecutar el mismo token en local.
+No queda ningún paso pendiente del primer deploy. Mantener el bot local apagado mientras use el mismo token; cuando el usuario quiera desarrollar localmente, cambiarlo al token de prueba. Como mejora futura independiente, incorporar al Bot Control Center estado, health, reinicios y logs remotos.
 
 ## Riesgos y bloqueos
 

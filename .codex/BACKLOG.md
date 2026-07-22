@@ -11,10 +11,9 @@
 
 # IN PROGRESS
 
-- [P0] Corregir el primer deploy GCE de `galerazobot:db278a097b62`: el runtime ya arranca, pero el bridge Docker sólo ofrece IPv4 y la VM sin IPv4 pública no alcanza Telegram; detener el bucle, validar salida segura mediante la red IPv6 del host, desplegar la corrección y comprobar `/lil`, healthcheck y reinicio.
-
 # DONE
 
+- [2026-07-22] Completar el primer deploy saludable de `galerazobot:db278a097b62`: desplegar el Compose con `network_mode: host`, comprobar `/lil`, polling y envíos Telegram con HTTP 200, contenedor `running/healthy`, SQLite legible e intacto, cero OOM y política `unless-stopped`. Tras un reinicio inicial, una segunda auditoría confirmó estabilidad sin reinicios nuevos.
 - [2026-07-21] Diagnosticar el primer deploy fallido: el runtime omitía `.python-version` y fallaba antes de Telegram. Detener el contenedor en bucle, copiar el archivo al runtime, agregar smoke tests locales/CI, publicar `galerazobot:db278a097b62` (`sha256:115a350c...b7cf7`) y validar esa imagen en la VM contra SQLite real sin iniciar el bot. Corregir además el primer-fallo sin rollback para detener el contenedor automáticamente.
 - [2026-07-21] Completar el paso 10: construir desde `e63c0e8`, ejecutar 96 pruebas dentro del target Docker, crear la imagen de producción Linux/amd64 y publicarla en `bot-fleet-production/bots/galerazobot:e63c0e8ee924`. Verificar referencia local, digest `sha256:21581c63d742902a2f13e2a987284531cdaee5469d09d7e93195cf7d1523e840` y mantener `galerazo-prod` con cero imágenes, contenedores y Compose.
 - [2026-07-20] Exponer el contrato seguro de credenciales para Bot Control Center: inspector booleano, parche parcial privado por IAP, allowlist, preservación de valores omitidos, JSON opcional de Sheets, rollback y cero valores en argumentos/salida. Validar lectura real y un no-op real contra `galerazo-prod`; la configuración siguió válida y no se publicó ni desplegó imagen. Validación: 96 pruebas, runtime, pip, compileall, PowerShell/Bash y Control Center end-to-end OK.
