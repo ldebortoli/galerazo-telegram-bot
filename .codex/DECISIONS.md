@@ -493,3 +493,29 @@ Este archivo es append-only a nivel conceptual: no borrar decisiones anteriores.
 - Fecha: 2026-07-22.
 - Decisión: `Invoke-GceBotctl.ps1` copia temporalmente por IAP un `deploy/gce/botctl.py` versionado, ejecuta sólo `status`, `triggers`, `media`, `moderate` o `stop` con argumentos validados y elimina el temporal. Las lecturas usan el SQLite real en modo lectura y Telegram bajo demanda; nunca devuelven el token. La moderación vuelve a resolver trigger, autor y chat antes de escribir y comunica resultados parciales. `stop` equivale únicamente a `docker compose stop bot`, sin `down` ni eliminación de base, imagen, secretos o configuración.
 - Motivo: dar visibilidad y una contención segura ante bucles de reinicio sin instalar un daemon, abrir puertos administrativos ni aceptar comandos remotos libres.
+
+## D-061 - Backup SQLite mensual compartido para la flota
+
+- Estado: vigente.
+- Fecha: 2026-07-22.
+- Decisión: crear un bucket privado regional compartido por proyecto y aislar cada bot bajo `bots/<bot-id>/`; cada VM genera una copia consistente con `sqlite3.Connection.backup`, valida `PRAGMA integrity_check`, adjunta SHA-256 y la sube una vez por mes mediante un timer systemd persistente.
+- Retención: conservar copias locales y remotas 400 días. Cloud Storage usa acceso uniforme, prevención de acceso público, soft delete de siete días y nombres inmutables; la identidad de runtime recibe sólo `roles/storage.objectCreator` sobre el bucket.
+- Reutilización: `Enable-GceSqliteBackups.ps1` parametriza proyecto, VM, service account, bot, rutas y UID; el mismo bucket sirve a futuros bots sin copiar bases entre prefijos. La restauración permanece manual y confirmada mediante el flujo existente de `MigrateData`.
+- Motivo: separar el backup de la VM sin introducir snapshots completos ni frecuencia/costo innecesarios mientras los datos no sean críticos.
+
+## D-062 - Reporte diario de gasto mediante Cloud Billing exportado a BigQuery
+
+- Estado: vigente.
+- Fecha: 2026-07-22.
+- Decision: usar `JobQueue.run_daily` de `python-telegram-bot` a una hora `America/Argentina/Buenos_Aires` configurable, con default 09:00, para consultar la exportacion estandar de Cloud Billing a BigQuery y enviar el resultado a `TELEGRAM_LOG_CHAT_ID`.
+- Calculo: filtrar el `invoice.month` vigente y mostrar costo bruto, creditos y neto (`cost + credits`) por moneda, junto con la ultima hora de exportacion. La latencia de Billing se informa y este reporte no reemplaza el presupuesto ni sus alertas.
+- Costos y seguridad: SQL parametrizado, tabla validada, cache y `maximum_bytes_billed=100 MiB`; sin canal o configuracion completa no se agenda ni consulta. GCE usa ADC de `galerazo-vm`, sin claves JSON, con `roles/bigquery.jobUser` en el proyecto y `roles/bigquery.dataViewer` solo en el dataset.
+- Activacion: crear el dataset exige `-AcknowledgeBillableResource`; vincular la cuenta a la exportacion estandar es un paso manual de consola y la carga inicial puede demorar hasta cinco dias.
+
+## D-063 - Cobertura local y CI con umbrales explicitos
+
+- Estado: vigente.
+- Fecha: 2026-07-22.
+- Decision: medir `galerazo_bot` con `coverage.py` y branch coverage; exigir al menos 62% de sentencias y 36% de ramas mediante `scripts/check_coverage.py`.
+- CI: `Quality` ejecuta la suite rapida una sola vez bajo cobertura. Docker sigue condicionado a cambios de runtime/contenedor y los workflows costosos permanecen manuales para proteger la cuota de Actions.
+- Limite: coverage.py no expone una metrica separada de funciones; se documentan y controlan las metricas que el stack soporta.

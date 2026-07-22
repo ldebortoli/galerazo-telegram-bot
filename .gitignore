@@ -4,6 +4,9 @@ bin/
 .env
 .venv/
 venv/
+.coverage
+coverage-report.json
+htmlcov/
 data/*.sqlite3
 data/*.sqlite3-*
 data/bot.pid

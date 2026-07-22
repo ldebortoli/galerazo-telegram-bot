@@ -53,7 +53,9 @@ jobs:
         if: steps.changes.outputs.changed == 'true'
         run: |
           .update-venv/bin/python scripts/runtime_versions.py
-          .update-venv/bin/python -m unittest discover -s tests -v
+          .update-venv/bin/python -m coverage run -m unittest discover -s tests -v
+          .update-venv/bin/python -m coverage json
+          .update-venv/bin/python scripts/check_coverage.py
           .update-venv/bin/python -m compileall app.py control_panel.py galerazo_bot
           .update-venv/bin/python -m pip check
 

@@ -34,6 +34,7 @@ class CommandRoutingTests(unittest.TestCase):
 
         self.assertIsInstance(application.update_processor, PerChatUpdateProcessor)
         self.assertEqual(application.concurrent_updates, 256)
+        self.assertIsNotNone(application.job_queue)
 
     def test_registered_commands_have_no_unknown_command_fallback(self) -> None:
         application = CapturingApplication()

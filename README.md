@@ -125,6 +125,21 @@ Si no encuentra cambios de runtime o dependencias, omite la suite y el build Doc
 - El deploy desactivado es exclusivamente manual y no crea runs omitidos en cada push.
 - Los jobs tienen timeouts de 10, 15 y 20 minutos para evitar consumo indefinido ante un bloqueo.
 
+### Pruebas locales y cobertura
+
+La validacion local rapida y la cobertura reproducible se ejecutan dentro de `.venv`:
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest discover -s tests -v
+.\.venv\Scripts\python.exe -m coverage erase
+.\.venv\Scripts\python.exe -m coverage run -m unittest discover -s tests -v
+.\.venv\Scripts\python.exe -m coverage json
+.\.venv\Scripts\python.exe scripts\check_coverage.py
+.\.venv\Scripts\python.exe -m coverage report
+```
+
+`coverage.py` mide sentencias/lineas y ramas; este stack no expone una metrica separada de funciones. Los minimos son 62% de sentencias y 36% de ramas. `Quality` ejecuta la suite una sola vez bajo cobertura. La validacion Docker se activa solamente cuando cambia el runtime, el lock o el contenedor, y los workflows de deploy costosos siguen siendo manuales.
+
 Si aparece un problema despues de fusionar una actualizacion, ubica ese commit y revertirlo conserva el historial:
 
 ```powershell
@@ -223,6 +238,9 @@ DATABASE_PATH=data/galerazo.sqlite3
 GOOGLE_SHEETS_CREDENTIALS_JSON_PATH=secrets/google-service-account.json
 GOOGLE_SHEETS_SPREADSHEET_ID=replace-with-spreadsheet-id
 GOOGLE_SHEETS_WORKSHEET_NAME=Gastos
+GOOGLE_CLOUD_BILLING_PROJECT_ID=bot-fleet-production
+GOOGLE_CLOUD_BILLING_TABLE=bot-fleet-production.billing_export.gcp_billing_export_v1_XXXXXX_XXXXXX_XXXXXX
+GOOGLE_CLOUD_BILLING_REPORT_TIME=09:00
 ```
 
 El archivo `.env` no se sube al repo.
@@ -255,6 +273,38 @@ Esta capa detecta contenido sexual general. No es un detector especializado ni u
 
 El Bot API oficial de Telegram limita `getFile` a 20 MB. Con moderacion activa, un archivo mayor se rechaza con un mensaje especifico porque el bot no puede descargarlo para analizarlo. Sin moderacion activa, ese limite no altera el guardado por `file_id`.
 
+### 9. Configurar el reporte diario de gasto de Google Cloud
+
+El bot usa `JobQueue.run_daily` de `python-telegram-bot` y la exportacion estandar de Cloud Billing a BigQuery. La API de Billing no expone el gasto mensual actual directamente.
+
+1. En Google Cloud crea un dataset de BigQuery; para obtener backfill desde el mes anterior conviene la ubicacion multirregion `US`.
+2. En `Facturacion > Exportacion de facturacion > Exportacion a BigQuery`, habilita `Costo de uso estandar` y selecciona ese dataset.
+3. Espera a que Google cree la tabla `gcp_billing_export_v1_<BILLING_ACCOUNT_ID>`; la carga inicial puede tardar hasta cinco dias.
+4. Concede a la service account de la VM `BigQuery Job User` en el proyecto que contiene el dataset y `BigQuery Data Viewer` solamente sobre ese dataset.
+5. Configura el proyecto, la tabla completa y la hora argentina:
+
+```env
+GOOGLE_CLOUD_BILLING_PROJECT_ID=bot-fleet-production
+GOOGLE_CLOUD_BILLING_TABLE=bot-fleet-production.billing_export.gcp_billing_export_v1_XXXXXX_XXXXXX_XXXXXX
+GOOGLE_CLOUD_BILLING_REPORT_TIME=09:00
+```
+
+En GCE no se usa una clave JSON: el cliente toma Application Default Credentials de la service account adjunta a la VM. Localmente podes usar `gcloud auth application-default login` con una cuenta que tenga los mismos permisos.
+
+Cada dia el canal de logging recibe gasto bruto, creditos, gasto neto y fecha de actualizacion para el mes de factura vigente. La consulta usa parametros, cache y un limite estricto de 100 MiB facturables. La exportacion y los reportes de Google pueden llevar mas de 24 horas de demora, por lo que este aviso complementa pero no reemplaza el presupuesto y sus alertas.
+
+El dataset y los permisos minimos se pueden preparar de forma idempotente. El script exige reconocer que BigQuery es un recurso potencialmente facturable:
+
+```powershell
+.\scripts\deploy\Initialize-GceBillingReport.ps1 `
+  -ProjectId bot-fleet-production `
+  -DatasetId billing_export `
+  -ServiceAccountId galerazo-vm `
+  -AcknowledgeBillableResource
+```
+
+El script no habilita la exportacion de la cuenta de facturacion: ese paso se confirma manualmente en la consola.
+
 ## Canales del bot
 
 - Canal operativo: chats, grupos y supergrupos donde los usuarios interactuan con el bot.
@@ -267,6 +317,7 @@ Por ahora el canal de logging solo recibe:
 - Errores no handleados.
 - Reportes enviados por usuarios con `/reportar`.
 - Avisos cuando un mensaje no paginable supera el limite de Telegram y se envia truncado.
+- Reporte diario del gasto mensual de Google Cloud cuando Billing esta configurado.
 
 El canal de anuncios recibe mensajes enviados por devs con:
 

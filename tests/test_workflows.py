@@ -17,6 +17,15 @@ class RuntimeUpdateWorkflowTests(unittest.TestCase):
         self.assertNotIn("gh pr create", workflow)
         self.assertNotIn("--force", workflow)
 
+    def test_quality_runs_tests_once_with_coverage_thresholds(self) -> None:
+        workflow = (
+            PROJECT_ROOT / ".github" / "workflows" / "quality.yml"
+        ).read_text(encoding="utf-8")
+
+        self.assertEqual(workflow.count("unittest discover"), 1)
+        self.assertIn("python -m coverage run", workflow)
+        self.assertIn("python scripts/check_coverage.py", workflow)
+
 
 if __name__ == "__main__":
     unittest.main()

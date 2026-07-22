@@ -1,0 +1,9 @@
+[run]
+branch = True
+source = galerazo_bot
+
+[report]
+show_missing = True
+
+[json]
+output = coverage-report.json

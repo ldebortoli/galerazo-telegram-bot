@@ -22,6 +22,9 @@ class Settings:
     google_sheets_spreadsheet_id: str | None
     google_sheets_worksheet_name: str
     openai_api_key: str | None = None
+    google_cloud_billing_project_id: str | None = None
+    google_cloud_billing_table: str | None = None
+    google_cloud_billing_report_time: str = "09:00"
 
 
 def load_settings() -> Settings:
@@ -37,6 +40,11 @@ def load_settings() -> Settings:
         google_sheets_spreadsheet_id=os.getenv("GOOGLE_SHEETS_SPREADSHEET_ID") or None,
         google_sheets_worksheet_name=os.getenv("GOOGLE_SHEETS_WORKSHEET_NAME", "Gastos"),
         openai_api_key=os.getenv("OPENAI_API_KEY") or None,
+        google_cloud_billing_project_id=os.getenv("GOOGLE_CLOUD_BILLING_PROJECT_ID") or None,
+        google_cloud_billing_table=os.getenv("GOOGLE_CLOUD_BILLING_TABLE") or None,
+        google_cloud_billing_report_time=os.getenv(
+            "GOOGLE_CLOUD_BILLING_REPORT_TIME", "09:00"
+        ),
     )
 
 

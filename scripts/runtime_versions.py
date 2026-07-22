@@ -13,12 +13,14 @@ REQUIREMENTS_IN = ROOT / "requirements.in"
 REQUIREMENTS_LOCK = ROOT / "requirements.txt"
 DIRECT_DEPENDENCIES = {
     "av",
+    "coverage",
     "google-auth",
+    "google-cloud-bigquery",
     "gspread",
     "httpx",
     "pillow",
     "python-dotenv",
-    "python-telegram-bot",
+    "python-telegram-bot[job-queue]",
     "tzdata",
 }
 
@@ -71,7 +73,10 @@ def check_versions() -> list[str]:
         for line in REQUIREMENTS_LOCK.read_text(encoding="utf-8").splitlines()
         if "==" in line
     }
-    missing = sorted(DIRECT_DEPENDENCIES - locked)
+    locked_direct_dependencies = {
+        dependency.split("[", 1)[0] for dependency in DIRECT_DEPENDENCIES
+    }
+    missing = sorted(locked_direct_dependencies - locked)
     if missing:
         errors.append(f"Direct dependencies missing from requirements.txt: {', '.join(missing)}")
     return errors

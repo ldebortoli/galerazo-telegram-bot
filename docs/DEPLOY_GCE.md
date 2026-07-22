@@ -308,6 +308,43 @@ automaticamente dentro de `bot.env`:
 GOOGLE_SHEETS_CREDENTIALS_JSON_PATH=/app/secrets/google-service-account.json
 ```
 
+### Reporte diario de Cloud Billing
+
+Para informar el gasto mensual en `TELEGRAM_LOG_CHAT_ID`, habilitar primero la
+exportacion estandar de Cloud Billing a un dataset BigQuery desde la consola de
+Google. La tabla creada tiene el formato
+`gcp_billing_export_v1_<BILLING_ACCOUNT_ID>`. Configurar luego:
+
+```env
+GOOGLE_CLOUD_BILLING_PROJECT_ID=TU_PROYECTO
+GOOGLE_CLOUD_BILLING_TABLE=TU_PROYECTO.billing_export.gcp_billing_export_v1_XXXXXX_XXXXXX_XXXXXX
+GOOGLE_CLOUD_BILLING_REPORT_TIME=09:00
+```
+
+La VM usa ADC con `galerazo-vm`; no agregar una clave JSON. Conceder a esa
+identidad `roles/bigquery.jobUser` en el proyecto que ejecuta la consulta y
+`roles/bigquery.dataViewer` solamente en el dataset exportado. El job corre a
+la hora configurada en `America/Argentina/Buenos_Aires`, suma costo mas
+creditos del `invoice.month` actual y limita cada consulta a 100 MiB
+facturables. La exportacion puede demorarse y no reemplaza las alertas del
+presupuesto.
+
+El dataset y esos permisos se preparan de forma idempotente con confirmacion de
+recurso potencialmente facturable:
+
+```powershell
+.\scripts\deploy\Initialize-GceBillingReport.ps1 `
+  -ProjectId TU_PROYECTO `
+  -DatasetId billing_export `
+  -ServiceAccountId galerazo-vm `
+  -AcknowledgeBillableResource
+```
+
+El script no vincula la cuenta de facturacion. En la consola, abrir
+`Facturacion > Exportacion de facturacion`, habilitar `Costo de uso estandar`
+sobre ese dataset y esperar a que Google cree la tabla antes de completar
+`GOOGLE_CLOUD_BILLING_TABLE`.
+
 ### Integracion con Bot Control Center
 
 Bot Control Center ya dispone de una vista separada de credenciales. Consulta

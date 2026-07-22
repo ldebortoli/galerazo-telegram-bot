@@ -1,7 +1,9 @@
 av
+coverage
+google-cloud-bigquery
 httpx
 Pillow
-python-telegram-bot
+python-telegram-bot[job-queue]
 python-dotenv
 gspread
 google-auth

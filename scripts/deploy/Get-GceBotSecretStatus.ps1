@@ -56,6 +56,9 @@ try {
         "TELEGRAM_ANNOUNCEMENTS_CHAT_ID",
         "GOOGLE_SHEETS_SPREADSHEET_ID",
         "GOOGLE_SHEETS_WORKSHEET_NAME",
+        "GOOGLE_CLOUD_BILLING_PROJECT_ID",
+        "GOOGLE_CLOUD_BILLING_TABLE",
+        "GOOGLE_CLOUD_BILLING_REPORT_TIME",
         "GOOGLE_SHEETS_CREDENTIALS_JSON"
     )) {
         $property = $parsed.PSObject.Properties[$name]

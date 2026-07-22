@@ -6,7 +6,7 @@ Mantener Galerazo Bot reproducible en Windows, CI y Docker, con SQLite persisten
 
 ## Tarea actual
 
-El primer deploy de producción de `galerazobot:db278a097b62` quedó completado. El Compose usa `network_mode: host`, el contenedor está `running/healthy`, `/lil` respondió y Telegram mantiene polling y envíos HTTP 200. El bot local está apagado y los datos/configuración remotos permanecen intactos.
+El job diario de gasto de Google Cloud quedo implementado y validado. La activacion real esta bloqueada: `bot-fleet-production` tiene BigQuery API habilitada, pero no tiene datasets ni tabla de exportacion. Crear el dataset requiere confirmar el recurso potencialmente facturable y habilitar manualmente `Costo de uso estandar` en Cloud Billing. El trabajo paralelo de backups GCE tambien quedo completado, validado y documentado.
 
 ## Estado actual
 
@@ -25,6 +25,7 @@ El primer deploy de producción de `galerazobot:db278a097b62` quedó completado.
 - La consola confirmo `bot-fleet-production` con USD 300 de credito de prueba sin uso y vencimiento mostrado para el 19 de octubre de 2026; no se pulso `Actualizar` ni se convirtio manualmente la cuenta a modalidad paga.
 - `Bot Fleet - Monthly Guardrail` esta activo en USD, con presupuesto mensual de USD 1, USD 0 consumidos, promociones excluidas, Free Tier incluido y alertas real 10/50/100% mas pronostico 100%. Cubre la cuenta de facturacion, que actualmente tiene un solo proyecto; no es un corte automatico.
 - Estan habilitadas `compute.googleapis.com`, `artifactregistry.googleapis.com`, `iap.googleapis.com` e `iamcredentials.googleapis.com`.
+- `bigquery.googleapis.com` tambien esta habilitada. `bq ls --project_id=bot-fleet-production` no devuelve datasets; por eso el reporte sigue desactivado en produccion.
 - Artifact Registry contiene `us-central1-docker.pkg.dev/bot-fleet-production/bots/galerazobot:e63c0e8ee924`, digest `sha256:21581c63d742902a2f13e2a987284531cdaee5469d09d7e93195cf7d1523e840`. Es la primera imagen publicada y usa el commit como tag.
 - `galerazo-vm` existe y esta habilitada. Tiene exactamente un binding `roles/artifactregistry.reader` sobre `bots`, cero roles directos a nivel proyecto y cero claves administradas por el usuario.
 - La cuenta humana activa de `gcloud` tiene exactamente un binding `roles/artifactregistry.writer` sobre `bots`; su identidad no se registra en la memoria ni en el repositorio.
@@ -45,6 +46,9 @@ El primer deploy de producción de `galerazobot:db278a097b62` quedó completado.
 
 ## Validacion reciente
 
+- Backups mensuales activos: bucket privado `bot-fleet-production-sqlite-backups` en `us-central1`, retención 400 días, PAP y acceso uniforme; `galerazo-vm` sólo puede crear objetos. Timer enabled/active, próxima ejecución 2026-08-01 con demora aleatoria. Primera copia 180224 bytes descargada nuevamente: SHA-256 e `integrity_check` OK; bot remoto continuó `running/healthy`. Suite completa: 121 pruebas, runtime, pip, compileall, PowerShell/Bash y diff-check OK.
+- Billing: 13 pruebas especificas validan timezone argentino, `invoice.month`, SQL parametrizado, costo bruto/creditos/neto, limite de 100 MiB, errores, destino de logging, default desactivado y `JobQueue`. La suite completa del worktree actual paso con 122 pruebas nativas, 62,55% de sentencias y 36,96% de ramas; Docker Linux/amd64 paso 121 pruebas (una Tk omitida), runtime Python 3.14.6 y smoke real de JobQueue/BigQuery. La imagen runtime local mide aproximadamente 110 MB y el import completo uso cerca de 99 MiB RSS.
+- La configuracion de Billing se propaga por `.env`, el panel desplazable, bootstrap GCE, carga/parche/inspector remoto y documentacion. `Initialize-GceBillingReport.ps1` prepara dataset y permisos minimos solo con `-AcknowledgeBillableResource`; no se ejecuto contra GCP.
 - `/galerazas` renderiza el título en negrita mediante `MessageEntity`, agrega una línea vacía antes de las filas y conserva ambas cosas al paginar. Pasaron 96 pruebas, runtime, `pip check`, `compileall` y `git diff --check`.
 - Contrato de Bot Control Center completado: `deploy/gce/botctl.py` y `Invoke-GceBotctl.ps1` exponen acciones fijas para estado, triggers, multimedia, moderación y detención segura. La lectura real por IAP confirmó VM `running`, contenedor `running/healthy`, un reinicio total, cero reinicios recientes, Telegram conectado y seis triggers (cuatro con multimedia y dos de texto). No se ejecutaron mutaciones de producción.
 
@@ -70,11 +74,12 @@ El primer deploy de producción de `galerazobot:db278a097b62` quedó completado.
 
 ## Proximo paso exacto
 
-No queda ningún paso pendiente del primer deploy. Mantener el bot local apagado mientras use el mismo token; cuando el usuario quiera desarrollar localmente, cambiarlo al token de prueba. Como mejora futura independiente, incorporar al Bot Control Center estado, health, reinicios y logs remotos.
+Cuando el usuario confirme el posible costo, ejecutar `Initialize-GceBillingReport.ps1 -ProjectId bot-fleet-production -AcknowledgeBillableResource`, habilitar `Costo de uso estandar` sobre `billing_export` en la consola, esperar la tabla, configurar las tres variables de Billing y publicar/desplegar una imagen inmutable.
 
 ## Riesgos y bloqueos
 
 - La VM `e2-micro` tiene 1 GB: limitar la moderacion de video concurrente hasta medir PyAV.
 - La salida IPv6/Private Google Access fue validada; si una dependencia futura exige IPv4, Cloud NAT o IPv4 externa pueden agregar costo y requieren una nueva decision.
 - Google Sheets real sigue bloqueado hasta recibir spreadsheet/worksheet/credenciales.
+- El reporte diario de Billing no esta activo en produccion hasta crear/vincular el dataset y recibir la tabla generada por Google; la exportacion inicial puede tardar hasta cinco dias.
 - No ejecutar el bot local y remoto simultaneamente con el mismo token.

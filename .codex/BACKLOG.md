@@ -2,6 +2,7 @@
 
 ## P1
 
+- [BLOCKED: el proyecto no tiene dataset ni tabla de exportacion; requiere confirmar `-AcknowledgeBillableResource`, habilitar manualmente `Costo de uso estandar` en Cloud Billing y esperar la tabla antes de configurar y desplegar] Activar en produccion el reporte diario de gasto de Google Cloud.
 - [BLOCKED: falta que el usuario confirme spreadsheet ID, worksheet y credenciales de service account] Conectar el sistema de gastos con el Google Sheet real.
 - [BLOCKED: el token `gh` no tiene scope `user`/Plan y el navegador disponible no tiene sesion GitHub; requiere iniciar sesion o autorizar explicitamente ampliar el scope] Confirmar visualmente si la cuenta personal tiene medio de pago cargado. La documentacion oficial confirma que, si no existe un medio valido, Actions se bloquea al agotar la cuota y no cobra excedentes.
 
@@ -13,6 +14,8 @@
 
 # DONE
 
+- [2026-07-22] Implementar backups SQLite mensuales reutilizables para la flota: copia consistente e íntegra, SHA-256, bucket GCS privado compartido con prefijo por bot y retención de 400 días, identidad de escritura mínima, timer persistente por VM, estado local y guía de restauración. Instalarlo en `galerazo-prod`, crear y volver a descargar la primera copia de 180224 bytes, validar SHA-256/integridad y conservar el bot `healthy`. Validación: 121 pruebas, runtime, dependencias, compileall, PowerShell/Bash y diff-check OK.
+- [2026-07-22] Implementar el reporte diario de gasto mensual de Google Cloud: `JobQueue.run_daily` a horario argentino, exportacion estandar de Billing en BigQuery, costo bruto/creditos/neto por `invoice.month`, ADC sin claves, limite de 100 MiB, propagacion por panel/GCE, preparador idempotente con confirmacion y guia. Agregar cobertura con umbrales de 62% de sentencias y 36% de ramas. Validacion del worktree actual: 122 pruebas nativas y 121 Docker, 62,55%/36,96%, runtime Python 3.14.6, lock, `pip check`, compileall y smoke del runtime OK.
 - [2026-07-22] Implementar el contrato remoto versionado consumido por Bot Control Center para estado operativo, triggers y multimedia reales, moderación con aviso al chat y detención segura del contenedor. `status` informa VM/contenedor, health, reinicios, imagen, recursos, SQLite, Telegram y logs/errores; `stop` usa `docker compose stop bot` sin borrar datos. Validación: 119 pruebas OK y lecturas reales por IAP confirmaron VM `running`, contenedor `running/healthy`, un reinicio total, cero recientes, Telegram conectado y seis triggers (cuatro con multimedia y dos de texto); no se ejecutaron mutaciones en producción.
 
 - [2026-07-22] Formatear `/galerazas` con `Tabla de Galerazas` en negrita mediante una entidad nativa de Telegram y una línea vacía antes del ranking, preservando el formato al paginar. Validación: 96 pruebas, runtime, dependencias, compileall y diff-check OK.

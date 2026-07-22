@@ -264,6 +264,21 @@ class DeploymentAutomationTests(unittest.TestCase):
         self.assertNotIn("projects add-iam-policy-binding", foundation)
         self.assertNotIn("compute instances create", foundation)
 
+    def test_billing_report_setup_is_confirmed_and_least_privilege(self) -> None:
+        setup = (
+            PROJECT_ROOT
+            / "scripts"
+            / "deploy"
+            / "Initialize-GceBillingReport.ps1"
+        ).read_text(encoding="utf-8")
+
+        self.assertIn("AcknowledgeBillableResource", setup)
+        self.assertIn("bigquery.googleapis.com", setup)
+        self.assertIn("roles/bigquery.jobUser", setup)
+        self.assertIn("roles/bigquery.dataViewer", setup)
+        self.assertIn("--dataset", setup)
+        self.assertNotIn("service-accounts keys create", setup)
+
     def test_github_image_publication_is_manual_and_keyless(self) -> None:
         workflow = (
             PROJECT_ROOT / ".github" / "workflows" / "publish-gce-image.yml"

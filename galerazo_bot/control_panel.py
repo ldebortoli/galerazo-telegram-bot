@@ -32,6 +32,9 @@ FIELDS = (
     ("GOOGLE_SHEETS_CREDENTIALS_JSON_PATH", "Credenciales de Google", False),
     ("GOOGLE_SHEETS_SPREADSHEET_ID", "ID de Google Sheet", False),
     ("GOOGLE_SHEETS_WORKSHEET_NAME", "Hoja de gastos", False),
+    ("GOOGLE_CLOUD_BILLING_PROJECT_ID", "Proyecto de Google Billing", False),
+    ("GOOGLE_CLOUD_BILLING_TABLE", "Tabla de Google Billing", False),
+    ("GOOGLE_CLOUD_BILLING_REPORT_TIME", "Hora diaria de Billing", False),
 )
 
 
@@ -241,8 +244,37 @@ class ControlPanel(tk.Tk):
         ttk.Label(parent, text="Cerrar este panel también apaga el bot.", style="Muted.TLabel").pack(anchor="w", pady=(18, 0))
 
     def _build_config_tab(self, parent: ttk.Frame) -> None:
-        form = ttk.Frame(parent)
-        form.pack(fill="both", expand=True)
+        form_region = ttk.Frame(parent)
+        form_region.pack(fill="both", expand=True)
+        form_canvas = tk.Canvas(
+            form_region,
+            bg=self.BG,
+            highlightthickness=0,
+            borderwidth=0,
+        )
+        form_scrollbar = ttk.Scrollbar(
+            form_region,
+            orient="vertical",
+            command=form_canvas.yview,
+        )
+        form_canvas.configure(yscrollcommand=form_scrollbar.set)
+        form_canvas.pack(side="left", fill="both", expand=True)
+        form_scrollbar.pack(side="right", fill="y")
+
+        form = ttk.Frame(form_canvas)
+        form_window = form_canvas.create_window((0, 0), window=form, anchor="nw")
+        form.bind(
+            "<Configure>",
+            lambda _event: form_canvas.configure(scrollregion=form_canvas.bbox("all")),
+        )
+        form_canvas.bind(
+            "<Configure>",
+            lambda event: form_canvas.itemconfigure(form_window, width=event.width),
+        )
+        form_canvas.bind(
+            "<MouseWheel>",
+            lambda event: form_canvas.yview_scroll(int(-event.delta / 120), "units"),
+        )
         form.columnconfigure(1, weight=1)
         for row, (key, label, secret) in enumerate(FIELDS):
             ttk.Label(form, text=label).grid(row=row, column=0, sticky="w", padx=(0, 16), pady=6)
@@ -276,7 +308,11 @@ class ControlPanel(tk.Tk):
 
     def load_configuration(self) -> None:
         values = _read_env()
-        defaults = {"DATABASE_PATH": "data/galerazo.sqlite3", "GOOGLE_SHEETS_WORKSHEET_NAME": "Gastos"}
+        defaults = {
+            "DATABASE_PATH": "data/galerazo.sqlite3",
+            "GOOGLE_SHEETS_WORKSHEET_NAME": "Gastos",
+            "GOOGLE_CLOUD_BILLING_REPORT_TIME": "09:00",
+        }
         for key, variable in self.variables.items():
             variable.set(values.get(key, defaults.get(key, "")))
 
