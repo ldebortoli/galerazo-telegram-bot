@@ -12,7 +12,7 @@ from telegram.ext import filters
 
 from galerazo_bot.database import Database, GalerazaScore
 from galerazo_bot.galeraza import build_galeraza_lines, render_galeraza_page
-from galerazo_bot.telegram_bot import _galeraza_game_date, _is_galeraza_candidate
+from galerazo_bot.telegram_bot import _bold_first_line_entities, _galeraza_game_date, _is_galeraza_candidate
 
 
 STATUS_UPDATE_FIELDS = {
@@ -85,10 +85,19 @@ class GalerazaRenderingTests(unittest.TestCase):
         )
         self.assertNotIn("@", "\n".join(lines))
 
-    def test_uses_table_title(self) -> None:
-        page = render_galeraza_page([], page=1, language="es")
+    def test_uses_bold_table_title_separated_from_ranking(self) -> None:
+        page = render_galeraza_page(
+            [GalerazaScore("1", None, "Nombre", 3)],
+            page=1,
+            language="es",
+        )
+        entities = _bold_first_line_entities(page.text)
 
-        self.assertTrue(page.text.startswith("Tabla de Galerazas"))
+        self.assertEqual(page.text, "Tabla de Galerazas\n\nNombre (1) => 3")
+        self.assertEqual(len(entities), 1)
+        self.assertEqual(entities[0].type, "bold")
+        self.assertEqual(entities[0].offset, 0)
+        self.assertEqual(entities[0].length, len("Tabla de Galerazas"))
 
 
 class GalerazaAwardTests(unittest.TestCase):

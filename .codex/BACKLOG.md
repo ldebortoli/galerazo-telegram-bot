@@ -13,6 +13,7 @@
 
 # DONE
 
+- [2026-07-22] Formatear `/galerazas` con `Tabla de Galerazas` en negrita mediante una entidad nativa de Telegram y una línea vacía antes del ranking, preservando el formato al paginar. Validación: 96 pruebas, runtime, dependencias, compileall y diff-check OK.
 - [2026-07-22] Completar el primer deploy saludable de `galerazobot:db278a097b62`: desplegar el Compose con `network_mode: host`, comprobar `/lil`, polling y envíos Telegram con HTTP 200, contenedor `running/healthy`, SQLite legible e intacto, cero OOM y política `unless-stopped`. Tras un reinicio inicial, una segunda auditoría confirmó estabilidad sin reinicios nuevos.
 - [2026-07-21] Diagnosticar el primer deploy fallido: el runtime omitía `.python-version` y fallaba antes de Telegram. Detener el contenedor en bucle, copiar el archivo al runtime, agregar smoke tests locales/CI, publicar `galerazobot:db278a097b62` (`sha256:115a350c...b7cf7`) y validar esa imagen en la VM contra SQLite real sin iniciar el bot. Corregir además el primer-fallo sin rollback para detener el contenedor automáticamente.
 - [2026-07-21] Completar el paso 10: construir desde `e63c0e8`, ejecutar 96 pruebas dentro del target Docker, crear la imagen de producción Linux/amd64 y publicarla en `bot-fleet-production/bots/galerazobot:e63c0e8ee924`. Verificar referencia local, digest `sha256:21581c63d742902a2f13e2a987284531cdaee5469d09d7e93195cf7d1523e840` y mantener `galerazo-prod` con cero imágenes, contenedores y Compose.

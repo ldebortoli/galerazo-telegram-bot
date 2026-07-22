@@ -9,7 +9,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
-from telegram import Bot, Chat, ChatMember, Message, Update, User
+from telegram import Bot, Chat, ChatMember, Message, MessageEntity, Update, User
 from telegram.error import BadRequest, Conflict, Forbidden, TelegramError
 from telegram.ext import (
     Application,
@@ -44,7 +44,7 @@ from .expenses import (
     fallback_sheet_detail,
     format_amount,
 )
-from .galeraza import build_galeraza_lines, render_galeraza_page
+from .galeraza import build_galeraza_header, build_galeraza_lines, render_galeraza_page
 from .google_sheets import GoogleSheetsConfig, GoogleSheetsExpenseWriter
 from .i18n import DEFAULT_LANGUAGE, t
 from .instance_lock import SingleInstance
@@ -67,6 +67,14 @@ POLLING_OPTIONS = {
     "allowed_updates": Update.ALL_TYPES,
     "drop_pending_updates": False,
 }
+
+
+def _bold_first_line_entities(text: str) -> list[MessageEntity]:
+    title = text.partition("\n")[0]
+    if not title:
+        return []
+    utf16_length = len(title.encode("utf-16-le")) // 2
+    return [MessageEntity(type=MessageEntity.BOLD, offset=0, length=utf16_length)]
 
 
 @dataclass(frozen=True)
@@ -742,9 +750,10 @@ async def _send_galerazas(
     scores = db.get_galeraza_scores(str(message.chat.id))
     lines = build_galeraza_lines(scores, language)
     page = render_galeraza_page(scores, page=1, language=language)
-    content_json = json.dumps({"header": t(language, "galeraza.header"), "lines": lines}, ensure_ascii=False)
+    content_json = json.dumps({"header": build_galeraza_header(language), "lines": lines}, ensure_ascii=False)
     try:
-        result = await message.reply_text(page.text, do_quote=True)
+        entities = _bold_first_line_entities(page.text)
+        result = await message.reply_text(page.text, do_quote=True, entities=entities)
         message_id = str(result.message_id)
         if page.total_pages > 1 and message_id:
             db.save_paginated_message_state(
@@ -759,6 +768,7 @@ async def _send_galerazas(
             await result.edit_text(
                 text=page.text,
                 reply_markup=build_keyboard(message_id, page.page, page.total_pages, unlocked=False),
+                entities=entities,
             )
         return True
     except TelegramError as exc:
@@ -1166,9 +1176,13 @@ async def _edit_paginated_message(
     content = json.loads(state.content_json)
     rendered = render_page(content["header"], content["lines"], page=page)
     db.set_paginated_message_page(str(message.chat.id), message_id, rendered.page)
+    edit_options = {}
+    if state.list_type == "galeraza":
+        edit_options["entities"] = _bold_first_line_entities(rendered.text)
     await message.edit_text(
         text=rendered.text,
         reply_markup=build_keyboard(message_id, rendered.page, rendered.total_pages, unlocked=unlocked),
+        **edit_options,
     )
 
 

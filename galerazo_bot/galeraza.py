@@ -6,7 +6,11 @@ from .pagination import PaginatedPage, render_page
 
 
 def render_galeraza_page(scores: list[GalerazaScore], page: int, language: str = DEFAULT_LANGUAGE) -> PaginatedPage:
-    return render_page(t(language, "galeraza.header"), build_galeraza_lines(scores, language), page)
+    return render_page(build_galeraza_header(language), build_galeraza_lines(scores, language), page)
+
+
+def build_galeraza_header(language: str = DEFAULT_LANGUAGE) -> str:
+    return f"{t(language, 'galeraza.header')}\n"
 
 
 def build_galeraza_lines(scores: list[GalerazaScore], language: str = DEFAULT_LANGUAGE) -> list[str]:

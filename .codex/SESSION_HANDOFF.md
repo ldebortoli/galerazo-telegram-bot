@@ -45,6 +45,7 @@ El primer deploy de producción de `galerazobot:db278a097b62` quedó completado.
 
 ## Validacion reciente
 
+- `/galerazas` renderiza el título en negrita mediante `MessageEntity`, agrega una línea vacía antes de las filas y conserva ambas cosas al paginar. Pasaron 96 pruebas, runtime, `pip check`, `compileall` y `git diff --check`.
 - Cierre del primer deploy: dos auditorías remotas por IAP confirmaron contenedor `running/healthy`, SQLite legible, cero OOM, reinicios estables en 1 y tráfico Telegram `getUpdates`/`sendMessage` HTTP 200. La VM conservaba 433 MB disponibles y 25 GB libres en disco.
 - Validación local posterior: 96 pruebas OK, runtime Python 3.14.6 alineado, `pip check`, `compileall`, `git diff --check` y checkpoint de logs sin novedades.
 - 96 pruebas nativas OK.
