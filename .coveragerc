@@ -1,6 +1,8 @@
 [run]
 branch = True
 source = galerazo_bot
+omit =
+    galerazo_bot/control_panel.py
 
 [report]
 show_missing = True

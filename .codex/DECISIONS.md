@@ -518,4 +518,5 @@ Este archivo es append-only a nivel conceptual: no borrar decisiones anteriores.
 - Fecha: 2026-07-22.
 - Decision: medir `galerazo_bot` con `coverage.py` y branch coverage; exigir al menos 62% de sentencias y 36% de ramas mediante `scripts/check_coverage.py`.
 - CI: `Quality` ejecuta la suite rapida una sola vez bajo cobertura. Docker sigue condicionado a cambios de runtime/contenedor y los workflows costosos permanecen manuales para proteger la cuota de Actions.
+- Alcance: excluir `galerazo_bot/control_panel.py` de la metrica multiplataforma porque su layout Tk solo puede ejecutarse en Windows; mantener sus pruebas nativas y contratos estaticos fuera de ese porcentaje.
 - Limite: coverage.py no expone una metrica separada de funciones; se documentan y controlan las metricas que el stack soporta.

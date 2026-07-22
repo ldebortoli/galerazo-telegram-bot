@@ -138,7 +138,7 @@ La validacion local rapida y la cobertura reproducible se ejecutan dentro de `.v
 .\.venv\Scripts\python.exe -m coverage report
 ```
 
-`coverage.py` mide sentencias/lineas y ramas; este stack no expone una metrica separada de funciones. Los minimos son 62% de sentencias y 36% de ramas. `Quality` ejecuta la suite una sola vez bajo cobertura. La validacion Docker se activa solamente cuando cambia el runtime, el lock o el contenedor, y los workflows de deploy costosos siguen siendo manuales.
+`coverage.py` mide sentencias/lineas y ramas; este stack no expone una metrica separada de funciones. Los minimos son 62% de sentencias y 36% de ramas. `galerazo_bot/control_panel.py` se excluye de la metrica multiplataforma porque su prueba de layout requiere Tk nativo de Windows y se ejecuta localmente; sus demas contratos siguen cubiertos por pruebas estaticas. `Quality` ejecuta la suite una sola vez bajo cobertura. La validacion Docker se activa solamente cuando cambia el runtime, el lock o el contenedor, y los workflows de deploy costosos siguen siendo manuales.
 
 Si aparece un problema despues de fusionar una actualizacion, ubica ese commit y revertirlo conserva el historial:
 
