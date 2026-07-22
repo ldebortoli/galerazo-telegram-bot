@@ -6,13 +6,14 @@ Mantener Galerazo Bot reproducible en Windows, CI y Docker, con SQLite persisten
 
 ## Tarea actual
 
-No hay una implementacion activa. Los `NetworkError` transitorios del polling ya no se anuncian falsamente como errores no handleados; la correccion esta validada y desplegada.
+No hay una implementacion activa. Las correcciones se acumulan localmente/Git y los releases de produccion quedan agrupados hasta que el usuario pida explicitamente publicar o desplegar.
 
 El mecanismo mensual de backups GCE ya tiene un runbook exhaustivo y enlazado desde README/deploy para Galerazobot y futuros bots. El job diario de gasto de Google Cloud quedo implementado y validado; su activacion real sigue bloqueada porque `bot-fleet-production` no tiene dataset ni tabla de exportacion.
 
 ## Estado actual
 
 - Rama `main`, tracking `origin/main`.
+- Politica de release: un fix normal termina en validacion, commit y push. No construir imagen sin necesidad Docker y no publicar Artifact Registry ni desplegar GCE salvo pedido explicito del usuario en la instruccion actual.
 - Python 3.14.6 exacto y lock completo.
 - `Dockerfile` tiene targets `test` y `runtime`; produccion corre como UID/GID 10001, con healthcheck SQLite.
 - `compose.production.yaml` no publica puertos, usa la red del host para salida IPv6 y persiste `/app/data` y `/app/backups` en `/srv/galerazo`.

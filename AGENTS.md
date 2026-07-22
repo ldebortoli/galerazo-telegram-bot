@@ -41,3 +41,10 @@ Before ending every user instruction, run `python -m galerazo_bot.log_checkpoint
 ## Runtime and dependency policy
 
 Use the latest stable CPython and stable dependency releases. Windows development, CI and Docker must use the exact patch version recorded in `.python-version`; run project commands through `.venv`. Before finishing work, run `.venv\Scripts\python.exe scripts\runtime_versions.py` and the test suite. Dependency upgrades must update the complete `requirements.txt` lock and pass both native and Docker tests when Docker is available. If an upgrade causes a regression, revert the runtime/dependency upgrade commit and recreate `.venv` from the restored lock before continuing.
+
+<!-- galerazo-release-policy -->
+## Batched production releases
+
+Ordinary fixes and features must be implemented, validated, committed and pushed without publishing an Artifact Registry image or deploying GCE. Do not infer release authorization from a production bug report, a completed fix, a push to `main` or the existence of deployment credentials.
+
+Build a local Docker image only when the changed surface requires Docker-specific validation. Publish or deploy only when the user explicitly asks for a release or deployment in the current instruction. Batch accumulated corrections into that requested release and then run the full publication, backup, healthcheck and rollback workflow.

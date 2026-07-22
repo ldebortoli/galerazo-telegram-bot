@@ -542,3 +542,10 @@ Este archivo es append-only a nivel conceptual: no borrar decisiones anteriores.
 - `python-telegram-bot` reintenta indefinidamente los `NetworkError` producidos por `getUpdates` y entrega esos fallos al error handler con `update=None`, sin job ni coroutine.
 - Ese caso se registra localmente como warning resumido y no se envia al canal de logging, porque ya esta siendo manejado por el retry loop de PTB.
 - Un `NetworkError` asociado a un update, job o coroutine sigue el flujo normal de error no handleado. `Conflict` mantiene su tratamiento separado y detiene la instancia para evitar dos pollers con el mismo token.
+
+## D-067 - Releases de produccion agrupados y bajo pedido explicito
+
+- Estado: vigente desde 2026-07-22.
+- Las correcciones y funcionalidades ordinarias se implementan, validan, commitean y pushean, pero no publican una imagen en Artifact Registry ni despliegan GCE.
+- Un reporte de bug de produccion no autoriza por si mismo un release. Publicar o desplegar requiere que el usuario lo pida explicitamente en la instruccion actual con expresiones como "hacer un release" o "desplegar".
+- Docker local se usa solo cuando la superficie modificada necesita esa validacion; no implica release. Cuando el usuario autoriza un release, se agrupan todas las correcciones acumuladas y se conserva el flujo completo de backup, healthcheck y rollback.

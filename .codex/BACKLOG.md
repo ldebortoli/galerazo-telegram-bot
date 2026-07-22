@@ -16,6 +16,8 @@
 
 # DONE
 
+- [2026-07-22] Establecer la politica operativa de releases agrupados: correcciones ordinarias se validan, commitean y pushean sin publicar imagen ni desplegar GCE; Docker local solo cuando la superficie lo exige; release/deploy unicamente por pedido explicito del usuario en la instruccion actual. Registrado como instruccion de repositorio, contexto estable y decision D-067.
+
 - [2026-07-22] Clasificar los `NetworkError` transitorios del polling sin update/job/coroutine: PTB los reintenta indefinidamente y ahora quedan como warning local sin falso "Error no handleado" en el canal; errores de updates, jobs, coroutines y `Conflict` conservan su tratamiento. Validacion: 209 pruebas Windows/Linux, 2.759 sentencias y 770 ramas al 100%, Python 3.14.6, lock, compileall, `pip check`, Docker y Quality `29896015712` OK. Publicar/desplegar `galerazobot:73ac112` (`sha256:18b077...86ec`); produccion quedo `running/healthy`, cero reinicios/OOM, SQLite integro y polling HTTP 200.
 
 - [2026-07-22] Corregir `/debug` en produccion tras confirmar en los logs remotos `Timed out`: documentos JSON en memoria, timeout HTTP de 30 segundos y un reintento exclusivo para `TimedOut`, sin temporales. Elevar la cobertura obligatoria del nucleo multiplataforma a 100% de sentencias y ramas con pruebas de comportamiento reales. Validacion: 209 pruebas Windows y Linux, 100,00%/100,00%, Python 3.14.6, lock, compileall, `pip check`, Docker y Quality `29895467400` OK. Publicar y desplegar `galerazobot:f9df2b1` (`sha256:03f5ab...5756`); produccion quedo `running/healthy`, cero reinicios/OOM, SQLite integro y Telegram HTTP 200.
