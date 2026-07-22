@@ -4,12 +4,12 @@ from scripts.check_coverage import coverage_failures
 
 
 class CoveragePolicyTests(unittest.TestCase):
-    def test_accepts_current_thresholds(self) -> None:
+    def test_accepts_only_full_coverage(self) -> None:
         self.assertEqual(
             coverage_failures(
                 {
-                    "percent_statements_covered": 62.0,
-                    "percent_branches_covered": 36.0,
+                    "percent_statements_covered": 100.0,
+                    "percent_branches_covered": 100.0,
                 }
             ),
             [],
@@ -18,8 +18,8 @@ class CoveragePolicyTests(unittest.TestCase):
     def test_reports_each_regressed_metric(self) -> None:
         failures = coverage_failures(
             {
-                "percent_statements_covered": 61.99,
-                "percent_branches_covered": 35.99,
+                "percent_statements_covered": 99.99,
+                "percent_branches_covered": 99.99,
             }
         )
 

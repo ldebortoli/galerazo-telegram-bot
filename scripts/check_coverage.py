@@ -5,8 +5,8 @@ import json
 from pathlib import Path
 
 
-MINIMUM_STATEMENT_PERCENT = 62.0
-MINIMUM_BRANCH_PERCENT = 36.0
+MINIMUM_STATEMENT_PERCENT = 100.0
+MINIMUM_BRANCH_PERCENT = 100.0
 
 
 def coverage_failures(totals: dict[str, object]) -> list[str]:

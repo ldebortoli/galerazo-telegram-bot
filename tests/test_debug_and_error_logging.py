@@ -1,11 +1,10 @@
 import json
-import tempfile
 import unittest
-from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from telegram import Update
+from telegram.error import BadRequest, TimedOut
 
 from galerazo_bot.telegram_bot import _send_debug_update, _send_unhandled_error_event, _serialize_update
 
@@ -50,27 +49,54 @@ class DebugSerializationTests(unittest.IsolatedAsyncioTestCase):
             reply_document=AsyncMock(),
         )
         db = MagicMock()
-        with tempfile.TemporaryDirectory() as directory:
-            real_path = Path
-            with (
-                patch(
-                    "galerazo_bot.telegram_bot._serialize_update",
-                    return_value='{"data":"' + ("x" * 5000) + '"}',
-                ),
-                patch(
-                    "galerazo_bot.telegram_bot.Path",
-                    side_effect=lambda value: real_path(directory) / value,
-                ),
-            ):
-                sent = await _send_debug_update(db, message, Update(update_id=91))
+        debug_json = '{"data":"' + ("x" * 5000) + '"}'
+        with patch("galerazo_bot.telegram_bot._serialize_update", return_value=debug_json):
+            sent = await _send_debug_update(db, message, Update(update_id=91))
 
-            document = message.reply_document.await_args.kwargs["document"]
-            self.assertEqual(document.name, "Debug de la update 91")
-            self.assertNotIn("caption", message.reply_document.await_args.kwargs)
-            self.assertTrue(document.exists())
+        arguments = message.reply_document.await_args.kwargs
+        self.assertEqual(arguments["document"].getvalue(), debug_json.encode("utf-8"))
+        self.assertEqual(arguments["filename"], "Debug de la update 91")
+        self.assertNotIn("caption", arguments)
+        self.assertEqual(arguments["read_timeout"], 30)
+        self.assertEqual(arguments["write_timeout"], 30)
+        self.assertEqual(arguments["connect_timeout"], 30)
+        self.assertEqual(arguments["pool_timeout"], 30)
 
         self.assertTrue(sent)
         message.reply_text.assert_not_awaited()
+
+    async def test_large_debug_retries_one_timeout(self) -> None:
+        message = SimpleNamespace(
+            reply_text=AsyncMock(),
+            reply_document=AsyncMock(side_effect=[TimedOut(), None]),
+        )
+        with patch("galerazo_bot.telegram_bot._serialize_update", return_value="x" * 5000):
+            sent = await _send_debug_update(MagicMock(), message, Update(update_id=92))
+
+        self.assertTrue(sent)
+        self.assertEqual(message.reply_document.await_count, 2)
+
+    async def test_large_debug_returns_false_after_second_timeout(self) -> None:
+        message = SimpleNamespace(
+            reply_text=AsyncMock(),
+            reply_document=AsyncMock(side_effect=TimedOut()),
+        )
+        with patch("galerazo_bot.telegram_bot._serialize_update", return_value="x" * 5000):
+            sent = await _send_debug_update(MagicMock(), message, Update(update_id=93))
+
+        self.assertFalse(sent)
+        self.assertEqual(message.reply_document.await_count, 2)
+
+    async def test_small_debug_returns_false_on_telegram_error(self) -> None:
+        message = SimpleNamespace(
+            reply_text=AsyncMock(side_effect=BadRequest("rejected")),
+            reply_document=AsyncMock(),
+        )
+
+        sent = await _send_debug_update(MagicMock(), message, Update(update_id=94))
+
+        self.assertFalse(sent)
+        message.reply_document.assert_not_awaited()
 
     async def test_unhandled_error_log_includes_update_json(self) -> None:
         bot = FakeBot()

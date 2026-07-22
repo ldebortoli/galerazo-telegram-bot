@@ -6,11 +6,12 @@ import logging
 import traceback
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
+from io import BytesIO
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
 from telegram import Bot, Chat, ChatMember, Message, MessageEntity, Update, User
-from telegram.error import BadRequest, Conflict, Forbidden, TelegramError
+from telegram.error import BadRequest, Conflict, Forbidden, TelegramError, TimedOut
 from telegram.ext import (
     Application,
     ApplicationBuilder,
@@ -67,6 +68,7 @@ logger = logging.getLogger(__name__)
 TELEGRAM_DOCUMENT_UPLOAD_LIMIT_BYTES = 50 * 1024 * 1024
 TELEGRAM_FILE_DOWNLOAD_LIMIT_BYTES = 20 * 1024 * 1024
 TELEGRAM_MESSAGE_LIMIT_CHARS = 4096
+TELEGRAM_DOCUMENT_TIMEOUT_SECONDS = 30
 PAGINATED_METADATA_TTL = timedelta(days=14)
 ARGENTINA_TIMEZONE = ZoneInfo("America/Argentina/Buenos_Aires")
 POLLING_OPTIONS = {
@@ -1237,7 +1239,7 @@ async def _cleanup_old_paginated_messages(db: Database, bot: Bot) -> None:
 
 
 def _paginated_metadata_cutoff() -> str:
-    return (datetime.utcnow() - PAGINATED_METADATA_TTL).strftime("%Y-%m-%d %H:%M:%S")
+    return (datetime.now(timezone.utc) - PAGINATED_METADATA_TTL).strftime("%Y-%m-%d %H:%M:%S")
 
 
 def _is_paginated_state_expired(created_at: str) -> bool:
@@ -1247,7 +1249,9 @@ def _is_paginated_state_expired(created_at: str) -> bool:
         logger.warning("Fecha invalida en metadata de botonera: %s", created_at)
         return False
 
-    return datetime.utcnow() - created > PAGINATED_METADATA_TTL
+    if created.tzinfo is None:
+        created = created.replace(tzinfo=timezone.utc)
+    return datetime.now(timezone.utc) - created > PAGINATED_METADATA_TTL
 
 
 async def _edit_paginated_message(
@@ -1537,16 +1541,27 @@ async def _send_debug_update(
             )
             return True
 
-        debug_dir = Path("debug")
-        debug_dir.mkdir(parents=True, exist_ok=True)
         update_id = update.update_id if isinstance(update, Update) else None
         update_label = str(update_id) if update_id is not None else "sin id"
-        debug_path = debug_dir / f"Debug de la update {update_label}"
-        debug_path.write_text(debug_json, encoding="utf-8")
-        await message.reply_document(
-            document=debug_path,
-            do_quote=True,
-        )
+        filename = f"Debug de la update {update_label}"
+        payload = debug_json.encode("utf-8")
+
+        async def send_document() -> None:
+            await message.reply_document(
+                document=BytesIO(payload),
+                filename=filename,
+                do_quote=True,
+                read_timeout=TELEGRAM_DOCUMENT_TIMEOUT_SECONDS,
+                write_timeout=TELEGRAM_DOCUMENT_TIMEOUT_SECONDS,
+                connect_timeout=TELEGRAM_DOCUMENT_TIMEOUT_SECONDS,
+                pool_timeout=TELEGRAM_DOCUMENT_TIMEOUT_SECONDS,
+            )
+
+        try:
+            await send_document()
+        except TimedOut:
+            logger.warning("Timeout al enviar update de debug; reintentando una vez.")
+            await send_document()
         return True
     except (TelegramError, OSError) as exc:
         logger.warning("No pude enviar update de debug: %s", exc)

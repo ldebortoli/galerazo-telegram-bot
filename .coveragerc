@@ -6,6 +6,8 @@ omit =
 
 [report]
 show_missing = True
+fail_under = 100
+precision = 2
 
 [json]
 output = coverage-report.json

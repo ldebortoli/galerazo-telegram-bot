@@ -4,11 +4,7 @@ import os
 from dataclasses import dataclass
 from pathlib import Path
 
-try:
-    from dotenv import load_dotenv
-except ModuleNotFoundError:
-    def load_dotenv() -> None:
-        return None
+from dotenv import load_dotenv
 
 
 @dataclass(frozen=True)

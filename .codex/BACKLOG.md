@@ -12,6 +12,8 @@
 
 # IN PROGRESS
 
+- [2026-07-22] Corregir `/debug` en produccion tras el timeout al enviar updates grandes y elevar la cobertura exigida a 100% de sentencias y ramas con pruebas de comportamiento reales.
+
 # DONE
 
 - [2026-07-22] Documentar exhaustivamente el mecanismo mensual de backups GCE: runbook completo con arquitectura, recursos, secuencia de ejecución, programación, retención, costos, seguridad y límite real del aislamiento, parámetros, alta para Galerazobot y otros bots, contrato para Bot Control Center, operación, verificación, restauración, pausa/retiro, troubleshooting y criterio de éxito. Enlazarlo desde README/deploy y proteger sus secciones críticas con una prueba. Validación: 5 pruebas específicas y 126 pruebas completas OK, runtime, dependencias, compileall y diff-check OK.

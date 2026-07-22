@@ -143,7 +143,7 @@ python -m galerazo_bot.log_checkpoint
 git diff --check
 ```
 
-La suite automatizada usa `unittest` y cubre enrutamiento, permisos, config, Galeraza, ruleta, triggers, migraciones con colisiones, paginacion, serializacion de debug, logging, panel e instancia unica. La cobertura de Galeraza audita las 46 categorias actuales de `filters.StatusUpdate` y falla si PTB agrega una nueva sin mapear.
+La suite automatizada usa `unittest` y cubre enrutamiento, permisos, config, Galeraza, ruleta, triggers, migraciones con colisiones, paginacion, serializacion de debug, logging, panel e instancia unica. La cobertura obligatoria del nucleo multiplataforma es 100% de sentencias y ramas; `galerazo_bot/control_panel.py` queda explicitamente fuera de esa metrica por depender del layout Tk nativo de Windows, donde mantiene su prueba especifica. La cobertura de Galeraza audita las 46 categorias actuales de `filters.StatusUpdate` y falla si PTB agrega una nueva sin mapear.
 
 El panel usa un cliente inicial de `760x750`, minimo `680x730`; la pestaña Configuracion desplaza solamente el formulario y mantiene visibles las acciones y el estado del canal de logging.
 

@@ -521,3 +521,17 @@ Este archivo es append-only a nivel conceptual: no borrar decisiones anteriores.
 - CI: `Quality` ejecuta la suite rapida una sola vez bajo cobertura. Docker sigue condicionado a cambios de runtime/contenedor y los workflows costosos permanecen manuales para proteger la cuota de Actions.
 - Alcance: excluir `galerazo_bot/control_panel.py` de la metrica multiplataforma porque su layout Tk solo puede ejecutarse en Windows; mantener sus pruebas nativas y contratos estaticos fuera de ese porcentaje.
 - Limite: coverage.py no expone una metrica separada de funciones; se documentan y controlan las metricas que el stack soporta.
+
+## D-064 - Cobertura obligatoria del nucleo al 100%
+
+- Estado: vigente desde 2026-07-22; reemplaza los umbrales numericos de D-063.
+- La validacion local y `Quality` exigen 100% de sentencias y 100% de ramas para todo el nucleo multiplataforma incluido por `.coveragerc`; cualquier regresion falla.
+- `galerazo_bot/control_panel.py` permanece fuera de esa metrica multiplataforma porque su layout Tk depende del runtime grafico nativo de Windows. El panel conserva su prueba de layout en Windows y contratos estaticos en la suite comun; esta exclusion debe seguir siendo explicita.
+- Las pruebas agregadas para sostener el porcentaje deben validar comportamiento, errores y guardas reales. No se permiten ramas artificiales de produccion ni aserciones vacias para inflar la metrica.
+
+## D-065 - Documentos de debug en memoria con timeout y reintento acotados
+
+- Estado: vigente desde 2026-07-22.
+- Los updates de debug que no entran en un mensaje se serializan a `BytesIO`; no se crean archivos temporales ni se depende de escritura local en el contenedor.
+- La subida del documento usa 30 segundos para los timeouts HTTP de PTB y reintenta una sola vez exclusivamente ante `telegram.error.TimedOut`.
+- Otros errores de Telegram, o un segundo timeout, conservan la respuesta localizada de fallo y se registran sin exponer el contenido del update.

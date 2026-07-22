@@ -4,10 +4,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable
 
-try:
-    import gspread
-except ModuleNotFoundError:
-    gspread = None
+import gspread
 
 
 EXPENSE_HEADERS = (
