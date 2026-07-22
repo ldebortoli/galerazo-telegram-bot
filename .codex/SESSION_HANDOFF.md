@@ -6,7 +6,7 @@ Mantener Galerazo Bot reproducible en Windows, CI y Docker, con SQLite persisten
 
 ## Tarea actual
 
-El job diario de gasto de Google Cloud quedo implementado y validado. La activacion real esta bloqueada: `bot-fleet-production` tiene BigQuery API habilitada, pero no tiene datasets ni tabla de exportacion. Crear el dataset requiere confirmar el recurso potencialmente facturable y habilitar manualmente `Costo de uso estandar` en Cloud Billing. El trabajo paralelo de backups GCE tambien quedo completado, validado y documentado.
+El mecanismo mensual de backups GCE ya tiene un runbook exhaustivo y enlazado desde README/deploy para Galerazobot y futuros bots. El job diario de gasto de Google Cloud quedo implementado y validado; su activacion real sigue bloqueada porque `bot-fleet-production` no tiene dataset ni tabla de exportacion.
 
 ## Estado actual
 
@@ -46,6 +46,7 @@ El job diario de gasto de Google Cloud quedo implementado y validado. La activac
 
 ## Validacion reciente
 
+- `docs/BACKUPS_GCE.md` quedó convertido en un runbook reproducible y su contrato documental quedó cubierto por prueba. Incluye arquitectura, costos, seguridad y aislamiento real, alta multibot, estado para Bot Control Center, restauración, pausa/retiro, troubleshooting y verificaciones periódicas. Pasaron 5 pruebas específicas y 126 pruebas completas, runtime, `pip check`, compileall y `git diff --check`.
 - Backups mensuales activos: bucket privado `bot-fleet-production-sqlite-backups` en `us-central1`, retención 400 días, PAP y acceso uniforme; `galerazo-vm` sólo puede crear objetos. Timer enabled/active, próxima ejecución 2026-08-01 con demora aleatoria. Primera copia 180224 bytes descargada nuevamente: SHA-256 e `integrity_check` OK; bot remoto continuó `running/healthy`. Suite completa: 122 pruebas, runtime, pip, compileall, PowerShell/Bash y diff-check OK.
 - Billing: 13 pruebas especificas validan timezone argentino, `invoice.month`, SQL parametrizado, costo bruto/creditos/neto, limite de 100 MiB, errores, destino de logging, default desactivado y `JobQueue`. La suite completa del worktree actual paso con 122 pruebas nativas, 62,72% de sentencias y 37,60% de ramas sobre el alcance multiplataforma; el panel Tk queda en sus pruebas Windows. Docker Linux/amd64 paso 121 pruebas (una Tk omitida), runtime Python 3.14.6 y smoke real de JobQueue/BigQuery. La imagen runtime local mide aproximadamente 110 MB y el import completo uso cerca de 99 MiB RSS.
 - La configuracion de Billing se propaga por `.env`, el panel desplazable, bootstrap GCE, carga/parche/inspector remoto y documentacion. `Initialize-GceBillingReport.ps1` prepara dataset y permisos minimos solo con `-AcknowledgeBillableResource`; no se ejecuto contra GCP.
