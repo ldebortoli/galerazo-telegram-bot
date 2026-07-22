@@ -13,6 +13,8 @@
 
 # DONE
 
+- [2026-07-22] Implementar el contrato remoto versionado consumido por Bot Control Center para estado operativo, triggers y multimedia reales, moderación con aviso al chat y detención segura del contenedor. `status` informa VM/contenedor, health, reinicios, imagen, recursos, SQLite, Telegram y logs/errores; `stop` usa `docker compose stop bot` sin borrar datos. Validación: 119 pruebas OK y lecturas reales por IAP confirmaron VM `running`, contenedor `running/healthy`, un reinicio total, cero recientes, Telegram conectado y seis triggers (cuatro con multimedia y dos de texto); no se ejecutaron mutaciones en producción.
+
 - [2026-07-22] Formatear `/galerazas` con `Tabla de Galerazas` en negrita mediante una entidad nativa de Telegram y una línea vacía antes del ranking, preservando el formato al paginar. Validación: 96 pruebas, runtime, dependencias, compileall y diff-check OK.
 - [2026-07-22] Completar el primer deploy saludable de `galerazobot:db278a097b62`: desplegar el Compose con `network_mode: host`, comprobar `/lil`, polling y envíos Telegram con HTTP 200, contenedor `running/healthy`, SQLite legible e intacto, cero OOM y política `unless-stopped`. Tras un reinicio inicial, una segunda auditoría confirmó estabilidad sin reinicios nuevos.
 - [2026-07-21] Diagnosticar el primer deploy fallido: el runtime omitía `.python-version` y fallaba antes de Telegram. Detener el contenedor en bucle, copiar el archivo al runtime, agregar smoke tests locales/CI, publicar `galerazobot:db278a097b62` (`sha256:115a350c...b7cf7`) y validar esa imagen en la VM contra SQLite real sin iniciar el bot. Corregir además el primer-fallo sin rollback para detener el contenedor automáticamente.

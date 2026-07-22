@@ -319,6 +319,39 @@ se limpia en ambos extremos y nunca aparece en argumentos, respuesta o logs.
 La edicion no reinicia el bot: los cambios se toman en el proximo deploy o
 reinicio. Deploy y credenciales siguen siendo acciones separadas y auditables.
 
+Bot Control Center también usa `Invoke-GceBotctl.ps1` para copiar y ejecutar de
+forma temporal `deploy/gce/botctl.py`. El contrato devuelve JSON para estado de
+VM/contenedor, healthcheck, reinicios, imagen, recursos, Telegram, logs y
+triggers reales. La multimedia se descarga desde Telegram a un temporal privado
+sin devolver el token. La moderacion vuelve a resolver trigger, autor y chat en
+SQLite, puede bloquear globalmente al usuario en el bot y envia una advertencia
+al chat; informa resultados parciales si el aviso falla.
+
+Para una inspeccion manual sin cambiar produccion:
+
+```powershell
+.\scripts\deploy\Invoke-GceBotctl.ps1 `
+  -ProjectId TU_PROYECTO `
+  -Zone us-central1-a `
+  -Instance galerazo-prod `
+  -Action status
+```
+
+Si el contenedor entra en un bucle, el panel ofrece una detencion confirmada que
+equivale a:
+
+```powershell
+.\scripts\deploy\Invoke-GceBotctl.ps1 `
+  -ProjectId TU_PROYECTO `
+  -Zone us-central1-a `
+  -Instance galerazo-prod `
+  -Action stop `
+  -AcknowledgeStop
+```
+
+`stop` usa `docker compose stop bot`: no ejecuta `down`, no borra SQLite,
+secretos, imagenes ni configuracion y deja el destino listo para otro deploy.
+
 ## 5A. Construir y publicar desde la PC — recomendado
 
 Construir la imagen y ejecutar las pruebas dentro del target Docker:

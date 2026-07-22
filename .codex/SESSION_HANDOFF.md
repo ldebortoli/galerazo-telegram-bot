@@ -46,6 +46,8 @@ El primer deploy de producción de `galerazobot:db278a097b62` quedó completado.
 ## Validacion reciente
 
 - `/galerazas` renderiza el título en negrita mediante `MessageEntity`, agrega una línea vacía antes de las filas y conserva ambas cosas al paginar. Pasaron 96 pruebas, runtime, `pip check`, `compileall` y `git diff --check`.
+- Contrato de Bot Control Center completado: `deploy/gce/botctl.py` y `Invoke-GceBotctl.ps1` exponen acciones fijas para estado, triggers, multimedia, moderación y detención segura. La lectura real por IAP confirmó VM `running`, contenedor `running/healthy`, un reinicio total, cero reinicios recientes, Telegram conectado y seis triggers (cuatro con multimedia y dos de texto). No se ejecutaron mutaciones de producción.
+
 - Cierre del primer deploy: dos auditorías remotas por IAP confirmaron contenedor `running/healthy`, SQLite legible, cero OOM, reinicios estables en 1 y tráfico Telegram `getUpdates`/`sendMessage` HTTP 200. La VM conservaba 433 MB disponibles y 25 GB libres en disco.
 - Validación local posterior: 96 pruebas OK, runtime Python 3.14.6 alineado, `pip check`, `compileall`, `git diff --check` y checkpoint de logs sin novedades.
 - 96 pruebas nativas OK.

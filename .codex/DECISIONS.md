@@ -486,3 +486,10 @@ Este archivo es append-only a nivel conceptual: no borrar decisiones anteriores.
 - Decision: ejecutar Galerazobot con `network_mode: host` en `galerazo-prod` para reutilizar la salida IPv6 de la VM.
 - Motivo: la VM no tiene IPv4 publica ni Cloud NAT; el bridge Docker sólo entregaba IPv4 al contenedor y `getMe` contra Telegram terminaba por timeout. La misma imagen con red de host resolvió IPv6 y obtuvo HTTP 200 de `api.telegram.org`.
 - Seguridad: el bot no escucha puertos, Compose no publica ninguno, las capacidades siguen eliminadas, el filesystem permanece read-only y el firewall de GCE conserva únicamente la entrada administrativa por IAP.
+
+## D-060 - Contrato efímero y enumerado para Bot Control Center
+
+- Estado: vigente.
+- Fecha: 2026-07-22.
+- Decisión: `Invoke-GceBotctl.ps1` copia temporalmente por IAP un `deploy/gce/botctl.py` versionado, ejecuta sólo `status`, `triggers`, `media`, `moderate` o `stop` con argumentos validados y elimina el temporal. Las lecturas usan el SQLite real en modo lectura y Telegram bajo demanda; nunca devuelven el token. La moderación vuelve a resolver trigger, autor y chat antes de escribir y comunica resultados parciales. `stop` equivale únicamente a `docker compose stop bot`, sin `down` ni eliminación de base, imagen, secretos o configuración.
+- Motivo: dar visibilidad y una contención segura ante bucles de reinicio sin instalar un daemon, abrir puertos administrativos ni aceptar comandos remotos libres.
