@@ -501,6 +501,7 @@ Este archivo es append-only a nivel conceptual: no borrar decisiones anteriores.
 - Decisión: crear un bucket privado regional compartido por proyecto y aislar cada bot bajo `bots/<bot-id>/`; cada VM genera una copia consistente con `sqlite3.Connection.backup`, valida `PRAGMA integrity_check`, adjunta SHA-256 y la sube una vez por mes mediante un timer systemd persistente.
 - Retención: conservar copias locales y remotas 400 días. Cloud Storage usa acceso uniforme, prevención de acceso público, soft delete de siete días y nombres inmutables; la identidad de runtime recibe sólo `roles/storage.objectCreator` sobre el bucket.
 - Reutilización: `Enable-GceSqliteBackups.ps1` parametriza proyecto, VM, service account, bot, rutas y UID; el mismo bucket sirve a futuros bots sin copiar bases entre prefijos. La restauración permanece manual y confirmada mediante el flujo existente de `MigrateData`.
+- Límite de aislamiento: el prefijo por bot es una separación lógica, no IAM, porque `storage.objectCreator` se concede sobre el bucket compartido. Se acepta para bots personales bajo el mismo dueño; clientes o dominios no confiables deben usar bucket o proyecto separado.
 - Motivo: separar el backup de la VM sin introducir snapshots completos ni frecuencia/costo innecesarios mientras los datos no sean críticos.
 
 ## D-062 - Reporte diario de gasto mediante Cloud Billing exportado a BigQuery

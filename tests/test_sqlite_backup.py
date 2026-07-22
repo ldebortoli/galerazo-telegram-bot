@@ -153,6 +153,26 @@ class SqliteBackupAutomationTests(unittest.TestCase):
         self.assertEqual(lifecycle["rule"][0]["condition"]["age"], 400)
         self.assertEqual(lifecycle["rule"][0]["condition"]["matchesPrefix"], ["bots/"])
 
+    def test_runbook_covers_operations_recovery_and_fleet_reuse(self) -> None:
+        guide = (PROJECT_ROOT / "docs" / "BACKUPS_GCE.md").read_text(encoding="utf-8")
+        readme = (PROJECT_ROOT / "README.md").read_text(encoding="utf-8")
+        deploy_guide = (PROJECT_ROOT / "docs" / "DEPLOY_GCE.md").read_text(encoding="utf-8")
+
+        for required_section in (
+            "## Modelo de seguridad",
+            "### Límite del aislamiento en un bucket compartido",
+            "## Costos y capacidad",
+            "## Reutilizarlo con otro bot",
+            "## Restaurar una copia",
+            "## Pausar, reactivar o retirar un bot",
+            "## Diagnóstico de fallos",
+            "## Criterio de éxito para un bot nuevo",
+        ):
+            self.assertIn(required_section, guide)
+        self.assertIn("last-backup-<bot-id>.json", guide)
+        self.assertIn("docs/BACKUPS_GCE.md", readme)
+        self.assertIn("BACKUPS_GCE.md", deploy_guide)
+
 
 if __name__ == "__main__":
     unittest.main()

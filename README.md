@@ -686,6 +686,11 @@ La preparacion completa de Google Cloud, los comandos locales, la publicacion
 manual desde GitHub, el primer deploy y el rollback estan en
 [`docs/DEPLOY_GCE.md`](docs/DEPLOY_GCE.md).
 
+La base de producción también tiene backups externos mensuales, consistentes e
+independientes de Docker, con retención de 400 días en Cloud Storage. El diseño,
+costos, seguridad, operación, restauración y procedimiento reutilizable para
+otros bots están en [`docs/BACKUPS_GCE.md`](docs/BACKUPS_GCE.md).
+
 Railway permanece como alternativa y su workflow historico sigue desactivado;
 no forma parte del camino recomendado actual.
 

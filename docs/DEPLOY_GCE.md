@@ -118,6 +118,27 @@ bot local este apagado, que los secretos/base remotos existan y que la imagen
 tenga un tag inmutable distinto de `latest`. Esto permite que Bot Control
 Center invoque estas acciones mas adelante sin duplicar la logica de deploy.
 
+### Backups externos posteriores al primer deploy
+
+Después de que la SQLite remota exista, se habilita una sola vez el timer
+mensual de backups externos. Este paso no forma parte de cada release y no se
+debe repetir salvo que cambien las rutas, el UID o la infraestructura:
+
+```powershell
+.\scripts\deploy\Enable-GceSqliteBackups.ps1 `
+  -ProjectId bot-fleet-production `
+  -Zone us-central1-a `
+  -Instance galerazo-prod `
+  -ServiceAccountName galerazo-vm `
+  -BotId galerazobot `
+  -AcknowledgePotentialStorageCost
+```
+
+El runbook completo —incluyendo arquitectura, retención, seguridad, costos,
+estado para Bot Control Center, alta de otros bots, restauración y diagnóstico—
+está en [`BACKUPS_GCE.md`](BACKUPS_GCE.md). Un deploy normal conserva tanto la
+SQLite remota como sus copias locales y externas.
+
 ## Costos y minutos de CI
 
 La imagen no necesita generarse en GitHub. El camino local usa Docker Desktop y
