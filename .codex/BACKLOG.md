@@ -12,9 +12,11 @@
 
 # IN PROGRESS
 
-- [2026-07-22] Corregir `/debug` en produccion tras el timeout al enviar updates grandes y elevar la cobertura exigida a 100% de sentencias y ramas con pruebas de comportamiento reales.
+- Sin tareas activas.
 
 # DONE
+
+- [2026-07-22] Corregir `/debug` en produccion tras confirmar en los logs remotos `Timed out`: documentos JSON en memoria, timeout HTTP de 30 segundos y un reintento exclusivo para `TimedOut`, sin temporales. Elevar la cobertura obligatoria del nucleo multiplataforma a 100% de sentencias y ramas con pruebas de comportamiento reales. Validacion: 209 pruebas Windows y Linux, 100,00%/100,00%, Python 3.14.6, lock, compileall, `pip check`, Docker y Quality `29895467400` OK. Publicar y desplegar `galerazobot:f9df2b1` (`sha256:03f5ab...5756`); produccion quedo `running/healthy`, cero reinicios/OOM, SQLite integro y Telegram HTTP 200.
 
 - [2026-07-22] Documentar exhaustivamente el mecanismo mensual de backups GCE: runbook completo con arquitectura, recursos, secuencia de ejecución, programación, retención, costos, seguridad y límite real del aislamiento, parámetros, alta para Galerazobot y otros bots, contrato para Bot Control Center, operación, verificación, restauración, pausa/retiro, troubleshooting y criterio de éxito. Enlazarlo desde README/deploy y proteger sus secciones críticas con una prueba. Validación: 5 pruebas específicas y 126 pruebas completas OK, runtime, dependencias, compileall y diff-check OK.
 
