@@ -368,6 +368,11 @@ por accidente.
 
 ## 6. Primer deploy y actualizaciones
 
+La VM no tiene IPv4 publica ni Cloud NAT. El contenedor usa `network_mode: host`
+para reutilizar la salida IPv6 de la VM hacia Telegram. Galerazobot no escucha
+puertos y las reglas de firewall de GCE siguen aplicandose al host; no publiques
+puertos en Compose.
+
 Tomar la imagen mostrada por el publicador local o GitHub:
 
 ```powershell

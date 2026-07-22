@@ -5,6 +5,7 @@ services:
     image: ${GALERAZO_IMAGE:?Set GALERAZO_IMAGE in deploy/gce/image.env}
     restart: unless-stopped
     init: true
+    network_mode: host
     env_file:
       - /etc/galerazo/bot.env
     environment:

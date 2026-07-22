@@ -478,3 +478,11 @@ Este archivo es append-only a nivel conceptual: no borrar decisiones anteriores.
 - Fecha: 2026-07-21.
 - Decision: si un deploy falla y existe una imagen anterior saludable, restaurarla; si es el primer deploy y no existe una imagen anterior, detener explícitamente el contenedor fallido.
 - Motivo: evitar que `restart: unless-stopped` mantenga un bucle de reinicios y distinguir claramente en la salida si hubo rollback o sólo contención del fallo.
+
+## D-059 - Red de host para salida IPv6 del contenedor
+
+- Estado: vigente.
+- Fecha: 2026-07-22.
+- Decision: ejecutar Galerazobot con `network_mode: host` en `galerazo-prod` para reutilizar la salida IPv6 de la VM.
+- Motivo: la VM no tiene IPv4 publica ni Cloud NAT; el bridge Docker sólo entregaba IPv4 al contenedor y `getMe` contra Telegram terminaba por timeout. La misma imagen con red de host resolvió IPv6 y obtuvo HTTP 200 de `api.telegram.org`.
+- Seguridad: el bot no escucha puertos, Compose no publica ninguno, las capacidades siguen eliminadas, el filesystem permanece read-only y el firewall de GCE conserva únicamente la entrada administrativa por IAP.

@@ -11,7 +11,7 @@
 
 # IN PROGRESS
 
-- [P0] Completar el primer deploy GCE con la imagen corregida `galerazobot:db278a097b62`; esperar el reintento confirmado por el usuario desde `Deployar última imagen` y luego validar healthcheck, logs, reinicio y comandos de Telegram.
+- [P0] Corregir el primer deploy GCE de `galerazobot:db278a097b62`: el runtime ya arranca, pero el bridge Docker sólo ofrece IPv4 y la VM sin IPv4 pública no alcanza Telegram; detener el bucle, validar salida segura mediante la red IPv6 del host, desplegar la corrección y comprobar `/lil`, healthcheck y reinicio.
 
 # DONE
 

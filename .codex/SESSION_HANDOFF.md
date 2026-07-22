@@ -6,7 +6,7 @@ Mantener Galerazo Bot reproducible en Windows, CI y Docker, con SQLite persisten
 
 ## Tarea actual
 
-El primer deploy fue intentado desde Bot Control Center con el flujo completo y falló porque `galerazobot:d8ae2ecc00f5` omitía `/app/.python-version`. El contenedor fallido está detenido y base/configuración permanecen intactas. La corrección quedó publicada como `galerazobot:db278a097b62`, pasó smoke local y remoto contra SQLite real sin iniciar Telegram. Falta que el usuario reintente exclusivamente `Deployar última imagen` y luego completar la validación final.
+El usuario desplegó `galerazobot:db278a097b62`, pero `/lil` no respondió. El contenedor acumuló 3081 reinicios por `telegram.error.TimedOut` durante `getMe`: el bridge Docker sólo entregaba IPv4 y la VM no tiene IPv4 pública/NAT. El contenedor está detenido; la misma imagen con red de host resolvió IPv6 y obtuvo HTTP 200 de Telegram. `network_mode: host` está implementado y pendiente de validación/deploy; bot local apagado y datos/configuración intactos.
 
 ## Estado actual
 
@@ -59,11 +59,13 @@ El primer deploy fue intentado desde Bot Control Center con el flujo completo y 
 - Antes del paso 11, el chequeo canónico del panel devolvió `BOT_APAGADO`; no había procesos Python con `app.py`, `data/bot.pid` ni contenedores Docker locales de Galerazobot. Este estado debe volver a comprobarse justo antes de desplegar porque es temporal.
 - El primer intento publicó `d8ae2ecc00f5`, pero el runtime falló con `FileNotFoundError: /app/.python-version`. Se detuvo el reinicio continuo sin OOM; SQLite conservó 176128 bytes/mode 0600 y `bot.env` siguió root/0600.
 - `db278a097b62` está publicado con digest `sha256:115a350c...b7cf7`; ejecutó 96 pruebas Docker, smoke de versión y healthcheck remoto sobre la base real como UID 10001. No inició Telegram durante esas comprobaciones.
+- La inspección posterior encontró `db278a097b62` con 3081 reinicios y `telegram.error.TimedOut` durante `getMe`. La VM resolvió/alcanzó Telegram por IPv6; el bridge `galerazo_default` era `ipv6=false` y sólo resolvía `149.154.166.110`. La misma imagen con `--network host` resolvió también `2001:67c:4e8:f004::9` y obtuvo HTTP 200.
+- El contenedor fallido está detenido (`Exited 143`). El Compose candidato con `network_mode: host` pasó `docker compose config --quiet` en la VM; 96 pruebas nativas, runtime, pip, compileall y `git diff --check` pasaron localmente.
 - Quality `29779348254` y Docker Quality `29779348273` pasaron sobre `9ac8cc4`; Docker construyo el target de pruebas, ejecuto 89 tests y construyo el target runtime.
 
 ## Proximo paso exacto
 
-En Bot Control Center, pulsar `Verificar`, confirmar que `Última imagen` termina en `db278a097b62` y usar exclusivamente `Deployar última imagen`. Después validar por IAP que el contenedor quede healthy, revisar logs, comprobar la política de reinicio y probar comandos básicos sin ejecutar el mismo token en local.
+Guardar/publicar el cambio de Compose y, desde Bot Control Center, usar exclusivamente `Deployar última imagen` con `db278a097b62`; no hace falta publicar otra imagen. Después validar por IAP que el contenedor quede healthy y sin reinicios, revisar logs, comprobar la política de reinicio y pedir al usuario probar `/lil` sin ejecutar el mismo token en local.
 
 ## Riesgos y bloqueos
 

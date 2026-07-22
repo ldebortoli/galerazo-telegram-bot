@@ -72,6 +72,7 @@ class ContainerRuntimeTests(unittest.TestCase):
         self.assertIn("/srv/galerazo/backups", compose)
         self.assertIn("/etc/galerazo/bot.env", compose)
         self.assertIn("restart: unless-stopped", compose)
+        self.assertIn("network_mode: host", compose)
         self.assertIn("read_only: true", compose)
         self.assertIn("no-new-privileges:true", compose)
         self.assertNotIn("ports:", compose)
