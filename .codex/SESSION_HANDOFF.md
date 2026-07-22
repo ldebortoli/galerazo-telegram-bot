@@ -8,6 +8,8 @@ Mantener Galerazo Bot reproducible en Windows, CI y Docker, con SQLite persisten
 
 Tambien se investiga `/debug` en produccion y se eleva la cobertura obligatoria a 100% de sentencias y ramas. El log remoto del intento mostrado por el usuario confirma `No pude enviar update de debug: Timed out`: el update grande tomo la ruta de documento y agoto el timeout HTTP predeterminado de cinco segundos.
 
+La primera ejecucion de `Quality` con umbral 100% revelo que Ubuntu no ejercitaba cuatro rutas del mutex nativo de Windows en `instance_lock.py`; el workflow ahora imprime el detalle antes de aplicar el umbral y se estan completando esos mocks multiplataforma sin excluir el modulo.
+
 El mecanismo mensual de backups GCE ya tiene un runbook exhaustivo y enlazado desde README/deploy para Galerazobot y futuros bots. El job diario de gasto de Google Cloud quedo implementado y validado; su activacion real sigue bloqueada porque `bot-fleet-production` no tiene dataset ni tabla de exportacion.
 
 ## Estado actual

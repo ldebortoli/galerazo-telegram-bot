@@ -71,6 +71,15 @@ class InstanceLockCompleteTests(unittest.TestCase):
             instance.release()
         acquire.assert_called_once()
         release.assert_called_once()
+
+        with patch("galerazo_bot.instance_lock.os.name", "nt"), patch.object(
+            instance, "_acquire_windows", return_value=True
+        ) as acquire, patch.object(instance, "_release_windows") as release:
+            self.assertTrue(instance.acquire())
+            instance.release()
+        acquire.assert_called_once()
+        release.assert_called_once()
+
         instance._handle = None
         instance._release_windows()
 
@@ -87,6 +96,36 @@ class InstanceLockCompleteTests(unittest.TestCase):
         ):
             with self.assertRaisesRegex(OSError, "mutex"):
                 SingleInstance("windows-fail")._acquire_windows()
+
+    def test_windows_success_duplicate_and_release(self) -> None:
+        import ctypes
+
+        kernel = MagicMock()
+        kernel.CreateMutexW.return_value = 42
+        with patch.object(ctypes, "WinDLL", create=True, return_value=kernel), patch.object(
+            ctypes, "set_last_error", create=True
+        ), patch.object(
+            ctypes, "get_last_error", create=True, return_value=183
+        ):
+            duplicate = SingleInstance("windows-duplicate")
+            self.assertFalse(duplicate._acquire_windows())
+            kernel.CloseHandle.assert_called_once_with(42)
+
+        kernel.reset_mock()
+        kernel.CreateMutexW.return_value = 43
+        with patch.object(ctypes, "WinDLL", create=True, return_value=kernel), patch.object(
+            ctypes, "set_last_error", create=True
+        ), patch.object(
+            ctypes, "get_last_error", create=True, return_value=0
+        ):
+            instance = SingleInstance("windows-success")
+            self.assertTrue(instance._acquire_windows())
+            self.assertEqual(instance._handle, 43)
+            instance._release_windows()
+
+        kernel.ReleaseMutex.assert_called_once_with(43)
+        kernel.CloseHandle.assert_called_once_with(43)
+        self.assertIsNone(instance._handle)
 
 
 class LogCheckpointCompleteTests(unittest.TestCase):
