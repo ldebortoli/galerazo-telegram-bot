@@ -50,6 +50,14 @@ class CommandRoutingTests(unittest.TestCase):
             and "galerazas" in handler.commands
         ]
         self.assertEqual(len(galerazas_handlers), 1)
+        galeraza_alias_handlers = [
+            handler
+            for group, handler in application.handlers
+            if group == 1
+            and isinstance(handler, CommandHandler)
+            and "galeraza" in handler.commands
+        ]
+        self.assertEqual(len(galeraza_alias_handlers), 1)
 
     def test_preprocessor_receives_pin_add_and_leave_events(self) -> None:
         application = CapturingApplication()
@@ -132,19 +140,21 @@ class CommandRoutingTests(unittest.TestCase):
                 calls += 1
                 return True
 
-            response = asyncio.run(
-                handle_command_async(
-                    text="/galerazas",
-                    sender_id="1",
-                    db=db,
-                    chat_id="-1",
-                    chat_type="group",
-                    send_galerazas=send_galerazas,
-                )
-            )
+            for command_text in ("/galerazas", "/galeraza"):
+                with self.subTest(command_text=command_text):
+                    response = asyncio.run(
+                        handle_command_async(
+                            text=command_text,
+                            sender_id="1",
+                            db=db,
+                            chat_id="-1",
+                            chat_type="group",
+                            send_galerazas=send_galerazas,
+                        )
+                    )
 
-            self.assertIsNone(response)
-            self.assertEqual(calls, 1)
+                    self.assertIsNone(response)
+            self.assertEqual(calls, 2)
 
     def test_help_uses_slash_prefixed_commands(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

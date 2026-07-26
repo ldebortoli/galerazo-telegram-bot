@@ -10,7 +10,7 @@ from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from telegram import Chat, ChatMember, Message, Update, User
-from telegram.error import BadRequest, Conflict, Forbidden, NetworkError, TelegramError
+from telegram.error import BadRequest, Conflict, Forbidden, NetworkError, TelegramError, TimedOut
 
 from galerazo_bot.cloud_billing import GoogleCloudBillingReader, GoogleCloudBillingReport
 from galerazo_bot.config import Settings
@@ -135,12 +135,20 @@ class LifecycleAndBillingTests(unittest.IsolatedAsyncioTestCase):
         db = MagicMock()
         builder = MagicMock()
         builder.token.return_value = builder
+        builder.connect_timeout.return_value = builder
+        builder.read_timeout.return_value = builder
+        builder.write_timeout.return_value = builder
+        builder.pool_timeout.return_value = builder
         builder.post_init.return_value = builder
         builder.concurrent_updates.return_value = builder
         builder.build.return_value = "app"
         with patch.object(tb, "ApplicationBuilder", return_value=builder):
             self.assertEqual(tb._build_application("token", db), "app")
         builder.token.assert_called_once_with("token")
+        builder.connect_timeout.assert_called_once_with(tb.TELEGRAM_REQUEST_TIMEOUT_SECONDS)
+        builder.read_timeout.assert_called_once_with(tb.TELEGRAM_REQUEST_TIMEOUT_SECONDS)
+        builder.write_timeout.assert_called_once_with(tb.TELEGRAM_REQUEST_TIMEOUT_SECONDS)
+        builder.pool_timeout.assert_called_once_with(tb.TELEGRAM_REQUEST_TIMEOUT_SECONDS)
         self.assertIsInstance(builder.concurrent_updates.call_args.args[0], tb.PerChatUpdateProcessor)
 
     async def test_post_init_builds_state_and_runs_startup_actions(self) -> None:
@@ -625,6 +633,14 @@ class GalerazaExpenseAndConfigTests(unittest.IsolatedAsyncioTestCase):
         db.save_paginated_message_state.reset_mock()
         await tb._send_text_response(db, message, long_list, "1", "command", True, bot, "-10")
         db.save_paginated_message_state.assert_not_called()
+
+        message.reply_text.side_effect = TimedOut()
+        await tb._send_text_response(db, message, "Triggers:\n\n- uno", "1", "triggers", True, bot, "-10")
+
+        message.reply_text.side_effect = None
+        message.reply_text.return_value = SimpleNamespace(message_id=3, edit_text=AsyncMock())
+        await tb._send_text_response(db, message, "Triggers:\n\n- uno", "1", "triggers", True, bot, "-10")
+        self.assertEqual(message.reply_text.await_args.kwargs["entities"][0].type, "bold")
 
     async def test_report_submit_status_and_sync_expenses(self) -> None:
         db = MagicMock()

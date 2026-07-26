@@ -1,8 +1,115 @@
-# Pendientes
+# Procesadas el 2026-07-26 (incorporadas al BACKLOG; implementacion en curso)
 
-No hay pedidos sin procesar.
+- hubo un bugazo, te paso el error, corregilo porfa:
+Error no handleado:
+hon3.14/site-packages/telegram/_message.py", line 2228, in reply_text
+    return await self.get_bot().send_message(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<21 lines>...
+    )
+    ^
+  File "/usr/local/lib/python3.14/site-packages/telegram/ext/_extbot.py", line 3150, in send_message
+    return await super().send_message(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<23 lines>...
+    )
+    ^
+  File "/usr/local/lib/python3.14/site-packages/telegram/_bot.py", line 1138, in send_message
+    return await self._send_message(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<21 lines>...
+    )
+    ^
+  File "/usr/local/lib/python3.14/site-packages/telegram/ext/_extbot.py", line 638, in _send_message
+    result = await super()._send_message(
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<23 lines>...
+    )
+    ^
+  File "/usr/local/lib/python3.14/site-packages/telegram/_bot.py", line 828, in _send_message
+    result = await self._post(
+             ^^^^^^^^^^^^^^^^^
+    ...<7 lines>...
+    )
+    ^
+  File "/usr/local/lib/python3.14/site-packages/telegram/_bot.py", line 712, in _post
+    return await self._do_post(
+           ^^^^^^^^^^^^^^^^^^^^
+    ...<6 lines>...
+    )
+    ^
+  File "/usr/local/lib/python3.14/site-packages/telegram/ext/_extbot.py", line 378, in _do_post
+    return await super()._do_post(
+           ^^^^^^^^^^^^^^^^^^^^^^^
+    ...<6 lines>...
+    )
+    ^
+  File "/usr/local/lib/python3.14/site-packages/telegram/_bot.py", line 741, in _do_post
+    result = await request.post(
+             ^^^^^^^^^^^^^^^^^^^
+    ...<6 lines>...
+    )
+    ^
+  File "/usr/local/lib/python3.14/site-packages/telegram/request/_baserequest.py", line 198, in post
+    result = await self._request_wrapper(
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<7 lines>...
+    )
+    ^
+  File "/usr/local/lib/python3.14/site-packages/telegram/request/_baserequest.py", line 305, in _request_wrapper
+    code, payload = await self.do_request(
+                    ^^^^^^^^^^^^^^^^^^^^^^
+    ...<7 lines>...
+    )
+    ^
+  File "/usr/local/lib/python3.14/site-packages/telegram/request/_httpxrequest.py", line 296, in do_request
+    raise TimedOut from err
+telegram.error.TimedOut: Timed out
+
+Update JSON:
+{
+  "message": {
+    "channel_chat_created": false,
+    "delete_chat_photo": false,
+    "entities": [
+      {
+        "length": 9,
+        "offset": 0,
+        "type": "bot_command"
+      }
+    ],
+    "group_chat_created": false,
+    "sender_tag": "VirgoGalera",
+    "supergroup_chat_created": false,
+    "text": "/triggers",
+    "chat": {
+      "id": -1001227239699,
+      "title": "🇦🇷 Dankgentina Official Group",
+      "type": "supergroup",
+      "username": "dankgentin"
+    },
+    "date": 1784777685,
+    "message_id": 1338572,
+    "from": {
+      "first_name": "galerazo",
+      "id": 267832653,
+      "is_bot": false,
+      "language_code": "es",
+      "last_name": "34",
+      "username": "galerazo34"
+    }
+  },
+  "update_id": 253645075
+}
+
+- quiero que la lista de triggers sea como la lista de la galeraza, es decir que el título esté en negrita y haya un salto de línea antes de que comiencen los triggers.
+- quiero un nuevo comando /galeraza que sea igual al de /galerazas solo que sin s al final, es decir solo un alias porque a veces me olvido de la s final ajajaj. no debería ser mucho cambio en el código, no reimplementes todo para esto por favor, reusá todo y solo agregá un comando más.
 
 # Procesadas
+
+- [2026-07-26] Corregir el `TimedOut` transitorio al responder `/triggers`; error incorporado al BACKLOG con la update `253645075`.
+- [2026-07-26] Formatear la lista de `/triggers` como la tabla de Galerazas: titulo en negrita y linea vacia antes de los elementos.
+- [2026-07-26] Agregar `/galeraza` como alias reutilizando la implementacion de `/galerazas`.
 
 - [2026-07-11] Verificar si la cuenta de GitHub tiene medio de pago y si GitHub Actions podria generar cobros.
 - [2026-07-11] Corregir el texto cortado del estado del canal de logging en la pestaña Configuracion del panel.

@@ -25,4 +25,11 @@ COMMANDS = {
         handle,
         configurable_group="galeraza",
     ),
+    "galeraza": Command(
+        "galeraza",
+        "muestra el ranking de la Galeraza",
+        handle,
+        command_key="galerazas",
+        configurable_group="galeraza",
+    ),
 }

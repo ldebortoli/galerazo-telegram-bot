@@ -549,3 +549,9 @@ Este archivo es append-only a nivel conceptual: no borrar decisiones anteriores.
 - Las correcciones y funcionalidades ordinarias se implementan, validan, commitean y pushean, pero no publican una imagen en Artifact Registry ni despliegan GCE.
 - Un reporte de bug de produccion no autoriza por si mismo un release. Publicar o desplegar requiere que el usuario lo pida explicitamente en la instruccion actual con expresiones como "hacer un release" o "desplegar".
 - Docker local se usa solo cuando la superficie modificada necesita esa validacion; no implica release. Cuando el usuario autoriza un release, se agrupan todas las correcciones acumuladas y se conserva el flujo completo de backup, healthcheck y rollback.
+
+## D-068 - Timeouts HTTP centrales para solicitudes Telegram
+
+- Estado: vigente desde 2026-07-26.
+- Las solicitudes normales de `python-telegram-bot` usan timeouts de conexion, lectura, escritura y pool de 30 segundos configurados en `ApplicationBuilder`; el valor predeterminado de cinco segundos era insuficiente para envios transitorios como `/triggers`.
+- Un `TimedOut` al crear una respuesta paginada se registra localmente como warning y no se reintenta: Telegram puede haber aceptado el envio aunque la respuesta se haya perdido, por lo que reintentar podria duplicar el mensaje.

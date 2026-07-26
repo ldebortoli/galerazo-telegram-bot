@@ -162,6 +162,7 @@ El panel usa un cliente inicial de `760x750`, minimo `680x730`; la pestaña Conf
 - Los comandos inexistentes se ignoran silenciosamente; no registrar fallbacks en grupos posteriores de PTB que vuelvan a procesar comandos validos.
 - Antes de cerrar cada pedido se ejecuta `python -m galerazo_bot.log_checkpoint`; los errores nuevos se investigan antes de reconocer y avanzar el offset.
 - Los `NetworkError` transitorios de `getUpdates` llegan sin update/job/coroutine y PTB los reintenta; se registran como warning local sin anunciar un falso error no handleado. Errores de red asociados a trabajo real si se anuncian.
+- `ApplicationBuilder` configura 30 segundos para los timeouts HTTP normales de Telegram; las respuestas paginadas no reintentan un `TimedOut` para evitar duplicados y lo registran como warning local.
 - Los rankings usan nombres visibles cacheados en `users` y user IDs; no generan menciones ni hacen requests de nombres al renderizar.
 - Todas las pantallas de `/config` incluyen `config:close`; los permisos se validan antes de ejecutar cualquier callback.
 - Cerrar el panel de control apaga el arbol de procesos local del bot antes de destruir la ventana.

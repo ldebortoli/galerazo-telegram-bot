@@ -69,6 +69,7 @@ TELEGRAM_DOCUMENT_UPLOAD_LIMIT_BYTES = 50 * 1024 * 1024
 TELEGRAM_FILE_DOWNLOAD_LIMIT_BYTES = 20 * 1024 * 1024
 TELEGRAM_MESSAGE_LIMIT_CHARS = 4096
 TELEGRAM_DOCUMENT_TIMEOUT_SECONDS = 30
+TELEGRAM_REQUEST_TIMEOUT_SECONDS = 30
 PAGINATED_METADATA_TTL = timedelta(days=14)
 ARGENTINA_TIMEZONE = ZoneInfo("America/Argentina/Buenos_Aires")
 POLLING_OPTIONS = {
@@ -128,6 +129,10 @@ def _build_application(token: str, db: Database) -> Application:
     return (
         ApplicationBuilder()
         .token(token)
+        .connect_timeout(TELEGRAM_REQUEST_TIMEOUT_SECONDS)
+        .read_timeout(TELEGRAM_REQUEST_TIMEOUT_SECONDS)
+        .write_timeout(TELEGRAM_REQUEST_TIMEOUT_SECONDS)
+        .pool_timeout(TELEGRAM_REQUEST_TIMEOUT_SECONDS)
         .post_init(_post_init)
         .concurrent_updates(PerChatUpdateProcessor(db.resolve_chat_id))
         .build()
@@ -905,7 +910,12 @@ async def _send_text_response(
     body_lines = lines[1:]
     page = render_page(header, body_lines, page=1)
 
-    result = await message.reply_text(page.text, do_quote=True)
+    entities = _bold_first_line_entities(page.text) if list_type == "triggers" else None
+    try:
+        result = await message.reply_text(page.text, do_quote=True, entities=entities)
+    except TimedOut:
+        logger.warning("Se agoto el timeout al responder %s en chat %s.", list_type, message.chat.id)
+        return
     message_id = str(result.message_id)
     if page.total_pages <= 1 or not message_id:
         return
@@ -923,6 +933,7 @@ async def _send_text_response(
     await result.edit_text(
         text=page.text,
         reply_markup=build_keyboard(message_id, page.page, page.total_pages, unlocked=False),
+        entities=entities,
     )
 
 
@@ -1281,7 +1292,7 @@ async def _edit_paginated_message(
     rendered = render_page(content["header"], content["lines"], page=page)
     db.set_paginated_message_page(str(message.chat.id), message_id, rendered.page)
     edit_options = {}
-    if state.list_type == "galeraza":
+    if state.list_type in {"galeraza", "triggers"}:
         edit_options["entities"] = _bold_first_line_entities(rendered.text)
     await message.edit_text(
         text=rendered.text,

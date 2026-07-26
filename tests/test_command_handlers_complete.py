@@ -344,7 +344,9 @@ class TriggerHandlerCompleteTests(unittest.IsolatedAsyncioTestCase):
         self.assertIn("hay triggers", triggers.triggers(make_context(), db))
         row = Trigger("-1", "name", "Display Name", "x", None, None, None, "1", "now")
         db.list_triggers.return_value = [row]
-        self.assertIn("- Display Name", triggers.triggers(make_context(), db))
+        response = triggers.triggers(make_context(), db)
+        self.assertTrue(response.startswith("Triggers:\n\n"))
+        self.assertIn("- Display Name", response)
         self.assertTrue(triggers._is_valid_payload(TriggerPayload(file_id="f")))
         self.assertFalse(triggers._is_valid_payload(TriggerPayload()))
 

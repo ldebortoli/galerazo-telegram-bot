@@ -86,7 +86,7 @@ def triggers(context: CommandContext, db: Database) -> str:
     if not rows:
         return context.t("triggers.empty")
 
-    lines = [context.t("triggers.header")]
+    lines = [context.t("triggers.header"), ""]
     lines.extend(_trigger_line(row) for row in rows)
     return "\n".join(lines)
 

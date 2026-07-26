@@ -9,7 +9,7 @@ HELP_GROUPS = (
     ("general", {"help", "ayuda", "start", "hola", "lil", "nivel", "chats", "reportar"}),
     ("blocking", {"bloquear", "desbloquear", "desloquear", "listanegra", "bloqueados"}),
     ("chat_admin", {"config", "restringir", "habilitar", "restringidos", "salir"}),
-    ("galeraza", {"galerazas"}),
+    ("galeraza", {"galeraza", "galerazas"}),
     ("triggers", {"agregartrigger", "agrtrigger", "borrartrigger", "eliminartrigger", "eltrigger", "triggers"}),
     ("games", {"ruletarusa"}),
     ("expenses", {"habilitargastos", "deshabilitargastos", "gasto", "ultimosgastos", "estadogastos", "sincronizargastos"}),
