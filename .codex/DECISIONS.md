@@ -574,3 +574,10 @@ Este archivo es append-only a nivel conceptual: no borrar decisiones anteriores.
 - Estado: vigente desde 2026-07-26; reemplaza el alcance de usuarios comunes de D-069 para grupos.
 - Los grupos reciben el menu de comandos comunes, excepto gastos. El scope `all_chat_administrators` agrega los comandos de nivel `ADMIN` solamente a los administradores del grupo.
 - Los comandos de nivel `DEV` y todos los comandos de gastos permanecen ocultos en BotFather. La ruleta rusa vuelve a aparecer como comando comun de grupos, aunque cada grupo puede mantenerla deshabilitada por configuracion.
+
+## D-072 - Changelog y version obligatorios por cambio funcional
+
+- Estado: vigente desde 2026-07-26; amplifica D-070.
+- Todo cambio funcional actualiza `CHANGELOG.md` en el mismo commit. El agente elige el incremento de version salvo numero indicado expresamente por el usuario: capacidades visibles importantes incrementan la version menor y varios fixes menores se agrupan bajo una sola linea "Correcciones y mejoras".
+- Al agregar, eliminar, renombrar, cambiar permisos o descripciones de un comando, el mismo trabajo debe actualizar definiciones/pruebas de BotFather y ejecutar la sincronizacion directa. Los cambios sin impacto de comandos no requieren esa llamada externa.
+- La version actual pasa a `0.2`, que agrupa `/version`, los anuncios de release y menus BotFather por rol. Se anunciara en el proximo deploy solicitado.

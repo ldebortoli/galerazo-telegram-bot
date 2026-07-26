@@ -12,6 +12,7 @@ from galerazo_bot.command_handlers import gastos, novedad, reportar, restriction
 from galerazo_bot.database import BlockedUser, ChatRestrictedUser, ChatStatsRow, Expense, Trigger, User
 from galerazo_bot.expenses import ExpenseSheetStatus, ExpenseSubmissionResult, ExpenseSyncResult
 from galerazo_bot.roles import BackupResult, CommandContext, TriggerModerationResult, TriggerPayload, UserLevel
+from galerazo_bot.versioning import CURRENT_VERSION
 
 
 def make_context(**overrides) -> CommandContext:
@@ -71,7 +72,7 @@ class SmallAsyncHandlerTests(unittest.IsolatedAsyncioTestCase):
         )
 
     def test_version(self) -> None:
-        self.assertIn("0.1", version.handle(make_context(), MagicMock()))
+        self.assertIn(CURRENT_VERSION, version.handle(make_context(), MagicMock()))
 
     async def test_novedad_paths(self) -> None:
         self.assertIn("Uso", await novedad.handle(make_context(args="  "), MagicMock()))

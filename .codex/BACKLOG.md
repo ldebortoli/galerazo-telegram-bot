@@ -16,6 +16,8 @@
 
 # DONE
 
+- [2026-07-26] Establecer versionado automatico por cambio funcional y sincronizacion obligatoria de BotFather cuando cambien comandos; agrupar los cambios recientes como version `0.2`. Validacion: 213 pruebas, 100% de sentencias/ramas, runtime, lock, `pip check`, `compileall` y checkpoint OK. No se requirio sincronizacion directa porque no cambio ningun comando.
+
 - [2026-07-26] Ajustar BotFather con scopes para grupos: menu comun sin gastos y menu adicional para administradores con comandos `ADMIN`; ocultar solo desarrollo y gastos. Sincronizacion real realizada con exito. Validacion: 213 pruebas, 100% de sentencias/ramas, runtime, lock, `pip check`, `compileall` y checkpoint OK.
 
 - [2026-07-26] Implementar versionado inicial `0.1`: `CHANGELOG.md`, anuncio unico persistido en SQLite despues de un envio exitoso al canal de novedades y comando publico `/version`. El anuncio se ejecuta al iniciar la version desplegada; no se desplego en esta tarea. Validacion: 213 pruebas, 100% de sentencias/ramas, runtime, lock, `pip check`, `compileall` y checkpoint OK.

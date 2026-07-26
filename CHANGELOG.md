@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.2] - 2026-07-26
+
+- Comando `/version` para consultar la version actual del bot.
+- Anuncio automatico de novedades al canal de anuncios una sola vez por version desplegada.
+- Menus de BotFather diferenciados para usuarios comunes y administradores de grupos.
+
 ## [0.1] - 2026-07-26
 
 - Galeraza diaria sincronizada por chat con tabla de puntajes y paginacion.

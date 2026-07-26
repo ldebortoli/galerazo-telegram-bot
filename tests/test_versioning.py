@@ -10,7 +10,7 @@ from galerazo_bot import versioning
 
 class VersioningTests(unittest.TestCase):
     def test_current_release_notes_reads_current_entry_and_rejects_invalid_changelog(self) -> None:
-        self.assertIn("Galerazo Bot v0.1", versioning.current_release_notes())
+        self.assertIn(f"Galerazo Bot v{versioning.CURRENT_VERSION}", versioning.current_release_notes())
 
         with tempfile.TemporaryDirectory() as directory:
             changelog = Path(directory) / "CHANGELOG.md"
@@ -19,7 +19,7 @@ class VersioningTests(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, "no contiene la version"):
                     versioning.current_release_notes()
 
-            changelog.write_text("## [0.1]\n\n## [0.2]\n", encoding="utf-8")
+            changelog.write_text(f"## [{versioning.CURRENT_VERSION}]\n\n## [0.3]\n", encoding="utf-8")
             with patch.object(versioning, "CHANGELOG_PATH", changelog):
                 with self.assertRaisesRegex(ValueError, "no contiene cambios"):
                     versioning.current_release_notes()

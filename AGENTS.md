@@ -48,3 +48,10 @@ Use the latest stable CPython and stable dependency releases. Windows developmen
 Ordinary fixes and features must be implemented, validated, committed and pushed without publishing an Artifact Registry image or deploying GCE. Do not infer release authorization from a production bug report, a completed fix, a push to `main` or the existence of deployment credentials.
 
 Build a local Docker image only when the changed surface requires Docker-specific validation. Publish or deploy only when the user explicitly asks for a release or deployment in the current instruction. Batch accumulated corrections into that requested release and then run the full publication, backup, healthcheck and rollback workflow.
+
+<!-- galerazo-versioning-policy -->
+## Versioning and BotFather policy
+
+- Every functional change must update `CHANGELOG.md` in the same change. The agent chooses the next version unless the user explicitly provides one: use a minor bump for meaningful user-facing capabilities and group minor fixes under one `Correcciones y mejoras` entry.
+- Keep `galerazo_bot/versioning.py::CURRENT_VERSION` equal to the latest `CHANGELOG.md` heading. Tests must validate that entry.
+- Whenever a command is added, removed, renamed, re-permissioned or its BotFather description changes, update the BotFather scope definitions, test them and run the direct BotFather synchronization before ending the task. Do not expose development or expense commands in BotFather.
