@@ -12,7 +12,7 @@ El mecanismo mensual de backups GCE ya tiene un runbook exhaustivo y enlazado de
 
 ## Estado actual
 
-- Rama `main`, tracking `origin/main`.
+- Rama `main`, tracking `origin/main`; ultimo commit propio `3fb6048` (`Fix trigger response timeout and add galeraza alias`) ya fue pusheado. `README.md` conserva una modificacion local ajena y no esta staged.
 - Politica de release: un fix normal termina en validacion, commit y push. No construir imagen sin necesidad Docker y no publicar Artifact Registry ni desplegar GCE salvo pedido explicito del usuario en la instruccion actual.
 - Python 3.14.6 exacto y lock completo.
 - `Dockerfile` tiene targets `test` y `runtime`; produccion corre como UID/GID 10001, con healthcheck SQLite.
@@ -49,7 +49,7 @@ El mecanismo mensual de backups GCE ya tiene un runbook exhaustivo y enlazado de
 
 ## Validacion reciente
 
-- Pedidos de `USER_QUEUE.md` del 2026-07-26 completados localmente: `/triggers` usa los timeouts centrales de 30 s de PTB y contiene `TimedOut` como warning sin reintentar; su titulo se muestra en negrita con separacion antes de la lista, incluida la paginacion. `/galeraza` es alias del handler existente `/galerazas`. Pasaron 209 pruebas y `coverage.py` al 100,00% de sentencias y ramas. Falta ejecutar las comprobaciones finales de runtime, lock, `compileall`, checkpoint, commit y push; no se autorizo release/deploy.
+- Pedidos de `USER_QUEUE.md` del 2026-07-26 completados y pusheados: `/triggers` usa los timeouts centrales de 30 s de PTB y contiene `TimedOut` como warning sin reintentar; su titulo se muestra en negrita con separacion antes de la lista, incluida la paginacion. `/galeraza` es alias del handler existente `/galerazas`. Pasaron 209 pruebas y `coverage.py` al 100,00% de sentencias y ramas; runtime Python 3.14.6, `pip check`, `compileall`, `git diff --check` y checkpoint de logs tambien OK. No se autorizo release/deploy.
 
 - Polling: el traceback `NetworkError: httpx.ReadError` con `Update JSON: null` provenia de `getUpdates`; PTB ya lo reintentaba, el contenedor nunca se reinicio y siguio obteniendo HTTP 200. `_handle_error` ahora omite del canal solo `NetworkError` sin update/job/coroutine y mantiene el resto. Pasaron 209 pruebas Windows/Linux, 2.759 sentencias y 770 ramas al 100%, Docker, runtime, lock, compileall, `pip check` y Quality `29896015712`. `73ac112` (`sha256:18b077...86ec`) fue desplegada con backup previo; auditoria posterior: `running/healthy`, cero reinicios/OOM, SQLite legible e integro, polling HTTP 200 y ningun error nuevo.
 - `/debug`: el log real de produccion confirmo que el documento grande agotaba el timeout predeterminado de cinco segundos. El handler ahora usa `BytesIO`, cuatro timeouts PTB de 30 segundos y un solo reintento ante `TimedOut`, sin escribir JSON en disco. La suite paso 209 pruebas en Windows y Linux con 100,00% de sentencias y 100,00% de ramas; Python 3.14.6, lock, compileall, `pip check`, Docker y Quality `29895467400` quedaron OK. La imagen `f9df2b1` (`sha256:03f5ab...5756`) fue desplegada con backup previo; auditoria posterior: `running/healthy`, cero reinicios, cero OOM, SQLite legible e integro, inicio/logging/polling de Telegram HTTP 200.
