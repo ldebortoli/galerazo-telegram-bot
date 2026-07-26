@@ -48,7 +48,7 @@ class MenuAndPaginationCompleteTests(unittest.TestCase):
             self.assertEqual(chat_config.command_group_label("unknown", "xx"), "unknown")
         self.assertTrue(chat_config.is_valid_language("en"))
         self.assertFalse(chat_config.is_valid_language("xx"))
-        self.assertTrue(chat_config.is_valid_command_group("gastos"))
+        self.assertFalse(chat_config.is_valid_command_group("gastos"))
         self.assertFalse(chat_config.is_valid_command_group("unknown"))
         self.assertIsNone(chat_config.parse_config_callback("bad"))
         self.assertIsNone(chat_config.parse_config_callback("other:main"))

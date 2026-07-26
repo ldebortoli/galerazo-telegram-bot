@@ -211,24 +211,10 @@ class ChatAndExpenseHandlerTests(unittest.IsolatedAsyncioTestCase):
         self.assertIn("chats privados: total 0", response)
         self.assertEqual(chats._sum_chat_stats([]), {"total": 0, "active": 0, "inactive": 0})
 
-    def test_enable_and_disable_expenses(self) -> None:
-        db = MagicMock()
-        private = make_context(chat_type="private")
-        self.assertIn("grupos", gastos.habilitargastos(private, db))
-        self.assertIn("grupos", gastos.deshabilitargastos(private, db))
-        db.is_command_group_enabled.return_value = True
-        self.assertIn("habilitados", gastos.habilitargastos(make_context(), db))
-        db.is_command_group_enabled.return_value = False
-        self.assertIn("habilitados", gastos.habilitargastos(make_context(), db))
-        db.set_command_group_enabled.assert_called_with("-1", "gastos", True)
-        self.assertIn("deshabilitados", gastos.deshabilitargastos(make_context(), db))
-        db.is_command_group_enabled.return_value = True
-        self.assertIn("deshabilitados", gastos.deshabilitargastos(make_context(), db))
-        db.set_command_group_enabled.assert_called_with("-1", "gastos", False)
-
     async def test_gasto_all_result_paths(self) -> None:
         db = MagicMock()
-        self.assertIn("grupos", await gastos.gasto(make_context(chat_type="private"), db))
+        private = make_context(chat_type="private", args="18500 | transferencia | caja | pizzas")
+        self.assertIn("configurado", await gastos.gasto(private, db))
         self.assertIn("/gasto", await gastos.gasto(make_context(args="bad"), db))
         valid = "18500 | transferencia | caja | pizzas"
         self.assertIn("configurado", await gastos.gasto(make_context(args=valid), db))
@@ -245,9 +231,8 @@ class ChatAndExpenseHandlerTests(unittest.IsolatedAsyncioTestCase):
     def test_recent_and_status_expenses(self) -> None:
         db = MagicMock()
         private = make_context(chat_type="private")
-        self.assertIn("grupos", gastos.ultimosgastos(private, db))
-        self.assertIn("grupos", gastos.estadogastos(private, db))
         db.list_recent_expenses.return_value = []
+        self.assertIn("hay gastos", gastos.ultimosgastos(private, db))
         self.assertIn("hay gastos", gastos.ultimosgastos(make_context(), db))
         db.list_recent_expenses.return_value = [
             Expense(1, "-1", "2", "alias", "User", 12345, "ARS", "cash", "box", "food", "synced", None, "now", "now"),
@@ -259,22 +244,18 @@ class ChatAndExpenseHandlerTests(unittest.IsolatedAsyncioTestCase):
         self.assertIn("sincronizado", response)
         self.assertIn("pendiente", response)
 
-        db.is_command_group_enabled.return_value = False
         db.count_pending_expenses.return_value = 4
         response = gastos.estadogastos(make_context(), db)
-        self.assertIn("deshabilitado", response)
         self.assertIn("4", response)
-        db.is_command_group_enabled.return_value = True
-        status = ExpenseSheetStatus(True, True, True, "Gastos", 2, None)
+        status = ExpenseSheetStatus(True, True, "Gastos", 2, None)
         response = gastos.estadogastos(make_context(get_expense_sheet_status=lambda: status), db)
-        self.assertIn("habilitado", response)
         self.assertIn("2", response)
         status = replace(status, detail="Sheet OK")
         self.assertIn("Sheet OK", gastos.estadogastos(make_context(get_expense_sheet_status=lambda: status), db))
 
     async def test_sync_expenses_paths(self) -> None:
         db = MagicMock()
-        self.assertIn("grupos", await gastos.sincronizargastos(make_context(chat_type="private"), db))
+        self.assertIn("configurado", await gastos.sincronizargastos(make_context(chat_type="private"), db))
         self.assertIn("configurado", await gastos.sincronizargastos(make_context(), db))
         for result, expected in (
             (ExpenseSyncResult(False, 0, 0), "configurado"),

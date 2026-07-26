@@ -37,7 +37,6 @@ class ExpenseSyncResult:
 
 @dataclass(frozen=True)
 class ExpenseSheetStatus:
-    enabled_for_chat: bool
     configured: bool
     ready: bool
     worksheet_name: str | None

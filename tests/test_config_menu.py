@@ -62,6 +62,9 @@ class ConfigMenuTests(unittest.IsolatedAsyncioTestCase):
     def test_close_callback_is_parsed(self) -> None:
         self.assertEqual(parse_config_callback("config:close"), ("close",))
 
+    def test_expenses_are_not_listed_as_a_configurable_group(self) -> None:
+        self.assertNotIn("config:command:gastos", _callback_data(build_command_groups_menu("es")))
+
     async def test_common_user_cannot_close_config_menu(self) -> None:
         update, context, state, message = _callback_fixture()
 
@@ -94,6 +97,17 @@ class ConfigMenuTests(unittest.IsolatedAsyncioTestCase):
 
                 message.delete.assert_awaited_once_with()
                 update.callback_query.answer.assert_awaited_once_with(text="mensaje eliminado")
+
+    async def test_legacy_expense_config_button_deletes_its_message_for_any_user(self) -> None:
+        update, context, state, message = _callback_fixture()
+        update.callback_query.data = "config:command:gastos"
+        state.db.is_user_blocked.return_value = True
+
+        with patch("galerazo_bot.telegram_bot._state", return_value=state):
+            await _config_callback_entrypoint(update, context)
+
+        message.delete.assert_awaited_once_with()
+        update.callback_query.answer.assert_awaited_once_with("mensaje eliminado")
 
 
 if __name__ == "__main__":

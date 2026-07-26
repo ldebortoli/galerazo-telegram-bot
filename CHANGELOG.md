@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.4] - 2026-07-26
+
+- Gastos deja de ser configurable por grupo: sus cuatro comandos son exclusivos de desarrollo y funcionan en cualquier tipo de chat.
+- Los tableros de configuracion antiguos de Gastos se eliminan al interactuar con ellos.
+
 ## [0.3] - 2026-07-26
 
 - El registro, consulta, activacion y sincronizacion de gastos ahora esta restringido exclusivamente a desarrolladores.

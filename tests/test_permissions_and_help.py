@@ -28,8 +28,6 @@ class PermissionsAndHelpTests(unittest.TestCase):
             db.register_chat("-1", "group", "Group")
 
             for command in (
-                "/habilitargastos",
-                "/deshabilitargastos",
                 "/gasto ARS 100 | tarjeta | supermercado | compras",
                 "/ultimosgastos",
                 "/estadogastos",
@@ -46,6 +44,18 @@ class PermissionsAndHelpTests(unittest.TestCase):
                         )
                     )
                     self.assertEqual(response, "No tenés permisos suficientes para usar este comando.")
+
+            response = asyncio.run(
+                handle_command_async(
+                    "/gasto 100 | tarjeta | supermercado | compras",
+                    "1",
+                    db,
+                    chat_id="1",
+                    chat_type="private",
+                    user_level=UserLevel.DEV,
+                )
+            )
+            self.assertIn("No hay mecanismo configurado", response)
 
     def test_bot_cannot_be_blacklisted(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

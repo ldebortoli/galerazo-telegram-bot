@@ -648,17 +648,23 @@ async def _config_callback_entrypoint(update: Update, context: ContextTypes.DEFA
         return
 
     state.db.get_or_create_user(str(user.id), _display_name(user), user.username)
+    message = callback_query.message
+    language = _chat_language(state.db, message.chat.id) if message is not None else DEFAULT_LANGUAGE
+    if message is None or message.chat.type not in {"group", "supergroup"}:
+        await callback_query.answer(t(language, "config.group_only_popup"))
+        return
+
+    parsed = parse_config_callback(callback_query.data or "")
+    if _is_legacy_expense_config_callback(parsed):
+        await message.delete()
+        await callback_query.answer(t(language, "pagination.deleted"))
+        return
+
     if state.db.is_user_blocked(str(user.id)):
         await callback_query.answer()
         return
     if _is_user_restricted_in_callback_chat(state.db, callback_query, str(user.id)):
         await callback_query.answer()
-        return
-
-    message = callback_query.message
-    language = _chat_language(state.db, message.chat.id) if message is not None else DEFAULT_LANGUAGE
-    if message is None or message.chat.type not in {"group", "supergroup"}:
-        await callback_query.answer(t(language, "config.group_only_popup"))
         return
 
     user_level = await _resolve_user_level(
@@ -672,13 +678,16 @@ async def _config_callback_entrypoint(update: Update, context: ContextTypes.DEFA
         await callback_query.answer(t(language, "config.permission_popup"))
         return
 
-    parsed = parse_config_callback(callback_query.data or "")
     if parsed is None:
         await callback_query.answer()
         return
 
     popup_text = await _handle_config_callback(state.db, message, parsed)
     await callback_query.answer(text=popup_text)
+
+
+def _is_legacy_expense_config_callback(parsed: tuple[str, ...] | None) -> bool:
+    return parsed is not None and len(parsed) >= 2 and parsed[0] in {"command", "set"} and parsed[1] == "gastos"
 
 
 async def _my_chat_member_entrypoint(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -1121,7 +1130,6 @@ def _build_expense_sheet_status(
     configured = writer.is_configured()
     ready = writer.is_ready()
     return ExpenseSheetStatus(
-        enabled_for_chat=db.is_command_group_enabled(chat_id, "gastos"),
         configured=configured,
         ready=ready,
         worksheet_name=writer.worksheet_name if configured else None,

@@ -16,6 +16,8 @@
 
 # DONE
 
+- [2026-07-26] Quitar Gastos de `/config` y los comandos `/habilitargastos`/`/deshabilitargastos`; los cuatro comandos restantes exigen `DEV` y funcionan en cualquier chat. Los callbacks antiguos de Gastos eliminan su tablero al tocarse. BotFather resincronizado. Version `0.4`. Validacion: 215 pruebas, 100% de sentencias/ramas, runtime, `pip check`, `compileall` y diff-check OK. Sin release/deploy.
+
 - [2026-07-26] Restringir toda la familia de comandos de gastos a `UserLevel.DEV`: solo desarrolladores pueden habilitar, deshabilitar, registrar, listar, consultar el estado o sincronizar gastos. BotFather fue resincronizado y conserva esos comandos ocultos. Version `0.3`. Validacion: 214 pruebas, 100% de sentencias/ramas, runtime, `pip check`, `compileall`, diff-check y checkpoint OK. Sin release/deploy.
 
 - [2026-07-26] Establecer versionado automatico por cambio funcional y sincronizacion obligatoria de BotFather cuando cambien comandos; agrupar los cambios recientes como version `0.2`. Validacion: 213 pruebas, 100% de sentencias/ramas, runtime, lock, `pip check`, `compileall` y checkpoint OK. No se requirio sincronizacion directa porque no cambio ningun comando.

@@ -13,28 +13,7 @@ from ..roles import CommandContext, UserLevel
 from ..user_display import format_user
 
 
-def habilitargastos(context: CommandContext, db: Database) -> str:
-    if context.chat_type not in {"group", "supergroup"} or context.chat_id is None:
-        return context.t("expenses.group_only")
-    if db.is_command_group_enabled(context.chat_id, "gastos"):
-        return context.t("expenses.enabled_already")
-    db.set_command_group_enabled(context.chat_id, "gastos", True)
-    return context.t("expenses.enabled")
-
-
-def deshabilitargastos(context: CommandContext, db: Database) -> str:
-    if context.chat_type not in {"group", "supergroup"} or context.chat_id is None:
-        return context.t("expenses.group_only")
-    if not db.is_command_group_enabled(context.chat_id, "gastos"):
-        return context.t("expenses.disabled_already")
-    db.set_command_group_enabled(context.chat_id, "gastos", False)
-    return context.t("expenses.disabled")
-
-
 async def gasto(context: CommandContext, _db: Database) -> str:
-    if context.chat_type not in {"group", "supergroup"}:
-        return context.t("expenses.group_only")
-
     draft = parse_expense_command_args(context.args)
     if draft is None:
         return f"{context.t('expenses.usage')}\n{expense_usage_example(context.language)}"
@@ -57,9 +36,6 @@ async def gasto(context: CommandContext, _db: Database) -> str:
 
 
 def ultimosgastos(context: CommandContext, db: Database) -> str:
-    if context.chat_type not in {"group", "supergroup"} or context.chat_id is None:
-        return context.t("expenses.group_only")
-
     expenses = db.list_recent_expenses(context.chat_id, limit=DEFAULT_EXPENSE_LIST_LIMIT)
     if not expenses:
         return context.t("expenses.empty")
@@ -82,10 +58,6 @@ def ultimosgastos(context: CommandContext, db: Database) -> str:
 
 
 def estadogastos(context: CommandContext, db: Database) -> str:
-    if context.chat_type not in {"group", "supergroup"} or context.chat_id is None:
-        return context.t("expenses.group_only")
-
-    enabled = db.is_command_group_enabled(context.chat_id, "gastos")
     if context.get_expense_sheet_status is None:
         detail = context.t("expenses.sheet_not_configured")
         pending_count = db.count_pending_expenses(context.chat_id)
@@ -94,11 +66,9 @@ def estadogastos(context: CommandContext, db: Database) -> str:
         detail = status.detail or context.t("expenses.sheet_not_configured")
         pending_count = status.pending_count
 
-    enabled_text = context.t("expenses.status_enabled") if enabled else context.t("expenses.status_disabled")
     return "\n".join(
         [
             context.t("expenses.status_header"),
-            f"- {enabled_text}",
             f"- {detail}",
             context.t("expenses.pending_count", count=pending_count),
             expense_usage_example(context.language),
@@ -107,8 +77,6 @@ def estadogastos(context: CommandContext, db: Database) -> str:
 
 
 async def sincronizargastos(context: CommandContext, db: Database) -> str:
-    if context.chat_type not in {"group", "supergroup"} or context.chat_id is None:
-        return context.t("expenses.group_only")
     if context.sync_expenses is None:
         return context.t("expenses.sheet_not_configured")
 
@@ -135,31 +103,17 @@ def _format_amount(context: CommandContext, amount_cents: int, currency: str) ->
 
 
 COMMANDS = {
-    "habilitargastos": Command(
-        "habilitargastos",
-        "habilita los gastos en este chat",
-        habilitargastos,
-        UserLevel.DEV,
-    ),
-    "deshabilitargastos": Command(
-        "deshabilitargastos",
-        "deshabilita los gastos en este chat",
-        deshabilitargastos,
-        UserLevel.DEV,
-    ),
     "gasto": Command(
         "gasto",
         "registra un gasto",
         gasto,
         UserLevel.DEV,
-        configurable_group="gastos",
     ),
     "ultimosgastos": Command(
         "ultimosgastos",
         "muestra los ultimos gastos",
         ultimosgastos,
         UserLevel.DEV,
-        configurable_group="gastos",
         list_response=True,
     ),
     "estadogastos": Command(

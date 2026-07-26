@@ -740,7 +740,6 @@ class GalerazaExpenseAndConfigTests(unittest.IsolatedAsyncioTestCase):
 
         writer.is_configured.return_value = False
         writer.is_ready.return_value = False
-        db.is_command_group_enabled.return_value = True
         db.count_pending_expenses.return_value = 2
         status = tb._build_expense_sheet_status(db, writer, "-1")
         self.assertIsNone(status.worksheet_name)

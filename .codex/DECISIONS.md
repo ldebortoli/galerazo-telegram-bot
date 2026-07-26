@@ -588,3 +588,10 @@ Este archivo es append-only a nivel conceptual: no borrar decisiones anteriores.
 - Los seis comandos de gastos (`/habilitargastos`, `/deshabilitargastos`, `/gasto`, `/ultimosgastos`, `/estadogastos` y `/sincronizargastos`) requieren `UserLevel.DEV`.
 - Motivo: los gastos se consolidan en una planilla global y el usuario solicito que solamente el desarrollador pueda habilitarlos, cargarlos, consultarlos y sincronizarlos.
 - La configuracion por chat y la persistencia local se conservan: el grupo sigue deshabilitado inicialmente y un desarrollador debe habilitarlo antes de registrar un gasto.
+
+## D-074 - Gastos globales de desarrollo sin configuracion por chat
+
+- Estado: vigente desde 2026-07-26; reemplaza la configuracion por chat de D-073.
+- Se eliminan `/habilitargastos` y `/deshabilitargastos`, la opcion Gastos de `/config` y la condicion `configurable_group` de los cuatro comandos restantes.
+- `/gasto`, `/ultimosgastos`, `/estadogastos` y `/sincronizargastos` requieren `DEV` y pueden usarse en cualquier tipo de chat. La base conserva el `chat_id` de cada gasto como dato de registro, no como permiso.
+- Los callbacks de tableros antiguos de Gastos se detectan antes de controles de nivel y eliminan el mensaje para retirar la UI obsoleta en el primer toque.
