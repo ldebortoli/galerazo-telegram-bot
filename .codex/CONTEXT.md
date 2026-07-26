@@ -36,6 +36,7 @@ La misma politica se aplica globalmente desde `C:\Users\calei\.codex\AGENTS.md`.
 - `galerazo_bot/database.py`: esquema SQLite y operaciones persistentes.
 - `galerazo_bot/pagination.py`: paginacion reutilizable y metadata de botoneras.
 - `galerazo_bot/chat_config.py`: menus y grupos de comandos configurables.
+- `galerazo_bot/versioning.py`: version actual y lectura de la entrada correspondiente en `CHANGELOG.md`.
 - `galerazo_bot/i18n.py`: textos en espanol e ingles. Los nombres de comandos no se traducen.
 - `galerazo_bot/galeraza.py`: reglas y formato del juego diario.
 - `galerazo_bot/media_moderation.py`: normalizacion de imagenes, muestreo 20/40/60/80% de videos y cliente de moderacion; no persiste media.
@@ -164,6 +165,7 @@ El panel usa un cliente inicial de `760x750`, minimo `680x730`; la pestaña Conf
 - Los `NetworkError` transitorios de `getUpdates` llegan sin update/job/coroutine y PTB los reintenta; se registran como warning local sin anunciar un falso error no handleado. Errores de red asociados a trabajo real si se anuncian.
 - `ApplicationBuilder` configura 30 segundos para los timeouts HTTP normales de Telegram; las respuestas paginadas no reintentan un `TimedOut` para evitar duplicados y lo registran como warning local.
 - Al iniciar, el bot sincroniza los comandos sugeridos de BotFather por scope: privados reciben los comandos generales comunes y grupos suman Galeraza/triggers. No se sugieren comandos admin/dev, gastos ni ruleta; el menu global se limpia para no filtrarlos a canales.
+- `CURRENT_VERSION` inicia en `0.1`; `CHANGELOG.md` contiene las notas por release. Antes de cada deploy pedido por el usuario, incrementar ambos y anotar solo cambios importantes; agrupar arreglos menores como "Correcciones y mejoras". SQLite anuncia cada version una vez al canal de novedades y `/version` la expone a todos.
 - Los rankings usan nombres visibles cacheados en `users` y user IDs; no generan menciones ni hacen requests de nombres al renderizar.
 - Todas las pantallas de `/config` incluyen `config:close`; los permisos se validan antes de ejecutar cualquier callback.
 - Cerrar el panel de control apaga el arbol de procesos local del bot antes de destruir la ventana.

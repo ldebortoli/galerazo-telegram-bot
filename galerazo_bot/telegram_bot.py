@@ -74,6 +74,7 @@ from .pagination import BUTTON_PREFIX, build_keyboard, parse_callback_data, rend
 from .roles import BackupResult, RussianRouletteHitResult, TriggerModerationResult, TriggerPayload, UserLevel
 from .runtime import ensure_python_version
 from .update_processor import PerChatUpdateProcessor
+from .versioning import CURRENT_VERSION, current_release_notes
 
 
 logger = logging.getLogger(__name__)
@@ -183,9 +184,34 @@ async def _post_init(application: Application) -> None:
     )
 
     await _sync_botfather_commands(application.bot)
+    await _announce_current_release(db, application.bot, settings)
     await _cleanup_old_paginated_messages(db, application.bot)
     await _send_log_event(application.bot, settings.telegram_log_chat_id, "Galerazo Bot iniciado.")
     _schedule_google_cloud_billing_report(application, settings)
+
+
+async def _announce_current_release(db: Database, bot: Bot, settings: Settings) -> bool:
+    if db.get_announced_release_version() == CURRENT_VERSION:
+        return False
+
+    try:
+        release_notes = current_release_notes()
+    except (OSError, ValueError) as exc:
+        logger.error("No pude leer el changelog de la version %s: %s", CURRENT_VERSION, exc)
+        return False
+
+    sent = await _send_announcement(
+        bot,
+        settings.telegram_announcements_chat_id,
+        release_notes,
+        settings.telegram_log_chat_id,
+    )
+    if not sent:
+        return False
+
+    db.set_announced_release_version(CURRENT_VERSION)
+    logger.info("Novedades de la version %s enviadas.", CURRENT_VERSION)
+    return True
 
 
 def _suggested_bot_commands(language: str, include_group_commands: bool) -> tuple[BotCommand, ...]:

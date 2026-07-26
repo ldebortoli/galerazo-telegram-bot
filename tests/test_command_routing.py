@@ -165,6 +165,7 @@ class CommandRoutingTests(unittest.TestCase):
 
             self.assertIn("/help:", response)
             self.assertIn("/start:", response)
+            self.assertIn("/version:", response)
             self.assertNotIn("- help:", response)
 
     def test_start_greets_and_points_to_help(self) -> None:

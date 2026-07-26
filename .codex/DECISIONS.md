@@ -561,3 +561,10 @@ Este archivo es append-only a nivel conceptual: no borrar decisiones anteriores.
 - Estado: vigente desde 2026-07-26.
 - Al iniciar, el bot sincroniza los comandos sugeridos mediante los scopes `all_private_chats` y `all_group_chats`, con descripciones en espanol por defecto e ingles para `language_code=en`.
 - Solo se incluyen comandos de nivel `COMMON`; privados reciben los generales y grupos agregan Galeraza y triggers habilitados por defecto. Se excluyen siempre los comandos de admin/dev y los grupos configurables deshabilitados por defecto (`gastos`, `ruletarusa`). El scope global se elimina para no conservar sugerencias anteriores sensibles ni aplicarlas a canales.
+
+## D-070 - Versionado y anuncios de release
+
+- Estado: vigente desde 2026-07-26.
+- `CURRENT_VERSION` y su entrada `## [version]` en `CHANGELOG.md` definen la release. Antes de cada deploy solicitado por el usuario, el agente incrementa la version y agrega los cambios importantes; los fixes menores se resumen como "Correcciones y mejoras" salvo indicacion contraria del usuario.
+- SQLite conserva solamente la ultima version anunciada en `release_state`. Durante el inicio, el bot envia las notas de la version al canal de anuncios y solo actualiza ese estado tras un envio exitoso, por lo que los reinicios no duplican novedades ni un fallo las pierde.
+- `/version` es publico y devuelve `CURRENT_VERSION`. El changelog inicial es `0.1` y se anunciara cuando esa version se despliegue por primera vez.

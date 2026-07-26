@@ -98,6 +98,11 @@ class DatabaseCompleteTests(unittest.TestCase):
         self.assertTrue(self.db.try_record_daily_report("1", "2026-07-22"))
         self.assertFalse(self.db.try_record_daily_report("1", "2026-07-22"))
         self.assertTrue(self.db.try_record_daily_report("1", "2026-07-23", "-1"))
+        self.assertIsNone(self.db.get_announced_release_version())
+        self.db.set_announced_release_version("0.1")
+        self.assertEqual(self.db.get_announced_release_version(), "0.1")
+        self.db.set_announced_release_version("0.2")
+        self.assertEqual(self.db.get_announced_release_version(), "0.2")
 
     def test_galeraza_pagination_and_compatibility_wrappers(self) -> None:
         self.db.register_chat("-1", "group", "G")

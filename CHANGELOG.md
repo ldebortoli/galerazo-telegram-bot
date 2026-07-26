@@ -1,0 +1,9 @@
+# Changelog
+
+## [0.1] - 2026-07-26
+
+- Galeraza diaria sincronizada por chat con tabla de puntajes y paginacion.
+- Triggers configurables con soporte de texto y multimedia.
+- Permisos por nivel, configuracion por grupo, bloqueo y restricciones por chat.
+- Reportes, anuncios, backups SQLite, panel local de control y diagnostico.
+- Registro opcional de gastos con Google Sheets y moderacion opcional de media al crear triggers.

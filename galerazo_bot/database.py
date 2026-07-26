@@ -354,6 +354,15 @@ class Database:
                 )
                 """
             )
+            conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS release_state (
+                    id INTEGER PRIMARY KEY CHECK (id = 1),
+                    announced_version TEXT NOT NULL,
+                    announced_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+                )
+                """
+            )
             _ensure_column(conn, "paginated_message_states", "content_json", "TEXT NOT NULL DEFAULT '{}'")
             _ensure_column(
                 conn,
@@ -388,6 +397,26 @@ class Database:
                     FROM galeraza_message_states
                     """
                 )
+
+    def get_announced_release_version(self) -> str | None:
+        with self._connect() as conn:
+            row = conn.execute(
+                "SELECT announced_version FROM release_state WHERE id = 1"
+            ).fetchone()
+        return str(row["announced_version"]) if row is not None else None
+
+    def set_announced_release_version(self, version: str) -> None:
+        with self._connect() as conn:
+            conn.execute(
+                """
+                INSERT INTO release_state (id, announced_version, announced_at)
+                VALUES (1, ?, CURRENT_TIMESTAMP)
+                ON CONFLICT(id) DO UPDATE SET
+                    announced_version = excluded.announced_version,
+                    announced_at = CURRENT_TIMESTAMP
+                """,
+                (version,),
+            )
 
     def get_or_create_user(
         self,

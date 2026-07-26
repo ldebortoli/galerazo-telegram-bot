@@ -19,6 +19,7 @@ from .ruletarusa import COMMANDS as RUSSIAN_ROULETTE_COMMANDS
 from .salir import COMMANDS as SALIR_COMMANDS
 from .start import COMMANDS as START_COMMANDS
 from .triggers import COMMANDS as TRIGGERS_COMMANDS
+from .version import COMMANDS as VERSION_COMMANDS
 
 
 COMMANDS: dict[str, Command] = {
@@ -39,5 +40,6 @@ COMMANDS: dict[str, Command] = {
     **CONFIG_COMMANDS,
     **GALERAZAS_COMMANDS,
     **TRIGGERS_COMMANDS,
+    **VERSION_COMMANDS,
     **SALIR_COMMANDS,
 }

@@ -158,7 +158,7 @@ class LifecycleAndBillingTests(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(
             private_names,
-            {"help", "ayuda", "start", "hola", "lil", "nivel", "chats", "reportar"},
+            {"help", "ayuda", "start", "hola", "lil", "nivel", "version", "chats", "reportar"},
         )
         self.assertTrue({"galeraza", "galerazas", "triggers", "agregartrigger"} <= group_names)
         self.assertFalse({"config", "backup", "debug", "gasto", "ruletarusa"} & group_names)
@@ -182,6 +182,8 @@ class LifecycleAndBillingTests(unittest.IsolatedAsyncioTestCase):
             bot=SimpleNamespace(get_me=AsyncMock(return_value=SimpleNamespace(id=99))),
         )
         with patch.object(tb, "_sync_botfather_commands", AsyncMock()) as sync, patch.object(
+            tb, "_announce_current_release", AsyncMock()
+        ) as announce, patch.object(
             tb, "_cleanup_old_paginated_messages", AsyncMock()
         ) as cleanup, patch.object(
             tb, "_send_log_event", AsyncMock(return_value=True)
@@ -189,9 +191,32 @@ class LifecycleAndBillingTests(unittest.IsolatedAsyncioTestCase):
             await tb._post_init(app)
         self.assertEqual(app.bot_data["state"].bot_user_id, "99")
         sync.assert_awaited_once_with(app.bot)
+        announce.assert_awaited_once_with(db, app.bot, app.bot_data["settings"])
         cleanup.assert_awaited_once()
         log.assert_awaited_once()
         schedule.assert_called_once()
+
+    async def test_release_announcement_only_marks_version_after_success(self) -> None:
+        db = MagicMock()
+        bot = MagicMock()
+        db.get_announced_release_version.return_value = tb.CURRENT_VERSION
+        self.assertFalse(await tb._announce_current_release(db, bot, settings()))
+
+        db.get_announced_release_version.return_value = None
+        with patch.object(tb, "current_release_notes", side_effect=ValueError("bad")):
+            self.assertFalse(await tb._announce_current_release(db, bot, settings()))
+
+        with patch.object(tb, "current_release_notes", return_value="notes"), patch.object(
+            tb, "_send_announcement", AsyncMock(return_value=False)
+        ):
+            self.assertFalse(await tb._announce_current_release(db, bot, settings()))
+
+        with patch.object(tb, "current_release_notes", return_value="notes"), patch.object(
+            tb, "_send_announcement", AsyncMock(return_value=True)
+        ) as send:
+            self.assertTrue(await tb._announce_current_release(db, bot, settings()))
+        send.assert_awaited_once_with(bot, "-11", "notes", "-10")
+        db.set_announced_release_version.assert_called_once_with(tb.CURRENT_VERSION)
 
     def test_schedule_invalid_reader_time_and_missing_job_queue(self) -> None:
         app = SimpleNamespace(job_queue=MagicMock())

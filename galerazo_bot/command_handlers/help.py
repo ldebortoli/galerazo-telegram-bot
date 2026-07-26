@@ -6,7 +6,7 @@ from ..roles import CommandContext
 
 
 HELP_GROUPS = (
-    ("general", {"help", "ayuda", "start", "hola", "lil", "nivel", "chats", "reportar"}),
+    ("general", {"help", "ayuda", "start", "hola", "lil", "nivel", "version", "chats", "reportar"}),
     ("blocking", {"bloquear", "desbloquear", "desloquear", "listanegra", "bloqueados"}),
     ("chat_admin", {"config", "restringir", "habilitar", "restringidos", "salir"}),
     ("galeraza", {"galeraza", "galerazas"}),
