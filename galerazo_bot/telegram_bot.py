@@ -13,6 +13,7 @@ from zoneinfo import ZoneInfo
 from telegram import (
     Bot,
     BotCommand,
+    BotCommandScopeAllChatAdministrators,
     BotCommandScopeAllGroupChats,
     BotCommandScopeAllPrivateChats,
     BotCommandScopeDefault,
@@ -85,7 +86,16 @@ TELEGRAM_DOCUMENT_TIMEOUT_SECONDS = 30
 TELEGRAM_REQUEST_TIMEOUT_SECONDS = 30
 PAGINATED_METADATA_TTL = timedelta(days=14)
 ARGENTINA_TIMEZONE = ZoneInfo("America/Argentina/Buenos_Aires")
-BOTFATHER_DISABLED_COMMAND_GROUPS = frozenset({"gastos", "ruletarusa"})
+BOTFATHER_HIDDEN_COMMANDS = frozenset(
+    {
+        "habilitargastos",
+        "deshabilitargastos",
+        "gasto",
+        "ultimosgastos",
+        "estadogastos",
+        "sincronizargastos",
+    }
+)
 POLLING_OPTIONS = {
     "allowed_updates": Update.ALL_TYPES,
     "drop_pending_updates": False,
@@ -214,14 +224,17 @@ async def _announce_current_release(db: Database, bot: Bot, settings: Settings) 
     return True
 
 
-def _suggested_bot_commands(language: str, include_group_commands: bool) -> tuple[BotCommand, ...]:
+def _suggested_bot_commands(
+    language: str,
+    max_level: UserLevel,
+    include_group_commands: bool,
+) -> tuple[BotCommand, ...]:
     commands = []
     for command in COMMANDS.values():
-        if command.min_level != UserLevel.COMMON or command.hidden:
+        if command.min_level > max_level or command.hidden or command.name in BOTFATHER_HIDDEN_COMMANDS:
             continue
-        if command.configurable_group is not None:
-            if not include_group_commands or command.configurable_group in BOTFATHER_DISABLED_COMMAND_GROUPS:
-                continue
+        if command.configurable_group is not None and not include_group_commands:
+            continue
         commands.append(BotCommand(command.name, t(language, f"help.{command.command_key}")))
     return tuple(commands)
 
@@ -231,13 +244,18 @@ async def _sync_botfather_commands(bot: Bot) -> None:
         for language_code in (None, "en"):
             language = language_code or DEFAULT_LANGUAGE
             await bot.set_my_commands(
-                _suggested_bot_commands(language, include_group_commands=False),
+                _suggested_bot_commands(language, UserLevel.COMMON, include_group_commands=False),
                 scope=BotCommandScopeAllPrivateChats(),
                 language_code=language_code,
             )
             await bot.set_my_commands(
-                _suggested_bot_commands(language, include_group_commands=True),
+                _suggested_bot_commands(language, UserLevel.COMMON, include_group_commands=True),
                 scope=BotCommandScopeAllGroupChats(),
+                language_code=language_code,
+            )
+            await bot.set_my_commands(
+                _suggested_bot_commands(language, UserLevel.ADMIN, include_group_commands=True),
+                scope=BotCommandScopeAllChatAdministrators(),
                 language_code=language_code,
             )
             await bot.delete_my_commands(

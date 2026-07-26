@@ -9,7 +9,16 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from telegram import BotCommandScopeAllGroupChats, BotCommandScopeAllPrivateChats, Chat, ChatMember, Message, Update, User
+from telegram import (
+    BotCommandScopeAllChatAdministrators,
+    BotCommandScopeAllGroupChats,
+    BotCommandScopeAllPrivateChats,
+    Chat,
+    ChatMember,
+    Message,
+    Update,
+    User,
+)
 from telegram.error import BadRequest, Conflict, Forbidden, NetworkError, TelegramError, TimedOut
 
 from galerazo_bot.cloud_billing import GoogleCloudBillingReader, GoogleCloudBillingReport
@@ -152,25 +161,36 @@ class LifecycleAndBillingTests(unittest.IsolatedAsyncioTestCase):
         self.assertIsInstance(builder.concurrent_updates.call_args.args[0], tb.PerChatUpdateProcessor)
 
     async def test_botfather_command_suggestions_are_public_and_scoped(self) -> None:
-        private_names = {command.command for command in tb._suggested_bot_commands("es", False)}
-        group_names = {command.command for command in tb._suggested_bot_commands("es", True)}
-        english_commands = tb._suggested_bot_commands("en", True)
+        private_names = {
+            command.command for command in tb._suggested_bot_commands("es", UserLevel.COMMON, False)
+        }
+        group_names = {
+            command.command for command in tb._suggested_bot_commands("es", UserLevel.COMMON, True)
+        }
+        admin_names = {
+            command.command for command in tb._suggested_bot_commands("es", UserLevel.ADMIN, True)
+        }
+        english_commands = tb._suggested_bot_commands("en", UserLevel.ADMIN, True)
 
         self.assertEqual(
             private_names,
             {"help", "ayuda", "start", "hola", "lil", "nivel", "version", "chats", "reportar"},
         )
         self.assertTrue({"galeraza", "galerazas", "triggers", "agregartrigger"} <= group_names)
-        self.assertFalse({"config", "backup", "debug", "gasto", "ruletarusa"} & group_names)
+        self.assertIn("ruletarusa", group_names)
+        self.assertFalse({"config", "backup", "debug", "gasto"} & group_names)
+        self.assertTrue({"config", "restringir", "habilitar", "restringidos"} <= admin_names)
+        self.assertFalse({"backup", "debug", "gasto", "estadogastos"} & admin_names)
         self.assertIn("shows this help", {command.description for command in english_commands})
 
         bot = SimpleNamespace(set_my_commands=AsyncMock(), delete_my_commands=AsyncMock())
         await tb._sync_botfather_commands(bot)
-        self.assertEqual(bot.set_my_commands.await_count, 4)
+        self.assertEqual(bot.set_my_commands.await_count, 6)
         self.assertEqual(bot.delete_my_commands.await_count, 2)
         scopes = [call.kwargs["scope"] for call in bot.set_my_commands.await_args_list]
         self.assertEqual(sum(isinstance(scope, BotCommandScopeAllPrivateChats) for scope in scopes), 2)
         self.assertEqual(sum(isinstance(scope, BotCommandScopeAllGroupChats) for scope in scopes), 2)
+        self.assertEqual(sum(isinstance(scope, BotCommandScopeAllChatAdministrators) for scope in scopes), 2)
 
         bot.set_my_commands.side_effect = TimedOut()
         await tb._sync_botfather_commands(bot)

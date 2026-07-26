@@ -568,3 +568,9 @@ Este archivo es append-only a nivel conceptual: no borrar decisiones anteriores.
 - `CURRENT_VERSION` y su entrada `## [version]` en `CHANGELOG.md` definen la release. Antes de cada deploy solicitado por el usuario, el agente incrementa la version y agrega los cambios importantes; los fixes menores se resumen como "Correcciones y mejoras" salvo indicacion contraria del usuario.
 - SQLite conserva solamente la ultima version anunciada en `release_state`. Durante el inicio, el bot envia las notas de la version al canal de anuncios y solo actualiza ese estado tras un envio exitoso, por lo que los reinicios no duplican novedades ni un fallo las pierde.
 - `/version` es publico y devuelve `CURRENT_VERSION`. El changelog inicial es `0.1` y se anunciara cuando esa version se despliegue por primera vez.
+
+## D-071 - Menus BotFather diferenciados para administradores
+
+- Estado: vigente desde 2026-07-26; reemplaza el alcance de usuarios comunes de D-069 para grupos.
+- Los grupos reciben el menu de comandos comunes, excepto gastos. El scope `all_chat_administrators` agrega los comandos de nivel `ADMIN` solamente a los administradores del grupo.
+- Los comandos de nivel `DEV` y todos los comandos de gastos permanecen ocultos en BotFather. La ruleta rusa vuelve a aparecer como comando comun de grupos, aunque cada grupo puede mantenerla deshabilitada por configuracion.
