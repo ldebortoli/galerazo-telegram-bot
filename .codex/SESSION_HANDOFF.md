@@ -6,13 +6,13 @@ Mantener Galerazo Bot reproducible en Windows, CI y Docker, con SQLite persisten
 
 ## Tarea actual
 
-No hay una implementacion activa. Versionado automatico por cambio funcional y sincronizacion obligatoria de BotFather cuando cambien comandos quedaron establecidos; la version actual es `0.2` y falta commit/push. Las correcciones se acumulan localmente/Git y los releases de produccion quedan agrupados hasta que el usuario pida explicitamente publicar o desplegar.
+No hay una implementacion activa. Versionado automatico por cambio funcional y sincronizacion obligatoria de BotFather cuando cambien comandos quedaron establecidos y pusheados; la version actual es `0.2`. Las correcciones se acumulan localmente/Git y los releases de produccion quedan agrupados hasta que el usuario pida explicitamente publicar o desplegar.
 
 El mecanismo mensual de backups GCE ya tiene un runbook exhaustivo y enlazado desde README/deploy para Galerazobot y futuros bots. El job diario de gasto de Google Cloud quedo implementado y validado; su activacion real sigue bloqueada porque `bot-fleet-production` no tiene dataset ni tabla de exportacion.
 
 ## Estado actual
 
-- Rama `main`, tracking `origin/main`; ultimo commit propio `09a97a2` (`Show admin commands in BotFather groups`) ya fue pusheado. `README.md` conserva una modificacion local ajena y no esta staged.
+- Rama `main`, tracking `origin/main`; ultimo commit propio `096630b` (`Automate version and changelog policy`) ya fue pusheado. `README.md` conserva una modificacion local ajena y no esta staged.
 - Politica de release: un fix normal termina en validacion, commit y push. No construir imagen sin necesidad Docker y no publicar Artifact Registry ni desplegar GCE salvo pedido explicito del usuario en la instruccion actual.
 - Python 3.14.6 exacto y lock completo.
 - `Dockerfile` tiene targets `test` y `runtime`; produccion corre como UID/GID 10001, con healthcheck SQLite.
