@@ -16,6 +16,8 @@
 
 # DONE
 
+- [2026-07-26] Sincronizar los comandos sugeridos de BotFather por scope y lenguaje al iniciar el bot; privados reciben ocho comandos generales comunes y grupos suman Galeraza/triggers. Excluir admin/dev, gastos y ruleta; borrar el scope global para no conservar sugerencias sensibles. Sincronizacion real realizada con exito. Validacion: 210 pruebas y 100% de sentencias/ramas, runtime, lock, `pip check`, `compileall` y checkpoint OK.
+
 - [2026-07-26] Corregir el `TimedOut` de `/triggers`: todos los requests normales de PTB ahora tienen 30 s de timeout y la respuesta paginada contiene ese fallo como warning, sin reintento que pueda duplicar mensajes. Formatear `/triggers` con titulo en negrita y linea vacia, incluso al paginar. Agregar `/galeraza` como alias que reutiliza el handler de `/galerazas`. Validacion: 209 pruebas y 100% de sentencias/ramas.
 
 - [2026-07-22] Establecer la politica operativa de releases agrupados: correcciones ordinarias se validan, commitean y pushean sin publicar imagen ni desplegar GCE; Docker local solo cuando la superficie lo exige; release/deploy unicamente por pedido explicito del usuario en la instruccion actual. Registrado como instruccion de repositorio, contexto estable y decision D-067.

@@ -10,7 +10,19 @@ from io import BytesIO
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
-from telegram import Bot, Chat, ChatMember, Message, MessageEntity, Update, User
+from telegram import (
+    Bot,
+    BotCommand,
+    BotCommandScopeAllGroupChats,
+    BotCommandScopeAllPrivateChats,
+    BotCommandScopeDefault,
+    Chat,
+    ChatMember,
+    Message,
+    MessageEntity,
+    Update,
+    User,
+)
 from telegram.error import BadRequest, Conflict, Forbidden, NetworkError, TelegramError, TimedOut
 from telegram.ext import (
     Application,
@@ -72,6 +84,7 @@ TELEGRAM_DOCUMENT_TIMEOUT_SECONDS = 30
 TELEGRAM_REQUEST_TIMEOUT_SECONDS = 30
 PAGINATED_METADATA_TTL = timedelta(days=14)
 ARGENTINA_TIMEZONE = ZoneInfo("America/Argentina/Buenos_Aires")
+BOTFATHER_DISABLED_COMMAND_GROUPS = frozenset({"gastos", "ruletarusa"})
 POLLING_OPTIONS = {
     "allowed_updates": Update.ALL_TYPES,
     "drop_pending_updates": False,
@@ -169,9 +182,44 @@ async def _post_init(application: Application) -> None:
         media_moderator=OpenAIMediaModerator(settings.openai_api_key),
     )
 
+    await _sync_botfather_commands(application.bot)
     await _cleanup_old_paginated_messages(db, application.bot)
     await _send_log_event(application.bot, settings.telegram_log_chat_id, "Galerazo Bot iniciado.")
     _schedule_google_cloud_billing_report(application, settings)
+
+
+def _suggested_bot_commands(language: str, include_group_commands: bool) -> tuple[BotCommand, ...]:
+    commands = []
+    for command in COMMANDS.values():
+        if command.min_level != UserLevel.COMMON or command.hidden:
+            continue
+        if command.configurable_group is not None:
+            if not include_group_commands or command.configurable_group in BOTFATHER_DISABLED_COMMAND_GROUPS:
+                continue
+        commands.append(BotCommand(command.name, t(language, f"help.{command.command_key}")))
+    return tuple(commands)
+
+
+async def _sync_botfather_commands(bot: Bot) -> None:
+    try:
+        for language_code in (None, "en"):
+            language = language_code or DEFAULT_LANGUAGE
+            await bot.set_my_commands(
+                _suggested_bot_commands(language, include_group_commands=False),
+                scope=BotCommandScopeAllPrivateChats(),
+                language_code=language_code,
+            )
+            await bot.set_my_commands(
+                _suggested_bot_commands(language, include_group_commands=True),
+                scope=BotCommandScopeAllGroupChats(),
+                language_code=language_code,
+            )
+            await bot.delete_my_commands(
+                scope=BotCommandScopeDefault(),
+                language_code=language_code,
+            )
+    except TelegramError as exc:
+        logger.warning("No pude sincronizar los comandos sugeridos de BotFather: %s", exc)
 
 
 def _schedule_google_cloud_billing_report(

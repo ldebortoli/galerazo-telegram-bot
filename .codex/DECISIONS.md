@@ -555,3 +555,9 @@ Este archivo es append-only a nivel conceptual: no borrar decisiones anteriores.
 - Estado: vigente desde 2026-07-26.
 - Las solicitudes normales de `python-telegram-bot` usan timeouts de conexion, lectura, escritura y pool de 30 segundos configurados en `ApplicationBuilder`; el valor predeterminado de cinco segundos era insuficiente para envios transitorios como `/triggers`.
 - Un `TimedOut` al crear una respuesta paginada se registra localmente como warning y no se reintenta: Telegram puede haber aceptado el envio aunque la respuesta se haya perdido, por lo que reintentar podria duplicar el mensaje.
+
+## D-069 - Menus de BotFather limitados a comandos publicos
+
+- Estado: vigente desde 2026-07-26.
+- Al iniciar, el bot sincroniza los comandos sugeridos mediante los scopes `all_private_chats` y `all_group_chats`, con descripciones en espanol por defecto e ingles para `language_code=en`.
+- Solo se incluyen comandos de nivel `COMMON`; privados reciben los generales y grupos agregan Galeraza y triggers habilitados por defecto. Se excluyen siempre los comandos de admin/dev y los grupos configurables deshabilitados por defecto (`gastos`, `ruletarusa`). El scope global se elimina para no conservar sugerencias anteriores sensibles ni aplicarlas a canales.

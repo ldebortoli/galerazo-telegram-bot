@@ -6,7 +6,7 @@ Mantener Galerazo Bot reproducible en Windows, CI y Docker, con SQLite persisten
 
 ## Tarea actual
 
-No hay una implementacion activa. Las correcciones se acumulan localmente/Git y los releases de produccion quedan agrupados hasta que el usuario pida explicitamente publicar o desplegar.
+No hay una implementacion activa. BotFather ya fue sincronizado directamente con los menus publicos y la automatizacion de inicio fue validada; falta commit y push. Las correcciones se acumulan localmente/Git y los releases de produccion quedan agrupados hasta que el usuario pida explicitamente publicar o desplegar.
 
 El mecanismo mensual de backups GCE ya tiene un runbook exhaustivo y enlazado desde README/deploy para Galerazobot y futuros bots. El job diario de gasto de Google Cloud quedo implementado y validado; su activacion real sigue bloqueada porque `bot-fleet-production` no tiene dataset ni tabla de exportacion.
 

@@ -9,7 +9,7 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from telegram import Chat, ChatMember, Message, Update, User
+from telegram import BotCommandScopeAllGroupChats, BotCommandScopeAllPrivateChats, Chat, ChatMember, Message, Update, User
 from telegram.error import BadRequest, Conflict, Forbidden, NetworkError, TelegramError, TimedOut
 
 from galerazo_bot.cloud_billing import GoogleCloudBillingReader, GoogleCloudBillingReport
@@ -151,17 +151,44 @@ class LifecycleAndBillingTests(unittest.IsolatedAsyncioTestCase):
         builder.pool_timeout.assert_called_once_with(tb.TELEGRAM_REQUEST_TIMEOUT_SECONDS)
         self.assertIsInstance(builder.concurrent_updates.call_args.args[0], tb.PerChatUpdateProcessor)
 
+    async def test_botfather_command_suggestions_are_public_and_scoped(self) -> None:
+        private_names = {command.command for command in tb._suggested_bot_commands("es", False)}
+        group_names = {command.command for command in tb._suggested_bot_commands("es", True)}
+        english_commands = tb._suggested_bot_commands("en", True)
+
+        self.assertEqual(
+            private_names,
+            {"help", "ayuda", "start", "hola", "lil", "nivel", "chats", "reportar"},
+        )
+        self.assertTrue({"galeraza", "galerazas", "triggers", "agregartrigger"} <= group_names)
+        self.assertFalse({"config", "backup", "debug", "gasto", "ruletarusa"} & group_names)
+        self.assertIn("shows this help", {command.description for command in english_commands})
+
+        bot = SimpleNamespace(set_my_commands=AsyncMock(), delete_my_commands=AsyncMock())
+        await tb._sync_botfather_commands(bot)
+        self.assertEqual(bot.set_my_commands.await_count, 4)
+        self.assertEqual(bot.delete_my_commands.await_count, 2)
+        scopes = [call.kwargs["scope"] for call in bot.set_my_commands.await_args_list]
+        self.assertEqual(sum(isinstance(scope, BotCommandScopeAllPrivateChats) for scope in scopes), 2)
+        self.assertEqual(sum(isinstance(scope, BotCommandScopeAllGroupChats) for scope in scopes), 2)
+
+        bot.set_my_commands.side_effect = TimedOut()
+        await tb._sync_botfather_commands(bot)
+
     async def test_post_init_builds_state_and_runs_startup_actions(self) -> None:
         db = MagicMock()
         app = SimpleNamespace(
             bot_data={"settings": settings(), "db": db},
             bot=SimpleNamespace(get_me=AsyncMock(return_value=SimpleNamespace(id=99))),
         )
-        with patch.object(tb, "_cleanup_old_paginated_messages", AsyncMock()) as cleanup, patch.object(
+        with patch.object(tb, "_sync_botfather_commands", AsyncMock()) as sync, patch.object(
+            tb, "_cleanup_old_paginated_messages", AsyncMock()
+        ) as cleanup, patch.object(
             tb, "_send_log_event", AsyncMock(return_value=True)
         ) as log, patch.object(tb, "_schedule_google_cloud_billing_report") as schedule:
             await tb._post_init(app)
         self.assertEqual(app.bot_data["state"].bot_user_id, "99")
+        sync.assert_awaited_once_with(app.bot)
         cleanup.assert_awaited_once()
         log.assert_awaited_once()
         schedule.assert_called_once()
