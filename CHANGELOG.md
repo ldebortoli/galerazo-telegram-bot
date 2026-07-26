@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.3] - 2026-07-26
+
+- El registro, consulta, activacion y sincronizacion de gastos ahora esta restringido exclusivamente a desarrolladores.
+
 ## [0.2] - 2026-07-26
 
 - Comando `/version` para consultar la version actual del bot.

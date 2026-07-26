@@ -581,3 +581,10 @@ Este archivo es append-only a nivel conceptual: no borrar decisiones anteriores.
 - Todo cambio funcional actualiza `CHANGELOG.md` en el mismo commit. El agente elige el incremento de version salvo numero indicado expresamente por el usuario: capacidades visibles importantes incrementan la version menor y varios fixes menores se agrupan bajo una sola linea "Correcciones y mejoras".
 - Al agregar, eliminar, renombrar, cambiar permisos o descripciones de un comando, el mismo trabajo debe actualizar definiciones/pruebas de BotFather y ejecutar la sincronizacion directa. Los cambios sin impacto de comandos no requieren esa llamada externa.
 - La version actual pasa a `0.2`, que agrupa `/version`, los anuncios de release y menus BotFather por rol. Se anunciara en el proximo deploy solicitado.
+
+## D-073 - Gastos exclusivos de desarrollo
+
+- Estado: vigente desde 2026-07-26; reemplaza los permisos previos de la familia de gastos.
+- Los seis comandos de gastos (`/habilitargastos`, `/deshabilitargastos`, `/gasto`, `/ultimosgastos`, `/estadogastos` y `/sincronizargastos`) requieren `UserLevel.DEV`.
+- Motivo: los gastos se consolidan en una planilla global y el usuario solicito que solamente el desarrollador pueda habilitarlos, cargarlos, consultarlos y sincronizarlos.
+- La configuracion por chat y la persistencia local se conservan: el grupo sigue deshabilitado inicialmente y un desarrollador debe habilitarlo antes de registrar un gasto.

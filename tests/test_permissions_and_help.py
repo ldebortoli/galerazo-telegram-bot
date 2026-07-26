@@ -21,6 +21,32 @@ class PermissionsAndHelpTests(unittest.TestCase):
             self.assertEqual(response, "No tenés permisos suficientes para usar este comando.")
             self.assertFalse(db.is_user_blocked("2"))
 
+    def test_only_developers_can_use_expense_commands(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            db = Database(Path(directory) / "test.sqlite3")
+            db.get_or_create_user("1", "Common")
+            db.register_chat("-1", "group", "Group")
+
+            for command in (
+                "/habilitargastos",
+                "/deshabilitargastos",
+                "/gasto ARS 100 | tarjeta | supermercado | compras",
+                "/ultimosgastos",
+                "/estadogastos",
+                "/sincronizargastos",
+            ):
+                with self.subTest(command=command):
+                    response = asyncio.run(
+                        handle_command_async(
+                            command,
+                            "1",
+                            db,
+                            chat_id="-1",
+                            chat_type="group",
+                        )
+                    )
+                    self.assertEqual(response, "No tenés permisos suficientes para usar este comando.")
+
     def test_bot_cannot_be_blacklisted(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             db = Database(Path(directory) / "test.sqlite3")
