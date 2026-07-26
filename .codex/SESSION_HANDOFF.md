@@ -12,7 +12,7 @@ El mecanismo mensual de backups GCE ya tiene un runbook exhaustivo y enlazado de
 
 ## Estado actual
 
-- Rama `main`, tracking `origin/main`; el cambio de gastos `0.4` esta validado y pendiente de commit/push. `README.md` conserva una modificacion local ajena y no esta staged.
+- Rama `main`, tracking `origin/main`; ultimo commit propio `af11d99` (`Make expense commands developer-only globally`) ya fue pusheado. `README.md` conserva una modificacion local ajena y no esta staged.
 - Politica de release: un fix normal termina en validacion, commit y push. No construir imagen sin necesidad Docker y no publicar Artifact Registry ni desplegar GCE salvo pedido explicito del usuario en la instruccion actual.
 - Python 3.14.6 exacto y lock completo.
 - `Dockerfile` tiene targets `test` y `runtime`; produccion corre como UID/GID 10001, con healthcheck SQLite.
