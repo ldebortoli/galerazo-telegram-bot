@@ -4,8 +4,8 @@ Base para un bot de Telegram con una version estable y reproducible de Python, `
 
 ## Comandos
 
-- `/help` / `/ayuda`: muestra los comandos disponibles para tu nivel de usuario.
-- `/start`: saluda y muestra como abrir la ayuda.
+- `help` / `ayuda`: muestra los comandos disponibles para tu nivel de usuario.
+- `start`: saluda y muestra como abrir la ayuda.
 - `hola`: responde un saludo.
 - `lil`: responde `LIL`.
 - `nivel`: muestra el nivel detectado para el usuario.
