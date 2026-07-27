@@ -12,7 +12,7 @@ El mecanismo mensual de backups GCE ya tiene un runbook exhaustivo y enlazado de
 
 ## Estado actual
 
-- Rama `main`, tracking `origin/main`; ultimo commit propio `8e4fe6d` (`Add configurable chat announcements`) ya fue pusheado. `README.md` conserva una modificacion local ajena y no esta staged.
+- Rama `main`, tracking `origin/main`; ultimo commit propio `989c494` (`Update command examples in README`) ya fue pusheado. El arbol de trabajo esta limpio.
 - Politica de release: un fix normal termina en validacion, commit y push. No construir imagen sin necesidad Docker y no publicar Artifact Registry ni desplegar GCE salvo pedido explicito del usuario en la instruccion actual.
 - Python 3.14.6 exacto y lock completo.
 - `Dockerfile` tiene targets `test` y `runtime`; produccion corre como UID/GID 10001, con healthcheck SQLite.
