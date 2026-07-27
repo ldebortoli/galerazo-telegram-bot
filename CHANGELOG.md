@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.5] - 2026-07-27
+
+- Nuevo comando de desarrollo `/anuncio` para enviar anuncios a todos los chats activos y al canal de anuncios.
+- Cada chat puede habilitar o deshabilitar anuncios desde `/config`; la preferencia empieza habilitada e incluye chats privados y canales.
+- Las novedades de versiones desplegadas ahora se distribuyen con el mismo sistema de anuncios y actualizan chats eliminados, bloqueados o expulsados al detectarlos.
+
 ## [0.4] - 2026-07-26
 
 - Gastos deja de ser configurable por grupo: sus cuatro comandos son exclusivos de desarrollo y funcionan en cualquier tipo de chat.

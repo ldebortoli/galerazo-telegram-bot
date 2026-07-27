@@ -24,6 +24,10 @@ class VersioningTests(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, "no contiene cambios"):
                     versioning.current_release_notes()
 
+            changelog.write_text(f"## [{versioning.CURRENT_VERSION}]\n\n- Final\n", encoding="utf-8")
+            with patch.object(versioning, "CHANGELOG_PATH", changelog):
+                self.assertIn("- Final", versioning.current_release_notes())
+
         with patch.object(versioning, "CHANGELOG_PATH", Path("missing.md")):
             with self.assertRaises(FileNotFoundError):
                 versioning.current_release_notes()

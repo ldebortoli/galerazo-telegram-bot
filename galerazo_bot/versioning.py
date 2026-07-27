@@ -3,7 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 
 
-CURRENT_VERSION = "0.4"
+CURRENT_VERSION = "0.5"
 CHANGELOG_PATH = Path(__file__).resolve().parent.parent / "CHANGELOG.md"
 
 

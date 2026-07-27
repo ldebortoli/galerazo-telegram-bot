@@ -16,6 +16,8 @@
 
 # DONE
 
+- [2026-07-27] Implementar `/anuncio` para devs: recorre chats activos, respeta el opt-out por chat, manda tambien al canal de anuncios y solo marca inactivos ante errores definitivos. Agregar preferencia Anuncios a `/config` para privados/grupos/supergrupos, por defecto activa y migrable; los releases distribuyen el changelog por ese mismo mecanismo. Version `0.5`. BotFather resincronizado. Validacion: 218 pruebas, 100% de sentencias/ramas, runtime, `pip check`, `compileall` y diff-check OK. Sin release/deploy.
+
 - [2026-07-26] Quitar Gastos de `/config` y los comandos `/habilitargastos`/`/deshabilitargastos`; los cuatro comandos restantes exigen `DEV` y funcionan en cualquier chat. Los callbacks antiguos de Gastos eliminan su tablero al tocarse. BotFather resincronizado. Version `0.4`. Validacion: 215 pruebas, 100% de sentencias/ramas, runtime, `pip check`, `compileall` y diff-check OK. Sin release/deploy.
 
 - [2026-07-26] Restringir toda la familia de comandos de gastos a `UserLevel.DEV`: solo desarrolladores pueden habilitar, deshabilitar, registrar, listar, consultar el estado o sincronizar gastos. BotFather fue resincronizado y conserva esos comandos ocultos. Version `0.3`. Validacion: 214 pruebas, 100% de sentencias/ramas, runtime, `pip check`, `compileall`, diff-check y checkpoint OK. Sin release/deploy.

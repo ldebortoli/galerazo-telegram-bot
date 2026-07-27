@@ -44,9 +44,17 @@ class ChatStatsRow:
 
 
 @dataclass(frozen=True)
+class ActiveChat:
+    chat_id: str
+    chat_type: str
+    title: str | None
+
+
+@dataclass(frozen=True)
 class ChatSettings:
     chat_id: str
     language: str
+    announcements_enabled: bool
 
 
 @dataclass(frozen=True)
@@ -181,12 +189,14 @@ class Database:
                 CREATE TABLE IF NOT EXISTS chat_settings (
                     chat_id TEXT PRIMARY KEY,
                     language TEXT NOT NULL DEFAULT 'es',
+                    announcements_enabled INTEGER NOT NULL DEFAULT 1,
                     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
                     updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
                     FOREIGN KEY (chat_id) REFERENCES chats (chat_id)
                 )
                 """
             )
+            _ensure_column(conn, "chat_settings", "announcements_enabled", "INTEGER NOT NULL DEFAULT 1")
             conn.execute(
                 """
                 CREATE TABLE IF NOT EXISTS chat_command_settings (
@@ -578,12 +588,13 @@ class Database:
             )
             conn.execute(
                 """
-                INSERT INTO chat_settings (chat_id, language, created_at, updated_at)
-                SELECT ?, language, created_at, CURRENT_TIMESTAMP
+                INSERT INTO chat_settings (chat_id, language, announcements_enabled, created_at, updated_at)
+                SELECT ?, language, announcements_enabled, created_at, CURRENT_TIMESTAMP
                 FROM chat_settings
                 WHERE chat_id = ?
                 ON CONFLICT(chat_id) DO UPDATE SET
                     language = excluded.language,
+                    announcements_enabled = excluded.announcements_enabled,
                     updated_at = CURRENT_TIMESTAMP
                 """,
                 (new_chat_id, old_chat_id),
@@ -820,11 +831,15 @@ class Database:
                 (chat_id,),
             )
             row = conn.execute(
-                "SELECT chat_id, language FROM chat_settings WHERE chat_id = ?",
+                "SELECT chat_id, language, announcements_enabled FROM chat_settings WHERE chat_id = ?",
                 (chat_id,),
             ).fetchone()
 
-        return ChatSettings(chat_id=row["chat_id"], language=row["language"])
+        return ChatSettings(
+            chat_id=row["chat_id"],
+            language=row["language"],
+            announcements_enabled=bool(row["announcements_enabled"]),
+        )
 
     def set_chat_language(self, chat_id: str, language: str) -> None:
         chat_id = self.resolve_chat_id(chat_id)
@@ -838,6 +853,20 @@ class Database:
                     updated_at = CURRENT_TIMESTAMP
                 """,
                 (chat_id, language),
+            )
+
+    def set_chat_announcements_enabled(self, chat_id: str, enabled: bool) -> None:
+        chat_id = self.resolve_chat_id(chat_id)
+        with self._connect() as conn:
+            conn.execute(
+                """
+                INSERT INTO chat_settings (chat_id, announcements_enabled)
+                VALUES (?, ?)
+                ON CONFLICT(chat_id) DO UPDATE SET
+                    announcements_enabled = excluded.announcements_enabled,
+                    updated_at = CURRENT_TIMESTAMP
+                """,
+                (chat_id, int(enabled)),
             )
 
     def is_command_group_enabled(self, chat_id: str, command_group: str) -> bool:
@@ -907,6 +936,18 @@ class Database:
             )
             for row in rows
         ]
+
+    def list_active_chats(self) -> list[ActiveChat]:
+        with self._connect() as conn:
+            rows = conn.execute(
+                """
+                SELECT chat_id, chat_type, title
+                FROM chats
+                WHERE status = 'active'
+                ORDER BY chat_id
+                """
+            ).fetchall()
+        return [ActiveChat(row["chat_id"], row["chat_type"], row["title"]) for row in rows]
 
     def save_incoming_message(
         self,

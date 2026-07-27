@@ -39,6 +39,7 @@ from telegram.ext import (
 
 from .chat_config import (
     CONFIG_PREFIX,
+    build_announcements_menu,
     build_command_group_menu,
     build_command_groups_menu,
     build_language_menu,
@@ -54,6 +55,7 @@ from .cloud_billing import (
     format_google_cloud_billing_report,
     parse_report_time,
 )
+from .announcements import AnnouncementBroadcastResult, announcement_fits, format_announcement
 from .commands import COMMANDS, get_command, handle_command_async, is_command_invocation
 from .config import Settings, load_settings
 from .database import Database, Trigger
@@ -210,13 +212,13 @@ async def _announce_current_release(db: Database, bot: Bot, settings: Settings) 
         logger.error("No pude leer el changelog de la version %s: %s", CURRENT_VERSION, exc)
         return False
 
-    sent = await _send_announcement(
-        bot,
-        settings.telegram_announcements_chat_id,
-        release_notes,
-        settings.telegram_log_chat_id,
+    result = await _broadcast_announcement(
+        db=db,
+        bot=bot,
+        text=release_notes,
+        announcements_chat_id=settings.telegram_announcements_chat_id,
     )
-    if not sent:
+    if result.too_long or not result.announcement_channel_sent:
         return False
 
     db.set_announced_release_version(CURRENT_VERSION)
@@ -232,6 +234,8 @@ def _suggested_bot_commands(
     commands = []
     for command in COMMANDS.values():
         if command.min_level > max_level or command.hidden or command.name in BOTFATHER_HIDDEN_COMMANDS:
+            continue
+        if command.name == "config" and include_group_commands and max_level < UserLevel.ADMIN:
             continue
         if command.configurable_group is not None and not include_group_commands:
             continue
@@ -540,6 +544,12 @@ async def _handle_command_update(update: Update, context: ContextTypes.DEFAULT_T
             state.settings.telegram_log_chat_id,
             _chat_language(state.db, chat.id),
         ),
+        broadcast_announcement=lambda text: _broadcast_announcement(
+            db=state.db,
+            bot=context.bot,
+            text=text,
+            announcements_chat_id=state.settings.telegram_announcements_chat_id,
+        ),
         send_report=lambda text: _send_report(
             db=state.db,
             bot=context.bot,
@@ -650,8 +660,8 @@ async def _config_callback_entrypoint(update: Update, context: ContextTypes.DEFA
     state.db.get_or_create_user(str(user.id), _display_name(user), user.username)
     message = callback_query.message
     language = _chat_language(state.db, message.chat.id) if message is not None else DEFAULT_LANGUAGE
-    if message is None or message.chat.type not in {"group", "supergroup"}:
-        await callback_query.answer(t(language, "config.group_only_popup"))
+    if message is None or message.chat.type not in {"private", "group", "supergroup"}:
+        await callback_query.answer(t(language, "config.unsupported_chat"))
         return
 
     parsed = parse_config_callback(callback_query.data or "")
@@ -674,7 +684,7 @@ async def _config_callback_entrypoint(update: Update, context: ContextTypes.DEFA
         bot=context.bot,
         dev_user_ids=state.settings.telegram_dev_user_ids,
     )
-    if user_level < UserLevel.ADMIN:
+    if message.chat.type in {"group", "supergroup"} and user_level < UserLevel.ADMIN:
         await callback_query.answer(t(language, "config.permission_popup"))
         return
 
@@ -1187,7 +1197,7 @@ async def _send_config_menu(db: Database, message: Message) -> bool:
     try:
         await message.reply_text(
             t(language, "config.title"),
-            reply_markup=build_main_menu(language),
+            reply_markup=build_main_menu(language, _chat_supports_command_groups(message.chat.type)),
             do_quote=True,
         )
         db.get_chat_settings(str(message.chat.id))
@@ -1207,13 +1217,36 @@ async def _handle_config_callback(db: Database, message: Message, parsed: tuple[
         return t(language, "config.closed")
 
     if action == "main":
-        await message.edit_text(t(language, "config.title"), reply_markup=build_main_menu(language))
+        await message.edit_text(
+            t(language, "config.title"),
+            reply_markup=build_main_menu(language, _chat_supports_command_groups(message.chat.type)),
+        )
         return None
 
     if action == "language":
         settings = db.get_chat_settings(chat_id)
         await message.edit_text(t(settings.language, "config.language"), reply_markup=build_language_menu(settings.language))
         return None
+
+    if action == "announcements":
+        settings = db.get_chat_settings(chat_id)
+        await message.edit_text(
+            t(language, "config.announcements"),
+            reply_markup=build_announcements_menu(settings.announcements_enabled, language),
+        )
+        return None
+
+    if action == "setannouncements" and len(parsed) == 2:
+        enabled = parsed[1] == "1"
+        settings = db.get_chat_settings(chat_id)
+        if settings.announcements_enabled == enabled:
+            return None
+        db.set_chat_announcements_enabled(chat_id, enabled)
+        await message.edit_text(
+            t(language, "config.announcements"),
+            reply_markup=build_announcements_menu(enabled, language),
+        )
+        return t(language, "config.updated")
 
     if action == "lang" and len(parsed) == 2:
         language = parsed[1]
@@ -1227,6 +1260,8 @@ async def _handle_config_callback(db: Database, message: Message, parsed: tuple[
         return t(language, "config.language_updated")
 
     if action == "commands":
+        if not _chat_supports_command_groups(message.chat.type):
+            return None
         await message.edit_text(t(language, "config.commands"), reply_markup=build_command_groups_menu(language))
         return None
 
@@ -1257,6 +1292,10 @@ async def _handle_config_callback(db: Database, message: Message, parsed: tuple[
         return t(language, "config.updated")
 
     return None
+
+
+def _chat_supports_command_groups(chat_type: str) -> bool:
+    return chat_type in {"group", "supergroup"}
 
 
 async def _handle_paginated_callback(
@@ -1619,6 +1658,64 @@ async def _send_announcement(
         return False
 
     return True
+
+
+async def _broadcast_announcement(
+    db: Database,
+    bot: Bot,
+    text: str,
+    announcements_chat_id: str | None,
+) -> AnnouncementBroadcastResult:
+    if not announcement_fits(text, TELEGRAM_MESSAGE_LIMIT_CHARS):
+        return AnnouncementBroadcastResult(too_long=True)
+
+    announcement_chat_id = str(announcements_chat_id) if announcements_chat_id else None
+    sent_count = 0
+    skipped_count = 0
+    inactive_count = 0
+    failed_count = 0
+    for chat in db.list_active_chats():
+        if chat.chat_id == announcement_chat_id:
+            continue
+        settings = db.get_chat_settings(chat.chat_id)
+        if not settings.announcements_enabled:
+            skipped_count += 1
+            continue
+        try:
+            await bot.send_message(
+                chat_id=_parse_chat_id(chat.chat_id),
+                text=format_announcement(text, settings.language),
+            )
+        except TelegramError as exc:
+            if _is_bot_removed_error(exc):
+                db.mark_chat_inactive(chat.chat_id, "announcement_send_failed")
+                inactive_count += 1
+            else:
+                failed_count += 1
+            logger.warning("No pude enviar anuncio al chat %s: %s", chat.chat_id, exc)
+            continue
+        sent_count += 1
+
+    announcement_channel_sent = False
+    if announcement_chat_id:
+        channel_language = _chat_language(db, announcement_chat_id)
+        try:
+            await bot.send_message(
+                chat_id=_parse_chat_id(announcement_chat_id),
+                text=format_announcement(text, channel_language),
+            )
+        except (TelegramError, ValueError) as exc:
+            logger.warning("No pude enviar anuncio al canal de anuncios: %s", exc)
+        else:
+            announcement_channel_sent = True
+
+    return AnnouncementBroadcastResult(
+        sent_count=sent_count,
+        skipped_count=skipped_count,
+        inactive_count=inactive_count,
+        failed_count=failed_count,
+        announcement_channel_sent=announcement_channel_sent,
+    )
 
 
 async def _create_and_send_backup(

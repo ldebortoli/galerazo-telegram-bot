@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from ..commands import Command
+from .anuncio import COMMANDS as ANUNCIO_COMMANDS
 from .backup import COMMANDS as BACKUP_COMMANDS
 from .blacklist import COMMANDS as BLACKLIST_COMMANDS
 from .chats import COMMANDS as CHATS_COMMANDS
@@ -23,6 +24,7 @@ from .version import COMMANDS as VERSION_COMMANDS
 
 
 COMMANDS: dict[str, Command] = {
+    **ANUNCIO_COMMANDS,
     **HELP_COMMANDS,
     **START_COMMANDS,
     **HOLA_COMMANDS,

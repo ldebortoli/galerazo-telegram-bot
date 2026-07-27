@@ -8,7 +8,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 from galerazo_bot.commands import Command as _Command
 from galerazo_bot.command_handlers import backup, blacklist, chats, config, debug, galerazas
-from galerazo_bot.command_handlers import gastos, novedad, reportar, restrictions, salir, triggers, version
+from galerazo_bot.command_handlers import anuncio, gastos, novedad, reportar, restrictions, salir, triggers, version
 from galerazo_bot.database import BlockedUser, ChatRestrictedUser, ChatStatsRow, Expense, Trigger, User
 from galerazo_bot.expenses import ExpenseSheetStatus, ExpenseSubmissionResult, ExpenseSyncResult
 from galerazo_bot.roles import BackupResult, CommandContext, TriggerModerationResult, TriggerPayload, UserLevel
@@ -40,8 +40,16 @@ class SmallAsyncHandlerTests(unittest.IsolatedAsyncioTestCase):
         self.assertIn("2 MB", response)
 
     async def test_config_paths(self) -> None:
-        self.assertIn("grupos", await config.handle(make_context(chat_type="private"), MagicMock()))
-        self.assertIn("configurado", await config.handle(make_context(), MagicMock()))
+        self.assertIn("disponible", await config.handle(make_context(chat_type="channel"), MagicMock()))
+        self.assertIn(
+            "permisos",
+            await config.handle(make_context(chat_type="group", user_level=UserLevel.COMMON), MagicMock()),
+        )
+        self.assertIn("configurado", await config.handle(make_context(chat_type="private"), MagicMock()))
+        self.assertIn(
+            "configurado",
+            await config.handle(make_context(user_level=UserLevel.ADMIN), MagicMock()),
+        )
         self.assertIn(
             "mostrar",
             await config.handle(make_context(send_config_menu=AsyncMock(return_value=False)), MagicMock()),
@@ -85,7 +93,23 @@ class SmallAsyncHandlerTests(unittest.IsolatedAsyncioTestCase):
         )
         sender = AsyncMock(return_value=True)
         self.assertIn("enviada", await novedad.handle(make_context(args=" hola ", send_announcement=sender), MagicMock()))
-        sender.assert_awaited_once_with("hola")
+
+    async def test_anuncio_paths(self) -> None:
+        self.assertIn("Uso", await anuncio.handle(make_context(args=""), MagicMock()))
+        self.assertIn("configurado", await anuncio.handle(make_context(args="hola"), MagicMock()))
+        sender = AsyncMock(return_value=SimpleNamespace(too_long=True))
+        self.assertIn("límite", await anuncio.handle(make_context(args="hola", broadcast_announcement=sender), MagicMock()))
+        sender.return_value = SimpleNamespace(
+            too_long=False,
+            sent_count=1,
+            skipped_count=2,
+            inactive_count=3,
+            failed_count=4,
+            announcement_channel_sent=True,
+        )
+        self.assertIn("Enviados: 1", await anuncio.handle(make_context(args="hola", broadcast_announcement=sender), MagicMock()))
+        self.assertEqual(sender.await_count, 2)
+        sender.assert_awaited_with("hola")
 
     async def test_reportar_paths_and_date_fallback(self) -> None:
         db = MagicMock()

@@ -6,13 +6,13 @@ Mantener Galerazo Bot reproducible en Windows, CI y Docker, con SQLite persisten
 
 ## Tarea actual
 
-No hay una implementacion activa. Gastos ya no aparece en `/config`: `/gasto`, `/ultimosgastos`, `/estadogastos` y `/sincronizargastos` exigen `DEV` en cualquier chat; los botones heredados se eliminan al tocarse. BotFather se resincronizo. La version actual es `0.4`, pendiente de anuncio solamente en el proximo deploy solicitado. Las correcciones se acumulan localmente/Git y los releases de produccion quedan agrupados hasta que el usuario pida explicitamente publicar o desplegar.
+No hay una implementacion activa. `/anuncio` envia anuncios DEV-only a chats activos con opt-out por `/config` y al canal central; los releases usan el mismo flujo. La version actual es `0.5`, pendiente de anuncio solamente en el proximo deploy solicitado. Gastos ya no aparece en `/config`: `/gasto`, `/ultimosgastos`, `/estadogastos` y `/sincronizargastos` exigen `DEV` en cualquier chat. Las correcciones se acumulan localmente/Git y los releases de produccion quedan agrupados hasta que el usuario pida explicitamente publicar o desplegar.
 
 El mecanismo mensual de backups GCE ya tiene un runbook exhaustivo y enlazado desde README/deploy para Galerazobot y futuros bots. El job diario de gasto de Google Cloud quedo implementado y validado; su activacion real sigue bloqueada porque `bot-fleet-production` no tiene dataset ni tabla de exportacion.
 
 ## Estado actual
 
-- Rama `main`, tracking `origin/main`; ultimo commit propio `af11d99` (`Make expense commands developer-only globally`) ya fue pusheado. `README.md` conserva una modificacion local ajena y no esta staged.
+- Rama `main`, tracking `origin/main`; el cambio de anuncios `0.5` esta validado y pendiente de commit/push. `README.md` conserva una modificacion local ajena y no esta staged.
 - Politica de release: un fix normal termina en validacion, commit y push. No construir imagen sin necesidad Docker y no publicar Artifact Registry ni desplegar GCE salvo pedido explicito del usuario en la instruccion actual.
 - Python 3.14.6 exacto y lock completo.
 - `Dockerfile` tiene targets `test` y `runtime`; produccion corre como UID/GID 10001, con healthcheck SQLite.
@@ -48,6 +48,8 @@ El mecanismo mensual de backups GCE ya tiene un runbook exhaustivo y enlazado de
 - `USER_QUEUE.md` no tiene pedidos sin procesar.
 
 ## Validacion reciente
+
+- Anuncios configurables: `/anuncio` para desarrollo, opt-out por chat desde `/config`, persistencia/migracion SQLite, central de anuncios, pie `/config`, prevalidacion de limite, estados inactivos solo por errores definitivos y changelogs de release por el mismo broadcast. BotFather resincronizado. Pasaron 218 pruebas con 100% de sentencias y ramas; runtime Python 3.14.6, `pip check`, `compileall` y `git diff --check` OK. No se construyo Docker ni se publico/desplego produccion.
 
 - Gastos globales DEV-only: quitados de `/config` y removidos `/habilitargastos`/`/deshabilitargastos`; los cuatro comandos restantes funcionan en privados, grupos, supergrupos y canales solo para desarrollo. Los callbacks antiguos eliminan su mensaje y BotFather fue resincronizado. Pasaron 215 pruebas con 100% de sentencias y ramas; runtime Python 3.14.6, `pip check`, `compileall` y `git diff --check` OK. No se construyo Docker ni se publico/desplego produccion.
 

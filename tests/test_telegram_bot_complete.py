@@ -174,7 +174,7 @@ class LifecycleAndBillingTests(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(
             private_names,
-            {"help", "ayuda", "start", "hola", "lil", "nivel", "version", "chats", "reportar"},
+            {"help", "ayuda", "start", "hola", "lil", "nivel", "version", "chats", "reportar", "config"},
         )
         self.assertTrue({"galeraza", "galerazas", "triggers", "agregartrigger"} <= group_names)
         self.assertIn("ruletarusa", group_names)
@@ -227,15 +227,17 @@ class LifecycleAndBillingTests(unittest.IsolatedAsyncioTestCase):
             self.assertFalse(await tb._announce_current_release(db, bot, settings()))
 
         with patch.object(tb, "current_release_notes", return_value="notes"), patch.object(
-            tb, "_send_announcement", AsyncMock(return_value=False)
+            tb, "_broadcast_announcement", AsyncMock(return_value=tb.AnnouncementBroadcastResult())
         ):
             self.assertFalse(await tb._announce_current_release(db, bot, settings()))
 
         with patch.object(tb, "current_release_notes", return_value="notes"), patch.object(
-            tb, "_send_announcement", AsyncMock(return_value=True)
+            tb,
+            "_broadcast_announcement",
+            AsyncMock(return_value=tb.AnnouncementBroadcastResult(announcement_channel_sent=True)),
         ) as send:
             self.assertTrue(await tb._announce_current_release(db, bot, settings()))
-        send.assert_awaited_once_with(bot, "-11", "notes", "-10")
+        send.assert_awaited_once_with(db=db, bot=bot, text="notes", announcements_chat_id="-11")
         db.set_announced_release_version.assert_called_once_with(tb.CURRENT_VERSION)
 
     def test_schedule_invalid_reader_time_and_missing_job_queue(self) -> None:
@@ -487,7 +489,7 @@ class CommandAndCallbackEntrypointTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_config_callback_entrypoint_all_guards_and_success(self) -> None:
         db = MagicMock()
-        db.get_chat_settings.return_value = SimpleNamespace(language="es")
+        db.get_chat_settings.return_value = SimpleNamespace(language="es", announcements_enabled=True)
         bot_state = state(db)
         context = context_for(bot_state)
         user = SimpleNamespace(id=1, full_name="User", username=None)
@@ -768,10 +770,16 @@ class GalerazaExpenseAndConfigTests(unittest.IsolatedAsyncioTestCase):
         self.assertIn("eliminado", (await tb._handle_config_callback(db, message, ("close",))).lower())
         for parsed in (("main",), ("language",), ("commands",)):
             self.assertIsNone(await tb._handle_config_callback(db, message, parsed))
+        private_message = message_stub(chat=SimpleNamespace(id=-1, type="private"))
+        self.assertIsNone(await tb._handle_config_callback(db, private_message, ("commands",)))
         self.assertIsNone(await tb._handle_config_callback(db, message, ("lang", "xx")))
         self.assertIsNone(await tb._handle_config_callback(db, message, ("lang", "es")))
         db.get_chat_settings.return_value = SimpleNamespace(language="es")
         self.assertIn("updated", (await tb._handle_config_callback(db, message, ("lang", "en"))).lower())
+        db.get_chat_settings.return_value = SimpleNamespace(language="es", announcements_enabled=True)
+        self.assertIsNone(await tb._handle_config_callback(db, message, ("announcements",)))
+        self.assertIsNone(await tb._handle_config_callback(db, message, ("setannouncements", "1")))
+        self.assertIn("actualizada", (await tb._handle_config_callback(db, message, ("setannouncements", "0"))).lower())
         self.assertIsNone(await tb._handle_config_callback(db, message, ("command", "unknown")))
         db.is_command_group_enabled.return_value = True
         self.assertIsNone(await tb._handle_config_callback(db, message, ("command", "galeraza")))
@@ -780,6 +788,53 @@ class GalerazaExpenseAndConfigTests(unittest.IsolatedAsyncioTestCase):
         db.is_command_group_enabled.return_value = False
         self.assertIn("actualizada", (await tb._handle_config_callback(db, message, ("set", "galeraza", "1"))).lower())
         self.assertIsNone(await tb._handle_config_callback(db, message, ("unknown",)))
+
+    async def test_broadcast_announcements_updates_only_definitive_failures(self) -> None:
+        db = MagicMock()
+        db.list_active_chats.return_value = [
+            SimpleNamespace(chat_id="-1"),
+            SimpleNamespace(chat_id="-2"),
+            SimpleNamespace(chat_id="-3"),
+        ]
+        db.get_chat_settings.side_effect = [
+            SimpleNamespace(language="es", announcements_enabled=True),
+            SimpleNamespace(language="en", announcements_enabled=False),
+            SimpleNamespace(language="es", announcements_enabled=True),
+            SimpleNamespace(language="es", announcements_enabled=True),
+        ]
+        bot = SimpleNamespace(send_message=AsyncMock(side_effect=[None, Forbidden("blocked"), None]))
+
+        result = await tb._broadcast_announcement(db, bot, "Hola", "-11")
+
+        self.assertEqual((result.sent_count, result.skipped_count, result.inactive_count, result.failed_count), (1, 1, 1, 0))
+        self.assertTrue(result.announcement_channel_sent)
+        db.mark_chat_inactive.assert_called_once_with("-3", "announcement_send_failed")
+        self.assertTrue(bot.send_message.await_args_list[0].kwargs["text"].endswith("/config."))
+
+        db.list_active_chats.return_value = [SimpleNamespace(chat_id="-1")]
+        db.get_chat_settings.side_effect = [
+            SimpleNamespace(language="es", announcements_enabled=True),
+            SimpleNamespace(language="es", announcements_enabled=True),
+        ]
+        bot.send_message = AsyncMock(side_effect=[TimedOut(), BadRequest("channel")])
+        result = await tb._broadcast_announcement(db, bot, "Hola", "-11")
+        self.assertEqual(result.failed_count, 1)
+        self.assertFalse(result.announcement_channel_sent)
+
+        self.assertTrue(tb.announcement_fits("Hola", tb.TELEGRAM_MESSAGE_LIMIT_CHARS))
+        self.assertFalse(tb.announcement_fits("x" * tb.TELEGRAM_MESSAGE_LIMIT_CHARS, tb.TELEGRAM_MESSAGE_LIMIT_CHARS))
+        self.assertTrue((await tb._broadcast_announcement(db, bot, "x" * tb.TELEGRAM_MESSAGE_LIMIT_CHARS, "-11")).too_long)
+
+        db.list_active_chats.return_value = [SimpleNamespace(chat_id="-11")]
+        db.get_chat_settings.side_effect = [SimpleNamespace(language="es", announcements_enabled=True)]
+        bot.send_message = AsyncMock()
+        result = await tb._broadcast_announcement(db, bot, "Hola", "-11")
+        self.assertEqual(result.skipped_count, 0)
+        self.assertTrue(result.announcement_channel_sent)
+
+        db.list_active_chats.return_value = []
+        result = await tb._broadcast_announcement(db, bot, "Hola", None)
+        self.assertFalse(result.announcement_channel_sent)
 
 
 class PaginationAndChatHelpersTests(unittest.IsolatedAsyncioTestCase):

@@ -6,8 +6,10 @@ from ..roles import CommandContext, UserLevel
 
 
 async def handle(context: CommandContext, _db: Database) -> str | None:
-    if context.chat_type not in {"group", "supergroup"}:
-        return context.t("config.group_only")
+    if context.chat_type not in {"private", "group", "supergroup"}:
+        return context.t("config.unsupported_chat")
+    if context.chat_type in {"group", "supergroup"} and context.user_level < UserLevel.ADMIN:
+        return context.t("permission_denied")
 
     if context.send_config_menu is None:
         return context.t("config.not_configured")
@@ -19,5 +21,5 @@ async def handle(context: CommandContext, _db: Database) -> str | None:
 
 
 COMMANDS = {
-    "config": Command("config", "muestra la configuracion del grupo", handle, UserLevel.ADMIN),
+    "config": Command("config", "muestra la configuracion del chat", handle),
 }

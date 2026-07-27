@@ -5,6 +5,7 @@ from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from galerazo_bot.chat_config import (
+    build_announcements_menu,
     build_command_group_menu,
     build_command_groups_menu,
     build_language_menu,
@@ -64,6 +65,11 @@ class ConfigMenuTests(unittest.IsolatedAsyncioTestCase):
 
     def test_expenses_are_not_listed_as_a_configurable_group(self) -> None:
         self.assertNotIn("config:command:gastos", _callback_data(build_command_groups_menu("es")))
+
+    def test_announcements_menu_has_enabled_options(self) -> None:
+        menu = build_announcements_menu(True, "es")
+        self.assertIn("config:setannouncements:1", _callback_data(menu))
+        self.assertIn("config:setannouncements:0", _callback_data(menu))
 
     async def test_common_user_cannot_close_config_menu(self) -> None:
         update, context, state, message = _callback_fixture()

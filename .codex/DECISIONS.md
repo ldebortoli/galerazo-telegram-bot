@@ -595,3 +595,11 @@ Este archivo es append-only a nivel conceptual: no borrar decisiones anteriores.
 - Se eliminan `/habilitargastos` y `/deshabilitargastos`, la opcion Gastos de `/config` y la condicion `configurable_group` de los cuatro comandos restantes.
 - `/gasto`, `/ultimosgastos`, `/estadogastos` y `/sincronizargastos` requieren `DEV` y pueden usarse en cualquier tipo de chat. La base conserva el `chat_id` de cada gasto como dato de registro, no como permiso.
 - Los callbacks de tableros antiguos de Gastos se detectan antes de controles de nivel y eliminan el mensaje para retirar la UI obsoleta en el primer toque.
+
+## D-075 - Broadcast de anuncios con opt-out por chat
+
+- Estado: vigente desde 2026-07-27.
+- `/anuncio` exige `DEV`, recorre solo chats activos y envia de forma secuencial. Cada envio usa el idioma del chat y agrega un pie que apunta a `/config`; se valida el limite para espanol e ingles antes de enviar el primer mensaje.
+- `chat_settings.announcements_enabled` tiene default activo, migra con el `chat_id` y puede modificarse por `/config` en privados y por administradores en grupos/supergrupos. El canal de anuncios recibe siempre la copia central.
+- `Forbidden` y `BadRequest` que identifican expulsion/bloqueo/chat inexistente marcan el chat inactivo. Timeouts y otros errores transitorios se contabilizan sin degradar la estadistica de `/chats`.
+- Las notas de `CHANGELOG.md` al iniciar una version nueva reutilizan el broadcast; la version se considera anunciada solo cuando pudo enviarse al canal central.

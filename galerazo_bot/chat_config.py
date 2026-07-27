@@ -30,14 +30,13 @@ COMMAND_GROUPS = (
 )
 
 
-def build_main_menu(language: str) -> InlineKeyboardMarkup:
-    return InlineKeyboardMarkup(
-        [
-            [InlineKeyboardButton(t(language, "config.language"), callback_data=f"{CONFIG_PREFIX}:language")],
-            [InlineKeyboardButton(t(language, "config.commands"), callback_data=f"{CONFIG_PREFIX}:commands")],
-            [_close_button()],
-        ]
-    )
+def build_main_menu(language: str, include_command_groups: bool = True) -> InlineKeyboardMarkup:
+    rows = [[InlineKeyboardButton(t(language, "config.language"), callback_data=f"{CONFIG_PREFIX}:language")]]
+    rows.append([InlineKeyboardButton(t(language, "config.announcements"), callback_data=f"{CONFIG_PREFIX}:announcements")])
+    if include_command_groups:
+        rows.append([InlineKeyboardButton(t(language, "config.commands"), callback_data=f"{CONFIG_PREFIX}:commands")])
+    rows.append([_close_button()])
+    return InlineKeyboardMarkup(rows)
 
 
 def build_language_menu(current_language: str) -> InlineKeyboardMarkup:
@@ -52,6 +51,24 @@ def build_language_menu(current_language: str) -> InlineKeyboardMarkup:
     ]
     rows.append(_navigation_row(current_language, f"{CONFIG_PREFIX}:main"))
     return InlineKeyboardMarkup(rows)
+
+
+def build_announcements_menu(enabled: bool, language: str) -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(
+        [
+            [
+                InlineKeyboardButton(
+                    _selected_label(t(language, "config.yes"), enabled),
+                    callback_data=f"{CONFIG_PREFIX}:setannouncements:1",
+                ),
+                InlineKeyboardButton(
+                    _selected_label(t(language, "config.no"), not enabled),
+                    callback_data=f"{CONFIG_PREFIX}:setannouncements:0",
+                ),
+            ],
+            _navigation_row(language, f"{CONFIG_PREFIX}:main"),
+        ]
+    )
 
 
 def build_command_groups_menu(language: str) -> InlineKeyboardMarkup:
