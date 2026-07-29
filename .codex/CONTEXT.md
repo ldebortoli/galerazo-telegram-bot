@@ -63,6 +63,7 @@ La misma politica se aplica globalmente desde `C:\Users\calei\.codex\AGENTS.md`.
 - `docs/BACKUPS_GCE.md`: runbook reproducible de backups mensuales para la flota; documenta arquitectura, costos, seguridad, operación, restauración, diagnóstico, contrato de estado para Bot Control Center y alta de otros bots.
 - `scripts/sync_windows_runtime.ps1`: instala/verifica el Python exacto con winget, conserva una `.venv` valida o la recrea cuando corresponde, e instala/valida el lock.
 - `scripts/setup.ps1`: setup integral e idempotente de Windows; compone runtime, configuracion local, validacion, build, accesos directos y apertura del panel.
+- `scripts/Watch-GceBotLogs.ps1`: abre por IAP una lectura continua y de solo lectura de los logs Docker de produccion. `build_control_panel.ps1` crea `Galerazo Bot - Logs.lnk` en `CODEX APPS` para ejecutarlo en PowerShell.
 - `instaladores/Instalar Galerazo Bot.cmd`: puente de doble clic hacia el setup versionado; no copia el repo ni contiene secretos.
 
 ## Persistencia y consistencia
@@ -185,6 +186,7 @@ El panel usa un cliente inicial de `760x750`, minimo `680x730`; la pestaña Conf
 - Todas las pantallas de `/config` incluyen `config:close`; los permisos se validan antes de ejecutar cualquier callback.
 - Cerrar el panel de control apaga el arbol de procesos local del bot antes de destruir la ventana.
 - El panel marca sus procesos con `GALERAZO_PANEL_MANAGED=1`; cada inicio del bot actualiza `data/bot.pid`, incluido un relanzamiento local por `/reiniciarbot` en Windows. Durante el relevo se usa `data/bot.restart`: el panel muestra `REINICIANDO` y no elimina un PID que el hijo todavia esta publicando.
+- `Galerazo Bot - Logs.lnk` abre PowerShell con `-NoExit` y sigue los logs remotos por IAP; `Ctrl+C` detiene la lectura sin modificar produccion.
 - Los niveles se validan al invocar comandos o tocar botones, no como clasificacion global permanente.
 - La media se modera solo al crear triggers. Sin clave se omite; con clave, un fallo impide guardar ese intento. Los buffers y frames se mantienen en memoria y se limpian siempre.
 

@@ -100,7 +100,7 @@ Durante el arranque el estado queda en amarillo mientras se valida la configurac
 
 Para reconstruir el lanzador de Windows ejecutá `powershell -ExecutionPolicy Bypass -File build_control_panel.ps1`. El build regenera el ICO multirresolución desde el PNG fuente, compila el lanzador y actualiza el acceso directo de `CODEX APPS`.
 
-El build tambien actualiza `Galerazo Bot.lnk` en el Escritorio. Volve a ejecutar el setup si moves el repositorio, cambias el runtime o necesitas regenerar los accesos con las rutas actuales.
+El build tambien crea `Galerazo Bot - Logs.lnk` en `CODEX APPS`: abre una consola que sigue los logs de produccion por IAP y se detiene con `Ctrl+C`. Actualiza `Galerazo Bot.lnk` en el Escritorio. Volve a ejecutar el setup si moves el repositorio, cambias el runtime o necesitas regenerar los accesos con las rutas actuales.
 
 Las dependencias directas se declaran en `requirements.in`. `requirements.txt` fija todas las versiones directas y transitivas para que Windows y Docker instalen el mismo conjunto reproducible.
 

@@ -63,9 +63,40 @@ function New-PanelShortcut {
     Write-Host "Acceso directo creado: $ShortcutPath"
 }
 
+function New-LogsShortcut {
+    param([Parameter(Mandatory)][string]$ShortcutPath)
+
+    $logsScript = Join-Path $projectRoot "scripts\Watch-GceBotLogs.ps1"
+    $powershellPath = Join-Path $env:WINDIR "System32\WindowsPowerShell\v1.0\powershell.exe"
+    if (-not (Test-Path -LiteralPath $logsScript) -or -not (Test-Path -LiteralPath $powershellPath)) {
+        throw "Falta el lanzador de logs o PowerShell de Windows."
+    }
+
+    $parent = Split-Path -Parent $ShortcutPath
+    New-Item -ItemType Directory -Force -Path $parent | Out-Null
+    $shell = New-Object -ComObject WScript.Shell
+    $shortcut = $null
+    try {
+        $shortcut = $shell.CreateShortcut($ShortcutPath)
+        $shortcut.TargetPath = $powershellPath
+        $shortcut.Arguments = "-NoExit -NoProfile -ExecutionPolicy Bypass -File `"$logsScript`""
+        $shortcut.WorkingDirectory = $projectRoot
+        $shortcut.IconLocation = "$iconIco,0"
+        $shortcut.Description = "Ver logs remotos de Galerazo Bot"
+        $shortcut.Save()
+    } finally {
+        if ($shortcut) {
+            [void][Runtime.InteropServices.Marshal]::FinalReleaseComObject($shortcut)
+        }
+        [void][Runtime.InteropServices.Marshal]::FinalReleaseComObject($shell)
+    }
+    Write-Host "Acceso directo creado: $ShortcutPath"
+}
+
 if (-not $SkipShortcuts) {
     $appsDirectory = Join-Path (Split-Path -Parent $projectRoot) "CODEX APPS"
     New-PanelShortcut -ShortcutPath (Join-Path $appsDirectory "Galerazo Bot.lnk")
+    New-LogsShortcut -ShortcutPath (Join-Path $appsDirectory "Galerazo Bot - Logs.lnk")
 
     $desktop = [Environment]::GetFolderPath(
         [Environment+SpecialFolder]::DesktopDirectory

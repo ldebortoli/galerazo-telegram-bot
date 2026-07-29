@@ -83,6 +83,16 @@ class ContainerRuntimeTests(unittest.TestCase):
         self.assertNotIn("ports:", compose)
         self.assertNotIn("/var/run/docker.sock", compose)
 
+    def test_remote_log_shortcut_uses_read_only_iap_following(self) -> None:
+        watcher = (PROJECT_ROOT / "scripts" / "Watch-GceBotLogs.ps1").read_text(encoding="utf-8")
+        launcher = (PROJECT_ROOT / "build_control_panel.ps1").read_text(encoding="utf-8")
+
+        self.assertIn("--tunnel-through-iap", watcher)
+        self.assertIn("logs --follow --tail", watcher)
+        self.assertIn("Galerazo Bot - Logs.lnk", launcher)
+        self.assertIn("Watch-GceBotLogs.ps1", launcher)
+        self.assertIn("-NoExit -NoProfile", launcher)
+
 
 class DeploymentAutomationTests(unittest.TestCase):
     def test_lifecycle_orchestrator_preserves_manual_safety_gates(self) -> None:

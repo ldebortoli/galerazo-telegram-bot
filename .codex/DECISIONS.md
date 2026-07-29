@@ -675,3 +675,7 @@ Las entradas de `CHANGELOG.md` y las novedades que el bot distribuye solo comuni
 ## D-089 - Resumen de broadcast automatico en logging (2026-07-29)
 
 Un broadcast de release no tiene un usuario invocador al cual responder. Cuando consigue enviar al canal de anuncios, el bot manda al canal de logging el mismo resumen de contadores que devuelve `/anuncio`. El resumen es observabilidad operativa y no condiciona que la version se marque como anunciada.
+
+## D-090 - Acceso directo de logs remotos (2026-07-29)
+
+El acceso `Galerazo Bot - Logs` se genera en `CODEX APPS` por el mismo build que mantiene el panel. Abre una consola PowerShell visible y ejecuta solo `gcloud compute ssh` por IAP con `docker compose logs --follow`; no administra ni modifica la VM, el contenedor o SQLite.
