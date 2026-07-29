@@ -645,3 +645,7 @@ Este archivo es append-only a nivel conceptual: no borrar decisiones anteriores.
 ## D-082 - Pie compacto de anuncios (2026-07-29)
 
 Los anuncios mantienen una separacion visual antes de la donacion y dejan el aviso de configuracion en la linea inmediatamente siguiente. Se aplica en todos los idiomas y a los changelogs distribuidos porque comparten `format_announcement()`.
+
+## D-083 - Enlace fijo al canal en anuncios (2026-07-29)
+
+Todo broadcast incluye el enlace publico de anuncios antes de la donacion. La URL permanece identica y la etiqueta se localiza para espanol e ingles; se conserva la misma composicion para anuncios manuales y changelogs de release.

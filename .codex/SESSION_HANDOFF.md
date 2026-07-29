@@ -12,6 +12,8 @@ El mecanismo mensual de backups GCE ya tiene un runbook exhaustivo y enlazado de
 
 ## Estado actual
 
+- Los anuncios incluyen ahora el enlace fijo al canal de anuncios antes de la donacion, con etiqueta localizada. Validacion: 223 pruebas, 100% de sentencias/ramas, runtime, `pip check`, `compileall`, diff-check y checkpoint OK. Pendiente de commit y push; no requiere BotFather ni release/deploy.
+
 - El pie de anuncios fue compactado: conserva la separacion antes de la donacion y deja el aviso `/config` en la siguiente linea. Validacion: 223 pruebas, 100% de sentencias/ramas, runtime, `pip check`, `compileall`, diff-check y checkpoint OK. Pendiente de commit y push; no requiere BotFather ni release/deploy.
 
 - El 2026-07-29 se sincronizo BotFather mediante el token local esperando el bot de pruebas, pero `getMe` devolvio `@galerazo_bot`. `/version` quedo publicado en privados como "muestra la version actual del bot" para el idioma base y "shows the current bot version" para ingles. Antes de futuras pruebas externas, verificar que `.env` contenga efectivamente el token de testing; no iniciar polling local con ese token mientras produccion este activa.

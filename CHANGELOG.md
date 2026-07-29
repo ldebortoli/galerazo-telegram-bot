@@ -6,6 +6,7 @@
 - Nuevo comando exclusivo de desarrollo `/reiniciarbot`, con confirmacion privada, expiracion de cinco minutos y reinicio ordenado despues de procesar las updates ya recibidas.
 - Correcciones y mejoras: al confirmar un reinicio, el polling se detiene antes de drenar las updates aceptadas, evitando que trafico continuo posponga el reinicio indefinidamente.
 - Correcciones y mejoras: los anuncios y broadcasts deshabilitan las previews de enlaces de Telegram.
+- Correcciones y mejoras: todos los anuncios incluyen el enlace al canal de anuncios antes de la donacion, con etiqueta localizada.
 - Correcciones y mejoras: los anuncios dejan el aviso de `/config` inmediatamente debajo del texto de donacion.
 - Correcciones y mejoras: las novedades distribuidas eliminan los delimitadores Markdown de comandos y valores para no mostrarlos como comillas literales en Telegram.
 - Correcciones y mejoras: se corrigieron textos con codificacion UTF-8 dañada y se agrego una prueba global para impedir mojibake en traducciones.
