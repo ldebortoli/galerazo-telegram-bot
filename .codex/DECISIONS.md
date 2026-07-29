@@ -30,6 +30,13 @@ Este archivo es append-only a nivel conceptual: no borrar decisiones anteriores.
 - Decision: las cadenas de `i18n.py` que requieran caracteres no ASCII pueden usar escapes Unicode; la suite rechaza los marcadores `Ã`, `Â` y U+FFFD en todas las traducciones runtime.
 - Motivo: impedir que errores de recodificacion UTF-8 vuelvan a mostrarse a usuarios de Telegram.
 
+## D-080 - Resumen de broadcast legible por linea
+
+- Estado: vigente.
+- Fecha: 2026-07-29.
+- Decision: el resultado de `/anuncio` muestra encabezado y cada contador en lineas independientes, tanto en español como en inglés.
+- Motivo: mejorar el escaneo del resultado en chats sin perder métricas de envio.
+
 ## D-001 - python-telegram-bot como integracion Telegram
 
 - Estado: vigente.

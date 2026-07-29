@@ -16,6 +16,8 @@
 
 # DONE
 
+- [2026-07-29] Formatear el resumen de `/anuncio` con un dato por línea. Validacion: 222 pruebas, 100% de sentencias/ramas, runtime, `pip check`, `compileall`, diff-check y checkpoint OK. Sin release/deploy.
+
 - [2026-07-29] Corregir mojibake UTF-8 en textos del bot y proteger todas las traducciones con una prueba de regresion. Validacion: 222 pruebas, 100% de sentencias/ramas, runtime, `pip check`, `compileall`, diff-check y checkpoint OK. Sin release/deploy.
 
 - [2026-07-29] Desactivar previews de enlaces en broadcasts, anuncios al canal y changelogs distribuidos. Validacion: 221 pruebas, 100% de sentencias/ramas, runtime, `pip check`, `compileall`, diff-check y checkpoint OK. Sin release/deploy.

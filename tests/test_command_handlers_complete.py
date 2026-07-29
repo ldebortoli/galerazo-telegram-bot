@@ -122,7 +122,12 @@ class SmallAsyncHandlerTests(unittest.IsolatedAsyncioTestCase):
             failed_count=4,
             announcement_channel_sent=True,
         )
-        self.assertIn("Enviados: 1", await anuncio.handle(make_context(args="hola", broadcast_announcement=sender), MagicMock()))
+        summary = await anuncio.handle(make_context(args="hola", broadcast_announcement=sender), MagicMock())
+        self.assertEqual(
+            summary,
+            "Anuncio terminado.\nEnviados: 1.\nOmitidos: 2.\nInactivos detectados: 3.\n"
+            "Fallidos transitorios: 4.\nCanal de anuncios: si.",
+        )
         self.assertEqual(sender.await_count, 2)
         sender.assert_awaited_with("hola")
 

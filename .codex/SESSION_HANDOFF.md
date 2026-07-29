@@ -12,6 +12,8 @@ El mecanismo mensual de backups GCE ya tiene un runbook exhaustivo y enlazado de
 
 ## Estado actual
 
+- `/anuncio` devuelve su resumen con un contador por línea; el formato exacto está cubierto por prueba en español.
+
 - Las traducciones runtime no contienen mojibake UTF-8: se corrigieron las dos cadenas de versión y una prueba rechaza `Ã`, `Â` y U+FFFD en todos los textos.
 - Rama `main`, tracking `origin/main`; el ultimo cambio funcional (`e568b8e`, correccion UTF-8 de traducciones) esta pusheado y BotFather fue resincronizado. El arbol de trabajo esta limpio.
 - El 2026-07-29 se configuro localmente el token del bot real `@galerazo_bot`; se agrego el enlace de Cafecito a su descripcion larga (93/512) y corta (114/120), y se resincronizaron sus comandos sugeridos de BotFather. La descripcion corta usa Unicode correcto para `Configurá`, conserva `/config`, `Anuncios` y `Donaciones`, sin punto final. No se inicio el bot local ni se desplego produccion.

@@ -7,6 +7,7 @@
 - Correcciones y mejoras: al confirmar un reinicio, el polling se detiene antes de drenar las updates aceptadas, evitando que trafico continuo posponga el reinicio indefinidamente.
 - Correcciones y mejoras: los anuncios y broadcasts deshabilitan las previews de enlaces de Telegram.
 - Correcciones y mejoras: se corrigieron textos con codificacion UTF-8 dañada y se agrego una prueba global para impedir mojibake en traducciones.
+- Correcciones y mejoras: el resumen de `/anuncio` ahora muestra cada resultado en su propia línea.
 
 ## [0.5] - 2026-07-27
 
