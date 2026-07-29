@@ -667,3 +667,7 @@ El runtime Docker incluye `CHANGELOG.md`, porque las notas de release son un art
 `/reiniciarbot` y `/apagar` comparten una confirmacion persistida de cinco minutos y una unica ruta de apagado: primero detienen el `Updater`, luego esperan como maximo 60 segundos por las updates ya aceptadas. Si un handler no termina, se registra el timeout en el canal de logging y se fuerza el reinicio o apagado para evitar que un bucle infinito deje al proceso en estado indeterminado. Docker concede 65 segundos al `SIGTERM` de un deploy, por lo que el cierre normal de PTB deja de recibir updates y drena antes de que Docker lo fuerce.
 
 Los cambios de esquema se implementan como migraciones inmutables y registradas en `schema_migrations`, ejecutadas al iniciar sobre la SQLite persistente remota. El deploy conserva el volumen y crea un backup consistente antes de sustituir la imagen; `MigrateData` sigue reservado exclusivamente para reemplazar la base remota por una copia local confirmada.
+
+## D-088 - Changelog publico orientado a usuarios (2026-07-29)
+
+Las entradas de `CHANGELOG.md` y las novedades que el bot distribuye solo comunican cambios visibles en comandos publicos. Los comandos exclusivos DEV, infraestructura, Docker, SQLite, migraciones, despliegues y correcciones internas no se incluyen. La trazabilidad tecnica se conserva en commits, documentacion tecnica y la memoria persistente del proyecto.

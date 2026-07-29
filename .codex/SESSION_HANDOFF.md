@@ -10,6 +10,7 @@ Mantener Galerazo Bot reproducible en Windows, CI y Docker, con SQLite persisten
 - Reinicio y apagado detienen polling, drenan las updates ya aceptadas durante un maximo de 60 segundos y fuerzan la accion si un handler no termina. El timeout se registra en logging. Docker da 65 segundos de gracia al detener el contenedor, por lo que un deploy sigue el mismo cierre ordenado antes del limite forzado.
 - SQLite ahora posee `schema_migrations`. Las migraciones se aplican sobre el volumen remoto existente y quedan registradas; la primera elimina `galeraza_message_states`, ya copiada previamente a `paginated_message_states`. Un deploy normal hace backup remoto y nunca usa la SQLite local. `MigrateData` sigue siendo el unico flujo que la reemplaza.
 - BotFather fue sincronizado con el token local. `/apagar` permanece oculto por ser DEV.
+- Para futuras versiones, el changelog y el anuncio de release solo detallan cambios visibles en comandos publicos; los cambios DEV o internos se documentan fuera de esos canales publicos.
 - Produccion sigue en `galerazobot:f8d4c9a648f8`, `running/healthy`; no fue tocada. La siguiente publicacion solicitada debe incluir `0.7` y tambien la correccion pendiente que agrega `CHANGELOG.md` al runtime, asi el anuncio de release no vuelve a fallar.
 - El bot local permanece apagado. No iniciar polling local con el token real mientras produccion esta activa.
 
