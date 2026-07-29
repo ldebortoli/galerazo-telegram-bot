@@ -12,7 +12,7 @@ El mecanismo mensual de backups GCE ya tiene un runbook exhaustivo y enlazado de
 
 ## Estado actual
 
-- Rama `main`, tracking `origin/main`; commit `9627836` (`Add restart confirmation and donation command`) creado, pendiente de push. El arbol de trabajo debe quedar limpio tras el push.
+- Rama `main`, tracking `origin/main`; commit `3298cd4` (`Add restart confirmation and donation command`) pusheado. El arbol de trabajo esta limpio.
 - Politica de release: un fix normal termina en validacion, commit y push. No construir imagen sin necesidad Docker y no publicar Artifact Registry ni desplegar GCE salvo pedido explicito del usuario en la instruccion actual.
 - Python 3.14.6 exacto y lock completo.
 - `Dockerfile` tiene targets `test` y `runtime`; produccion corre como UID/GID 10001, con healthcheck SQLite.
@@ -88,7 +88,7 @@ El mecanismo mensual de backups GCE ya tiene un runbook exhaustivo y enlazado de
 
 ## Proximo paso exacto
 
-Pushear la version `0.6` sin release/deploy. Luego, cuando el usuario confirme el posible costo, ejecutar `Initialize-GceBillingReport.ps1 -ProjectId bot-fleet-production -AcknowledgeBillableResource`, habilitar `Costo de uso estandar` sobre `billing_export` en la consola, esperar la tabla, configurar las tres variables de Billing y publicar/desplegar una imagen inmutable.
+Cuando el usuario confirme el posible costo, ejecutar `Initialize-GceBillingReport.ps1 -ProjectId bot-fleet-production -AcknowledgeBillableResource`, habilitar `Costo de uso estandar` sobre `billing_export` en la consola, esperar la tabla, configurar las tres variables de Billing y publicar/desplegar una imagen inmutable.
 
 ## Riesgos y bloqueos
 
