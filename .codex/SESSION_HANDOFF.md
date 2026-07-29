@@ -13,6 +13,7 @@ El mecanismo mensual de backups GCE ya tiene un runbook exhaustivo y enlazado de
 ## Estado actual
 
 - Rama `main`, tracking `origin/main`; commit `3298cd4` (`Add restart confirmation and donation command`) pusheado. El arbol de trabajo esta limpio.
+- El 2026-07-29 se configuro localmente el token del bot real `@galerazo_bot`; se agrego el enlace de Cafecito a su descripcion (93/512 caracteres) y se resincronizaron sus comandos sugeridos de BotFather. No se inicio el bot local ni se desplego produccion.
 - Politica de release: un fix normal termina en validacion, commit y push. No construir imagen sin necesidad Docker y no publicar Artifact Registry ni desplegar GCE salvo pedido explicito del usuario en la instruccion actual.
 - Python 3.14.6 exacto y lock completo.
 - `Dockerfile` tiene targets `test` y `runtime`; produccion corre como UID/GID 10001, con healthcheck SQLite.
