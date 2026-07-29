@@ -23,6 +23,7 @@ from telegram import (
     ChatMember,
     InlineKeyboardButton,
     InlineKeyboardMarkup,
+    LinkPreviewOptions,
     Message,
     MessageEntity,
     Update,
@@ -93,6 +94,7 @@ TELEGRAM_REQUEST_TIMEOUT_SECONDS = 30
 PAGINATED_METADATA_TTL = timedelta(days=14)
 RESTART_CONFIRMATION_TTL = timedelta(minutes=5)
 RESTART_CALLBACK_PREFIX = "restart"
+DISABLED_LINK_PREVIEW_OPTIONS = LinkPreviewOptions(is_disabled=True)
 ARGENTINA_TIMEZONE = ZoneInfo("America/Argentina/Buenos_Aires")
 BOTFATHER_HIDDEN_COMMANDS = frozenset(
     {
@@ -1780,6 +1782,7 @@ async def _send_announcement(
         await bot.send_message(
             chat_id=_parse_chat_id(announcements_chat_id),
             text=text[:TELEGRAM_MESSAGE_LIMIT_CHARS],
+            link_preview_options=DISABLED_LINK_PREVIEW_OPTIONS,
         )
         if was_truncated:
             await _send_log_event(bot, log_chat_id, t(language, "long_message.truncated_log"))
@@ -1815,6 +1818,7 @@ async def _broadcast_announcement(
             await bot.send_message(
                 chat_id=_parse_chat_id(chat.chat_id),
                 text=format_announcement(text, settings.language),
+                link_preview_options=DISABLED_LINK_PREVIEW_OPTIONS,
             )
         except TelegramError as exc:
             if _is_bot_removed_error(exc):
@@ -1833,6 +1837,7 @@ async def _broadcast_announcement(
             await bot.send_message(
                 chat_id=_parse_chat_id(announcement_chat_id),
                 text=format_announcement(text, channel_language),
+                link_preview_options=DISABLED_LINK_PREVIEW_OPTIONS,
             )
         except (TelegramError, ValueError) as exc:
             logger.warning("No pude enviar anuncio al canal de anuncios: %s", exc)

@@ -16,6 +16,13 @@ Este archivo es append-only a nivel conceptual: no borrar decisiones anteriores.
 - Decision: despues de una confirmacion de `/reiniciarbot`, esperar al callback actual, detener `Application.updater`, drenar `application.update_queue` y recien entonces llamar `stop_running` y reejecutar el proceso. Si PTB informa que el updater ya estaba detenido, continuar con el drenaje.
 - Motivo: acota el reinicio bajo trafico continuo sin descartar updates. Las que lleguen despues de detener polling permanecen en Telegram y se recuperan al arrancar porque `drop_pending_updates=False`.
 
+## D-078 - Anuncios sin previews de enlaces
+
+- Estado: vigente.
+- Fecha: 2026-07-29.
+- Decision: los envios de broadcast, el canal de anuncios y las novedades usan `LinkPreviewOptions(is_disabled=True)` de python-telegram-bot.
+- Motivo: evitar tarjetas externas no solicitadas y mantener los anuncios compactos, incluidos enlaces de Cafecito y changelogs.
+
 ## D-001 - python-telegram-bot como integracion Telegram
 
 - Estado: vigente.

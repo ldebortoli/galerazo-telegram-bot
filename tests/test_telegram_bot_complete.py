@@ -883,6 +883,7 @@ class GalerazaExpenseAndConfigTests(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(result.announcement_channel_sent)
         db.mark_chat_inactive.assert_called_once_with("-3", "announcement_send_failed")
         self.assertTrue(bot.send_message.await_args_list[0].kwargs["text"].endswith("/config."))
+        self.assertTrue(bot.send_message.await_args_list[0].kwargs["link_preview_options"].is_disabled)
 
         db.list_active_chats.return_value = [SimpleNamespace(chat_id="-1")]
         db.get_chat_settings.side_effect = [
@@ -904,6 +905,7 @@ class GalerazaExpenseAndConfigTests(unittest.IsolatedAsyncioTestCase):
         result = await tb._broadcast_announcement(db, bot, "Hola", "-11")
         self.assertEqual(result.skipped_count, 0)
         self.assertTrue(result.announcement_channel_sent)
+        self.assertTrue(bot.send_message.await_args.kwargs["link_preview_options"].is_disabled)
 
         db.list_active_chats.return_value = []
         result = await tb._broadcast_announcement(db, bot, "Hola", None)
@@ -1116,6 +1118,7 @@ class PermissionsLoggingBackupAndMiscTests(unittest.IsolatedAsyncioTestCase):
         self.assertFalse(await tb._send_announcement(bot, None, "x"))
         bot.send_message.side_effect = None
         self.assertTrue(await tb._send_announcement(bot, "-11", "short"))
+        self.assertTrue(bot.send_message.await_args.kwargs["link_preview_options"].is_disabled)
         with patch.object(tb, "_send_log_event", AsyncMock()) as log:
             self.assertTrue(await tb._send_announcement(bot, "-11", "x" * 5000, "-10", "es"))
         log.assert_awaited_once()
