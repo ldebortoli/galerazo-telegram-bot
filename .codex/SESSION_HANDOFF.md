@@ -4,114 +4,27 @@
 
 Mantener Galerazo Bot reproducible en Windows, CI y Docker, con SQLite persistente y deploy seguro de bajo costo.
 
-## Tarea actual
-
-No hay una implementacion activa. `/reiniciarbot` es DEV-only y crea una confirmacion persistida por cinco minutos; cualquier ejecucion del comando o click limpia confirmaciones vencidas sin scheduler. Solo el DEV solicitante puede confirmar/cancelar; al confirmar, PTB detiene polling, drena las updates ya aceptadas y el proceso se reejecuta. Las updates posteriores quedan en Telegram y se recuperan con `drop_pending_updates=False`. `/donar` es publico y todos los broadcasts incluyen el enlace de Cafecito antes del aviso `/config`, sin previews de enlaces. La version actual es `0.6`, pendiente de anuncio solamente en el proximo deploy solicitado. `/anuncio` envia anuncios DEV-only a chats activos con opt-out por `/config` y al canal central; los releases usan el mismo flujo. Gastos ya no aparece en `/config`: `/gasto`, `/ultimosgastos`, `/estadogastos` y `/sincronizargastos` exigen `DEV` en cualquier chat. Las correcciones se acumulan localmente/Git y los releases de produccion quedan agrupados hasta que el usuario pida explicitamente publicar o desplegar.
-
-El mecanismo mensual de backups GCE ya tiene un runbook exhaustivo y enlazado desde README/deploy para Galerazobot y futuros bots. El job diario de gasto de Google Cloud quedo implementado y validado; su activacion real sigue bloqueada porque `bot-fleet-production` no tiene dataset ni tabla de exportacion.
-
 ## Estado actual
 
-- Deploy de produccion del 2026-07-29: `galerazobot:f8d4c9a648f8` esta `running/healthy`, Telegram conectado y sin reinicios. No se distribuyeron novedades porque el arranque registro `No pude leer el changelog de la version 0.6: [Errno 2] No such file or directory: '/app/CHANGELOG.md'`. La correccion agrega ese archivo al runtime y reenvia este tipo de fallo al canal de logging; validada con 224 pruebas Windows y Docker, cobertura 100% y comprobacion real del runtime. Pendiente de commit/push. No se autoriza un nuevo deploy en esta tarea. La version `0.6` no quedo marcada como anunciada, por lo que el siguiente inicio con la imagen corregida podra distribuirla.
-
-- Un deploy normal no limpia ni sube la base SQLite local: realiza backup consistente de la base remota si habia una imagen activa y reutiliza el volumen `/srv/galerazo/data`. `MigrateData` es la unica accion que reemplaza la base remota y exige confirmacion explicita, backup previo e `integrity_check`.
-
-- El 2026-07-29 se detuvo una segunda instancia local huérfana de `app.py` (procesos `17524` y `18492`); la verificacion posterior no encontro procesos locales del bot. Produccion no fue tocada. La causa fue una carrera Windows: el panel borro el PID viejo luego de que el hijo publico el nuevo. Ahora `data/bot.restart` protege el relevo, el PID se reemplaza atomicamente y la UI muestra `REINICIANDO`; validado con 224 pruebas/100% y pendiente de commit/push. El bot local permanece apagado.
-
-- Los anuncios incluyen ahora el enlace fijo al canal de anuncios antes de la donacion, con etiqueta localizada. Validacion: 223 pruebas, 100% de sentencias/ramas, runtime, `pip check`, `compileall`, diff-check y checkpoint OK. Pendiente de commit y push; no requiere BotFather ni release/deploy.
-
-- El pie de anuncios fue compactado: conserva la separacion antes de la donacion y deja el aviso `/config` en la siguiente linea. Validacion: 223 pruebas, 100% de sentencias/ramas, runtime, `pip check`, `compileall`, diff-check y checkpoint OK. Pendiente de commit y push; no requiere BotFather ni release/deploy.
-
-- El 2026-07-29 se sincronizo BotFather mediante el token local esperando el bot de pruebas, pero `getMe` devolvio `@galerazo_bot`. `/version` quedo publicado en privados como "muestra la version actual del bot" para el idioma base y "shows the current bot version" para ingles. Antes de futuras pruebas externas, verificar que `.env` contenga efectivamente el token de testing; no iniciar polling local con ese token mientras produccion este activa.
-
-- Las novedades de version eliminan los delimitadores Markdown de codigo antes de enviarse como texto plano a Telegram. Validacion completa: 222 pruebas, 100% de sentencias/ramas, runtime, `pip check`, `compileall`, diff-check y checkpoint OK. Commit `0be599f` pusheado a `main`; no requiere sincronizacion BotFather ni release/deploy.
-
-- `/anuncio` devuelve su resumen con un contador por línea; el formato exacto está cubierto por prueba en español.
-
-- Las traducciones runtime no contienen mojibake UTF-8: se corrigieron las dos cadenas de versión y una prueba rechaza `Ã`, `Â` y U+FFFD en todos los textos.
-- Rama `main`, tracking `origin/main`; el ultimo cambio funcional (`e568b8e`, correccion UTF-8 de traducciones) esta pusheado y BotFather fue resincronizado. El arbol de trabajo esta limpio.
-- El 2026-07-29 se configuro localmente el token del bot real `@galerazo_bot`; se agrego el enlace de Cafecito a su descripcion larga (93/512) y corta (114/120), y se resincronizaron sus comandos sugeridos de BotFather. La descripcion corta usa Unicode correcto para `Configurá`, conserva `/config`, `Anuncios` y `Donaciones`, sin punto final. No se inicio el bot local ni se desplego produccion.
-- Politica de release: un fix normal termina en validacion, commit y push. No construir imagen sin necesidad Docker y no publicar Artifact Registry ni desplegar GCE salvo pedido explicito del usuario en la instruccion actual.
-- Python 3.14.6 exacto y lock completo.
-- `Dockerfile` tiene targets `test` y `runtime`; produccion corre como UID/GID 10001, con healthcheck SQLite.
-- `compose.production.yaml` no publica puertos, usa la red del host para salida IPv6 y persiste `/app/data` y `/app/backups` en `/srv/galerazo`.
-- Build/publicacion local: `scripts/deploy/Build-DockerImage.ps1` y `Publish-DockerImage.ps1`.
-- Host/deploy: `Initialize-GceHost.ps1`, `Deploy-Gce.ps1` y `Rollback-Gce.ps1`, todos por IAP.
-- El deploy remoto crea backup consistente, usa tag inmutable, espera healthcheck y restaura la imagen anterior si falla.
-- GitHub `Publish GCE image` es exclusivamente manual, usa WIF y no contiene deploy automatico.
-- Railway permanece desactivado y no fue modificado.
-- Docker Desktop 4.83.0 esta instalado por usuario; Docker Engine 29.6.2 responde en contexto `desktop-linux` como Linux/amd64 sobre WSL 2.7.10. `hello-world` se ejecuto correctamente.
-- Google Cloud CLI 576.0.0 esta instalado y autenticado; `core/project` apunta a `bot-fleet-production`, que se verifico `ACTIVE` mediante una lectura. No versionar ni registrar la cuenta humana autenticada.
-- Los instaladores agregaron Docker y Google Cloud CLI al PATH de usuario. La sesion de Codex abierta antes de instalarlos conserva un PATH viejo; terminales nuevas los encuentran normalmente y, en esta sesion, se validaron usando sus rutas instaladas.
-- La consola confirmo `bot-fleet-production` con USD 300 de credito de prueba sin uso y vencimiento mostrado para el 19 de octubre de 2026; no se pulso `Actualizar` ni se convirtio manualmente la cuenta a modalidad paga.
-- `Bot Fleet - Monthly Guardrail` esta activo en USD, con presupuesto mensual de USD 1, USD 0 consumidos, promociones excluidas, Free Tier incluido y alertas real 10/50/100% mas pronostico 100%. Cubre la cuenta de facturacion, que actualmente tiene un solo proyecto; no es un corte automatico.
-- Estan habilitadas `compute.googleapis.com`, `artifactregistry.googleapis.com`, `iap.googleapis.com` e `iamcredentials.googleapis.com`.
-- `bigquery.googleapis.com` tambien esta habilitada. `bq ls --project_id=bot-fleet-production` no devuelve datasets; por eso el reporte sigue desactivado en produccion.
-- Artifact Registry contiene como release vigente `us-central1-docker.pkg.dev/bot-fleet-production/bots/galerazobot:73ac112`, digest `sha256:18b077bb2e8d02aee579484223e8e821a390a56b9cea5e981b137c52c51a86ec`.
-- `galerazo-vm` existe y esta habilitada. Tiene exactamente un binding `roles/artifactregistry.reader` sobre `bots`, cero roles directos a nivel proyecto y cero claves administradas por el usuario.
-- La cuenta humana activa de `gcloud` tiene exactamente un binding `roles/artifactregistry.writer` sobre `bots`; su identidad no se registra en la memoria ni en el repositorio.
-- `scripts/deploy/Initialize-GcpBot.ps1` automatiza de forma idempotente APIs, registro e identidad/permisos por bot, encuentra `gcloud` instalado por usuario y no crea VM. Se ejecuto dos veces consecutivas con exito contra el proyecto real.
-- La VPC custom `bot-fleet` contiene la subred `bots-us-central1` (`10.20.0.0/24`, `IPV4_IPV6`, IPv6 externo, Private Google Access) y exactamente una regla propia: tcp/22 desde IAP `35.235.240.0/20` al tag `iap-ssh`.
-- `galerazo-prod` esta `RUNNING` en `us-central1-a`: `e2-micro`, Debian 12, disco de 30 GB `pd-standard`, sin IPv4 externa, con IPv6 efimera, `galerazo-vm`, OS Login, Shielded Secure Boot/vTPM/integrity monitoring y deletion protection. El contenedor ejecuta `galerazobot:73ac112`, esta `running/healthy`, tiene cero reinicios y OOM, y conserva `restart_policy=unless-stopped`; Docker esta activo y habilitado.
-- El host remoto tiene Docker Engine 29.6.2, Compose 5.3.1 y Google Cloud CLI 576.0.0; Docker esta activo/habilitado. `/srv/galerazo/{data,backups}` pertenece a 10001:10001, `/etc/galerazo` esta protegido y `bot.env` real tiene modo 0600.
-- `deploy/gce/verify-host.sh` valida el host sin imprimir secretos; `Initialize-GceHost.ps1` lo copia y ejecuta automaticamente. `--expect-pristine` confirmo cero contenedores, imagenes, base y Compose antes del primer deploy.
-- `Set-GceBotSecrets.ps1` y la accion `Configure` transfieren solo las variables permitidas de `.env` mediante un temporal local, IAP y un directorio remoto 0700; `install-config.sh` instala como root 0600, conserva `bot.env.previous`, valida sin mostrar valores y limpia ambos temporales.
-- La configuracion real ya se instalo en `galerazo-prod`: token e IDs presentes; OpenAI y Google Sheets omitidos porque estaban vacios localmente. `--expect-configured` paso y no quedaron directorios temporales.
-- `Migrate-GceBotDatabase.ps1` y la accion `MigrateData` exigen confirmacion, rechazan el bot local o contenedores remotos activos, crean un backup mediante la API SQLite, validan integridad y transfieren por un directorio IAP 0700. `install-database.sh` respalda/restaura una base remota previa y nunca copia WAL/SHM.
-- La base real esta en `/srv/galerazo/data/galerazo.sqlite3`, owner 10001:10001, modo 0600 e `integrity_check=ok`; los backups quedan fuera de Git y no quedaron temporales de migracion.
-- Bot Control Center ya dispone de una vista separada de credenciales. `Get-GceBotSecretStatus.ps1` devuelve sólo booleanos y `Patch-GceBotSecrets.ps1` aplica parches parciales por IAP sin valores en argumentos/salida, preserva campos omitidos, soporta el JSON opcional de Sheets, valida y limpia temporales.
-- No hay Cloud Router/NAT ni direcciones reservadas. Se valido SSH por IAP, ruta IPv6 y conexion real por IPv6 a Telegram y por Private Google Access a Artifact Registry.
-- `scripts/deploy/New-GceBotInstance.ps1` crea/valida esa infraestructura de forma idempotente y exige `-AcknowledgeBillableResource`. `Invoke-GceBotLifecycle.ps1` orquesta Foundation/Infrastructure/Prepare/Configure/MigrateData/Publish/Deploy/Release/Rollback y mantiene confirmaciones antes de costos, secretos, datos y produccion.
-- `docs/DEPLOY_GCE.md` documenta la reproduccion en otra cuenta: alta/facturacion/login/presupuesto manuales y acciones automatizadas `Prepare`, `Configure`, `MigrateData` y `Release` con confirmaciones.
-- `USER_QUEUE.md` no tiene pedidos sin procesar.
+- Se implemento la version `0.7`, aun sin release ni deploy solicitado. Incluye `/apagar` exclusivo DEV con confirmacion privada de cinco minutos y el mismo control de solicitante que `/reiniciarbot`.
+- Reinicio y apagado detienen polling, drenan las updates ya aceptadas durante un maximo de 60 segundos y fuerzan la accion si un handler no termina. El timeout se registra en logging. Docker da 65 segundos de gracia al detener el contenedor, por lo que un deploy sigue el mismo cierre ordenado antes del limite forzado.
+- SQLite ahora posee `schema_migrations`. Las migraciones se aplican sobre el volumen remoto existente y quedan registradas; la primera elimina `galeraza_message_states`, ya copiada previamente a `paginated_message_states`. Un deploy normal hace backup remoto y nunca usa la SQLite local. `MigrateData` sigue siendo el unico flujo que la reemplaza.
+- BotFather fue sincronizado con el token local. `/apagar` permanece oculto por ser DEV.
+- Produccion sigue en `galerazobot:f8d4c9a648f8`, `running/healthy`; no fue tocada. La siguiente publicacion solicitada debe incluir `0.7` y tambien la correccion pendiente que agrega `CHANGELOG.md` al runtime, asi el anuncio de release no vuelve a fallar.
+- El bot local permanece apagado. No iniciar polling local con el token real mientras produccion esta activa.
 
 ## Validacion reciente
 
-- Anuncios configurables: `/anuncio` para desarrollo, opt-out por chat desde `/config`, persistencia/migracion SQLite, central de anuncios, pie `/config`, prevalidacion de limite, estados inactivos solo por errores definitivos y changelogs de release por el mismo broadcast. BotFather resincronizado. Pasaron 218 pruebas con 100% de sentencias y ramas; runtime Python 3.14.6, `pip check`, `compileall` y `git diff --check` OK. No se construyo Docker ni se publico/desplego produccion.
+- 224 pruebas nativas OK; cobertura 100% de sentencias y ramas.
+- Target Docker de tests: 224 pruebas OK, una prueba Tk omitida en Linux; runtime Docker de Python 3.14.6 validado.
+- `scripts/runtime_versions.py`, `pip check`, `compileall` y `git diff --check` OK.
 
-- Gastos globales DEV-only: quitados de `/config` y removidos `/habilitargastos`/`/deshabilitargastos`; los cuatro comandos restantes funcionan en privados, grupos, supergrupos y canales solo para desarrollo. Los callbacks antiguos eliminan su mensaje y BotFather fue resincronizado. Pasaron 215 pruebas con 100% de sentencias y ramas; runtime Python 3.14.6, `pip check`, `compileall` y `git diff --check` OK. No se construyo Docker ni se publico/desplego produccion.
+## Pendientes y bloqueos
 
-- Gastos solo para desarrollo: los seis comandos requieren `DEV`, permanecen ocultos de BotFather y su sincronizacion directa termino correctamente. Pasaron 214 pruebas con 100% de sentencias y ramas; runtime Python 3.14.6, `pip check`, `compileall`, `git diff --check` y checkpoint de logs OK. No se construyo Docker ni se publico/desplego produccion.
+- Activar el reporte de Billing requiere confirmar costo, habilitar exportacion de Cloud Billing y esperar la tabla.
+- Conectar Google Sheets requiere spreadsheet ID, worksheet y credenciales del usuario.
+- No publicar imagen ni desplegar GCE hasta pedido explicito del usuario.
 
-- Pedidos de `USER_QUEUE.md` del 2026-07-26 completados y pusheados: `/triggers` usa los timeouts centrales de 30 s de PTB y contiene `TimedOut` como warning sin reintentar; su titulo se muestra en negrita con separacion antes de la lista, incluida la paginacion. `/galeraza` es alias del handler existente `/galerazas`. Pasaron 209 pruebas y `coverage.py` al 100,00% de sentencias y ramas; runtime Python 3.14.6, `pip check`, `compileall`, `git diff --check` y checkpoint de logs tambien OK. No se autorizo release/deploy.
+## Siguiente paso exacto
 
-- Polling: el traceback `NetworkError: httpx.ReadError` con `Update JSON: null` provenia de `getUpdates`; PTB ya lo reintentaba, el contenedor nunca se reinicio y siguio obteniendo HTTP 200. `_handle_error` ahora omite del canal solo `NetworkError` sin update/job/coroutine y mantiene el resto. Pasaron 209 pruebas Windows/Linux, 2.759 sentencias y 770 ramas al 100%, Docker, runtime, lock, compileall, `pip check` y Quality `29896015712`. `73ac112` (`sha256:18b077...86ec`) fue desplegada con backup previo; auditoria posterior: `running/healthy`, cero reinicios/OOM, SQLite legible e integro, polling HTTP 200 y ningun error nuevo.
-- `/debug`: el log real de produccion confirmo que el documento grande agotaba el timeout predeterminado de cinco segundos. El handler ahora usa `BytesIO`, cuatro timeouts PTB de 30 segundos y un solo reintento ante `TimedOut`, sin escribir JSON en disco. La suite paso 209 pruebas en Windows y Linux con 100,00% de sentencias y 100,00% de ramas; Python 3.14.6, lock, compileall, `pip check`, Docker y Quality `29895467400` quedaron OK. La imagen `f9df2b1` (`sha256:03f5ab...5756`) fue desplegada con backup previo; auditoria posterior: `running/healthy`, cero reinicios, cero OOM, SQLite legible e integro, inicio/logging/polling de Telegram HTTP 200.
-- `docs/BACKUPS_GCE.md` quedó convertido en un runbook reproducible y su contrato documental quedó cubierto por prueba. Incluye arquitectura, costos, seguridad y aislamiento real, alta multibot, estado para Bot Control Center, restauración, pausa/retiro, troubleshooting y verificaciones periódicas. Pasaron 5 pruebas específicas y 126 pruebas completas, runtime, `pip check`, compileall y `git diff --check`.
-- Backups mensuales activos: bucket privado `bot-fleet-production-sqlite-backups` en `us-central1`, retención 400 días, PAP y acceso uniforme; `galerazo-vm` sólo puede crear objetos. Timer enabled/active, próxima ejecución 2026-08-01 con demora aleatoria. Primera copia 180224 bytes descargada nuevamente: SHA-256 e `integrity_check` OK; bot remoto continuó `running/healthy`. Suite completa: 122 pruebas, runtime, pip, compileall, PowerShell/Bash y diff-check OK.
-- Billing: 13 pruebas especificas validan timezone argentino, `invoice.month`, SQL parametrizado, costo bruto/creditos/neto, limite de 100 MiB, errores, destino de logging, default desactivado y `JobQueue`. La suite completa del worktree actual paso con 122 pruebas nativas, 62,72% de sentencias y 37,60% de ramas sobre el alcance multiplataforma; el panel Tk queda en sus pruebas Windows. Docker Linux/amd64 paso 121 pruebas (una Tk omitida), runtime Python 3.14.6 y smoke real de JobQueue/BigQuery. La imagen runtime local mide aproximadamente 110 MB y el import completo uso cerca de 99 MiB RSS.
-- La configuracion de Billing se propaga por `.env`, el panel desplazable, bootstrap GCE, carga/parche/inspector remoto y documentacion. `Initialize-GceBillingReport.ps1` prepara dataset y permisos minimos solo con `-AcknowledgeBillableResource`; no se ejecuto contra GCP.
-- `/galerazas` renderiza el título en negrita mediante `MessageEntity`, agrega una línea vacía antes de las filas y conserva ambas cosas al paginar. Pasaron 96 pruebas, runtime, `pip check`, `compileall` y `git diff --check`.
-- Contrato de Bot Control Center completado: `deploy/gce/botctl.py` y `Invoke-GceBotctl.ps1` exponen acciones fijas para estado, triggers, multimedia, moderación y detención segura. La lectura real por IAP confirmó VM `running`, contenedor `running/healthy`, un reinicio total, cero reinicios recientes, Telegram conectado y seis triggers (cuatro con multimedia y dos de texto). No se ejecutaron mutaciones de producción.
-
-- Cierre del primer deploy: dos auditorías remotas por IAP confirmaron contenedor `running/healthy`, SQLite legible, cero OOM, reinicios estables en 1 y tráfico Telegram `getUpdates`/`sendMessage` HTTP 200. La VM conservaba 433 MB disponibles y 25 GB libres en disco.
-- Validación local posterior: 96 pruebas OK, runtime Python 3.14.6 alineado, `pip check`, `compileall`, `git diff --check` y checkpoint de logs sin novedades.
-- 96 pruebas nativas OK.
-- `compileall` OK para app, panel, paquete, scripts y tests.
-- `scripts/runtime_versions.py`: runtime alineado.
-- `pip check`: sin dependencias rotas.
-- Parser PowerShell: todos los scripts de deploy sin errores.
-- `bash -n`: bootstrap, instaladores de configuracion/base, verificador, deploy y rollback sin errores.
-- `git diff --check`: limpio.
-- El paso 10 ejecutó 96 pruebas dentro del target Docker (una prueba Tk omitida por ser Linux), validó Python 3.14.6 y construyó producción Linux/amd64. La imagen local y Artifact Registry coinciden en el digest `sha256:21581c...e840`.
-- Lectura real desde Galerazo y Bot Control Center confirmó sólo ocho booleanos. Un no-op real mantuvo ausente `GOOGLE_SHEETS_SPREADSHEET_ID`, pasó el verificador remoto y no inició ni desplegó el bot.
-- Docker y `gcloud` están instalados y validados; `deploy/out/last-image.txt` apunta a la imagen publicada y permanece ignorado por Git.
-- Después de publicar se confirmó por IAP que la VM sigue con cero imágenes, cero contenedores y sin `/opt/galerazo/compose.yaml`.
-- Antes del paso 11, el chequeo canónico del panel devolvió `BOT_APAGADO`; no había procesos Python con `app.py`, `data/bot.pid` ni contenedores Docker locales de Galerazobot. Este estado debe volver a comprobarse justo antes de desplegar porque es temporal.
-- El primer intento publicó `d8ae2ecc00f5`, pero el runtime falló con `FileNotFoundError: /app/.python-version`. Se detuvo el reinicio continuo sin OOM; SQLite conservó 176128 bytes/mode 0600 y `bot.env` siguió root/0600.
-- `db278a097b62` está publicado con digest `sha256:115a350c...b7cf7`; ejecutó 96 pruebas Docker, smoke de versión y healthcheck remoto sobre la base real como UID 10001. No inició Telegram durante esas comprobaciones.
-- La inspección posterior encontró `db278a097b62` con 3081 reinicios y `telegram.error.TimedOut` durante `getMe`. La VM resolvió/alcanzó Telegram por IPv6; el bridge `galerazo_default` era `ipv6=false` y sólo resolvía `149.154.166.110`. La misma imagen con `--network host` resolvió también `2001:67c:4e8:f004::9` y obtuvo HTTP 200.
-- El Compose con `network_mode: host` fue desplegado. Dos auditorías por IAP confirmaron `running/healthy`, healthcheck SQLite correcto, polling `getUpdates` HTTP 200 y envíos `sendMessage` HTTP 200. `/lil` respondió; hubo un reinicio inicial y luego no se registraron reinicios nuevos ni OOM.
-- Quality `29779348254` y Docker Quality `29779348273` pasaron sobre `9ac8cc4`; Docker construyo el target de pruebas, ejecuto 89 tests y construyo el target runtime.
-
-## Proximo paso exacto
-
-Cuando el usuario confirme el posible costo, ejecutar `Initialize-GceBillingReport.ps1 -ProjectId bot-fleet-production -AcknowledgeBillableResource`, habilitar `Costo de uso estandar` sobre `billing_export` en la consola, esperar la tabla, configurar las tres variables de Billing y publicar/desplegar una imagen inmutable.
-
-## Riesgos y bloqueos
-
-- La VM `e2-micro` tiene 1 GB: limitar la moderacion de video concurrente hasta medir PyAV.
-- La salida IPv6/Private Google Access fue validada; si una dependencia futura exige IPv4, Cloud NAT o IPv4 externa pueden agregar costo y requieren una nueva decision.
-- Google Sheets real sigue bloqueado hasta recibir spreadsheet/worksheet/credenciales.
-- El reporte diario de Billing no esta activo en produccion hasta crear/vincular el dataset y recibir la tabla generada por Google; la exportacion inicial puede tardar hasta cinco dias.
-- No ejecutar el bot local y remoto simultaneamente con el mismo token.
+Revisar el estado de Git, ejecutar `python -m galerazo_bot.log_checkpoint`, commitear y pushear la version `0.7`. Ante un pedido de release, construir/publicar una imagen inmutable y desplegarla con el flujo GCE; no migrar datos locales.

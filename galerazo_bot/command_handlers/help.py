@@ -13,7 +13,7 @@ HELP_GROUPS = (
     ("triggers", {"agregartrigger", "agrtrigger", "borrartrigger", "eliminartrigger", "eltrigger", "triggers"}),
     ("games", {"ruletarusa"}),
     ("expenses", {"habilitargastos", "deshabilitargastos", "gasto", "ultimosgastos", "estadogastos", "sincronizargastos"}),
-    ("dev", {"anuncio", "novedad", "backup", "debug", "reiniciarbot"}),
+    ("dev", {"anuncio", "novedad", "backup", "debug", "reiniciarbot", "apagar"}),
 )
 
 

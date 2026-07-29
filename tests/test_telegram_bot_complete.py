@@ -264,7 +264,7 @@ class LifecycleAndBillingTests(unittest.IsolatedAsyncioTestCase):
             tb, "_send_log_event", AsyncMock(return_value=True)
         ) as log:
             self.assertFalse(await tb._announce_current_release(db, bot, settings()))
-        log.assert_awaited_once_with(bot, "-10", "No pude leer el changelog de la version 0.6: bad")
+        log.assert_awaited_once_with(bot, "-10", f"No pude leer el changelog de la version {tb.CURRENT_VERSION}: bad")
 
         with patch.object(tb, "current_release_notes", return_value="notes"), patch.object(
             tb, "_broadcast_announcement", AsyncMock(return_value=tb.AnnouncementBroadcastResult())
@@ -587,6 +587,14 @@ class CommandAndCallbackEntrypointTests(unittest.IsolatedAsyncioTestCase):
             await tb._restart_callback_entrypoint(SimpleNamespace(callback_query=callback, effective_user=user), context)
         request.assert_called_once_with(app)
         self.assertEqual(callback.answer.await_args.args[0], "Reinicio confirmado.")
+
+        callback.data = "shutdown:yes"
+        with patch.object(tb, "_state", return_value=bot_state), patch.object(
+            tb, "_cleanup_expired_restart_confirmations", AsyncMock()
+        ), patch.object(tb, "_request_shutdown") as request:
+            await tb._restart_callback_entrypoint(SimpleNamespace(callback_query=callback, effective_user=user), context)
+        request.assert_called_once_with(app)
+        self.assertEqual(callback.answer.await_args.args[0], "Apagado confirmado.")
 
     async def test_config_callback_entrypoint_all_guards_and_success(self) -> None:
         db = MagicMock()
@@ -1037,6 +1045,8 @@ class PaginationAndChatHelpersTests(unittest.IsolatedAsyncioTestCase):
         created = message_stub()
         created.reply_text.return_value = SimpleNamespace(message_id=55)
         self.assertTrue(await tb._create_restart_confirmation(db, created, "1"))
+        self.assertTrue(await tb._create_restart_confirmation(db, created, "1", shutdown=True))
+        self.assertEqual(created.reply_text.await_args.kwargs["reply_markup"].inline_keyboard[0][0].callback_data, "shutdown:yes")
         created.reply_text.side_effect = BadRequest("send")
         self.assertFalse(await tb._create_restart_confirmation(db, created, "1"))
 
@@ -1058,6 +1068,14 @@ class PaginationAndChatHelpersTests(unittest.IsolatedAsyncioTestCase):
         tb._request_restart(application)
         self.assertEqual(application.create_task.call_count, 1)
 
+        shutdown_application = SimpleNamespace(bot_data={}, create_task=MagicMock())
+        tb._request_shutdown(shutdown_application)
+        self.assertEqual(shutdown_application.bot_data["power_requested"], "shutdown")
+        shutdown_task = shutdown_application.create_task.call_args.args[0]
+        shutdown_task.close()
+        tb._request_shutdown(shutdown_application)
+        self.assertEqual(shutdown_application.create_task.call_count, 1)
+
         queue = SimpleNamespace(join=AsyncMock())
         updater = SimpleNamespace(stop=AsyncMock())
         application = SimpleNamespace(update_queue=queue, updater=updater, stop_running=MagicMock())
@@ -1069,6 +1087,28 @@ class PaginationAndChatHelpersTests(unittest.IsolatedAsyncioTestCase):
         updater.stop.side_effect = RuntimeError("already stopped")
         await tb._restart_after_pending_updates(application)
         self.assertEqual(updater.stop.await_count, 2)
+
+        timeout_application = SimpleNamespace(
+            update_queue=SimpleNamespace(join=AsyncMock(side_effect=TimeoutError)),
+            updater=SimpleNamespace(stop=AsyncMock()),
+            bot=MagicMock(),
+            bot_data={"settings": settings()},
+            stop_running=MagicMock(),
+        )
+        with patch.object(tb, "_send_log_event", AsyncMock()) as send_log, patch.object(
+            tb.os, "_exit"
+        ) as exit_process:
+            await tb._stop_after_pending_updates(timeout_application, "shutdown")
+        send_log.assert_awaited_once()
+        exit_process.assert_called_once_with(0)
+
+        with patch.object(tb, "_send_log_event", AsyncMock()), patch.object(
+            tb, "_mark_panel_restart_pending"
+        ) as mark_restart, patch.object(tb.os, "execv") as restart_process, patch.object(tb.os, "_exit") as exit_process:
+            await tb._stop_after_pending_updates(timeout_application, "restart")
+        mark_restart.assert_called_once()
+        restart_process.assert_called_once_with(tb.sys.executable, [tb.sys.executable, *tb.sys.argv])
+        exit_process.assert_called_once_with(0)
 
     def test_chat_registration_migration_added_removed(self) -> None:
         db = MagicMock()

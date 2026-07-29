@@ -94,6 +94,8 @@ TELEGRAM_REQUEST_TIMEOUT_SECONDS = 30
 PAGINATED_METADATA_TTL = timedelta(days=14)
 RESTART_CONFIRMATION_TTL = timedelta(minutes=5)
 RESTART_CALLBACK_PREFIX = "restart"
+SHUTDOWN_CALLBACK_PREFIX = "shutdown"
+UPDATE_DRAIN_TIMEOUT_SECONDS = 60
 DISABLED_LINK_PREVIEW_OPTIONS = LinkPreviewOptions(is_disabled=True)
 ARGENTINA_TIMEZONE = ZoneInfo("America/Argentina/Buenos_Aires")
 BOTFATHER_HIDDEN_COMMANDS = frozenset(
@@ -206,7 +208,7 @@ def _register_handlers(application: Application) -> None:
     application.add_handler(CallbackQueryHandler(_callback_query_entrypoint, pattern=f"^{BUTTON_PREFIX}:"), group=1)
     application.add_handler(CallbackQueryHandler(_config_callback_entrypoint, pattern=f"^{CONFIG_PREFIX}:"), group=1)
     application.add_handler(
-        CallbackQueryHandler(_restart_callback_entrypoint, pattern=f"^{RESTART_CALLBACK_PREFIX}:"),
+        CallbackQueryHandler(_restart_callback_entrypoint, pattern=f"^({RESTART_CALLBACK_PREFIX}|{SHUTDOWN_CALLBACK_PREFIX}):"),
         group=1,
     )
     application.add_handler(ChatMemberHandler(_my_chat_member_entrypoint, ChatMemberHandler.MY_CHAT_MEMBER), group=1)
@@ -539,7 +541,7 @@ async def _handle_command_update(update: Update, context: ContextTypes.DEFAULT_T
         return
 
     command = get_command(message.text)
-    if command is not None and getattr(command, "command_key", None) == "reiniciarbot":
+    if command is not None and getattr(command, "command_key", None) in {"reiniciarbot", "apagar"}:
         await _cleanup_expired_restart_confirmations(state.db, context.bot)
 
     state.db.get_or_create_user(str(user.id), _display_name(user), user.username)
@@ -628,6 +630,12 @@ async def _handle_command_update(update: Update, context: ContextTypes.DEFAULT_T
             message,
             str(user.id),
         ),
+        create_shutdown_confirmation=lambda: _create_restart_confirmation(
+            state.db,
+            message,
+            str(user.id),
+            shutdown=True,
+        ),
         leave_chat=lambda: _leave_chat(state.db, context.bot, chat.id),
         can_run_russian_roulette=lambda: _bot_can_ban_members(
             context.bot,
@@ -714,7 +722,7 @@ async def _restart_callback_entrypoint(update: Update, context: ContextTypes.DEF
         await callback_query.answer(t(language, "restart.invalid_user"))
         return
 
-    action = (callback_query.data or "").partition(":")[2]
+    callback_prefix, _, action = (callback_query.data or "").partition(":")
     await _delete_restart_confirmation_message(state.db, message)
     if action == "no":
         await callback_query.answer(t(language, "restart.cancelled"))
@@ -723,6 +731,10 @@ async def _restart_callback_entrypoint(update: Update, context: ContextTypes.DEF
         await callback_query.answer(t(language, "restart.deleted"))
         return
 
+    if callback_prefix == SHUTDOWN_CALLBACK_PREFIX:
+        await callback_query.answer(t(language, "shutdown.confirmed"))
+        _request_shutdown(context.application)
+        return
     await callback_query.answer(t(language, "restart.confirmed"))
     _request_restart(context.application)
 
@@ -1477,17 +1489,22 @@ async def _cleanup_old_paginated_messages(db: Database, bot: Bot) -> None:
         )
 
 
-async def _create_restart_confirmation(db: Database, message: Message, requester_user_id: str) -> bool:
+async def _create_restart_confirmation(
+    db: Database,
+    message: Message,
+    requester_user_id: str,
+    shutdown: bool = False,
+) -> bool:
     language = _chat_language(db, message.chat.id)
     keyboard = InlineKeyboardMarkup(
         [[
-            InlineKeyboardButton(t(language, "restart.yes"), callback_data=f"{RESTART_CALLBACK_PREFIX}:yes"),
-            InlineKeyboardButton(t(language, "restart.no"), callback_data=f"{RESTART_CALLBACK_PREFIX}:no"),
+            InlineKeyboardButton(t(language, "restart.yes"), callback_data=f"{SHUTDOWN_CALLBACK_PREFIX if shutdown else RESTART_CALLBACK_PREFIX}:yes"),
+            InlineKeyboardButton(t(language, "restart.no"), callback_data=f"{SHUTDOWN_CALLBACK_PREFIX if shutdown else RESTART_CALLBACK_PREFIX}:no"),
         ]]
     )
     try:
         confirmation_message = await message.reply_text(
-            t(language, "restart.prompt"),
+            t(language, "shutdown.prompt" if shutdown else "restart.prompt"),
             reply_markup=keyboard,
             do_quote=True,
         )
@@ -1538,20 +1555,41 @@ async def _cleanup_expired_restart_confirmations(db: Database, bot: Bot) -> None
 
 
 def _request_restart(application: Application) -> None:
-    if application.bot_data.get("restart_requested"):
+    if application.bot_data.get("power_requested"):
         return
     application.bot_data["restart_requested"] = True
-    application.create_task(_restart_after_pending_updates(application), name="restart-after-pending-updates")
+    application.bot_data["power_requested"] = "restart"
+    application.create_task(_stop_after_pending_updates(application, "restart"), name="restart-after-pending-updates")
 
 
-async def _restart_after_pending_updates(application: Application) -> None:
+def _request_shutdown(application: Application) -> None:
+    if application.bot_data.get("power_requested"):
+        return
+    application.bot_data["power_requested"] = "shutdown"
+    application.create_task(_stop_after_pending_updates(application, "shutdown"), name="shutdown-after-pending-updates")
+
+
+async def _stop_after_pending_updates(application: Application, action: str) -> None:
     await asyncio.sleep(0)
     try:
         await application.updater.stop()
     except RuntimeError:
-        logger.info("El Updater ya estaba detenido durante el reinicio solicitado.")
-    await application.update_queue.join()
+        logger.info("El Updater ya estaba detenido durante %s.", action)
+    try:
+        await asyncio.wait_for(application.update_queue.join(), timeout=UPDATE_DRAIN_TIMEOUT_SECONDS)
+    except TimeoutError:
+        text = f"El drenaje de updates excedio {UPDATE_DRAIN_TIMEOUT_SECONDS} segundos durante {action}."
+        logger.error(text)
+        await _send_log_event(application.bot, application.bot_data["settings"].telegram_log_chat_id, text)
+        if action == "restart":
+            _mark_panel_restart_pending()
+            os.execv(sys.executable, [sys.executable, *sys.argv])
+        os._exit(0)
     application.stop_running()
+
+
+async def _restart_after_pending_updates(application: Application) -> None:
+    await _stop_after_pending_updates(application, "restart")
 
 
 def _paginated_metadata_cutoff() -> str:

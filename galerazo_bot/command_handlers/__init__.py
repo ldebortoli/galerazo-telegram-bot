@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from ..commands import Command
+from .apagar import COMMANDS as SHUTDOWN_COMMANDS
 from .anuncio import COMMANDS as ANUNCIO_COMMANDS
 from .backup import COMMANDS as BACKUP_COMMANDS
 from .blacklist import COMMANDS as BLACKLIST_COMMANDS
@@ -26,6 +27,7 @@ from .version import COMMANDS as VERSION_COMMANDS
 
 
 COMMANDS: dict[str, Command] = {
+    **SHUTDOWN_COMMANDS,
     **ANUNCIO_COMMANDS,
     **HELP_COMMANDS,
     **START_COMMANDS,

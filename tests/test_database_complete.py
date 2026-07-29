@@ -216,7 +216,11 @@ class DatabaseCompleteTests(unittest.TestCase):
         state = legacy.get_paginated_message_state("-1", "10")
         self.assertEqual(state.list_type, "galeraza")
         with legacy._connect() as connection:
-            self.assertTrue(_table_exists(connection, "galeraza_message_states"))
+            self.assertFalse(_table_exists(connection, "galeraza_message_states"))
+            self.assertEqual(
+                connection.execute("SELECT migration_id FROM schema_migrations").fetchone()[0],
+                "20260729_drop_legacy_galeraza_message_states",
+            )
             columns = {row["name"] for row in connection.execute("PRAGMA table_info(paginated_message_states)")}
         self.assertIn("content_json", columns)
         self.assertIn("current_page", columns)

@@ -155,6 +155,14 @@ class Database:
         with self._connect() as conn:
             conn.execute(
                 """
+                CREATE TABLE IF NOT EXISTS schema_migrations (
+                    migration_id TEXT PRIMARY KEY,
+                    applied_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+                )
+                """
+            )
+            conn.execute(
+                """
                 CREATE TABLE IF NOT EXISTS users (
                     user_id TEXT PRIMARY KEY,
                     display_name TEXT,
@@ -428,6 +436,17 @@ class Database:
                     FROM galeraza_message_states
                     """
                 )
+            self._apply_schema_migrations(conn)
+
+    @staticmethod
+    def _apply_schema_migrations(conn: sqlite3.Connection) -> None:
+        migration_id = "20260729_drop_legacy_galeraza_message_states"
+        applied = conn.execute(
+            "SELECT 1 FROM schema_migrations WHERE migration_id = ?", (migration_id,)
+        ).fetchone()
+        if applied is None:
+            conn.execute("DROP TABLE IF EXISTS galeraza_message_states")
+            conn.execute("INSERT INTO schema_migrations (migration_id) VALUES (?)", (migration_id,))
 
     def get_announced_release_version(self) -> str | None:
         with self._connect() as conn:

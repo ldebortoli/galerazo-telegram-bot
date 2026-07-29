@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7] - 2026-07-29
+
+- Nuevo comando exclusivo de desarrollo `/apagar`, con la misma confirmacion privada y expiracion de cinco minutos que `/reiniciarbot`.
+- Correcciones y mejoras: reinicios y apagados dejan de aceptar polling, drenan las updates ya aceptadas y fuerzan el cierre tras 60 segundos si un handler queda bloqueado.
+- Correcciones y mejoras: los deploys Docker dan 65 segundos de cierre ordenado antes de forzar el contenedor, conservando las updates que Telegram mantiene pendientes.
+- Correcciones y mejoras: SQLite aplica migraciones versionadas sobre la base remota existente. Cada deploy crea un backup previo; la primera migracion elimina la tabla legacy ya reemplazada de botoneras de Galeraza.
+
 ## [0.6] - 2026-07-29
 
 - Nuevo comando publico `/donar` y texto de Cafecito incluido en todos los anuncios distribuidos a chats.

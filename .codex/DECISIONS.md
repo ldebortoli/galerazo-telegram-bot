@@ -661,3 +661,9 @@ El reinicio Windows puede coexistir transitoriamente con el proceso padre y su h
 ## D-086 - Fallos de novedades visibles en logging (2026-07-29)
 
 El runtime Docker incluye `CHANGELOG.md`, porque las notas de release son un artefacto necesario al iniciar. Si aun asi no puede leerse, `_announce_current_release()` registra el error y lo reenvia al canal de logging, ya que Telegram y la configuracion de logging estan disponibles en ese punto. Un fallo del propio canal no impide que el bot inicie.
+
+## D-087 - Drenaje acotado y migraciones SQLite versionadas (2026-07-29)
+
+`/reiniciarbot` y `/apagar` comparten una confirmacion persistida de cinco minutos y una unica ruta de apagado: primero detienen el `Updater`, luego esperan como maximo 60 segundos por las updates ya aceptadas. Si un handler no termina, se registra el timeout en el canal de logging y se fuerza el reinicio o apagado para evitar que un bucle infinito deje al proceso en estado indeterminado. Docker concede 65 segundos al `SIGTERM` de un deploy, por lo que el cierre normal de PTB deja de recibir updates y drena antes de que Docker lo fuerce.
+
+Los cambios de esquema se implementan como migraciones inmutables y registradas en `schema_migrations`, ejecutadas al iniciar sobre la SQLite persistente remota. El deploy conserva el volumen y crea un backup consistente antes de sustituir la imagen; `MigrateData` sigue reservado exclusivamente para reemplazar la base remota por una copia local confirmada.

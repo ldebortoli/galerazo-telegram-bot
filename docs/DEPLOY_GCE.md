@@ -480,11 +480,19 @@ El deploy remoto:
 2. registra la imagen anterior;
 3. crea un backup SQLite consistente si hay un contenedor activo;
 4. descarga la imagen nueva antes de detener el bot;
-5. recrea el contenedor y espera hasta 120 segundos por su healthcheck;
-6. restaura automaticamente la imagen anterior si no queda healthy.
+5. solicita `SIGTERM` al contenedor anterior: deja de pedir updates y termina las ya aceptadas; Docker le concede hasta 65 segundos antes de forzar el cierre;
+6. recrea el contenedor y espera hasta 120 segundos por su healthcheck;
+7. aplica las migraciones SQLite versionadas de la nueva imagen sobre la base remota persistente; no copia ni borra datos locales;
+8. restaura automaticamente la imagen anterior si no queda healthy.
 
 El bot usa `drop_pending_updates=False`; durante los pocos segundos de recreacion
 Telegram conserva las updates que todavia no hayan expirado.
+
+Una migracion de esquema se agrega explicitamente en `Database._apply_schema_migrations()`
+con un identificador inmutable. Cada una se registra en `schema_migrations` dentro de
+la misma transaccion. Esto permite agregar columnas o retirar tablas obsoletas sin
+reemplazar la base remota; el backup del paso 3 permite restaurar la imagen y los
+datos anteriores si la validacion del deploy falla.
 
 ## 7. Comprobaciones y rollback
 
