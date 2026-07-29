@@ -173,6 +173,7 @@ El panel usa un cliente inicial de `760x750`, minimo `680x730`; la pestaña Conf
 - `chat_settings.announcements_enabled` empieza en activo, migra con grupos convertidos a supergrupos y se configura desde `/config` en privados, grupos y supergrupos. Los canales reciben anuncios por defecto; Telegram no permite una UI de callback administrable desde un channel post sin un usuario efectivo.
 - Los gastos no son configurables por grupo: `/gasto`, `/ultimosgastos`, `/estadogastos` y `/sincronizargastos` exigen nivel `DEV` y funcionan en cualquier chat. No se sugieren por BotFather. Los botones heredados `config:command:gastos` y `config:set:gastos:*` eliminan el mensaje al interactuar.
 - Los rankings usan nombres visibles cacheados en `users` y user IDs; no generan menciones ni hacen requests de nombres al renderizar.
+- Las traducciones se validan contra mojibake UTF-8 (`Ã`, `Â`, U+FFFD); usar escapes Unicode en textos nuevos cuando se necesite evitar conversiones de editor o consola.
 - Todas las pantallas de `/config` incluyen `config:close`; los permisos se validan antes de ejecutar cualquier callback.
 - Cerrar el panel de control apaga el arbol de procesos local del bot antes de destruir la ventana.
 - Los niveles se validan al invocar comandos o tocar botones, no como clasificacion global permanente.

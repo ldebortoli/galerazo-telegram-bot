@@ -23,6 +23,13 @@ Este archivo es append-only a nivel conceptual: no borrar decisiones anteriores.
 - Decision: los envios de broadcast, el canal de anuncios y las novedades usan `LinkPreviewOptions(is_disabled=True)` de python-telegram-bot.
 - Motivo: evitar tarjetas externas no solicitadas y mantener los anuncios compactos, incluidos enlaces de Cafecito y changelogs.
 
+## D-079 - Regresion contra mojibake en traducciones
+
+- Estado: vigente.
+- Fecha: 2026-07-29.
+- Decision: las cadenas de `i18n.py` que requieran caracteres no ASCII pueden usar escapes Unicode; la suite rechaza los marcadores `Ã`, `Â` y U+FFFD en todas las traducciones runtime.
+- Motivo: impedir que errores de recodificacion UTF-8 vuelvan a mostrarse a usuarios de Telegram.
+
 ## D-001 - python-telegram-bot como integracion Telegram
 
 - Estado: vigente.

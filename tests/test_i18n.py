@@ -21,6 +21,12 @@ class SpanishTranslationsTests(unittest.TestCase):
         self.assertIn("Usá /help", TRANSLATIONS["es"]["start.response"])
         self.assertIn("respondé", TRANSLATIONS["es"]["salir.usage"])
 
+    def test_translations_do_not_contain_utf8_mojibake(self) -> None:
+        mojibake_markers = ("\u00c3", "\u00c2", "\ufffd")
+        for translations in TRANSLATIONS.values():
+            for text in translations.values():
+                self.assertFalse(any(marker in text for marker in mojibake_markers), text)
+
 
 if __name__ == "__main__":
     unittest.main()
