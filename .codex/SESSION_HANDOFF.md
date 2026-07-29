@@ -12,6 +12,8 @@ El mecanismo mensual de backups GCE ya tiene un runbook exhaustivo y enlazado de
 
 ## Estado actual
 
+- Deploy de produccion del 2026-07-29: `galerazobot:f8d4c9a648f8` esta `running/healthy`, Telegram conectado y sin reinicios. No se distribuyeron novedades porque el arranque registro `No pude leer el changelog de la version 0.6: [Errno 2] No such file or directory: '/app/CHANGELOG.md'`. La imagen runtime no contiene ese archivo; el fallo ocurre antes de cualquier envio a chats y no marca `0.6` como anunciada, por lo que despues de corregir la imagen el siguiente inicio puede anunciarla. El usuario pidio solo diagnostico; no corregir ni desplegar en esta ejecucion.
+
 - El 2026-07-29 se detuvo una segunda instancia local huérfana de `app.py` (procesos `17524` y `18492`); la verificacion posterior no encontro procesos locales del bot. Produccion no fue tocada. La causa fue una carrera Windows: el panel borro el PID viejo luego de que el hijo publico el nuevo. Ahora `data/bot.restart` protege el relevo, el PID se reemplaza atomicamente y la UI muestra `REINICIANDO`; validado con 224 pruebas/100% y pendiente de commit/push. El bot local permanece apagado.
 
 - Los anuncios incluyen ahora el enlace fijo al canal de anuncios antes de la donacion, con etiqueta localizada. Validacion: 223 pruebas, 100% de sentencias/ramas, runtime, `pip check`, `compileall`, diff-check y checkpoint OK. Pendiente de commit y push; no requiere BotFather ni release/deploy.

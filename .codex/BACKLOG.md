@@ -2,6 +2,7 @@
 
 ## P1
 
+- [DEFERRED: el usuario solicito solo diagnostico en esta ejecucion] Incluir `CHANGELOG.md` en la imagen Docker runtime para que el anuncio de release pueda leer sus notas y distribuirlas al iniciar produccion.
 - [BLOCKED: el proyecto no tiene dataset ni tabla de exportacion; requiere confirmar `-AcknowledgeBillableResource`, habilitar manualmente `Costo de uso estandar` en Cloud Billing y esperar la tabla antes de configurar y desplegar] Activar en produccion el reporte diario de gasto de Google Cloud.
 - [BLOCKED: falta que el usuario confirme spreadsheet ID, worksheet y credenciales de service account] Conectar el sistema de gastos con el Google Sheet real.
 - [BLOCKED: el token `gh` no tiene scope `user`/Plan y el navegador disponible no tiene sesion GitHub; requiere iniciar sesion o autorizar explicitamente ampliar el scope] Confirmar visualmente si la cuenta personal tiene medio de pago cargado. La documentacion oficial confirma que, si no existe un medio valido, Actions se bloquea al agotar la cuota y no cobra excedentes.
