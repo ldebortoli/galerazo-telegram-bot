@@ -180,6 +180,7 @@ El panel usa un cliente inicial de `760x750`, minimo `680x730`; la pestaña Conf
 - Las traducciones se validan contra mojibake UTF-8 (`Ã`, `Â`, U+FFFD); usar escapes Unicode en textos nuevos cuando se necesite evitar conversiones de editor o consola.
 - Todas las pantallas de `/config` incluyen `config:close`; los permisos se validan antes de ejecutar cualquier callback.
 - Cerrar el panel de control apaga el arbol de procesos local del bot antes de destruir la ventana.
+- El panel marca sus procesos con `GALERAZO_PANEL_MANAGED=1`; cada inicio del bot actualiza `data/bot.pid`, incluido un relanzamiento local por `/reiniciarbot` en Windows.
 - Los niveles se validan al invocar comandos o tocar botones, no como clasificacion global permanente.
 - La media se modera solo al crear triggers. Sin clave se omite; con clave, un fallo impide guardar ese intento. Los buffers y frames se mantienen en memoria y se limpian siempre.
 

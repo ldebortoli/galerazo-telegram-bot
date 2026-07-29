@@ -18,6 +18,7 @@ DATA_DIR = PROJECT_ROOT / "data"
 PID_PATH = DATA_DIR / "bot.pid"
 LOG_PATH = DATA_DIR / "bot.log"
 ENV_PATH = PROJECT_ROOT / ".env"
+PANEL_MANAGED_ENV = "GALERAZO_PANEL_MANAGED"
 ICON_PNG_PATH = PROJECT_ROOT / "assets" / "galerazo-bot-icon.png"
 ICON_ICO_PATH = PROJECT_ROOT / "assets" / "galerazo-bot-icon.ico"
 WINDOWS_APP_ID = "GalerazoBot.ControlPanel"
@@ -340,7 +341,7 @@ class ControlPanel(tk.Tk):
             process = subprocess.Popen(
                 [sys.executable, str(PROJECT_ROOT / "app.py")],
                 cwd=PROJECT_ROOT,
-                env={**os.environ, **_read_env()},
+                env={**os.environ, **_read_env(), PANEL_MANAGED_ENV: "1"},
                 stdout=log,
                 stderr=subprocess.STDOUT,
                 stdin=subprocess.DEVNULL,

@@ -105,6 +105,21 @@ def trigger(media_type=None, file_id=None, text=None, payload_json=None, caption
 
 
 class LifecycleAndBillingTests(unittest.IsolatedAsyncioTestCase):
+    def test_panel_managed_restart_refreshes_the_pid_file(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            pid_path = Path(directory) / "bot.pid"
+            with patch.object(tb, "PANEL_PID_PATH", pid_path), patch.dict(
+                tb.os.environ, {}, clear=True
+            ):
+                tb._record_panel_managed_pid()
+                self.assertFalse(pid_path.exists())
+
+            with patch.object(tb, "PANEL_PID_PATH", pid_path), patch.dict(
+                tb.os.environ, {tb.PANEL_MANAGED_ENV: "1"}, clear=True
+            ):
+                tb._record_panel_managed_pid()
+            self.assertEqual(pid_path.read_text(encoding="ascii"), str(tb.os.getpid()))
+
     def test_bold_empty_main_failures_success_and_handler_registration(self) -> None:
         self.assertEqual(tb._bold_first_line_entities(""), [])
         with patch.object(tb, "ensure_python_version"), patch.object(tb, "configure_logging"), patch.object(

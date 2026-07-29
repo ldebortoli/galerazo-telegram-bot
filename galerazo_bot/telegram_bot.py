@@ -110,6 +110,8 @@ POLLING_OPTIONS = {
     "allowed_updates": Update.ALL_TYPES,
     "drop_pending_updates": False,
 }
+PANEL_MANAGED_ENV = "GALERAZO_PANEL_MANAGED"
+PANEL_PID_PATH = Path(__file__).resolve().parent.parent / "data" / "bot.pid"
 
 
 def _bold_first_line_entities(text: str) -> list[MessageEntity]:
@@ -145,6 +147,7 @@ def main() -> None:
         )
 
     try:
+        _record_panel_managed_pid()
         db = Database(settings.database_path)
         application = _build_application(settings.telegram_bot_token, db)
         application.bot_data["settings"] = settings
@@ -160,6 +163,13 @@ def main() -> None:
             os.execv(sys.executable, [sys.executable, *sys.argv])
     finally:
         instance.release()
+
+
+def _record_panel_managed_pid() -> None:
+    if os.environ.get(PANEL_MANAGED_ENV) != "1":
+        return
+    PANEL_PID_PATH.parent.mkdir(parents=True, exist_ok=True)
+    PANEL_PID_PATH.write_text(str(os.getpid()), encoding="ascii")
 
 
 def _build_application(token: str, db: Database) -> Application:

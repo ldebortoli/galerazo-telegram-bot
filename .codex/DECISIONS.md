@@ -649,3 +649,7 @@ Los anuncios mantienen una separacion visual antes de la donacion y dejan el avi
 ## D-083 - Enlace fijo al canal en anuncios (2026-07-29)
 
 Todo broadcast incluye el enlace publico de anuncios antes de la donacion. La URL permanece identica y la etiqueta se localiza para espanol e ingles; se conserva la misma composicion para anuncios manuales y changelogs de release.
+
+## D-084 - PID renovado despues de reinicio local (2026-07-29)
+
+El panel inicia el bot con `GALERAZO_PANEL_MANAGED=1`. El bot reescribe `data/bot.pid` al comenzar solo bajo esa marca, por lo que un relanzamiento Windows posterior a `/reiniciarbot` actualiza el PID que el panel consulta. Las ejecuciones manuales no crean ni reclaman ese estado del panel.
