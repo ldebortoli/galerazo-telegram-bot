@@ -38,12 +38,14 @@ class DatabaseCompleteTests(unittest.TestCase):
     def test_chat_registration_migrations_cycle_stats_and_settings(self) -> None:
         self.db.get_or_create_user("1")
         self.db.register_chat("-1", "group", "Old", "1")
+        self.db.save_restart_confirmation("-1", "99", "1")
         self.assertEqual(self.db.get_chat_added_by_user_id("-1"), "1")
         self.assertIsNone(self.db.get_chat_added_by_user_id("missing"))
         self.db.register_chat("-2", "supergroup", "New")
         self.db.migrate_chat_id("-1", "-2")
         self.assertEqual(self.db.resolve_chat_id("-1"), "-2")
         self.assertEqual(self.db.get_chat_added_by_user_id("-2"), "1")
+        self.assertEqual(self.db.get_restart_confirmation("-2", "99").requester_user_id, "1")
         self.db.migrate_chat_id("-2", "-2")
         self.db.migrate_chat_id("missing-old", "-3")
         self.assertEqual(self.db.resolve_chat_id("missing-old"), "-3")
@@ -127,6 +129,13 @@ class DatabaseCompleteTests(unittest.TestCase):
         self.assertEqual(state.current_page, 3)
         self.db.delete_paginated_message_state("-1", "10")
         self.assertIsNone(self.db.get_paginated_message_state("-1", "10"))
+
+        self.db.save_restart_confirmation("-1", "30", "1")
+        confirmation = self.db.get_restart_confirmation("-1", "30")
+        self.assertEqual(confirmation.requester_user_id, "1")
+        self.assertEqual(len(self.db.list_restart_confirmations_before("9999-01-01")), 1)
+        self.db.delete_restart_confirmation("-1", "30")
+        self.assertIsNone(self.db.get_restart_confirmation("-1", "30"))
 
         self.db.save_galeraza_message_state("-1", "20", "1", True, 2)
         self.assertTrue(self.db.get_galeraza_message_state("-1", "20").unlocked)

@@ -87,6 +87,14 @@ class PaginatedMessageState:
 
 
 @dataclass(frozen=True)
+class RestartConfirmation:
+    chat_id: str
+    message_id: str
+    requester_user_id: str
+    created_at: str
+
+
+@dataclass(frozen=True)
 class Trigger:
     chat_id: str
     trigger_name: str
@@ -302,6 +310,19 @@ class Database:
                     current_page INTEGER NOT NULL DEFAULT 1,
                     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
                     updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    PRIMARY KEY (chat_id, message_id),
+                    FOREIGN KEY (chat_id) REFERENCES chats (chat_id),
+                    FOREIGN KEY (requester_user_id) REFERENCES users (user_id)
+                )
+                """
+            )
+            conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS restart_confirmations (
+                    chat_id TEXT NOT NULL,
+                    message_id TEXT NOT NULL,
+                    requester_user_id TEXT NOT NULL,
+                    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
                     PRIMARY KEY (chat_id, message_id),
                     FOREIGN KEY (chat_id) REFERENCES chats (chat_id),
                     FOREIGN KEY (requester_user_id) REFERENCES users (user_id)
@@ -714,6 +735,18 @@ class Database:
                 (new_chat_id, old_chat_id),
             )
             conn.execute("DELETE FROM paginated_message_states WHERE chat_id = ?", (old_chat_id,))
+            conn.execute(
+                """
+                INSERT OR IGNORE INTO restart_confirmations (
+                    chat_id, message_id, requester_user_id, created_at
+                )
+                SELECT ?, message_id, requester_user_id, created_at
+                FROM restart_confirmations
+                WHERE chat_id = ?
+                """,
+                (new_chat_id, old_chat_id),
+            )
+            conn.execute("DELETE FROM restart_confirmations WHERE chat_id = ?", (old_chat_id,))
             conn.execute(
                 "UPDATE expenses SET chat_id = ? WHERE chat_id = ?",
                 (new_chat_id, old_chat_id),
@@ -1349,6 +1382,74 @@ class Database:
                 DELETE FROM paginated_message_states
                 WHERE chat_id = ? AND message_id = ?
                 """,
+                (chat_id, message_id),
+            )
+
+    def save_restart_confirmation(
+        self,
+        chat_id: str,
+        message_id: str,
+        requester_user_id: str,
+    ) -> None:
+        chat_id = self.resolve_chat_id(chat_id)
+        with self._connect() as conn:
+            conn.execute(
+                """
+                INSERT INTO restart_confirmations (chat_id, message_id, requester_user_id)
+                VALUES (?, ?, ?)
+                ON CONFLICT(chat_id, message_id) DO UPDATE SET
+                    requester_user_id = excluded.requester_user_id,
+                    created_at = CURRENT_TIMESTAMP
+                """,
+                (chat_id, message_id, requester_user_id),
+            )
+
+    def get_restart_confirmation(self, chat_id: str, message_id: str) -> RestartConfirmation | None:
+        chat_id = self.resolve_chat_id(chat_id)
+        with self._connect() as conn:
+            row = conn.execute(
+                """
+                SELECT chat_id, message_id, requester_user_id, created_at
+                FROM restart_confirmations
+                WHERE chat_id = ? AND message_id = ?
+                """,
+                (chat_id, message_id),
+            ).fetchone()
+        if row is None:
+            return None
+        return RestartConfirmation(
+            chat_id=row["chat_id"],
+            message_id=row["message_id"],
+            requester_user_id=row["requester_user_id"],
+            created_at=row["created_at"],
+        )
+
+    def list_restart_confirmations_before(self, cutoff: str) -> list[RestartConfirmation]:
+        with self._connect() as conn:
+            rows = conn.execute(
+                """
+                SELECT chat_id, message_id, requester_user_id, created_at
+                FROM restart_confirmations
+                WHERE created_at < ?
+                ORDER BY created_at ASC
+                """,
+                (cutoff,),
+            ).fetchall()
+        return [
+            RestartConfirmation(
+                chat_id=row["chat_id"],
+                message_id=row["message_id"],
+                requester_user_id=row["requester_user_id"],
+                created_at=row["created_at"],
+            )
+            for row in rows
+        ]
+
+    def delete_restart_confirmation(self, chat_id: str, message_id: str) -> None:
+        chat_id = self.resolve_chat_id(chat_id)
+        with self._connect() as conn:
+            conn.execute(
+                "DELETE FROM restart_confirmations WHERE chat_id = ? AND message_id = ?",
                 (chat_id, message_id),
             )
 

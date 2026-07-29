@@ -6,13 +6,13 @@ Mantener Galerazo Bot reproducible en Windows, CI y Docker, con SQLite persisten
 
 ## Tarea actual
 
-No hay una implementacion activa. `/anuncio` envia anuncios DEV-only a chats activos con opt-out por `/config` y al canal central; los releases usan el mismo flujo. La version actual es `0.5`, pendiente de anuncio solamente en el proximo deploy solicitado. Gastos ya no aparece en `/config`: `/gasto`, `/ultimosgastos`, `/estadogastos` y `/sincronizargastos` exigen `DEV` en cualquier chat. Las correcciones se acumulan localmente/Git y los releases de produccion quedan agrupados hasta que el usuario pida explicitamente publicar o desplegar.
+No hay una implementacion activa. `/reiniciarbot` es DEV-only y crea una confirmacion persistida por cinco minutos; cualquier ejecucion del comando o click limpia confirmaciones vencidas sin scheduler. Solo el DEV solicitante puede confirmar/cancelar y el proceso se reejecuta despues de drenar la cola de updates. `/donar` es publico y todos los broadcasts incluyen el enlace de Cafecito antes del aviso `/config`. La version actual es `0.6`, pendiente de anuncio solamente en el proximo deploy solicitado. `/anuncio` envia anuncios DEV-only a chats activos con opt-out por `/config` y al canal central; los releases usan el mismo flujo. Gastos ya no aparece en `/config`: `/gasto`, `/ultimosgastos`, `/estadogastos` y `/sincronizargastos` exigen `DEV` en cualquier chat. Las correcciones se acumulan localmente/Git y los releases de produccion quedan agrupados hasta que el usuario pida explicitamente publicar o desplegar.
 
 El mecanismo mensual de backups GCE ya tiene un runbook exhaustivo y enlazado desde README/deploy para Galerazobot y futuros bots. El job diario de gasto de Google Cloud quedo implementado y validado; su activacion real sigue bloqueada porque `bot-fleet-production` no tiene dataset ni tabla de exportacion.
 
 ## Estado actual
 
-- Rama `main`, tracking `origin/main`; ultimo commit propio `989c494` (`Update command examples in README`) ya fue pusheado. El arbol de trabajo esta limpio.
+- Rama `main`, tracking `origin/main`; commit `9627836` (`Add restart confirmation and donation command`) creado, pendiente de push. El arbol de trabajo debe quedar limpio tras el push.
 - Politica de release: un fix normal termina en validacion, commit y push. No construir imagen sin necesidad Docker y no publicar Artifact Registry ni desplegar GCE salvo pedido explicito del usuario en la instruccion actual.
 - Python 3.14.6 exacto y lock completo.
 - `Dockerfile` tiene targets `test` y `runtime`; produccion corre como UID/GID 10001, con healthcheck SQLite.
@@ -88,7 +88,7 @@ El mecanismo mensual de backups GCE ya tiene un runbook exhaustivo y enlazado de
 
 ## Proximo paso exacto
 
-Cuando el usuario confirme el posible costo, ejecutar `Initialize-GceBillingReport.ps1 -ProjectId bot-fleet-production -AcknowledgeBillableResource`, habilitar `Costo de uso estandar` sobre `billing_export` en la consola, esperar la tabla, configurar las tres variables de Billing y publicar/desplegar una imagen inmutable.
+Pushear la version `0.6` sin release/deploy. Luego, cuando el usuario confirme el posible costo, ejecutar `Initialize-GceBillingReport.ps1 -ProjectId bot-fleet-production -AcknowledgeBillableResource`, habilitar `Costo de uso estandar` sobre `billing_export` en la consola, esperar la tabla, configurar las tres variables de Billing y publicar/desplegar una imagen inmutable.
 
 ## Riesgos y bloqueos
 

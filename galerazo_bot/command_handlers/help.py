@@ -6,14 +6,14 @@ from ..roles import CommandContext
 
 
 HELP_GROUPS = (
-    ("general", {"help", "ayuda", "start", "hola", "lil", "nivel", "version", "chats", "reportar"}),
+    ("general", {"help", "ayuda", "start", "hola", "lil", "nivel", "version", "chats", "reportar", "donar"}),
     ("blocking", {"bloquear", "desbloquear", "desloquear", "listanegra", "bloqueados"}),
     ("chat_admin", {"config", "restringir", "habilitar", "restringidos", "salir"}),
     ("galeraza", {"galeraza", "galerazas"}),
     ("triggers", {"agregartrigger", "agrtrigger", "borrartrigger", "eliminartrigger", "eltrigger", "triggers"}),
     ("games", {"ruletarusa"}),
     ("expenses", {"habilitargastos", "deshabilitargastos", "gasto", "ultimosgastos", "estadogastos", "sincronizargastos"}),
-    ("dev", {"anuncio", "novedad", "backup", "debug"}),
+    ("dev", {"anuncio", "novedad", "backup", "debug", "reiniciarbot"}),
 )
 
 

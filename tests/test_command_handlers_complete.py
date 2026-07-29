@@ -7,7 +7,7 @@ from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from galerazo_bot.commands import Command as _Command
-from galerazo_bot.command_handlers import backup, blacklist, chats, config, debug, galerazas
+from galerazo_bot.command_handlers import backup, blacklist, chats, config, debug, donar, galerazas, reiniciarbot
 from galerazo_bot.command_handlers import anuncio, gastos, novedad, reportar, restrictions, salir, triggers, version
 from galerazo_bot.database import BlockedUser, ChatRestrictedUser, ChatStatsRow, Expense, Trigger, User
 from galerazo_bot.expenses import ExpenseSheetStatus, ExpenseSubmissionResult, ExpenseSyncResult
@@ -66,6 +66,21 @@ class SmallAsyncHandlerTests(unittest.IsolatedAsyncioTestCase):
         )
         self.assertIsNone(
             await debug.handle(make_context(send_debug_update=AsyncMock(return_value=True)), MagicMock())
+        )
+
+    async def test_donation_and_restart_paths(self) -> None:
+        self.assertIn("cafecito.app", donar.handle(make_context(), MagicMock()))
+        self.assertIn("configurado", await reiniciarbot.handle(make_context(), MagicMock()))
+        self.assertIn(
+            "crear",
+            await reiniciarbot.handle(
+                make_context(create_restart_confirmation=AsyncMock(return_value=False)), MagicMock()
+            ),
+        )
+        self.assertIsNone(
+            await reiniciarbot.handle(
+                make_context(create_restart_confirmation=AsyncMock(return_value=True)), MagicMock()
+            )
         )
 
     async def test_galerazas_paths(self) -> None:

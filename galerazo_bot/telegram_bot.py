@@ -3,6 +3,8 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+import os
+import sys
 import traceback
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
@@ -19,6 +21,8 @@ from telegram import (
     BotCommandScopeDefault,
     Chat,
     ChatMember,
+    InlineKeyboardButton,
+    InlineKeyboardMarkup,
     Message,
     MessageEntity,
     Update,
@@ -87,6 +91,8 @@ TELEGRAM_MESSAGE_LIMIT_CHARS = 4096
 TELEGRAM_DOCUMENT_TIMEOUT_SECONDS = 30
 TELEGRAM_REQUEST_TIMEOUT_SECONDS = 30
 PAGINATED_METADATA_TTL = timedelta(days=14)
+RESTART_CONFIRMATION_TTL = timedelta(minutes=5)
+RESTART_CALLBACK_PREFIX = "restart"
 ARGENTINA_TIMEZONE = ZoneInfo("America/Argentina/Buenos_Aires")
 BOTFATHER_HIDDEN_COMMANDS = frozenset(
     {
@@ -147,6 +153,9 @@ def main() -> None:
 
         logger.info("Galerazo Bot escuchando mensajes de Telegram.")
         application.run_polling(**POLLING_OPTIONS)
+        if application.bot_data.get("restart_requested") is True:
+            logger.info("Reiniciando Galerazo Bot por confirmacion de desarrollo.")
+            os.execv(sys.executable, [sys.executable, *sys.argv])
     finally:
         instance.release()
 
@@ -174,6 +183,10 @@ def _register_handlers(application: Application) -> None:
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, _text_command_entrypoint), group=1)
     application.add_handler(CallbackQueryHandler(_callback_query_entrypoint, pattern=f"^{BUTTON_PREFIX}:"), group=1)
     application.add_handler(CallbackQueryHandler(_config_callback_entrypoint, pattern=f"^{CONFIG_PREFIX}:"), group=1)
+    application.add_handler(
+        CallbackQueryHandler(_restart_callback_entrypoint, pattern=f"^{RESTART_CALLBACK_PREFIX}:"),
+        group=1,
+    )
     application.add_handler(ChatMemberHandler(_my_chat_member_entrypoint, ChatMemberHandler.MY_CHAT_MEMBER), group=1)
 
 
@@ -501,6 +514,10 @@ async def _handle_command_update(update: Update, context: ContextTypes.DEFAULT_T
     if message is None or user is None or chat is None or not message.text:
         return
 
+    command = get_command(message.text)
+    if command is not None and getattr(command, "command_key", None) == "reiniciarbot":
+        await _cleanup_expired_restart_confirmations(state.db, context.bot)
+
     state.db.get_or_create_user(str(user.id), _display_name(user), user.username)
     if state.db.is_user_blocked(str(user.id)):
         return
@@ -508,7 +525,6 @@ async def _handle_command_update(update: Update, context: ContextTypes.DEFAULT_T
         return
 
     user_level = UserLevel.COMMON
-    command = get_command(message.text)
     if command is not None and _is_command_group_disabled(state.db, chat, command.configurable_group):
         return
 
@@ -583,6 +599,11 @@ async def _handle_command_update(update: Update, context: ContextTypes.DEFAULT_T
         send_debug_update=lambda: _send_debug_update(state.db, message, update),
         send_galerazas=lambda: _send_galerazas(state.db, message, str(user.id)),
         send_config_menu=lambda: _send_config_menu(state.db, message),
+        create_restart_confirmation=lambda: _create_restart_confirmation(
+            state.db,
+            message,
+            str(user.id),
+        ),
         leave_chat=lambda: _leave_chat(state.db, context.bot, chat.id),
         can_run_russian_roulette=lambda: _bot_can_ban_members(
             context.bot,
@@ -648,6 +669,38 @@ async def _callback_query_entrypoint(update: Update, context: ContextTypes.DEFAU
             parsed=parsed,
         )
     await callback_query.answer(text=popup_text)
+
+
+async def _restart_callback_entrypoint(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    state = _state(context)
+    callback_query = update.callback_query
+    user = update.effective_user
+    message = callback_query.message if callback_query is not None else None
+    if callback_query is None or user is None or message is None:
+        return
+
+    await _cleanup_expired_restart_confirmations(state.db, context.bot)
+    confirmation = state.db.get_restart_confirmation(str(message.chat.id), str(message.message_id))
+    language = _chat_language(state.db, message.chat.id)
+    if confirmation is None:
+        await _delete_restart_confirmation_message(state.db, message)
+        await callback_query.answer(t(language, "restart.deleted"))
+        return
+    if str(user.id) != confirmation.requester_user_id:
+        await callback_query.answer(t(language, "restart.invalid_user"))
+        return
+
+    action = (callback_query.data or "").partition(":")[2]
+    await _delete_restart_confirmation_message(state.db, message)
+    if action == "no":
+        await callback_query.answer(t(language, "restart.cancelled"))
+        return
+    if action != "yes":
+        await callback_query.answer(t(language, "restart.deleted"))
+        return
+
+    await callback_query.answer(t(language, "restart.confirmed"))
+    _request_restart(context.application)
 
 
 async def _config_callback_entrypoint(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -1398,6 +1451,79 @@ async def _cleanup_old_paginated_messages(db: Database, bot: Bot) -> None:
             chat_id=_parse_chat_id(state.chat_id),
             message_id=state.message_id,
         )
+
+
+async def _create_restart_confirmation(db: Database, message: Message, requester_user_id: str) -> bool:
+    language = _chat_language(db, message.chat.id)
+    keyboard = InlineKeyboardMarkup(
+        [[
+            InlineKeyboardButton(t(language, "restart.yes"), callback_data=f"{RESTART_CALLBACK_PREFIX}:yes"),
+            InlineKeyboardButton(t(language, "restart.no"), callback_data=f"{RESTART_CALLBACK_PREFIX}:no"),
+        ]]
+    )
+    try:
+        confirmation_message = await message.reply_text(
+            t(language, "restart.prompt"),
+            reply_markup=keyboard,
+            do_quote=True,
+        )
+    except TelegramError:
+        logger.warning("No pude crear el tablero de reinicio en chat %s.", message.chat.id)
+        return False
+
+    db.save_restart_confirmation(
+        chat_id=str(message.chat.id),
+        message_id=str(confirmation_message.message_id),
+        requester_user_id=requester_user_id,
+    )
+    return True
+
+
+async def _delete_restart_confirmation_message(db: Database, message: Message) -> None:
+    try:
+        await message.delete()
+    except TelegramError as exc:
+        logger.warning("No pude eliminar tablero de reinicio %s en chat %s: %s", message.message_id, message.chat.id, exc)
+    finally:
+        db.delete_restart_confirmation(str(message.chat.id), str(message.message_id))
+
+
+async def _delete_restart_confirmation_by_id(
+    db: Database,
+    bot: Bot,
+    chat_id: int | str,
+    message_id: str,
+) -> None:
+    try:
+        await bot.delete_message(chat_id=chat_id, message_id=int(message_id))
+    except TelegramError as exc:
+        logger.warning("No pude eliminar tablero de reinicio %s en chat %s: %s", message_id, chat_id, exc)
+    finally:
+        db.delete_restart_confirmation(str(chat_id), message_id)
+
+
+async def _cleanup_expired_restart_confirmations(db: Database, bot: Bot) -> None:
+    cutoff = (datetime.now(timezone.utc) - RESTART_CONFIRMATION_TTL).strftime("%Y-%m-%d %H:%M:%S")
+    for confirmation in db.list_restart_confirmations_before(cutoff):
+        await _delete_restart_confirmation_by_id(
+            db,
+            bot,
+            _parse_chat_id(confirmation.chat_id),
+            confirmation.message_id,
+        )
+
+
+def _request_restart(application: Application) -> None:
+    if application.bot_data.get("restart_requested"):
+        return
+    application.bot_data["restart_requested"] = True
+    application.create_task(_restart_after_pending_updates(application), name="restart-after-pending-updates")
+
+
+async def _restart_after_pending_updates(application: Application) -> None:
+    await asyncio.sleep(0)
+    await application.update_queue.join()
+    application.stop_running()
 
 
 def _paginated_metadata_cutoff() -> str:

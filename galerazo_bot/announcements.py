@@ -16,7 +16,7 @@ class AnnouncementBroadcastResult:
 
 
 def format_announcement(text: str, language: str) -> str:
-    return f"{text}\n\n{t(language, 'announcement.footer')}"
+    return f"{text}\n\n{t(language, 'donation.text')}\n\n{t(language, 'announcement.footer')}"
 
 
 def announcement_fits(text: str, max_chars: int) -> bool:

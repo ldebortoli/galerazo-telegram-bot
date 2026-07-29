@@ -16,6 +16,9 @@
 
 # DONE
 
+- [2026-07-29] Implementar `/reiniciarbot` exclusivo DEV con confirmacion persistida, expiracion pasiva de cinco minutos, callbacks privados y reinicio tras drenar las updates ya obtenidas. La metadata tambien migra cuando Telegram convierte un grupo en supergrupo. Version `0.6`; BotFather resincronizado. Validacion: 221 pruebas, 100% de sentencias/ramas, runtime, `pip check`, `compileall`, diff-check y checkpoint OK. Sin release/deploy.
+- [2026-07-29] [USER_QUEUE] Implementar `/donar` y agregar el texto de Cafecito a todos los broadcasts antes del aviso de `/config`. Version `0.6`; BotFather resincronizado. Validacion: 221 pruebas, 100% de sentencias/ramas, runtime, `pip check`, `compileall`, diff-check y checkpoint OK. Sin release/deploy.
+
 - [2026-07-27] Implementar `/anuncio` para devs: recorre chats activos, respeta el opt-out por chat, manda tambien al canal de anuncios y solo marca inactivos ante errores definitivos. Agregar preferencia Anuncios a `/config` para privados/grupos/supergrupos, por defecto activa y migrable; los releases distribuyen el changelog por ese mismo mecanismo. Version `0.5`. BotFather resincronizado. Validacion: 218 pruebas, 100% de sentencias/ramas, runtime, `pip check`, `compileall` y diff-check OK. Sin release/deploy.
 
 - [2026-07-26] Quitar Gastos de `/config` y los comandos `/habilitargastos`/`/deshabilitargastos`; los cuatro comandos restantes exigen `DEV` y funcionan en cualquier chat. Los callbacks antiguos de Gastos eliminan su tablero al tocarse. BotFather resincronizado. Version `0.4`. Validacion: 215 pruebas, 100% de sentencias/ramas, runtime, `pip check`, `compileall` y diff-check OK. Sin release/deploy.

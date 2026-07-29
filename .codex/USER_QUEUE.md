@@ -101,7 +101,6 @@ Update JSON:
   },
   "update_id": 253645075
 }
-
 - quiero que la lista de triggers sea como la lista de la galeraza, es decir que el título esté en negrita y haya un salto de línea antes de que comiencen los triggers.
 - quiero un nuevo comando /galeraza que sea igual al de /galerazas solo que sin s al final, es decir solo un alias porque a veces me olvido de la s final ajajaj. no debería ser mucho cambio en el código, no reimplementes todo para esto por favor, reusá todo y solo agregá un comando más.
 
@@ -149,3 +148,7 @@ Update JSON:
 - [2026-07-10] Crear memoria persistente del proyecto en `.codex/` con contexto, decisiones, backlog, cola del usuario y handoff; exigir actualizacion continua y push al finalizar sesiones.
 
 Para agregar pedidos durante otra sesion, escribirlos en `Pendientes`. El agente debe incorporarlos a `BACKLOG.md` y moverlos a `Procesadas` al comenzar.
+
+## Procesadas
+
+- [2026-07-29] Agregar `/donar` y el texto de Cafecito a los broadcasts, antes del aviso de `/config`.

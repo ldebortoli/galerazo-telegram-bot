@@ -23,7 +23,7 @@ from telegram.error import BadRequest, Conflict, Forbidden, NetworkError, Telegr
 
 from galerazo_bot.cloud_billing import GoogleCloudBillingReader, GoogleCloudBillingReport
 from galerazo_bot.config import Settings
-from galerazo_bot.database import Database, Expense, PaginatedMessageState, Trigger
+from galerazo_bot.database import Database, Expense, PaginatedMessageState, RestartConfirmation, Trigger
 from galerazo_bot.google_sheets import GoogleSheetsConfig, GoogleSheetsExpenseWriter
 from galerazo_bot.roles import TriggerModerationResult, TriggerPayload, UserLevel
 from galerazo_bot import telegram_bot as tb
@@ -135,10 +135,22 @@ class LifecycleAndBillingTests(unittest.IsolatedAsyncioTestCase):
         application.run_polling.assert_called_once_with(**tb.POLLING_OPTIONS)
         lock.release.assert_called_once()
 
+        restart_application = MagicMock()
+        restart_application.bot_data = {"restart_requested": True}
+        with patch.object(tb, "ensure_python_version"), patch.object(tb, "configure_logging"), patch.object(
+            tb, "load_settings", return_value=settings()
+        ), patch.object(tb, "SingleInstance", return_value=lock), patch.object(
+            tb, "Database", return_value=fake_db
+        ), patch.object(tb, "_build_application", return_value=restart_application), patch.object(
+            tb, "_register_handlers"
+        ), patch.object(tb.os, "execv") as restart:
+            tb.main()
+        restart.assert_called_once_with(tb.sys.executable, [tb.sys.executable, *tb.sys.argv])
+
         fake_application = MagicMock()
         with patch.dict(tb.COMMANDS, {"hola": MagicMock(), "help": MagicMock()}, clear=True):
             tb._register_handlers(fake_application)
-        self.assertEqual(fake_application.add_handler.call_count, 7)
+        self.assertEqual(fake_application.add_handler.call_count, 8)
 
     def test_build_application_uses_per_chat_processor(self) -> None:
         db = MagicMock()
@@ -174,7 +186,7 @@ class LifecycleAndBillingTests(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(
             private_names,
-            {"help", "ayuda", "start", "hola", "lil", "nivel", "version", "chats", "reportar", "config"},
+            {"help", "ayuda", "start", "hola", "lil", "nivel", "version", "chats", "reportar", "donar", "config"},
         )
         self.assertTrue({"galeraza", "galerazas", "triggers", "agregartrigger"} <= group_names)
         self.assertIn("ruletarusa", group_names)
@@ -414,6 +426,12 @@ class CommandAndCallbackEntrypointTests(unittest.IsolatedAsyncioTestCase):
             tb, "get_command", return_value=command
         ), patch.object(tb, "_is_command_group_disabled", return_value=True):
             await tb._handle_command_update(update, context)
+        restart_command = SimpleNamespace(command_key="reiniciarbot", configurable_group=None, list_response=False)
+        with patch.object(tb, "_is_user_restricted_in_message_chat", return_value=True), patch.object(
+            tb, "get_command", return_value=restart_command
+        ), patch.object(tb, "_cleanup_expired_restart_confirmations", AsyncMock()) as cleanup:
+            await tb._handle_command_update(update, context)
+        cleanup.assert_awaited_once()
 
     async def test_handle_command_full_paths_none_removed_and_reraise(self) -> None:
         db = MagicMock()
@@ -486,6 +504,61 @@ class CommandAndCallbackEntrypointTests(unittest.IsolatedAsyncioTestCase):
             await tb._callback_query_entrypoint(SimpleNamespace(callback_query=callback, effective_user=user), context)
         handler.assert_awaited_once()
         self.assertEqual(callback.answer.await_args.kwargs.get("text"), "popup")
+
+    async def test_restart_callback_permissions_expiration_and_confirmation(self) -> None:
+        db = MagicMock()
+        db.list_restart_confirmations_before.return_value = []
+        bot_state = state(db)
+        bot = SimpleNamespace(delete_message=AsyncMock())
+        app = SimpleNamespace(bot_data={}, create_task=MagicMock())
+        context = SimpleNamespace(application=app, bot=bot)
+        message = message_stub()
+        callback = SimpleNamespace(message=message, data="restart:yes", answer=AsyncMock())
+        user = SimpleNamespace(id=2, full_name="Other", username=None)
+        confirmation = RestartConfirmation("-1", "10", "1", "2026-07-29 00:00:00")
+
+        with patch.object(tb, "_state", return_value=bot_state):
+            await tb._restart_callback_entrypoint(
+                SimpleNamespace(callback_query=SimpleNamespace(message=None), effective_user=user), context
+            )
+
+        with patch.object(tb, "_state", return_value=bot_state), patch.object(
+            tb, "_cleanup_expired_restart_confirmations", AsyncMock()
+        ) as cleanup:
+            db.get_restart_confirmation.return_value = None
+            await tb._restart_callback_entrypoint(SimpleNamespace(callback_query=callback, effective_user=user), context)
+            cleanup.assert_awaited_once()
+        self.assertEqual(callback.answer.await_args.args[0], "mensaje eliminado")
+
+        db.get_restart_confirmation.return_value = confirmation
+        with patch.object(tb, "_state", return_value=bot_state), patch.object(
+            tb, "_cleanup_expired_restart_confirmations", AsyncMock()
+        ):
+            await tb._restart_callback_entrypoint(SimpleNamespace(callback_query=callback, effective_user=user), context)
+        self.assertEqual(callback.answer.await_args.args[0], "Usuario inválido.")
+
+        user.id = 1
+        callback.data = "restart:no"
+        with patch.object(tb, "_state", return_value=bot_state), patch.object(
+            tb, "_cleanup_expired_restart_confirmations", AsyncMock()
+        ):
+            await tb._restart_callback_entrypoint(SimpleNamespace(callback_query=callback, effective_user=user), context)
+        self.assertEqual(callback.answer.await_args.args[0], "Reinicio cancelado.")
+
+        callback.data = "restart:bad"
+        with patch.object(tb, "_state", return_value=bot_state), patch.object(
+            tb, "_cleanup_expired_restart_confirmations", AsyncMock()
+        ):
+            await tb._restart_callback_entrypoint(SimpleNamespace(callback_query=callback, effective_user=user), context)
+        self.assertEqual(callback.answer.await_args.args[0], "mensaje eliminado")
+
+        callback.data = "restart:yes"
+        with patch.object(tb, "_state", return_value=bot_state), patch.object(
+            tb, "_cleanup_expired_restart_confirmations", AsyncMock()
+        ), patch.object(tb, "_request_restart") as request:
+            await tb._restart_callback_entrypoint(SimpleNamespace(callback_query=callback, effective_user=user), context)
+        request.assert_called_once_with(app)
+        self.assertEqual(callback.answer.await_args.args[0], "Reinicio confirmado.")
 
     async def test_config_callback_entrypoint_all_guards_and_success(self) -> None:
         db = MagicMock()
@@ -914,6 +987,29 @@ class PaginationAndChatHelpersTests(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(tb._is_paginated_state_expired(old))
         self.assertFalse(tb._is_paginated_state_expired(recent))
 
+        restart_message = message_stub()
+        db.list_restart_confirmations_before.return_value = []
+        await tb._cleanup_expired_restart_confirmations(db, bot)
+        db.list_restart_confirmations_before.return_value = [
+            RestartConfirmation("-1", "10", "1", "2026-07-29 00:00:00")
+        ]
+        with patch.object(tb, "_delete_restart_confirmation_by_id", AsyncMock()) as delete:
+            await tb._cleanup_expired_restart_confirmations(db, bot)
+        delete.assert_awaited_once()
+        await tb._delete_restart_confirmation_message(db, restart_message)
+        restart_message.delete.side_effect = BadRequest("delete")
+        await tb._delete_restart_confirmation_message(db, restart_message)
+        await tb._delete_restart_confirmation_by_id(db, bot, -1, "10")
+        bot.delete_message.side_effect = BadRequest("delete")
+        await tb._delete_restart_confirmation_by_id(db, bot, -1, "10")
+        bot.delete_message.side_effect = None
+
+        created = message_stub()
+        created.reply_text.return_value = SimpleNamespace(message_id=55)
+        self.assertTrue(await tb._create_restart_confirmation(db, created, "1"))
+        created.reply_text.side_effect = BadRequest("send")
+        self.assertFalse(await tb._create_restart_confirmation(db, created, "1"))
+
         db.get_paginated_message_state.return_value = None
         await tb._edit_paginated_message(db, message, "10", 1, False)
         db.get_paginated_message_state.return_value = self.paginated_state()
@@ -922,6 +1018,21 @@ class PaginationAndChatHelpersTests(unittest.IsolatedAsyncioTestCase):
         db.get_paginated_message_state.return_value = self.paginated_state(list_type="galeraza")
         await tb._edit_paginated_message(db, message, "10", 1, True)
         self.assertIn("entities", message.edit_text.await_args.kwargs)
+
+    async def test_restart_request_waits_for_pending_updates(self) -> None:
+        application = SimpleNamespace(bot_data={}, create_task=MagicMock())
+        tb._request_restart(application)
+        self.assertTrue(application.bot_data["restart_requested"])
+        task = application.create_task.call_args.args[0]
+        task.close()
+        tb._request_restart(application)
+        self.assertEqual(application.create_task.call_count, 1)
+
+        queue = SimpleNamespace(join=AsyncMock())
+        application = SimpleNamespace(update_queue=queue, stop_running=MagicMock())
+        await tb._restart_after_pending_updates(application)
+        queue.join.assert_awaited_once()
+        application.stop_running.assert_called_once()
 
     def test_chat_registration_migration_added_removed(self) -> None:
         db = MagicMock()

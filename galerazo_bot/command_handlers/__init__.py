@@ -7,6 +7,7 @@ from .blacklist import COMMANDS as BLACKLIST_COMMANDS
 from .chats import COMMANDS as CHATS_COMMANDS
 from .config import COMMANDS as CONFIG_COMMANDS
 from .debug import COMMANDS as DEBUG_COMMANDS
+from .donar import COMMANDS as DONAR_COMMANDS
 from .gastos import COMMANDS as GASTOS_COMMANDS
 from .galerazas import COMMANDS as GALERAZAS_COMMANDS
 from .help import COMMANDS as HELP_COMMANDS
@@ -15,6 +16,7 @@ from .lil import COMMANDS as LIL_COMMANDS
 from .nivel import COMMANDS as NIVEL_COMMANDS
 from .novedad import COMMANDS as NOVEDAD_COMMANDS
 from .reportar import COMMANDS as REPORTAR_COMMANDS
+from .reiniciarbot import COMMANDS as RESTART_COMMANDS
 from .restrictions import COMMANDS as RESTRICTIONS_COMMANDS
 from .ruletarusa import COMMANDS as RUSSIAN_ROULETTE_COMMANDS
 from .salir import COMMANDS as SALIR_COMMANDS
@@ -33,10 +35,12 @@ COMMANDS: dict[str, Command] = {
     **BLACKLIST_COMMANDS,
     **NOVEDAD_COMMANDS,
     **REPORTAR_COMMANDS,
+    **RESTART_COMMANDS,
     **RESTRICTIONS_COMMANDS,
     **RUSSIAN_ROULETTE_COMMANDS,
     **BACKUP_COMMANDS,
     **DEBUG_COMMANDS,
+    **DONAR_COMMANDS,
     **GASTOS_COMMANDS,
     **CHATS_COMMANDS,
     **CONFIG_COMMANDS,

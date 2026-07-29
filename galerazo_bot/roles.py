@@ -82,6 +82,7 @@ class CommandContext:
     send_debug_update: Callable[[], Awaitable[bool]] | None = None
     send_galerazas: Callable[[], Awaitable[bool]] | None = None
     send_config_menu: Callable[[], Awaitable[bool]] | None = None
+    create_restart_confirmation: Callable[[], Awaitable[bool]] | None = None
     leave_chat: Callable[[], Awaitable[bool]] | None = None
     can_run_russian_roulette: Callable[[], Awaitable[bool]] | None = None
     resolve_russian_roulette_hit: Callable[[str], Awaitable[RussianRouletteHitResult]] | None = None
