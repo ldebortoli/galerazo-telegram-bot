@@ -657,3 +657,7 @@ El panel inicia el bot con `GALERAZO_PANEL_MANAGED=1`. El bot reescribe `data/bo
 ## D-085 - Relevo atomico del PID local (2026-07-29)
 
 El reinicio Windows puede coexistir transitoriamente con el proceso padre y su hijo. Antes del relevo se crea `data/bot.restart`; el panel conserva el estado `REINICIANDO` hasta 15 segundos y no borra el PID previo durante esa ventana. El nuevo proceso reemplaza `bot.pid` atomically y borra la marca. Una marca vencida se descarta para no bloquear un encendido real.
+
+## D-086 - Fallos de novedades visibles en logging (2026-07-29)
+
+El runtime Docker incluye `CHANGELOG.md`, porque las notas de release son un artefacto necesario al iniciar. Si aun asi no puede leerse, `_announce_current_release()` registra el error y lo reenvia al canal de logging, ya que Telegram y la configuracion de logging estan disponibles en ese punto. Un fallo del propio canal no impide que el bot inicie.

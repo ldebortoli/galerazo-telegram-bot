@@ -63,6 +63,10 @@ class ContainerRuntimeTests(unittest.TestCase):
             "COPY --chown=galerazo:galerazo .python-version ./.python-version",
             runtime_section,
         )
+        self.assertIn(
+            "COPY --chown=galerazo:galerazo CHANGELOG.md ./CHANGELOG.md",
+            runtime_section,
+        )
         self.assertNotIn("COPY --chown=galerazo:galerazo . .", runtime_section)
 
     def test_production_compose_persists_data_without_public_ports(self) -> None:

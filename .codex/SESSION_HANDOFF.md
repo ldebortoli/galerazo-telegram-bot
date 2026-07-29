@@ -12,7 +12,9 @@ El mecanismo mensual de backups GCE ya tiene un runbook exhaustivo y enlazado de
 
 ## Estado actual
 
-- Deploy de produccion del 2026-07-29: `galerazobot:f8d4c9a648f8` esta `running/healthy`, Telegram conectado y sin reinicios. No se distribuyeron novedades porque el arranque registro `No pude leer el changelog de la version 0.6: [Errno 2] No such file or directory: '/app/CHANGELOG.md'`. La imagen runtime no contiene ese archivo; el fallo ocurre antes de cualquier envio a chats y no marca `0.6` como anunciada, por lo que despues de corregir la imagen el siguiente inicio puede anunciarla. El usuario pidio solo diagnostico; no corregir ni desplegar en esta ejecucion.
+- Deploy de produccion del 2026-07-29: `galerazobot:f8d4c9a648f8` esta `running/healthy`, Telegram conectado y sin reinicios. No se distribuyeron novedades porque el arranque registro `No pude leer el changelog de la version 0.6: [Errno 2] No such file or directory: '/app/CHANGELOG.md'`. La correccion agrega ese archivo al runtime y reenvia este tipo de fallo al canal de logging; validada con 224 pruebas Windows y Docker, cobertura 100% y comprobacion real del runtime. Pendiente de commit/push. No se autoriza un nuevo deploy en esta tarea. La version `0.6` no quedo marcada como anunciada, por lo que el siguiente inicio con la imagen corregida podra distribuirla.
+
+- Un deploy normal no limpia ni sube la base SQLite local: realiza backup consistente de la base remota si habia una imagen activa y reutiliza el volumen `/srv/galerazo/data`. `MigrateData` es la unica accion que reemplaza la base remota y exige confirmacion explicita, backup previo e `integrity_check`.
 
 - El 2026-07-29 se detuvo una segunda instancia local huérfana de `app.py` (procesos `17524` y `18492`); la verificacion posterior no encontro procesos locales del bot. Produccion no fue tocada. La causa fue una carrera Windows: el panel borro el PID viejo luego de que el hijo publico el nuevo. Ahora `data/bot.restart` protege el relevo, el PID se reemplaza atomicamente y la UI muestra `REINICIANDO`; validado con 224 pruebas/100% y pendiente de commit/push. El bot local permanece apagado.
 

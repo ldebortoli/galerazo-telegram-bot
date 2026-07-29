@@ -260,8 +260,11 @@ class LifecycleAndBillingTests(unittest.IsolatedAsyncioTestCase):
         self.assertFalse(await tb._announce_current_release(db, bot, settings()))
 
         db.get_announced_release_version.return_value = None
-        with patch.object(tb, "current_release_notes", side_effect=ValueError("bad")):
+        with patch.object(tb, "current_release_notes", side_effect=ValueError("bad")), patch.object(
+            tb, "_send_log_event", AsyncMock(return_value=True)
+        ) as log:
             self.assertFalse(await tb._announce_current_release(db, bot, settings()))
+        log.assert_awaited_once_with(bot, "-10", "No pude leer el changelog de la version 0.6: bad")
 
         with patch.object(tb, "current_release_notes", return_value="notes"), patch.object(
             tb, "_broadcast_announcement", AsyncMock(return_value=tb.AnnouncementBroadcastResult())

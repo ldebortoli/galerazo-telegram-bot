@@ -244,7 +244,9 @@ async def _announce_current_release(db: Database, bot: Bot, settings: Settings) 
     try:
         release_notes = current_release_notes()
     except (OSError, ValueError) as exc:
-        logger.error("No pude leer el changelog de la version %s: %s", CURRENT_VERSION, exc)
+        error_text = f"No pude leer el changelog de la version {CURRENT_VERSION}: {exc}"
+        logger.error(error_text)
+        await _send_log_event(bot, settings.telegram_log_chat_id, error_text)
         return False
 
     result = await _broadcast_announcement(

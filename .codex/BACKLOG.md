@@ -2,7 +2,6 @@
 
 ## P1
 
-- [DEFERRED: el usuario solicito solo diagnostico en esta ejecucion] Incluir `CHANGELOG.md` en la imagen Docker runtime para que el anuncio de release pueda leer sus notas y distribuirlas al iniciar produccion.
 - [BLOCKED: el proyecto no tiene dataset ni tabla de exportacion; requiere confirmar `-AcknowledgeBillableResource`, habilitar manualmente `Costo de uso estandar` en Cloud Billing y esperar la tabla antes de configurar y desplegar] Activar en produccion el reporte diario de gasto de Google Cloud.
 - [BLOCKED: falta que el usuario confirme spreadsheet ID, worksheet y credenciales de service account] Conectar el sistema de gastos con el Google Sheet real.
 - [BLOCKED: el token `gh` no tiene scope `user`/Plan y el navegador disponible no tiene sesion GitHub; requiere iniciar sesion o autorizar explicitamente ampliar el scope] Confirmar visualmente si la cuenta personal tiene medio de pago cargado. La documentacion oficial confirma que, si no existe un medio valido, Actions se bloquea al agotar la cuota y no cobra excedentes.
@@ -16,6 +15,8 @@
 - Sin tareas activas.
 
 # DONE
+
+- [2026-07-29] Incluir `CHANGELOG.md` en el runtime Docker y reenviar al canal de logs los fallos al preparar las novedades de release. Validacion: 224 pruebas Windows, 224 pruebas Docker (1 omitida por Tk), cobertura 100% de sentencias/ramas, runtime, `pip check`, `compileall`, diff-check y runtime con `CHANGELOG.md` OK. Sin release/deploy.
 
 - [2026-07-29] Evitar que el panel pierda el PID nuevo durante el relevo de `/reiniciarbot` en Windows y mostrar `REINICIANDO`. Validacion: 224 pruebas, 100% de sentencias/ramas, runtime, `pip check`, `compileall`, diff-check y checkpoint OK. Sin release/deploy.
 
