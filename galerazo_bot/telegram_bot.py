@@ -261,6 +261,19 @@ async def _announce_current_release(db: Database, bot: Bot, settings: Settings) 
         return False
 
     db.set_announced_release_version(CURRENT_VERSION)
+    await _send_log_event(
+        bot,
+        settings.telegram_log_chat_id,
+        t(
+            DEFAULT_LANGUAGE,
+            "announcement.sent",
+            sent=result.sent_count,
+            skipped=result.skipped_count,
+            inactive=result.inactive_count,
+            failed=result.failed_count,
+            channel="si" if result.announcement_channel_sent else "no",
+        ),
+    )
     logger.info("Novedades de la version %s enviadas.", CURRENT_VERSION)
     return True
 

@@ -671,3 +671,7 @@ Los cambios de esquema se implementan como migraciones inmutables y registradas 
 ## D-088 - Changelog publico orientado a usuarios (2026-07-29)
 
 Las entradas de `CHANGELOG.md` y las novedades que el bot distribuye solo comunican cambios visibles en comandos publicos. Los comandos exclusivos DEV, infraestructura, Docker, SQLite, migraciones, despliegues y correcciones internas no se incluyen. La trazabilidad tecnica se conserva en commits, documentacion tecnica y la memoria persistente del proyecto.
+
+## D-089 - Resumen de broadcast automatico en logging (2026-07-29)
+
+Un broadcast de release no tiene un usuario invocador al cual responder. Cuando consigue enviar al canal de anuncios, el bot manda al canal de logging el mismo resumen de contadores que devuelve `/anuncio`. El resumen es observabilidad operativa y no condiciona que la version se marque como anunciada.

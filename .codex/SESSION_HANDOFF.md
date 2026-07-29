@@ -12,6 +12,7 @@ Mantener Galerazo Bot reproducible en Windows, CI y Docker, con SQLite persisten
 - BotFather fue sincronizado con el token local. `/apagar` permanece oculto por ser DEV.
 - Para futuras versiones, el changelog y el anuncio de release solo detallan cambios visibles en comandos publicos; los cambios DEV o internos se documentan fuera de esos canales publicos.
 - Produccion ejecuta `galerazobot:a360a5d88272`, `running/healthy`. El deploy del 2026-07-29 anuncio correctamente la version `0.7`: los logs confirman los envios y `Novedades de la version 0.7 enviadas.`. El reporte diario de Google Cloud Billing sigue desactivado por falta de configuracion completa, no por un error de ejecucion.
+- Pendiente de proximo deploy: el broadcast automatico de una nueva version enviara al canal de logging el resumen de enviados, omitidos, inactivos, fallidos y canal de anuncios. No afecta el anuncio ni se incluye en el changelog publico.
 - El bot local permanece apagado. No iniciar polling local con el token real mientras produccion esta activa.
 
 ## Validacion reciente

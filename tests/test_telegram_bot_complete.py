@@ -275,9 +275,14 @@ class LifecycleAndBillingTests(unittest.IsolatedAsyncioTestCase):
             tb,
             "_broadcast_announcement",
             AsyncMock(return_value=tb.AnnouncementBroadcastResult(announcement_channel_sent=True)),
-        ) as send:
+        ) as send, patch.object(tb, "_send_log_event", AsyncMock(return_value=True)) as log:
             self.assertTrue(await tb._announce_current_release(db, bot, settings()))
         send.assert_awaited_once_with(db=db, bot=bot, text="notes", announcements_chat_id="-11")
+        log.assert_awaited_once_with(
+            bot,
+            "-10",
+            "Anuncio terminado.\nEnviados: 0.\nOmitidos: 0.\nInactivos detectados: 0.\nFallidos transitorios: 0.\nCanal de anuncios: si.",
+        )
         db.set_announced_release_version.assert_called_once_with(tb.CURRENT_VERSION)
 
     def test_schedule_invalid_reader_time_and_missing_job_queue(self) -> None:

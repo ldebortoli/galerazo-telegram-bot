@@ -16,6 +16,8 @@
 
 # DONE
 
+- [2026-07-29] Enviar al canal de logging el resumen final de contadores cuando un broadcast automatico de release termina correctamente. Preparado para el proximo deploy; no se agrega al changelog publico por ser observabilidad interna. Validacion: 224 pruebas, cobertura 100% de sentencias/ramas. Sin release/deploy.
+
 - [2026-07-29] Implementar cierre ordenado con timeout para `/reiniciarbot` y deploy Docker, migraciones SQLite versionadas sobre la base remota persistente y comando DEV `/apagar` con confirmacion privada. Version `0.7`; BotFather sincronizado y mantiene `/apagar` oculto. Validacion: 224 pruebas Windows y Docker (1 omitida por Tk), cobertura 100% de sentencias/ramas, runtime, `pip check`, `compileall` y diff-check OK. Sin release/deploy.
 
 - [2026-07-29] Incluir `CHANGELOG.md` en el runtime Docker y reenviar al canal de logs los fallos al preparar las novedades de release. Validacion: 224 pruebas Windows, 224 pruebas Docker (1 omitida por Tk), cobertura 100% de sentencias/ramas, runtime, `pip check`, `compileall`, diff-check y runtime con `CHANGELOG.md` OK. Sin release/deploy.
