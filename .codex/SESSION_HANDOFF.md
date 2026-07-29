@@ -12,7 +12,7 @@ El mecanismo mensual de backups GCE ya tiene un runbook exhaustivo y enlazado de
 
 ## Estado actual
 
-- El 2026-07-29 se detuvo la instancia local huérfana de `app.py` (proceso principal `17660` y su hijo `4152`); la verificacion posterior no encontro procesos locales del bot. Produccion no fue tocada. El panel habia mostrado apagado porque solo consulta el PID guardado en `data/bot.pid`; no explora procesos de `app.py`, mientras que el bloqueo de instancia si detecto la ejecucion viva. El panel ahora marca sus procesos y el bot renueva ese PID al arrancar tras `/reiniciarbot`; validado con 224 pruebas/100% y pendiente de commit/push.
+- El 2026-07-29 se detuvo una segunda instancia local huérfana de `app.py` (procesos `17524` y `18492`); la verificacion posterior no encontro procesos locales del bot. Produccion no fue tocada. La causa fue una carrera Windows: el panel borro el PID viejo luego de que el hijo publico el nuevo. Ahora `data/bot.restart` protege el relevo, el PID se reemplaza atomicamente y la UI muestra `REINICIANDO`; validado con 224 pruebas/100% y pendiente de commit/push. El bot local permanece apagado.
 
 - Los anuncios incluyen ahora el enlace fijo al canal de anuncios antes de la donacion, con etiqueta localizada. Validacion: 223 pruebas, 100% de sentencias/ramas, runtime, `pip check`, `compileall`, diff-check y checkpoint OK. Pendiente de commit y push; no requiere BotFather ni release/deploy.
 

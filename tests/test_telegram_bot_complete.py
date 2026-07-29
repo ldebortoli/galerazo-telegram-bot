@@ -108,17 +108,27 @@ class LifecycleAndBillingTests(unittest.IsolatedAsyncioTestCase):
     def test_panel_managed_restart_refreshes_the_pid_file(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             pid_path = Path(directory) / "bot.pid"
-            with patch.object(tb, "PANEL_PID_PATH", pid_path), patch.dict(
+            restart_path = Path(directory) / "bot.restart"
+            with patch.object(tb, "PANEL_PID_PATH", pid_path), patch.object(
+                tb, "PANEL_RESTART_PATH", restart_path
+            ), patch.dict(
                 tb.os.environ, {}, clear=True
             ):
                 tb._record_panel_managed_pid()
+                tb._mark_panel_restart_pending()
                 self.assertFalse(pid_path.exists())
+                self.assertFalse(restart_path.exists())
 
-            with patch.object(tb, "PANEL_PID_PATH", pid_path), patch.dict(
+            with patch.object(tb, "PANEL_PID_PATH", pid_path), patch.object(
+                tb, "PANEL_RESTART_PATH", restart_path
+            ), patch.dict(
                 tb.os.environ, {tb.PANEL_MANAGED_ENV: "1"}, clear=True
             ):
+                tb._mark_panel_restart_pending()
+                self.assertTrue(restart_path.exists())
                 tb._record_panel_managed_pid()
             self.assertEqual(pid_path.read_text(encoding="ascii"), str(tb.os.getpid()))
+            self.assertFalse(restart_path.exists())
 
     def test_bold_empty_main_failures_success_and_handler_registration(self) -> None:
         self.assertEqual(tb._bold_first_line_entities(""), [])

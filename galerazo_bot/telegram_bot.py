@@ -112,6 +112,7 @@ POLLING_OPTIONS = {
 }
 PANEL_MANAGED_ENV = "GALERAZO_PANEL_MANAGED"
 PANEL_PID_PATH = Path(__file__).resolve().parent.parent / "data" / "bot.pid"
+PANEL_RESTART_PATH = PANEL_PID_PATH.with_suffix(".restart")
 
 
 def _bold_first_line_entities(text: str) -> list[MessageEntity]:
@@ -160,6 +161,7 @@ def main() -> None:
         application.run_polling(**POLLING_OPTIONS)
         if application.bot_data.get("restart_requested") is True:
             logger.info("Reiniciando Galerazo Bot por confirmacion de desarrollo.")
+            _mark_panel_restart_pending()
             os.execv(sys.executable, [sys.executable, *sys.argv])
     finally:
         instance.release()
@@ -169,7 +171,15 @@ def _record_panel_managed_pid() -> None:
     if os.environ.get(PANEL_MANAGED_ENV) != "1":
         return
     PANEL_PID_PATH.parent.mkdir(parents=True, exist_ok=True)
-    PANEL_PID_PATH.write_text(str(os.getpid()), encoding="ascii")
+    temporary_path = PANEL_PID_PATH.with_suffix(".tmp")
+    temporary_path.write_text(str(os.getpid()), encoding="ascii")
+    temporary_path.replace(PANEL_PID_PATH)
+    PANEL_RESTART_PATH.unlink(missing_ok=True)
+
+
+def _mark_panel_restart_pending() -> None:
+    if os.environ.get(PANEL_MANAGED_ENV) == "1":
+        PANEL_RESTART_PATH.touch()
 
 
 def _build_application(token: str, db: Database) -> Application:

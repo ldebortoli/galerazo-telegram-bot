@@ -4,6 +4,7 @@ import ctypes
 import os
 import subprocess
 import sys
+import time
 import tkinter as tk
 from pathlib import Path
 from tkinter import messagebox, ttk
@@ -16,6 +17,8 @@ from .runtime import ensure_python_version
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 DATA_DIR = PROJECT_ROOT / "data"
 PID_PATH = DATA_DIR / "bot.pid"
+RESTART_PATH = PID_PATH.with_suffix(".restart")
+RESTART_TIMEOUT_SECONDS = 15
 LOG_PATH = DATA_DIR / "bot.log"
 ENV_PATH = PROJECT_ROOT / ".env"
 PANEL_MANAGED_ENV = "GALERAZO_PANEL_MANAGED"
@@ -77,8 +80,20 @@ def _running_process_id() -> int | None:
             return pid
     except (FileNotFoundError, ValueError):
         pass
+    if _restart_pending():
+        return None
     PID_PATH.unlink(missing_ok=True)
     return None
+
+
+def _restart_pending() -> bool:
+    try:
+        if time.time() - RESTART_PATH.stat().st_mtime <= RESTART_TIMEOUT_SECONDS:
+            return True
+    except FileNotFoundError:
+        return False
+    RESTART_PATH.unlink(missing_ok=True)
+    return False
 
 
 def _is_process_running(pid: int) -> bool:
@@ -411,14 +426,23 @@ class ControlPanel(tk.Tk):
     def refresh_status(self) -> None:
         pid = _running_process_id()
         running = pid is not None
+        restarting = not running and _restart_pending()
         starting = running and self.starting_process is not None and self.starting_process.pid == pid
-        color = self.AMBER if starting else self.GREEN if running else self.RED
-        label = "INICIANDO..." if starting else "BOT ENCENDIDO" if running else "BOT APAGADO"
-        detail = f"Validando configuración y conexión - PID {pid}" if starting else f"Proceso local activo - PID {pid}" if running else "No hay ningún proceso del bot activo."
+        color = self.AMBER if starting or restarting else self.GREEN if running else self.RED
+        label = "REINICIANDO..." if restarting else "INICIANDO..." if starting else "BOT ENCENDIDO" if running else "BOT APAGADO"
+        detail = (
+            "Esperando al nuevo proceso local."
+            if restarting
+            else f"Validando configuración y conexión - PID {pid}"
+            if starting
+            else f"Proceso local activo - PID {pid}"
+            if running
+            else "No hay ningún proceso del bot activo."
+        )
         self.status_dot.itemconfigure(self.status_circle, fill=color)
         self.status_label.configure(text=label)
         self.detail_label.configure(text=detail)
-        self.start_button.configure(state="disabled" if running else "normal")
+        self.start_button.configure(state="disabled" if running or restarting else "normal")
         self.stop_button.configure(state="normal" if running else "disabled")
         self.restart_button.configure(state="normal" if running and not starting else "disabled")
         self.refresh_logging_status()

@@ -653,3 +653,7 @@ Todo broadcast incluye el enlace publico de anuncios antes de la donacion. La UR
 ## D-084 - PID renovado despues de reinicio local (2026-07-29)
 
 El panel inicia el bot con `GALERAZO_PANEL_MANAGED=1`. El bot reescribe `data/bot.pid` al comenzar solo bajo esa marca, por lo que un relanzamiento Windows posterior a `/reiniciarbot` actualiza el PID que el panel consulta. Las ejecuciones manuales no crean ni reclaman ese estado del panel.
+
+## D-085 - Relevo atomico del PID local (2026-07-29)
+
+El reinicio Windows puede coexistir transitoriamente con el proceso padre y su hijo. Antes del relevo se crea `data/bot.restart`; el panel conserva el estado `REINICIANDO` hasta 15 segundos y no borra el PID previo durante esa ventana. El nuevo proceso reemplaza `bot.pid` atomically y borra la marca. Una marca vencida se descarta para no bloquear un encendido real.

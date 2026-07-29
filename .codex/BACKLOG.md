@@ -16,6 +16,8 @@
 
 # DONE
 
+- [2026-07-29] Evitar que el panel pierda el PID nuevo durante el relevo de `/reiniciarbot` en Windows y mostrar `REINICIANDO`. Validacion: 224 pruebas, 100% de sentencias/ramas, runtime, `pip check`, `compileall`, diff-check y checkpoint OK. Sin release/deploy.
+
 - [2026-07-29] Mantener actualizado el PID del panel local luego de `/reiniciarbot` en Windows. Validacion: 224 pruebas, 100% de sentencias/ramas, runtime, `pip check`, `compileall`, diff-check y checkpoint OK. Sin release/deploy.
 
 - [2026-07-29] Incluir siempre el enlace al canal de anuncios antes de la donacion, con etiqueta en espanol e ingles. Validacion: 223 pruebas, 100% de sentencias/ramas, runtime, `pip check`, `compileall`, diff-check y checkpoint OK. Sin release/deploy.
