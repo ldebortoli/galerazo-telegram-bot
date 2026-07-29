@@ -1522,6 +1522,10 @@ def _request_restart(application: Application) -> None:
 
 async def _restart_after_pending_updates(application: Application) -> None:
     await asyncio.sleep(0)
+    try:
+        await application.updater.stop()
+    except RuntimeError:
+        logger.info("El Updater ya estaba detenido durante el reinicio solicitado.")
     await application.update_queue.join()
     application.stop_running()
 

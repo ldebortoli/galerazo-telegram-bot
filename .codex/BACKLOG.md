@@ -16,6 +16,8 @@
 
 # DONE
 
+- [2026-07-29] Detener el `Updater` antes de drenar la cola al confirmar `/reiniciarbot`, para acotar el reinicio aun con trafico constante. Si ya se detuvo, se continua el drenaje. Validacion: 221 pruebas, 100% de sentencias/ramas, runtime, `pip check`, `compileall`, diff-check y checkpoint OK. Sin release/deploy.
+
 - [2026-07-29] Implementar `/reiniciarbot` exclusivo DEV con confirmacion persistida, expiracion pasiva de cinco minutos, callbacks privados y reinicio tras drenar las updates ya obtenidas. La metadata tambien migra cuando Telegram convierte un grupo en supergrupo. Version `0.6`; BotFather resincronizado. Validacion: 221 pruebas, 100% de sentencias/ramas, runtime, `pip check`, `compileall`, diff-check y checkpoint OK. Sin release/deploy.
 - [2026-07-29] [USER_QUEUE] Implementar `/donar` y agregar el texto de Cafecito a todos los broadcasts antes del aviso de `/config`. Version `0.6`; BotFather resincronizado. Validacion: 221 pruebas, 100% de sentencias/ramas, runtime, `pip check`, `compileall`, diff-check y checkpoint OK. Sin release/deploy.
 

@@ -4,6 +4,7 @@
 
 - Nuevo comando publico `/donar` y texto de Cafecito incluido en todos los anuncios distribuidos a chats.
 - Nuevo comando exclusivo de desarrollo `/reiniciarbot`, con confirmacion privada, expiracion de cinco minutos y reinicio ordenado despues de procesar las updates ya recibidas.
+- Correcciones y mejoras: al confirmar un reinicio, el polling se detiene antes de drenar las updates aceptadas, evitando que trafico continuo posponga el reinicio indefinidamente.
 
 ## [0.5] - 2026-07-27
 

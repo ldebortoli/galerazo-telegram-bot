@@ -1029,10 +1029,16 @@ class PaginationAndChatHelpersTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(application.create_task.call_count, 1)
 
         queue = SimpleNamespace(join=AsyncMock())
-        application = SimpleNamespace(update_queue=queue, stop_running=MagicMock())
+        updater = SimpleNamespace(stop=AsyncMock())
+        application = SimpleNamespace(update_queue=queue, updater=updater, stop_running=MagicMock())
         await tb._restart_after_pending_updates(application)
+        updater.stop.assert_awaited_once()
         queue.join.assert_awaited_once()
         application.stop_running.assert_called_once()
+
+        updater.stop.side_effect = RuntimeError("already stopped")
+        await tb._restart_after_pending_updates(application)
+        self.assertEqual(updater.stop.await_count, 2)
 
     def test_chat_registration_migration_added_removed(self) -> None:
         db = MagicMock()

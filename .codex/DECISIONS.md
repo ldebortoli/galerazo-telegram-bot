@@ -9,6 +9,13 @@ Este archivo es append-only a nivel conceptual: no borrar decisiones anteriores.
 - Decision: `/reiniciarbot` guarda una confirmacion SQLite asociada a chat/mensaje/DEV solicitante. No hay tarea de expiracion activa: las confirmaciones vencidas se limpian solo al ejecutar ese comando o al tocar sus botones. Tras confirmar, el proceso espera que la cola PTB de updates se vacie, detiene el polling y se reejecuta con `os.execv`.
 - Motivo: evita reinicios accidentales, conserva consistencia de las updates ya obtenidas y funciona de la misma forma en Windows y Docker sin reiniciar el contenedor.
 
+## D-077 - Detener polling antes de drenar un reinicio confirmado
+
+- Estado: vigente.
+- Fecha: 2026-07-29.
+- Decision: despues de una confirmacion de `/reiniciarbot`, esperar al callback actual, detener `Application.updater`, drenar `application.update_queue` y recien entonces llamar `stop_running` y reejecutar el proceso. Si PTB informa que el updater ya estaba detenido, continuar con el drenaje.
+- Motivo: acota el reinicio bajo trafico continuo sin descartar updates. Las que lleguen despues de detener polling permanecen en Telegram y se recuperan al arrancar porque `drop_pending_updates=False`.
+
 ## D-001 - python-telegram-bot como integracion Telegram
 
 - Estado: vigente.
