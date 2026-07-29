@@ -391,6 +391,8 @@ class BillingSheetsHealthAndStatusTests(unittest.IsolatedAsyncioTestCase):
             logging_utils.configure_logging()
             logging_utils.configure_logging()
         self.assertEqual(sum(isinstance(f, logging_utils.SecretRedactionFilter) for f in handler.filters), 1)
+        self.assertEqual(sum(isinstance(f, logging_utils.SuccessfulGetUpdatesFilter) for f in handler.filters), 1)
+        self.assertEqual(root.level, logging.DEBUG)
 
 
 if __name__ == "__main__":

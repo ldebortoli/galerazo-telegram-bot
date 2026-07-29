@@ -187,6 +187,7 @@ El panel usa un cliente inicial de `760x750`, minimo `680x730`; la pestaña Conf
 - Cerrar el panel de control apaga el arbol de procesos local del bot antes de destruir la ventana.
 - El panel marca sus procesos con `GALERAZO_PANEL_MANAGED=1`; cada inicio del bot actualiza `data/bot.pid`, incluido un relanzamiento local por `/reiniciarbot` en Windows. Durante el relevo se usa `data/bot.restart`: el panel muestra `REINICIANDO` y no elimina un PID que el hijo todavia esta publicando.
 - `Galerazo Bot - Logs.lnk` abre PowerShell con `-NoExit` y sigue los logs remotos por IAP; `Ctrl+C` detiene la lectura sin modificar produccion.
+- El runtime registra desde `DEBUG`. Un filtro global elimina exclusivamente los requests `httpx` exitosos de `getUpdates`; conserva otros requests, fallos y logs de aplicacion.
 - Los niveles se validan al invocar comandos o tocar botones, no como clasificacion global permanente.
 - La media se modera solo al crear triggers. Sin clave se omite; con clave, un fallo impide guardar ese intento. Los buffers y frames se mantienen en memoria y se limpian siempre.
 

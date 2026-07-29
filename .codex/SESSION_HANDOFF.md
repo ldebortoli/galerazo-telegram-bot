@@ -14,6 +14,7 @@ Mantener Galerazo Bot reproducible en Windows, CI y Docker, con SQLite persisten
 - Produccion ejecuta `galerazobot:a360a5d88272`, `running/healthy`. El deploy del 2026-07-29 anuncio correctamente la version `0.7`: los logs confirman los envios y `Novedades de la version 0.7 enviadas.`. El reporte diario de Google Cloud Billing sigue desactivado por falta de configuracion completa, no por un error de ejecucion.
 - Pendiente de proximo deploy: el broadcast automatico de una nueva version enviara al canal de logging el resumen de enviados, omitidos, inactivos, fallidos y canal de anuncios. No afecta el anuncio ni se incluye en el changelog publico.
 - `Galerazo Bot - Logs.lnk` fue creado en `C:\Users\calei\Documents\Codex\CODEX APPS`; sigue los logs remotos por IAP en PowerShell y se regenera con el setup/build.
+- Pendiente de proximo deploy: el runtime emitira logs DEBUG y filtrara solamente los `getUpdates` HTTP 200 repetitivos. El acceso directo ya ejecuta el script actualizado.
 - El bot local permanece apagado. No iniciar polling local con el token real mientras produccion esta activa.
 
 ## Validacion reciente

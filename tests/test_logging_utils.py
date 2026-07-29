@@ -1,7 +1,7 @@
 import logging
 import unittest
 
-from galerazo_bot.logging_utils import SecretRedactionFilter, redact_secrets
+from galerazo_bot.logging_utils import SecretRedactionFilter, SuccessfulGetUpdatesFilter, redact_secrets
 
 
 class LoggingUtilsTests(unittest.TestCase):
@@ -24,6 +24,39 @@ class LoggingUtilsTests(unittest.TestCase):
         )
         SecretRedactionFilter().filter(record)
         self.assertEqual(record.getMessage(), "Request /bot<redacted>/getUpdates")
+
+    def test_filter_ignores_only_successful_get_updates(self) -> None:
+        log_filter = SuccessfulGetUpdatesFilter()
+        successful_poll = logging.LogRecord(
+            "httpx",
+            logging.INFO,
+            __file__,
+            1,
+            'HTTP Request: POST https://api.telegram.org/bot<redacted>/getUpdates "HTTP/1.1 200 OK"',
+            (),
+            None,
+        )
+        send_message = logging.LogRecord(
+            "httpx",
+            logging.INFO,
+            __file__,
+            1,
+            'HTTP Request: POST https://api.telegram.org/bot<redacted>/sendMessage "HTTP/1.1 200 OK"',
+            (),
+            None,
+        )
+        failed_poll = logging.LogRecord(
+            "httpx",
+            logging.INFO,
+            __file__,
+            1,
+            'HTTP Request: POST https://api.telegram.org/bot<redacted>/getUpdates "HTTP/1.1 500 Internal Server Error"',
+            (),
+            None,
+        )
+        self.assertFalse(log_filter.filter(successful_poll))
+        self.assertTrue(log_filter.filter(send_message))
+        self.assertTrue(log_filter.filter(failed_poll))
 
 
 if __name__ == "__main__":

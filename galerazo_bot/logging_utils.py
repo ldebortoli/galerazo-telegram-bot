@@ -5,6 +5,7 @@ import re
 
 
 TELEGRAM_TOKEN_PATTERN = re.compile(r"(?<!\d)\d{6,}:[A-Za-z0-9_-]{8,}")
+SUCCESSFUL_GET_UPDATES_PATTERN = re.compile(r'/getUpdates "HTTP/1\.1 200 OK"')
 
 
 def redact_secrets(text: str) -> str:
@@ -18,8 +19,20 @@ class SecretRedactionFilter(logging.Filter):
         return True
 
 
+class SuccessfulGetUpdatesFilter(logging.Filter):
+    def filter(self, record: logging.LogRecord) -> bool:
+        return not (
+            record.name == "httpx"
+            and SUCCESSFUL_GET_UPDATES_PATTERN.search(record.getMessage()) is not None
+        )
+
+
 def configure_logging() -> None:
-    logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
-    for handler in logging.getLogger().handlers:
+    root_logger = logging.getLogger()
+    logging.basicConfig(level=logging.DEBUG, format="%(levelname)s %(name)s: %(message)s")
+    root_logger.setLevel(logging.DEBUG)
+    for handler in root_logger.handlers:
         if not any(isinstance(item, SecretRedactionFilter) for item in handler.filters):
             handler.addFilter(SecretRedactionFilter())
+        if not any(isinstance(item, SuccessfulGetUpdatesFilter) for item in handler.filters):
+            handler.addFilter(SuccessfulGetUpdatesFilter())

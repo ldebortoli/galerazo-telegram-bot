@@ -22,7 +22,7 @@ else {
     $gcloud = $fallback
 }
 
-Write-Host "Siguiendo logs de Galerazo Bot. Usa Ctrl+C para detener la lectura." -ForegroundColor Cyan
+Write-Host "Siguiendo logs DEBUG de Galerazo Bot. Se omiten solo getUpdates exitosos. Usa Ctrl+C para detener la lectura." -ForegroundColor Cyan
 & $gcloud compute ssh galerazo-prod `
     --project bot-fleet-production `
     --zone us-central1-a `

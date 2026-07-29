@@ -679,3 +679,7 @@ Un broadcast de release no tiene un usuario invocador al cual responder. Cuando 
 ## D-090 - Acceso directo de logs remotos (2026-07-29)
 
 El acceso `Galerazo Bot - Logs` se genera en `CODEX APPS` por el mismo build que mantiene el panel. Abre una consola PowerShell visible y ejecuta solo `gcloud compute ssh` por IAP con `docker compose logs --follow`; no administra ni modifica la VM, el contenedor o SQLite.
+
+## D-091 - Logging DEBUG sin polls exitosos repetitivos (2026-07-29)
+
+El runtime usa nivel `DEBUG` para mejorar el diagnostico remoto. Se filtra solamente el record `httpx` cuyo request `getUpdates` termina en HTTP 200; ese poll continuo no aporta informacion operativa. No se filtran fallos de polling ni otros requests HTTP.
