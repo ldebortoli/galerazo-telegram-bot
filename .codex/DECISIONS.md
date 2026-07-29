@@ -641,3 +641,7 @@ Este archivo es append-only a nivel conceptual: no borrar decisiones anteriores.
 ## D-081 - Novedades de version en texto plano (2026-07-29)
 
 `CHANGELOG.md` conserva Markdown para lectura en el repositorio, pero `current_release_notes()` elimina los delimitadores de codigo en linea antes de entregar texto a Telegram. Los broadcasts no dependen de `parse_mode`, asi se evitan comillas literales y no se introducen problemas de escape Markdown.
+
+## D-082 - Pie compacto de anuncios (2026-07-29)
+
+Los anuncios mantienen una separacion visual antes de la donacion y dejan el aviso de configuracion en la linea inmediatamente siguiente. Se aplica en todos los idiomas y a los changelogs distribuidos porque comparten `format_announcement()`.
