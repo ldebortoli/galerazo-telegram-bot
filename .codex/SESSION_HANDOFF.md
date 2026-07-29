@@ -12,6 +12,8 @@ El mecanismo mensual de backups GCE ya tiene un runbook exhaustivo y enlazado de
 
 ## Estado actual
 
+- Las novedades de version eliminan los delimitadores Markdown de codigo antes de enviarse como texto plano a Telegram. Validacion completa: 222 pruebas, 100% de sentencias/ramas, runtime, `pip check`, `compileall`, diff-check y checkpoint OK. Pendiente solo de commit y push; no requiere sincronizacion BotFather ni release/deploy.
+
 - `/anuncio` devuelve su resumen con un contador por línea; el formato exacto está cubierto por prueba en español.
 
 - Las traducciones runtime no contienen mojibake UTF-8: se corrigieron las dos cadenas de versión y una prueba rechaza `Ã`, `Â` y U+FFFD en todos los textos.

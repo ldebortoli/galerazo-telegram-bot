@@ -638,3 +638,6 @@ Este archivo es append-only a nivel conceptual: no borrar decisiones anteriores.
 - `chat_settings.announcements_enabled` tiene default activo, migra con el `chat_id` y puede modificarse por `/config` en privados y por administradores en grupos/supergrupos. El canal de anuncios recibe siempre la copia central.
 - `Forbidden` y `BadRequest` que identifican expulsion/bloqueo/chat inexistente marcan el chat inactivo. Timeouts y otros errores transitorios se contabilizan sin degradar la estadistica de `/chats`.
 - Las notas de `CHANGELOG.md` al iniciar una version nueva reutilizan el broadcast; la version se considera anunciada solo cuando pudo enviarse al canal central.
+## D-081 - Novedades de version en texto plano (2026-07-29)
+
+`CHANGELOG.md` conserva Markdown para lectura en el repositorio, pero `current_release_notes()` elimina los delimitadores de codigo en linea antes de entregar texto a Telegram. Los broadcasts no dependen de `parse_mode`, asi se evitan comillas literales y no se introducen problemas de escape Markdown.

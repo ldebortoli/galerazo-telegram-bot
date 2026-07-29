@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 from pathlib import Path
+import re
 
 
 CURRENT_VERSION = "0.6"
 CHANGELOG_PATH = Path(__file__).resolve().parent.parent / "CHANGELOG.md"
+INLINE_CODE_PATTERN = re.compile(r"`([^`]+)`")
 
 
 def current_release_notes() -> str:
@@ -24,4 +26,5 @@ def current_release_notes() -> str:
 
     if not release_lines:
         raise ValueError(f"CHANGELOG.md no contiene cambios para la version {CURRENT_VERSION}")
-    return f"Novedades de Galerazo Bot v{CURRENT_VERSION}\n\n" + "\n".join(release_lines)
+    plain_release_lines = [INLINE_CODE_PATTERN.sub(r"\1", line) for line in release_lines]
+    return f"Novedades de Galerazo Bot v{CURRENT_VERSION}\n\n" + "\n".join(plain_release_lines)
