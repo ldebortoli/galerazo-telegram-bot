@@ -11,7 +11,7 @@ Mantener Galerazo Bot reproducible en Windows, CI y Docker, con SQLite persisten
 - SQLite ahora posee `schema_migrations`. Las migraciones se aplican sobre el volumen remoto existente y quedan registradas; la primera elimina `galeraza_message_states`, ya copiada previamente a `paginated_message_states`. Un deploy normal hace backup remoto y nunca usa la SQLite local. `MigrateData` sigue siendo el unico flujo que la reemplaza.
 - BotFather fue sincronizado con el token local. `/apagar` permanece oculto por ser DEV.
 - Para futuras versiones, el changelog y el anuncio de release solo detallan cambios visibles en comandos publicos; los cambios DEV o internos se documentan fuera de esos canales publicos.
-- Produccion sigue en `galerazobot:f8d4c9a648f8`, `running/healthy`; no fue tocada. La siguiente publicacion solicitada debe incluir `0.7` y tambien la correccion pendiente que agrega `CHANGELOG.md` al runtime, asi el anuncio de release no vuelve a fallar.
+- Produccion ejecuta `galerazobot:a360a5d88272`, `running/healthy`. El deploy del 2026-07-29 anuncio correctamente la version `0.7`: los logs confirman los envios y `Novedades de la version 0.7 enviadas.`. El reporte diario de Google Cloud Billing sigue desactivado por falta de configuracion completa, no por un error de ejecucion.
 - El bot local permanece apagado. No iniciar polling local con el token real mientras produccion esta activa.
 
 ## Validacion reciente
