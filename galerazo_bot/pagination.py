@@ -17,14 +17,18 @@ class PaginatedPage:
 
 
 def build_pages(header: str, lines: list[str], max_chars: int = MESSAGE_LIMIT) -> list[str]:
-    pages: list[str] = []
+    return ["\n".join(page_lines) for page_lines in build_page_line_groups(header, lines, max_chars)]
+
+
+def build_page_line_groups(header: str, lines: list[str], max_chars: int = MESSAGE_LIMIT) -> list[list[str]]:
+    pages: list[list[str]] = []
     current_lines = [header]
     current_len = len(header)
 
     for line in lines:
         next_len = current_len + 1 + len(line)
         if len(current_lines) > 1 and next_len > max_chars:
-            pages.append("\n".join(current_lines))
+            pages.append(current_lines)
             current_lines = [header, line]
             current_len = len(header) + 1 + len(line)
             continue
@@ -32,12 +36,15 @@ def build_pages(header: str, lines: list[str], max_chars: int = MESSAGE_LIMIT) -
         current_lines.append(line)
         current_len = next_len
 
-    pages.append("\n".join(current_lines))
+    pages.append(current_lines)
     return pages
 
 
 def render_page(header: str, lines: list[str], page: int, max_chars: int = MESSAGE_LIMIT) -> PaginatedPage:
-    pages = build_pages(header, lines, max_chars)
+    return render_prebuilt_pages(build_pages(header, lines, max_chars), page)
+
+
+def render_prebuilt_pages(pages: list[str], page: int) -> PaginatedPage:
     total_pages = len(pages)
     safe_page = min(max(page, 1), total_pages)
     return PaginatedPage(text=pages[safe_page - 1], page=safe_page, total_pages=total_pages)

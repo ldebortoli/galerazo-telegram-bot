@@ -1063,6 +1063,12 @@ class PaginationAndChatHelpersTests(unittest.IsolatedAsyncioTestCase):
         db.get_paginated_message_state.return_value = self.paginated_state(list_type="galeraza")
         await tb._edit_paginated_message(db, message, "10", 1, True)
         self.assertIn("entities", message.edit_text.await_args.kwargs)
+        db.get_paginated_message_state.return_value = self.paginated_state(
+            list_type="galeraza",
+            content_json='{"pages":["Tabla de Galerazas\\n\\n1. A (1) => 9","Tabla de Galerazas\\n\\n2. B (2) => 8"]}',
+        )
+        await tb._edit_paginated_message(db, message, "10", 2, False)
+        self.assertEqual(message.edit_text.await_args.kwargs["text"], "Tabla de Galerazas\n\n2. B (2) => 8")
 
     async def test_restart_request_waits_for_pending_updates(self) -> None:
         application = SimpleNamespace(bot_data={}, create_task=MagicMock())

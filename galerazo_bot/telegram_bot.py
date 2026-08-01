@@ -71,14 +71,14 @@ from .expenses import (
     fallback_sheet_detail,
     format_amount,
 )
-from .galeraza import build_galeraza_header, build_galeraza_lines, render_galeraza_page
+from .galeraza import build_galeraza_header, build_galeraza_lines, build_galeraza_pages, render_galeraza_page
 from .google_sheets import GoogleSheetsConfig, GoogleSheetsExpenseWriter
 from .i18n import DEFAULT_LANGUAGE, t
 from .instance_lock import SingleInstance
 from .integration_status import save_logging_status
 from .logging_utils import configure_logging
 from .media_moderation import OpenAIMediaModerator, trigger_media_kind
-from .pagination import BUTTON_PREFIX, build_keyboard, parse_callback_data, render_page
+from .pagination import BUTTON_PREFIX, build_keyboard, parse_callback_data, render_page, render_prebuilt_pages
 from .roles import BackupResult, RussianRouletteHitResult, TriggerModerationResult, TriggerPayload, UserLevel
 from .runtime import ensure_python_version
 from .update_processor import PerChatUpdateProcessor
@@ -1070,7 +1070,7 @@ async def _send_galerazas(
     scores = db.get_galeraza_scores(str(message.chat.id))
     lines = build_galeraza_lines(scores, language)
     page = render_galeraza_page(scores, page=1, language=language)
-    content_json = json.dumps({"header": build_galeraza_header(language), "lines": lines}, ensure_ascii=False)
+    content_json = json.dumps({"pages": build_galeraza_pages(scores, language)}, ensure_ascii=False)
     try:
         entities = _bold_first_line_entities(page.text)
         result = await message.reply_text(page.text, do_quote=True, entities=entities)
@@ -1633,7 +1633,10 @@ async def _edit_paginated_message(
         return
 
     content = json.loads(state.content_json)
-    rendered = render_page(content["header"], content["lines"], page=page)
+    if state.list_type == "galeraza" and "pages" in content:
+        rendered = render_prebuilt_pages(content["pages"], page=page)
+    else:
+        rendered = render_page(content["header"], content["lines"], page=page)
     db.set_paginated_message_page(str(message.chat.id), message_id, rendered.page)
     edit_options = {}
     if state.list_type in {"galeraza", "triggers"}:

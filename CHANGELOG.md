@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.8] - 2026-08-01
+
+- La tabla de `/galerazas` ahora muestra posiciones compartidas ante empates y mantiene alineados los usuarios que comparten puesto, incluso al pasar entre paginas.
+- `/galerazas` informa cuando todavia no hay puntajes en el chat.
+
 ## [0.7] - 2026-07-29
 
 - Nuevo comando exclusivo de desarrollo `/apagar`, con la misma confirmacion privada y expiracion de cinco minutos que `/reiniciarbot`.

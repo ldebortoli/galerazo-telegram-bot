@@ -11,7 +11,7 @@ from telegram import Chat, Message, Update, User
 from telegram.ext import filters
 
 from galerazo_bot.database import Database, GalerazaScore
-from galerazo_bot.galeraza import build_galeraza_lines, render_galeraza_page
+from galerazo_bot.galeraza import build_galeraza_lines, build_galeraza_pages, render_galeraza_page
 from galerazo_bot.telegram_bot import _bold_first_line_entities, _galeraza_game_date, _is_galeraza_candidate
 
 
@@ -78,12 +78,64 @@ class GalerazaRenderingTests(unittest.TestCase):
         self.assertEqual(
             lines,
             [
-                "Nombre Visible (1) => 3",
-                "alias_sin_nombre (2) => 2",
-                "Usuario (3) => 1",
+                "1. Nombre Visible (1) => 3",
+                "2. alias_sin_nombre (2) => 2",
+                "3. Usuario (3) => 1",
             ],
         )
         self.assertNotIn("@", "\n".join(lines))
+
+    def test_uses_competition_ranks_and_aligns_ties(self) -> None:
+        scores = [
+            GalerazaScore("1", None, "Galerazo", 9),
+            GalerazaScore("2", None, "Jo", 8),
+            GalerazaScore("3", None, "Van", 8),
+            GalerazaScore("4", None, "Lil", 7),
+        ]
+
+        self.assertEqual(
+            build_galeraza_lines(scores),
+            [
+                "1. Galerazo (1) => 9",
+                "2. Jo (2) => 8",
+                "   Van (3) => 8",
+                "4. Lil (4) => 7",
+            ],
+        )
+
+    def test_all_ties_and_empty_rankings(self) -> None:
+        tied_scores = [
+            GalerazaScore("1", None, "Galerazo", 9),
+            GalerazaScore("2", None, "Jo", 9),
+            GalerazaScore("3", None, "Van", 9),
+        ]
+
+        self.assertEqual(
+            build_galeraza_lines(tied_scores),
+            [
+                "1. Galerazo (1) => 9",
+                "   Jo (2) => 9",
+                "   Van (3) => 9",
+            ],
+        )
+        self.assertEqual(build_galeraza_lines([]), ["Nadie tiene Galerazas hasta ahora."])
+        self.assertEqual(
+            build_galeraza_lines([], language="en"),
+            ["Nobody has any Galerazas yet."],
+        )
+
+    def test_repeats_a_shared_position_only_at_the_start_of_a_new_page(self) -> None:
+        scores = [
+            GalerazaScore("1", None, "A", 9),
+            GalerazaScore("2", None, "B", 8),
+            GalerazaScore("3", None, "C", 8),
+        ]
+
+        pages = build_galeraza_pages(scores, max_chars=45)
+
+        self.assertEqual(pages[0], "Tabla de Galerazas\n\n1. A (1) => 9")
+        self.assertEqual(pages[1], "Tabla de Galerazas\n\n2. B (2) => 8")
+        self.assertEqual(pages[2], "Tabla de Galerazas\n\n2. C (3) => 8")
 
     def test_uses_bold_table_title_separated_from_ranking(self) -> None:
         page = render_galeraza_page(
@@ -93,7 +145,7 @@ class GalerazaRenderingTests(unittest.TestCase):
         )
         entities = _bold_first_line_entities(page.text)
 
-        self.assertEqual(page.text, "Tabla de Galerazas\n\nNombre (1) => 3")
+        self.assertEqual(page.text, "Tabla de Galerazas\n\n1. Nombre (1) => 3")
         self.assertEqual(len(entities), 1)
         self.assertEqual(entities[0].type, "bold")
         self.assertEqual(entities[0].offset, 0)

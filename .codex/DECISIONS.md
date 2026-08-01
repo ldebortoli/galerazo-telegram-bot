@@ -683,3 +683,7 @@ El acceso `Galerazo Bot - Logs` se genera en `CODEX APPS` por el mismo build que
 ## D-091 - Logging DEBUG sin polls exitosos repetitivos (2026-07-29)
 
 El runtime usa nivel `DEBUG` para mejorar el diagnostico remoto. Se filtra solamente el record `httpx` cuyo request `getUpdates` termina en HTTP 200; ese poll continuo no aporta informacion operativa. No se filtran fallos de polling ni otros requests HTTP.
+
+## D-092 - Ranking competitivo de Galerazas con paginas autosuficientes (2026-08-01)
+
+`/galerazas` usa ranking competitivo: las personas empatadas comparten posicion y la siguiente posicion equivale a su indice global. Dentro de una pagina, las filas empatadas posteriores se alinean dejando vacio el prefijo de posicion. Si una pagina inicia en medio de un empate, la primera fila repite la posicion compartida para conservar contexto. Las paginas se persisten ya renderizadas en la metadata de Galeraza; las metadata legacy con `header` y `lines` siguen siendo compatibles hasta expirar.

@@ -16,6 +16,8 @@
 
 # DONE
 
+- [2026-08-01] Agregar posiciones competitivas a `/galerazas`, alinear empates, repetir la posicion solo cuando una pagina nueva inicia dentro de un empate y mostrar estado vacio sin puntajes. Version `0.8`; sin cambio de BotFather. Validacion: 229 pruebas, cobertura 100% de sentencias/ramas, runtime, `pip check`, `compileall` y diff-check OK. Sin release/deploy.
+
 - [2026-07-29] Elevar logging de runtime a DEBUG y omitir solo los polls `getUpdates` HTTP 200 del acceso de logs. Se aplicara con el proximo deploy. Validacion: 226 pruebas, cobertura 100% de sentencias/ramas. Sin release/deploy.
 
 - [2026-07-29] Crear acceso directo `Galerazo Bot - Logs` en `CODEX APPS` para seguir logs remotos por IAP en una consola. El setup y build lo regeneran. Validacion: acceso directo creado e inspeccionado, parser PowerShell OK, 225 pruebas y cobertura 100%. Sin release/deploy.

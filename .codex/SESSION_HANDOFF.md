@@ -6,20 +6,20 @@ Mantener Galerazo Bot reproducible en Windows, CI y Docker, con SQLite persisten
 
 ## Estado actual
 
-- Se implemento la version `0.7`, commit `465e0be` pusheado a `main`, aun sin release ni deploy solicitado. Incluye `/apagar` exclusivo DEV con confirmacion privada de cinco minutos y el mismo control de solicitante que `/reiniciarbot`.
+- Se implemento la version `0.8`, pendiente de commit/push y aun sin release ni deploy solicitado. `/galerazas` ahora muestra posiciones competitivas, estado vacio y paginas autosuficientes al atravesar empates. Incluye tambien los cambios anteriores de `/apagar` exclusivo DEV con confirmacion privada de cinco minutos.
 - Reinicio y apagado detienen polling, drenan las updates ya aceptadas durante un maximo de 60 segundos y fuerzan la accion si un handler no termina. El timeout se registra en logging. Docker da 65 segundos de gracia al detener el contenedor, por lo que un deploy sigue el mismo cierre ordenado antes del limite forzado.
 - SQLite ahora posee `schema_migrations`. Las migraciones se aplican sobre el volumen remoto existente y quedan registradas; la primera elimina `galeraza_message_states`, ya copiada previamente a `paginated_message_states`. Un deploy normal hace backup remoto y nunca usa la SQLite local. `MigrateData` sigue siendo el unico flujo que la reemplaza.
 - BotFather fue sincronizado con el token local. `/apagar` permanece oculto por ser DEV.
 - Para futuras versiones, el changelog y el anuncio de release solo detallan cambios visibles en comandos publicos; los cambios DEV o internos se documentan fuera de esos canales publicos.
 - Produccion ejecuta `galerazobot:a360a5d88272`, `running/healthy`. El deploy del 2026-07-29 anuncio correctamente la version `0.7`: los logs confirman los envios y `Novedades de la version 0.7 enviadas.`. El reporte diario de Google Cloud Billing sigue desactivado por falta de configuracion completa, no por un error de ejecucion.
-- Pendiente de proximo deploy: el broadcast automatico de una nueva version enviara al canal de logging el resumen de enviados, omitidos, inactivos, fallidos y canal de anuncios. No afecta el anuncio ni se incluye en el changelog publico.
+- Pendiente de proximo deploy: la version `0.8` distribuira las mejoras publicas de `/galerazas`; el broadcast automatico enviara al canal de logging el resumen de enviados, omitidos, inactivos, fallidos y canal de anuncios. No afecta el anuncio ni se incluye en el changelog publico.
 - `Galerazo Bot - Logs.lnk` fue creado en `C:\Users\calei\Documents\Codex\CODEX APPS`; sigue los logs remotos por IAP en PowerShell y se regenera con el setup/build.
 - Pendiente de proximo deploy: el runtime emitira logs DEBUG y filtrara solamente los `getUpdates` HTTP 200 repetitivos. El acceso directo ya ejecuta el script actualizado.
 - El bot local permanece apagado. No iniciar polling local con el token real mientras produccion esta activa.
 
 ## Validacion reciente
 
-- 224 pruebas nativas OK; cobertura 100% de sentencias y ramas.
+- 229 pruebas nativas OK; cobertura 100% de sentencias y ramas.
 - Target Docker de tests: 224 pruebas OK, una prueba Tk omitida en Linux; runtime Docker de Python 3.14.6 validado.
 - `scripts/runtime_versions.py`, `pip check`, `compileall` y `git diff --check` OK.
 
