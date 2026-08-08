@@ -19,6 +19,8 @@ class DatabaseMigrationTests(unittest.TestCase):
             db.restrict_user_in_chat("-1", "2", "1")
             db.try_award_daily_galeraza("-1", "2026-07-10", "2", "100")
             db.save_paginated_message_state("-1", "200", "test", "1", '{"lines": []}')
+            db.save_paginated_message_state("-1", "201", "galeraza", "1", '{"lines": []}')
+            db.try_record_daily_report("2", "2026-07-10", "-1")
             db.add_trigger(
                 "-1",
                 "saludo",
@@ -42,7 +44,8 @@ class DatabaseMigrationTests(unittest.TestCase):
                 '{"destination": true}',
             )
 
-            db.migrate_chat_id("-1", "-1001")
+            self.assertTrue(db.migrate_chat_id("-1", "-1001"))
+            self.assertFalse(db.migrate_chat_id("-1", "-1001"))
 
             self.assertEqual(db.resolve_chat_id("-1"), "-1001")
             self.assertEqual(db.get_chat_settings("-1001").language, "en")
@@ -55,6 +58,15 @@ class DatabaseMigrationTests(unittest.TestCase):
             pagination = db.get_paginated_message_state("-1001", "200")
             self.assertEqual(pagination.chat_id, "-1001")
             self.assertEqual(pagination.list_type, "destination")
+            galeraza_pagination = db.get_paginated_message_state("-1001", "201")
+            self.assertEqual(galeraza_pagination.chat_id, "-1001")
+            self.assertEqual(galeraza_pagination.list_type, "galeraza")
+            with db._connect() as conn:
+                report = conn.execute(
+                    "SELECT chat_id FROM daily_user_reports WHERE user_id = ? AND report_date = ?",
+                    ("2", "2026-07-10"),
+                ).fetchone()
+            self.assertEqual(report["chat_id"], "-1001")
             self.assertEqual(db.list_triggers("-1001")[0].display_name, "Saludo")
             self.assertEqual(db.list_triggers("-1001")[0].payload_json, '{"test": true}')
             self.assertEqual(db.list_recent_expenses("-1001")[0].description, "agua")

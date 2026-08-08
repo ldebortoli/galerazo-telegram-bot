@@ -2,36 +2,15 @@ from __future__ import annotations
 
 import asyncio
 import inspect
-from dataclasses import dataclass
-from typing import Awaitable, Callable, Optional, Union
 
+from .command_model import Command
 from .database import Database
 from .i18n import DEFAULT_LANGUAGE, t
 from .roles import CommandContext, UserLevel
 
 
-CommandResult = Union[Optional[str], Awaitable[Optional[str]]]
-CommandHandler = Callable[[CommandContext, Database], CommandResult]
 DEFAULT_PERMISSION_ERROR_KEY = "permission_denied"
 SYMBOL_COMMAND_PREFIXES = ("!", "/", ".", ">", "$")
-
-
-@dataclass(frozen=True)
-class Command:
-    name: str
-    description: str
-    handler: CommandHandler
-    min_level: UserLevel = UserLevel.COMMON
-    permission_error: str | None = None
-    permission_error_key: str | None = None
-    hidden: bool = False
-    configurable_group: str | None = None
-    command_key: str | None = None
-    list_response: bool = False
-
-    def __post_init__(self) -> None:
-        if self.command_key is None:
-            object.__setattr__(self, "command_key", self.name.split(maxsplit=1)[0])
 
 
 def normalize_command(text: str) -> str:

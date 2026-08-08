@@ -176,7 +176,7 @@ class LifecycleAndBillingTests(unittest.IsolatedAsyncioTestCase):
         fake_application = MagicMock()
         with patch.dict(tb.COMMANDS, {"hola": MagicMock(), "help": MagicMock()}, clear=True):
             tb._register_handlers(fake_application)
-        self.assertEqual(fake_application.add_handler.call_count, 8)
+        self.assertEqual(fake_application.add_handler.call_count, 9)
 
     def test_build_application_uses_per_chat_processor(self) -> None:
         db = MagicMock()
@@ -330,28 +330,30 @@ class PreprocessAndTriggerTests(unittest.IsolatedAsyncioTestCase):
         bot_state = state(db)
         context = context_for(bot_state, MagicMock())
         await tb._preprocess_message(SimpleNamespace(effective_message=None), context)
-        migration = message_stub()
-        with patch.object(tb, "_handle_chat_migration", return_value=True):
-            await tb._preprocess_message(SimpleNamespace(effective_message=migration), context)
+        migration = message_stub(migrate_to_chat_id=-100)
+        await tb._preprocess_message(SimpleNamespace(effective_message=migration), context)
+        db.get_or_create_user.assert_not_called()
+        with patch.object(tb, "_handle_chat_migration") as handle_migration:
+            await tb._chat_migration_entrypoint(
+                SimpleNamespace(effective_message=migration),
+                context,
+            )
+        handle_migration.assert_called_once_with(migration, db)
+        await tb._chat_migration_entrypoint(SimpleNamespace(effective_message=None), context)
 
         message = message_stub(text="hello")
         update = SimpleNamespace(effective_message=message, effective_user=None, effective_chat=message.chat)
-        with patch.object(tb, "_handle_chat_migration", return_value=False):
-            await tb._preprocess_message(update, context)
+        await tb._preprocess_message(update, context)
         user = SimpleNamespace(id=1, full_name="User", username=None, is_bot=False)
         update.effective_user = user
         db.is_user_blocked.return_value = True
-        with patch.object(tb, "_handle_chat_migration", return_value=False):
-            await tb._preprocess_message(update, context)
+        await tb._preprocess_message(update, context)
         db.is_user_blocked.return_value = False
-        with patch.object(tb, "_handle_chat_migration", return_value=False), patch.object(
-            tb, "_is_user_restricted_in_message_chat", return_value=True
-        ):
+        with patch.object(tb, "_is_user_restricted_in_message_chat", return_value=True):
             await tb._preprocess_message(update, context)
 
-        with patch.object(tb, "_handle_chat_migration", return_value=False), patch.object(
-            tb, "_is_user_restricted_in_message_chat", return_value=False
-        ), patch.object(tb, "_is_galeraza_candidate", return_value=True), patch.object(
+        with patch.object(tb, "_is_user_restricted_in_message_chat", return_value=False), patch.object(
+            tb, "_is_galeraza_candidate", return_value=True), patch.object(
             tb, "_maybe_award_daily_galeraza", AsyncMock()
         ) as award, patch.object(tb, "_maybe_send_triggered_messages", AsyncMock()) as send:
             await tb._preprocess_message(update, context)
@@ -360,9 +362,8 @@ class PreprocessAndTriggerTests(unittest.IsolatedAsyncioTestCase):
         db.save_incoming_message.assert_called_with(sender_id="1", text="hello", chat_id="-1")
 
         message.text = "/hola"
-        with patch.object(tb, "_handle_chat_migration", return_value=False), patch.object(
-            tb, "_is_user_restricted_in_message_chat", return_value=False
-        ), patch.object(tb, "_is_galeraza_candidate", return_value=False), patch.object(
+        with patch.object(tb, "_is_user_restricted_in_message_chat", return_value=False), patch.object(
+            tb, "_is_galeraza_candidate", return_value=False), patch.object(
             tb, "_maybe_send_triggered_messages", AsyncMock()
         ) as send:
             await tb._preprocess_message(update, context)
@@ -1117,8 +1118,10 @@ class PaginationAndChatHelpersTests(unittest.IsolatedAsyncioTestCase):
         tb._register_chat_from_message(message, db)
         self.assertFalse(tb._handle_chat_migration(message_stub(chat=None), db))
         self.assertFalse(tb._handle_chat_migration(message, db))
+        db.migrate_chat_id.return_value = True
         self.assertTrue(tb._handle_chat_migration(message_stub(migrate_to_chat_id=-100), db))
-        self.assertTrue(tb._handle_chat_migration(message_stub(migrate_from_chat_id=-1), db))
+        db.migrate_chat_id.return_value = False
+        self.assertFalse(tb._handle_chat_migration(message_stub(migrate_from_chat_id=-1), db))
         tb._register_bot_added_event(message_stub(chat=None), db, "99")
         tb._register_bot_added_event(message_stub(from_user=None), db, "99")
         tb._register_bot_added_event(message_stub(from_user=SimpleNamespace(id=1), new_chat_members=[]), db, "99")

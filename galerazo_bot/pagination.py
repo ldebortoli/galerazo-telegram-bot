@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import sqlite3
 from dataclasses import dataclass
 
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, MessageEntity
@@ -90,6 +91,26 @@ def parse_callback_data(data: str) -> tuple[str, str, str | None] | None:
     message_id = parts[2]
     value = parts[3] if len(parts) > 3 else None
     return action, message_id, value
+
+
+def migrate_chat_data(conn: sqlite3.Connection, old_chat_id: str, new_chat_id: str) -> None:
+    conn.execute(
+        """
+        INSERT OR IGNORE INTO paginated_message_states (
+            chat_id, message_id, list_type, requester_user_id, content_json,
+            unlocked, current_page, created_at, updated_at
+        )
+        SELECT ?, message_id, list_type, requester_user_id, content_json,
+               unlocked, current_page, created_at, CURRENT_TIMESTAMP
+        FROM paginated_message_states
+        WHERE chat_id = ? AND list_type != 'galeraza'
+        """,
+        (new_chat_id, old_chat_id),
+    )
+    conn.execute(
+        "DELETE FROM paginated_message_states WHERE chat_id = ? AND list_type != 'galeraza'",
+        (old_chat_id,),
+    )
 
 
 def _page_button_items(page: int, total_pages: int) -> list[int | str]:

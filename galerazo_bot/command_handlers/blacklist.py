@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from ..commands import Command
+from ..command_model import Command
 from ..database import Database
 from ..roles import CommandContext, UserLevel
 from ..user_display import format_user, resolve_target_user

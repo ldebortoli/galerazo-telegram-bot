@@ -111,7 +111,7 @@ class CommandRoutingTests(unittest.TestCase):
             for group, handler in application.handlers
             if group == 0 and isinstance(handler, MessageHandler)
         ]
-        self.assertEqual(len(preprocessors), 1)
+        self.assertEqual(len(preprocessors), 2)
 
         sent_at = datetime(2026, 7, 15, tzinfo=timezone.utc)
         actor = User(id=1, first_name="Actor", is_bot=False)
@@ -138,8 +138,18 @@ class CommandRoutingTests(unittest.TestCase):
                     **kwargs,
                 )
                 self.assertTrue(
-                    preprocessors[0].check_update(Update(update_id, message=message))
+                    preprocessors[1].check_update(Update(update_id, message=message))
                 )
+
+        migration_message = Message(
+            message_id=99,
+            date=sent_at,
+            chat=Chat(id=-1, type="group"),
+            migrate_to_chat_id=-1001,
+        )
+        migration_update = Update(99, message=migration_message)
+        self.assertTrue(preprocessors[0].check_update(migration_update))
+        self.assertTrue(preprocessors[1].check_update(migration_update))
 
     def test_unknown_commands_are_ignored(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

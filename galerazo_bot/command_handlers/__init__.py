@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from ..commands import Command
+from ..command_model import Command
 from .apagar import COMMANDS as SHUTDOWN_COMMANDS
 from .anuncio import COMMANDS as ANUNCIO_COMMANDS
 from .backup import COMMANDS as BACKUP_COMMANDS

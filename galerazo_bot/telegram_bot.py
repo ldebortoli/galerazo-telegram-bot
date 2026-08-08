@@ -47,6 +47,7 @@ from .chat_config import (
     is_valid_language,
     parse_config_callback,
 )
+from .chat_migration import chat_migration_ids
 from .cloud_billing import (
     GoogleCloudBillingConfig,
     GoogleCloudBillingReader,
@@ -207,6 +208,7 @@ def _register_handlers(application: Application) -> None:
         application,
         command_names=COMMANDS,
         command_prefixes=tuple(prefix for prefix in SYMBOL_COMMAND_PREFIXES if prefix != "/"),
+        chat_migration_callback=_chat_migration_entrypoint,
         preprocess_message=_preprocess_message,
         command_callback=_command_entrypoint,
         pagination_callback=_callback_query_entrypoint,
@@ -419,7 +421,7 @@ async def _preprocess_message(update: Update, context: ContextTypes.DEFAULT_TYPE
     if message is None:
         return
 
-    if _handle_chat_migration(message, state.db):
+    if chat_migration_ids(message) is not None:
         return
 
     _register_chat_from_message(message, state.db)
@@ -453,8 +455,15 @@ async def _preprocess_message(update: Update, context: ContextTypes.DEFAULT_TYPE
         bot=context.bot,
         message=message,
     )
-
     state.db.save_incoming_message(sender_id=str(user.id), text=text, chat_id=str(chat.id))
+
+
+async def _chat_migration_entrypoint(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    message = update.effective_message
+    if message is None:
+        return
+
+    _handle_chat_migration(message, _state(context).db)
 
 
 async def _maybe_send_triggered_messages(
@@ -1596,19 +1605,13 @@ def _register_chat_from_message(message: Message, db: Database) -> None:
 
 
 def _handle_chat_migration(message: Message, db: Database) -> bool:
-    if message.chat is None:
+    migration_ids = chat_migration_ids(message)
+    if migration_ids is None:
         return False
+    old_chat_id, new_chat_id = migration_ids
 
-    if message.migrate_to_chat_id is not None:
-        old_chat_id = message.chat.id
-        new_chat_id = message.migrate_to_chat_id
-    elif message.migrate_from_chat_id is not None:
-        old_chat_id = message.migrate_from_chat_id
-        new_chat_id = message.chat.id
-    else:
+    if not db.migrate_chat_id(old_chat_id=str(old_chat_id), new_chat_id=str(new_chat_id)):
         return False
-
-    db.migrate_chat_id(old_chat_id=str(old_chat_id), new_chat_id=str(new_chat_id))
     logger.info("Chat migrado de %s a %s.", old_chat_id, new_chat_id)
     return True
 

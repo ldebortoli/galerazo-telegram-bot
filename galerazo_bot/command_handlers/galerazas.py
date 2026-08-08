@@ -2,13 +2,14 @@ from __future__ import annotations
 
 import json
 import logging
+import sqlite3
 from datetime import datetime, timezone
 from zoneinfo import ZoneInfo
 
 from telegram import Message, Update, User
 from telegram.error import TelegramError
 
-from ..commands import Command
+from ..command_model import Command
 from ..database import Database
 from ..galeraza import build_galeraza_pages, render_galeraza_page
 from ..i18n import t
@@ -106,6 +107,58 @@ async def send_galerazas(
 
 def _language(db: Database, chat_id: int) -> str:
     return db.get_chat_settings(str(chat_id)).language
+
+
+def migrate_chat_data(conn: sqlite3.Connection, old_chat_id: str, new_chat_id: str) -> None:
+    conn.execute(
+        """
+        INSERT OR IGNORE INTO galeraza_daily_winners (
+            chat_id, game_date, user_id, message_id, message_date, created_at
+        )
+        SELECT ?, game_date, user_id, message_id, message_date, created_at
+        FROM galeraza_daily_winners
+        WHERE chat_id = ?
+        """,
+        (new_chat_id, old_chat_id),
+    )
+    conn.execute("DELETE FROM galeraza_daily_winners WHERE chat_id = ?", (old_chat_id,))
+    scores = conn.execute(
+        "SELECT user_id, points FROM galeraza_scores WHERE chat_id = ?",
+        (old_chat_id,),
+    ).fetchall()
+    for score in scores:
+        conn.execute(
+            """
+            INSERT INTO galeraza_scores (chat_id, user_id, points, updated_at)
+            VALUES (?, ?, ?, CURRENT_TIMESTAMP)
+            ON CONFLICT(chat_id, user_id) DO UPDATE SET
+                points = galeraza_scores.points + excluded.points,
+                updated_at = CURRENT_TIMESTAMP
+            """,
+            (new_chat_id, score["user_id"], score["points"]),
+        )
+    conn.execute("DELETE FROM galeraza_scores WHERE chat_id = ?", (old_chat_id,))
+    _migrate_pagination(conn, old_chat_id, new_chat_id)
+
+
+def _migrate_pagination(conn: sqlite3.Connection, old_chat_id: str, new_chat_id: str) -> None:
+    conn.execute(
+        """
+        INSERT OR IGNORE INTO paginated_message_states (
+            chat_id, message_id, list_type, requester_user_id, content_json,
+            unlocked, current_page, created_at, updated_at
+        )
+        SELECT ?, message_id, list_type, requester_user_id, content_json,
+               unlocked, current_page, created_at, CURRENT_TIMESTAMP
+        FROM paginated_message_states
+        WHERE chat_id = ? AND list_type = 'galeraza'
+        """,
+        (new_chat_id, old_chat_id),
+    )
+    conn.execute(
+        "DELETE FROM paginated_message_states WHERE chat_id = ? AND list_type = 'galeraza'",
+        (old_chat_id,),
+    )
 
 
 COMMANDS = {

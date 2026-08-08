@@ -1,9 +1,10 @@
 from __future__ import annotations
 
+import sqlite3
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
-from ..commands import Command
+from ..command_model import Command
 from ..database import Database
 from ..roles import CommandContext
 
@@ -31,6 +32,10 @@ def _today_key() -> str:
     except Exception:
         now = datetime.now().astimezone()
     return now.date().isoformat()
+
+
+def migrate_chat_data(conn: sqlite3.Connection, old_chat_id: str, new_chat_id: str) -> None:
+    conn.execute("UPDATE daily_user_reports SET chat_id = ? WHERE chat_id = ?", (new_chat_id, old_chat_id))
 
 
 COMMANDS = {

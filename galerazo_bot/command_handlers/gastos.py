@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from ..commands import Command
+import sqlite3
+from ..command_model import Command
 from ..database import Database
 from ..expenses import (
     DEFAULT_EXPENSE_LIST_LIMIT,
@@ -100,6 +101,10 @@ def _format_amount(context: CommandContext, amount_cents: int, currency: str) ->
     from ..expenses import format_amount
 
     return format_amount(amount_cents, currency)
+
+
+def migrate_chat_data(conn: sqlite3.Connection, old_chat_id: str, new_chat_id: str) -> None:
+    conn.execute("UPDATE expenses SET chat_id = ? WHERE chat_id = ?", (new_chat_id, old_chat_id))
 
 
 COMMANDS = {

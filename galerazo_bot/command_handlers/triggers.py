@@ -1,8 +1,9 @@
 from __future__ import annotations
 
+import sqlite3
 import json
 
-from ..commands import Command
+from ..command_model import Command
 from ..database import Database, Trigger
 from ..roles import CommandContext, TriggerModerationResult
 
@@ -110,6 +111,48 @@ def _is_valid_payload(payload) -> bool:
 
 def _trigger_line(trigger: Trigger) -> str:
     return f"- {trigger.display_name}"
+
+
+def migrate_chat_data(conn: sqlite3.Connection, old_chat_id: str, new_chat_id: str) -> None:
+    triggers = conn.execute(
+        """
+        SELECT trigger_name, display_name, text, media_type, file_id, caption, payload_json, created_by_user_id
+        FROM triggers
+        WHERE chat_id = ?
+        """,
+        (old_chat_id,),
+    ).fetchall()
+    for trigger in triggers:
+        conn.execute(
+            """
+            INSERT INTO triggers (
+                chat_id, trigger_name, display_name, text, media_type, file_id,
+                caption, payload_json, created_by_user_id, updated_at
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+            ON CONFLICT(chat_id, trigger_name) DO UPDATE SET
+                display_name = excluded.display_name,
+                text = excluded.text,
+                media_type = excluded.media_type,
+                file_id = excluded.file_id,
+                caption = excluded.caption,
+                payload_json = excluded.payload_json,
+                created_by_user_id = excluded.created_by_user_id,
+                updated_at = CURRENT_TIMESTAMP
+            """,
+            (
+                new_chat_id,
+                trigger["trigger_name"],
+                trigger["display_name"],
+                trigger["text"],
+                trigger["media_type"],
+                trigger["file_id"],
+                trigger["caption"],
+                trigger["payload_json"],
+                trigger["created_by_user_id"],
+            ),
+        )
+    conn.execute("DELETE FROM triggers WHERE chat_id = ?", (old_chat_id,))
 
 
 COMMANDS = {

@@ -32,9 +32,11 @@ La misma politica se aplica globalmente desde `C:\Users\calei\.codex\AGENTS.md`.
 - `control_panel.py`: entrypoint del panel local de Windows.
 - `galerazo_bot/telegram_bot.py`: ciclo de vida e integracion con `python-telegram-bot`; conserva adaptadores comunes y delega el registro nativo de handlers.
 - `galerazo_bot/handler_registration.py`: registro central de `MessageHandler`, `CommandHandler`, `PrefixHandler`, `CallbackQueryHandler` y `ChatMemberHandler`, sin fallback que interprete texto libre como comando.
+- `galerazo_bot/command_model.py`: contrato ligero `Command`, separado del dispatcher para que los modulos de dominio no dependan de `commands.py`.
 - `galerazo_bot/commands.py`: dispatcher comun, normalizacion, permisos y ejecucion de comandos.
-- `galerazo_bot/command_handlers/`: un modulo por conjunto de comandos. Cada modulo exporta `COMMANDS`; `galerazas.py` tambien contiene los adaptadores de Telegram que otorgan y envian el ranking.
-- `galerazo_bot/database.py`: esquema SQLite y operaciones persistentes.
+- `galerazo_bot/command_handlers/`: un modulo por conjunto de comandos. Cada modulo exporta `COMMANDS` y, cuando posee datos por chat, su migrador `migrate_chat_data`; `galerazas.py` tambien contiene los adaptadores de Telegram que otorgan y envian el ranking.
+- `galerazo_bot/chat_migration.py`: normaliza ambos eventos de migracion de Telegram y coordina los migradores de dominio dentro de una unica transaccion SQLite.
+- `galerazo_bot/database.py`: esquema SQLite, operaciones persistentes y la parte comun de cada migracion de chat.
 - `galerazo_bot/pagination.py`: paginacion reutilizable y metadata de botoneras.
 - `galerazo_bot/chat_config.py`: menus y grupos de comandos configurables.
 - `galerazo_bot/versioning.py`: version actual y lectura de la entrada correspondiente en `CHANGELOG.md`.
@@ -71,8 +73,9 @@ La misma politica se aplica globalmente desde `C:\Users\calei\.codex\AGENTS.md`.
 
 - La base por defecto es `data/galerazo.sqlite3`.
 - Cada operacion abre una conexion corta mediante un context manager y garantiza commit/rollback y cierre explicito.
-- Todos los datos asociados a un `chat_id` deben migrarse cuando Telegram convierte un grupo en supergrupo.
-- `Database.migrate_chat_id` es el punto central de esa migracion.
+- Todos los datos asociados a un `chat_id` deben migrarse cuando Telegram convierte un grupo en supergrupo. Un `MessageHandler(filters.StatusUpdate.MIGRATE)` dedicado recibe los eventos antes del preprocesador general.
+- Telegram entrega dos eventos de migracion. `Database.migrate_chat_id` reclama de forma atomica el par `old_chat_id`/`new_chat_id` en `chat_migrations`; solo el primer evento mueve datos y el segundo no realiza cambios.
+- `Database.migrate_chat_id` conserva una sola transaccion: actualiza las tablas comunes y llama a `chat_migration.migrate_command_data`, que delega cada tabla de comando a su modulo propietario.
 - El bot usa `PerChatUpdateProcessor`: conserva orden FIFO dentro de cada chat y permite procesar chats distintos en paralelo.
 - El polling fija `drop_pending_updates=False` para consumir updates que Telegram todavia conserve.
 - Los callbacks de botoneras se procesan en la misma secuencia del chat correspondiente.
@@ -161,13 +164,13 @@ El panel usa un cliente inicial de `760x750`, minimo `680x730`; la pestaña Conf
 - Las listas de usuarios muestran siempre el user ID entre parentesis.
 - Las listas largas usan la paginacion reutilizable y nunca cortan un renglon.
 - Los comandos conservan sus nombres originales en todos los idiomas.
-- Los comandos aceptan `/`, `!`, `.`, `>`, `$`, `galerazobot` y `galerazo_bot` como prefijos.
+- Los comandos aceptan `/`, `!`, `.`, `>` y `$` como prefijos. Los comandos con `/` tambien admiten el sufijo nativo `@nombre_del_bot` que reconoce `CommandHandler`.
 - Los comandos inexistentes se ignoran silenciosamente; no registrar fallbacks en grupos posteriores de PTB que vuelvan a procesar comandos validos.
 - Antes de cerrar cada pedido se ejecuta `python -m galerazo_bot.log_checkpoint`; los errores nuevos se investigan antes de reconocer y avanzar el offset.
 - Los `NetworkError` transitorios de `getUpdates` llegan sin update/job/coroutine y PTB los reintenta; se registran como warning local sin anunciar un falso error no handleado. Errores de red asociados a trabajo real si se anuncian.
 - `ApplicationBuilder` configura 30 segundos para los timeouts HTTP normales de Telegram; las respuestas paginadas no reintentan un `TimedOut` para evitar duplicados y lo registran como warning local.
 - Al iniciar, el bot sincroniza los comandos sugeridos de BotFather por scope: privados reciben los comandos generales; grupos reciben comandos comunes excepto gastos y sus administradores reciben ademas los comandos `ADMIN`. Los comandos `DEV` y todos los de gastos no se sugieren; el menu global se limpia para no filtrarlos a canales.
-- `CURRENT_VERSION` es `0.7`; `CHANGELOG.md` contiene las notas por release y se actualiza con todo cambio funcional. El agente calcula la siguiente version salvo numero indicado por el usuario: capacidades importantes incrementan la menor y arreglos menores se agrupan como "Correcciones y mejoras". Si un comando cambia, tambien actualiza y sincroniza BotFather en esa ejecucion. SQLite anuncia cada version una vez al canal de novedades y `/version` la expone a todos.
+- `CURRENT_VERSION` es `0.9`; `CHANGELOG.md` contiene las notas por release y se actualiza con todo cambio funcional. El agente calcula la siguiente version salvo numero indicado por el usuario: capacidades importantes incrementan la menor y arreglos menores se agrupan como "Correcciones y mejoras". Si un comando cambia, tambien actualiza y sincroniza BotFather en esa ejecucion. SQLite anuncia cada version una vez al canal de novedades y `/version` la expone a todos.
 - `CHANGELOG.md` y las novedades distribuidas son publicos: solo describen cambios visibles para usuarios en comandos publicos. No mencionar comandos DEV, infraestructura, Docker, SQLite, migraciones, despliegues ni correcciones internas; esas notas viven en commits, documentacion tecnica y `.codex/`.
 - `/anuncio` es exclusivo de desarrollo. Envia el texto a los chats activos que tengan anuncios habilitados y al canal de anuncios, anexa el acceso a `/config` y valida el limite final antes de comenzar. Un error definitivo de Telegram marca el chat inactivo; timeouts y red transitoria no lo hacen. Los changelogs de una version desplegada usan el mismo envio.
 - Al finalizar un broadcast automatico de release que alcanzo el canal de anuncios, el bot envia al canal de logging el mismo resumen de contadores que devuelve `/anuncio`. El fallo de ese resumen no altera la marca de version anunciada.

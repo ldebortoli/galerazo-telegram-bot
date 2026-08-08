@@ -1,6 +1,8 @@
 from __future__ import annotations
 
-from ..commands import Command
+import sqlite3
+
+from ..command_model import Command
 from ..database import Database
 from ..roles import CommandContext, UserLevel
 from ..user_display import format_user, resolve_target_user
@@ -51,6 +53,29 @@ def restringidos(context: CommandContext, db: Database) -> str:
     for user in users:
         lines.append(f"- {format_user(user, context)}")
     return "\n".join(lines)
+
+
+def migrate_chat_data(conn: sqlite3.Connection, old_chat_id: str, new_chat_id: str) -> None:
+    restrictions = conn.execute(
+        """
+        SELECT user_id, restricted_by_user_id
+        FROM chat_restricted_users
+        WHERE chat_id = ?
+        """,
+        (old_chat_id,),
+    ).fetchall()
+    for restricted_user in restrictions:
+        conn.execute(
+            """
+            INSERT INTO chat_restricted_users (chat_id, user_id, restricted_by_user_id, restricted_at)
+            VALUES (?, ?, ?, CURRENT_TIMESTAMP)
+            ON CONFLICT(chat_id, user_id) DO UPDATE SET
+                restricted_by_user_id = excluded.restricted_by_user_id,
+                restricted_at = CURRENT_TIMESTAMP
+            """,
+            (new_chat_id, restricted_user["user_id"], restricted_user["restricted_by_user_id"]),
+        )
+    conn.execute("DELETE FROM chat_restricted_users WHERE chat_id = ?", (old_chat_id,))
 
 
 COMMANDS = {

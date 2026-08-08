@@ -1,6 +1,8 @@
 from __future__ import annotations
 
-from ..commands import Command
+import sqlite3
+
+from ..command_model import Command
 from ..database import Database
 from ..roles import CommandContext, RussianRouletteHitResult, UserLevel
 
@@ -37,6 +39,21 @@ async def ruletarusa(context: CommandContext, db: Database) -> str:
         RussianRouletteHitResult.FAILED: "roulette.hit_failed",
     }[result]
     return context.t(result_key)
+
+
+def migrate_chat_data(conn: sqlite3.Connection, old_chat_id: str, new_chat_id: str) -> None:
+    conn.execute(
+        """
+        INSERT OR IGNORE INTO russian_roulette_states (
+            chat_id, user_id, bullet_position, shots_fired, created_at, updated_at
+        )
+        SELECT ?, user_id, bullet_position, shots_fired, created_at, CURRENT_TIMESTAMP
+        FROM russian_roulette_states
+        WHERE chat_id = ?
+        """,
+        (new_chat_id, old_chat_id),
+    )
+    conn.execute("DELETE FROM russian_roulette_states WHERE chat_id = ?", (old_chat_id,))
 
 
 COMMANDS = {

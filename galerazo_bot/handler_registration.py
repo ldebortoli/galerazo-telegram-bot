@@ -18,6 +18,7 @@ def register_handlers(
     *,
     command_names: Collection[str],
     command_prefixes: Collection[str],
+    chat_migration_callback: Callable[..., Awaitable[None]],
     preprocess_message: Callable[..., Awaitable[None]],
     command_callback: Callable[..., Awaitable[None]],
     pagination_callback: Callable[..., Awaitable[None]],
@@ -29,6 +30,10 @@ def register_handlers(
     power_pattern: str,
 ) -> None:
     """Wire Telegram's native handlers without interpreting ordinary text as commands."""
+    application.add_handler(
+        MessageHandler(filters.StatusUpdate.MIGRATE, chat_migration_callback),
+        group=0,
+    )
     application.add_handler(MessageHandler(filters.ALL, preprocess_message), group=0)
 
     for command_name in command_names:

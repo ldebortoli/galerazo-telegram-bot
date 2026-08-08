@@ -562,11 +562,22 @@ class Database:
                 (chat_id, chat_type, title, added_by_user_id),
             )
 
-    def migrate_chat_id(self, old_chat_id: str, new_chat_id: str) -> None:
+    def migrate_chat_id(self, old_chat_id: str, new_chat_id: str) -> bool:
         if old_chat_id == new_chat_id:
-            return
+            return False
 
         with self._connect() as conn:
+            migration_claim = conn.execute(
+                """
+                INSERT INTO chat_migrations (old_chat_id, new_chat_id)
+                VALUES (?, ?)
+                ON CONFLICT(old_chat_id) DO NOTHING
+                """,
+                (old_chat_id, new_chat_id),
+            )
+            if migration_claim.rowcount == 0:
+                return False
+
             old_chat = conn.execute(
                 """
                 SELECT chat_id, chat_type, title, added_by_user_id, status, status_reason, created_at
@@ -626,224 +637,11 @@ class Database:
                 "UPDATE incoming_messages SET chat_id = ? WHERE chat_id = ?",
                 (new_chat_id, old_chat_id),
             )
-            conn.execute(
-                """
-                INSERT INTO chat_settings (chat_id, language, announcements_enabled, created_at, updated_at)
-                SELECT ?, language, announcements_enabled, created_at, CURRENT_TIMESTAMP
-                FROM chat_settings
-                WHERE chat_id = ?
-                ON CONFLICT(chat_id) DO UPDATE SET
-                    language = excluded.language,
-                    announcements_enabled = excluded.announcements_enabled,
-                    updated_at = CURRENT_TIMESTAMP
-                """,
-                (new_chat_id, old_chat_id),
-            )
-            conn.execute("DELETE FROM chat_settings WHERE chat_id = ?", (old_chat_id,))
-            old_command_settings = conn.execute(
-                """
-                SELECT command_group, enabled
-                FROM chat_command_settings
-                WHERE chat_id = ?
-                """,
-                (old_chat_id,),
-            ).fetchall()
-            for setting in old_command_settings:
-                conn.execute(
-                    """
-                    INSERT INTO chat_command_settings (chat_id, command_group, enabled, updated_at)
-                    VALUES (?, ?, ?, CURRENT_TIMESTAMP)
-                    ON CONFLICT(chat_id, command_group) DO UPDATE SET
-                        enabled = excluded.enabled,
-                        updated_at = CURRENT_TIMESTAMP
-                    """,
-                    (new_chat_id, setting["command_group"], setting["enabled"]),
-                )
-            conn.execute("DELETE FROM chat_command_settings WHERE chat_id = ?", (old_chat_id,))
-            conn.execute(
-                "UPDATE daily_user_reports SET chat_id = ? WHERE chat_id = ?",
-                (new_chat_id, old_chat_id),
-            )
-            old_restricted_users = conn.execute(
-                """
-                SELECT user_id, restricted_by_user_id
-                FROM chat_restricted_users
-                WHERE chat_id = ?
-                """,
-                (old_chat_id,),
-            ).fetchall()
-            for restricted_user in old_restricted_users:
-                conn.execute(
-                    """
-                    INSERT INTO chat_restricted_users (chat_id, user_id, restricted_by_user_id, restricted_at)
-                    VALUES (?, ?, ?, CURRENT_TIMESTAMP)
-                    ON CONFLICT(chat_id, user_id) DO UPDATE SET
-                        restricted_by_user_id = excluded.restricted_by_user_id,
-                        restricted_at = CURRENT_TIMESTAMP
-                    """,
-                    (
-                        new_chat_id,
-                        restricted_user["user_id"],
-                        restricted_user["restricted_by_user_id"],
-                    ),
-                )
-            conn.execute("DELETE FROM chat_restricted_users WHERE chat_id = ?", (old_chat_id,))
-            conn.execute(
-                """
-                INSERT OR IGNORE INTO galeraza_daily_winners (
-                    chat_id,
-                    game_date,
-                    user_id,
-                    message_id,
-                    message_date,
-                    created_at
-                )
-                SELECT ?, game_date, user_id, message_id, message_date, created_at
-                FROM galeraza_daily_winners
-                WHERE chat_id = ?
-                """,
-                (new_chat_id, old_chat_id),
-            )
-            conn.execute("DELETE FROM galeraza_daily_winners WHERE chat_id = ?", (old_chat_id,))
-            old_scores = conn.execute(
-                """
-                SELECT user_id, points
-                FROM galeraza_scores
-                WHERE chat_id = ?
-                """,
-                (old_chat_id,),
-            ).fetchall()
-            for score in old_scores:
-                conn.execute(
-                    """
-                    INSERT INTO galeraza_scores (chat_id, user_id, points, updated_at)
-                    VALUES (?, ?, ?, CURRENT_TIMESTAMP)
-                    ON CONFLICT(chat_id, user_id) DO UPDATE SET
-                        points = galeraza_scores.points + excluded.points,
-                        updated_at = CURRENT_TIMESTAMP
-                    """,
-                    (new_chat_id, score["user_id"], score["points"]),
-                )
-            conn.execute("DELETE FROM galeraza_scores WHERE chat_id = ?", (old_chat_id,))
-            conn.execute(
-                """
-                INSERT OR IGNORE INTO paginated_message_states (
-                    chat_id,
-                    message_id,
-                    list_type,
-                    requester_user_id,
-                    content_json,
-                    unlocked,
-                    current_page,
-                    created_at,
-                    updated_at
-                )
-                SELECT
-                    ?,
-                    message_id,
-                    list_type,
-                    requester_user_id,
-                    content_json,
-                    unlocked,
-                    current_page,
-                    created_at,
-                    CURRENT_TIMESTAMP
-                FROM paginated_message_states
-                WHERE chat_id = ?
-                """,
-                (new_chat_id, old_chat_id),
-            )
-            conn.execute("DELETE FROM paginated_message_states WHERE chat_id = ?", (old_chat_id,))
-            conn.execute(
-                """
-                INSERT OR IGNORE INTO restart_confirmations (
-                    chat_id, message_id, requester_user_id, created_at
-                )
-                SELECT ?, message_id, requester_user_id, created_at
-                FROM restart_confirmations
-                WHERE chat_id = ?
-                """,
-                (new_chat_id, old_chat_id),
-            )
-            conn.execute("DELETE FROM restart_confirmations WHERE chat_id = ?", (old_chat_id,))
-            conn.execute(
-                "UPDATE expenses SET chat_id = ? WHERE chat_id = ?",
-                (new_chat_id, old_chat_id),
-            )
-            old_triggers = conn.execute(
-                """
-                SELECT trigger_name, display_name, text, media_type, file_id, caption, payload_json, created_by_user_id
-                FROM triggers
-                WHERE chat_id = ?
-                """,
-                (old_chat_id,),
-            ).fetchall()
-            for trigger in old_triggers:
-                conn.execute(
-                    """
-                    INSERT INTO triggers (
-                        chat_id,
-                        trigger_name,
-                        display_name,
-                        text,
-                        media_type,
-                        file_id,
-                        caption,
-                        payload_json,
-                        created_by_user_id,
-                        updated_at
-                    )
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
-                    ON CONFLICT(chat_id, trigger_name) DO UPDATE SET
-                        display_name = excluded.display_name,
-                        text = excluded.text,
-                        media_type = excluded.media_type,
-                        file_id = excluded.file_id,
-                        caption = excluded.caption,
-                        payload_json = excluded.payload_json,
-                        created_by_user_id = excluded.created_by_user_id,
-                        updated_at = CURRENT_TIMESTAMP
-                    """,
-                    (
-                        new_chat_id,
-                        trigger["trigger_name"],
-                        trigger["display_name"],
-                        trigger["text"],
-                        trigger["media_type"],
-                        trigger["file_id"],
-                        trigger["caption"],
-                        trigger["payload_json"],
-                        trigger["created_by_user_id"],
-                    ),
-                )
-            conn.execute("DELETE FROM triggers WHERE chat_id = ?", (old_chat_id,))
-            conn.execute(
-                """
-                INSERT OR IGNORE INTO russian_roulette_states (
-                    chat_id,
-                    user_id,
-                    bullet_position,
-                    shots_fired,
-                    created_at,
-                    updated_at
-                )
-                SELECT ?, user_id, bullet_position, shots_fired, created_at, CURRENT_TIMESTAMP
-                FROM russian_roulette_states
-                WHERE chat_id = ?
-                """,
-                (new_chat_id, old_chat_id),
-            )
-            conn.execute("DELETE FROM russian_roulette_states WHERE chat_id = ?", (old_chat_id,))
-            conn.execute(
-                """
-                INSERT INTO chat_migrations (old_chat_id, new_chat_id)
-                VALUES (?, ?)
-                ON CONFLICT(old_chat_id) DO UPDATE SET
-                    new_chat_id = excluded.new_chat_id,
-                    migrated_at = CURRENT_TIMESTAMP
-                """,
-                (old_chat_id, new_chat_id),
-            )
+            from .chat_migration import migrate_command_data
+
+            migrate_command_data(conn, old_chat_id, new_chat_id)
+
+        return True
 
     def resolve_chat_id(self, chat_id: str) -> str:
         with self._connect() as conn:

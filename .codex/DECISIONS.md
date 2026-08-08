@@ -695,3 +695,9 @@ Los comandos de Telegram se resuelven exclusivamente mediante `CommandHandler` p
 ## D-094 - Novedades acumuladas entre deploys (2026-08-08)
 
 El historial de la base conserva la ultima version anunciada. Al iniciar una version mas nueva, `pending_release_notes()` incluye la entrada actual y todas las entradas publicas posteriores a esa version que aun no se anunciaron. Asi, varios commits versionados antes de un unico deploy no pierden sus novedades; una instalacion nueva o una version previa desconocida recibe solo la entrada actual para evitar un historial excesivo.
+
+## D-095 - Migracion de chat por handler y dominios propietarios (2026-08-08)
+
+Los eventos de Telegram `migrate_to_chat_id` y `migrate_from_chat_id` se reciben con un `MessageHandler(filters.StatusUpdate.MIGRATE)` en el grupo 0, antes del preprocesador comun. Ambos se normalizan al mismo par de IDs. `Database.migrate_chat_id()` inserta ese par en `chat_migrations` con `ON CONFLICT DO NOTHING` dentro de la transaccion: solo quien obtiene la reclamacion traslada datos; el segundo evento termina sin cambios.
+
+Las tablas comunes del chat permanecen en `Database`; las tablas propias de configuracion, reportes, restricciones, Galeraza, paginacion, reinicio, gastos, triggers y ruleta se migran desde sus respectivos modulos mediante `chat_migration.migrate_command_data()`. La delegacion no abre conexiones ni transacciones nuevas, de modo que el traslado completo sigue siendo atomico.
