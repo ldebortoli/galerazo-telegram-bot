@@ -15,6 +15,8 @@
 
 # DONE
 
+- [2026-08-08] [USER_REQUEST] Agrupar el selector de idiomas de `/config` en filas de cuatro botones para reducir su alto. Version `0.13`; sin cambio de BotFather ni deploy. Validacion: 236 pruebas, cobertura 100% de sentencias/ramas, runtime, `pip check`, `compileall`, checkpoint y diff-check OK.
+
 - [2026-08-08] [USER_REQUEST] Incluir la linea `Repo: https://github.com/ldebortoli/galerazo-telegram-bot` debajo de la donacion en anuncios y novedades, con limite final validado en todos los idiomas. Version `0.12`; sin cambio de BotFather ni deploy. Validacion: 236 pruebas, cobertura 100% de sentencias/ramas, runtime, `pip check`, `compileall`, checkpoint y diff-check OK.
 
 - [2026-08-08] [USER_REQUEST] Compactar el selector de idiomas de `/config` en filas de dos botones y alinear los empates de `/galerazas` con guion y relleno equivalente a la posicion, dentro de cada cantidad de digitos. Version `0.11`; sin cambio de BotFather ni deploy. Validacion: 236 pruebas, cobertura 100% de sentencias/ramas, runtime, `pip check`, `compileall`, checkpoint y diff-check OK.

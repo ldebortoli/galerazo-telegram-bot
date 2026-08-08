@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.13] - 2026-08-08
+
+- Correcciones y mejoras: el selector de idioma de `/config` agrupa cuatro opciones por fila para ocupar menos espacio.
+
 ## [0.12] - 2026-08-08
 
 - Los anuncios y novedades ahora incluyen el enlace al repositorio oficial del bot.

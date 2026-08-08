@@ -8,6 +8,7 @@ Mantener Galerazo Bot reproducible en Windows, CI y Docker, con SQLite persisten
 
 - Se compacto el selector de idiomas en filas de dos botones y las filas empatadas de `/galerazas` ahora usan un prefijo con guion alineado dentro de cada ancho de posicion. El guion es formato de salida, no una lista Markdown. Version `0.11`, commit `46cb093` pusheado a `main`; 236 pruebas y cobertura 100% OK. No hay deploy solicitado.
 - Se incluyo debajo de la donacion la linea `Repo: https://github.com/ldebortoli/galerazo-telegram-bot` en el formato comun de anuncios y novedades. El control de longitud final se conserva para todos los idiomas. Version `0.12`; 236 pruebas y cobertura 100% OK. No hay deploy solicitado.
+- El selector de idiomas de `/config` agrupa cuatro botones por fila para reducir su alto. Version `0.13`; la navegacion permanece en su propia fila. Validacion completa: 236 pruebas y cobertura 100% OK. No hay deploy solicitado.
 - No hay tarea local activa. La suite usa `pytest==9.1.1` como runner oficial y `pytest-asyncio==1.4.0` en modo automatico. Conserva los tests heredados `unittest` e `IsolatedAsyncioTestCase`; setup Windows, Docker y CI ya ejecutan `python -m pytest`. Implementado en `6c35090` y pusheado a `main`; no requiere release ni deploy.
 - La migracion grupo-supergrupo usa un `MessageHandler(filters.StatusUpdate.MIGRATE)` dedicado en el grupo 0 antes del preprocesador. SQLite reclama una vez la pareja de IDs y los migradores por dominio se ejecutan dentro de esa misma transaccion; el segundo evento de Telegram no modifica datos. Implementado en `209893d` y pusheado a `main`, sin release ni deploy.
 - Se incorporaron catálogos completos estáticos para español de España, ruso, latín, japonés, italiano, francés, alemán, holandés, chino simplificado/tradicional, portugués de Brasil/Portugal, catalán, vasco y guaraní. Los comandos conservan sus nombres originales. Versión `0.10`; sin deploy solicitado.
@@ -28,6 +29,7 @@ Mantener Galerazo Bot reproducible en Windows, CI y Docker, con SQLite persisten
 
 ## Validacion reciente
 
+- Version `0.13`: 236 pruebas nativas OK; cobertura 100% de sentencias y ramas; `compileall`, `runtime_versions.py`, `pip check`, `git diff --check` y checkpoint de logs OK. Sin release/deploy.
 - Versión `0.10`: 234 pruebas nativas OK; cobertura 100% de sentencias y ramas; `compileall`, `runtime_versions.py`, `pip check`, `git diff --check` y checkpoint de logs OK. Sin release/deploy.
 - Versión `0.12`: 236 pruebas nativas OK; cobertura 100% de sentencias y ramas; `compileall`, `runtime_versions.py`, `pip check`, `git diff --check` y checkpoint de logs OK. Sin release/deploy.
 - Versión `0.11`: 236 pruebas nativas OK; cobertura 100% de sentencias y ramas; `compileall`, `runtime_versions.py`, `pip check`, `git diff --check` y checkpoint de logs OK. Sin release/deploy.

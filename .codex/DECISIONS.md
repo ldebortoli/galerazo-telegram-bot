@@ -723,3 +723,7 @@ El selector de idiomas de `/config` agrupa dos botones por fila para mantener bo
 ## D-100 - Enlace al repositorio en anuncios (2026-08-08)
 
 El formateador comun de anuncios agrega, despues del texto de donacion y antes del aviso de `/config`, la linea invariable `Repo: https://github.com/ldebortoli/galerazo-telegram-bot`. La misma ruta se usa para `/anuncio` y las novedades de version, por lo que ambos canales muestran exactamente el mismo pie y validan su longitud final antes de enviar.
+
+## D-101 - Cuatro idiomas por fila (2026-08-08)
+
+La constante `LANGUAGES_PER_ROW` es `4`, por lo que el selector de idioma de `/config` muestra cuatro opciones por fila y una ultima fila parcial cuando corresponde. Esta decision reemplaza la parte de D-099 que fijaba dos botones por fila: las etiquetas actuales caben sin truncarse y el tablero reduce su alto de forma significativa.

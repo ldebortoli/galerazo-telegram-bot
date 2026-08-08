@@ -8,7 +8,7 @@ from .i18n import t
 
 
 CONFIG_PREFIX = "config"
-LANGUAGES_PER_ROW = 2
+LANGUAGES_PER_ROW = 4
 
 
 @dataclass(frozen=True)

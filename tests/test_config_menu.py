@@ -66,6 +66,7 @@ class ConfigMenuTests(unittest.IsolatedAsyncioTestCase):
         menu = build_language_menu("es")
         language_rows = menu.inline_keyboard[:-1]
 
+        self.assertEqual(LANGUAGES_PER_ROW, 4)
         self.assertEqual(sum(len(row) for row in language_rows), len(LANGUAGES))
         self.assertTrue(all(1 <= len(row) <= LANGUAGES_PER_ROW for row in language_rows))
         self.assertTrue(any(len(row) == LANGUAGES_PER_ROW for row in language_rows))
