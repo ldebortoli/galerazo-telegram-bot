@@ -18,7 +18,8 @@ class AnnouncementBroadcastResult:
 def format_announcement(text: str, language: str) -> str:
     return (
         f"{text}\n\n{t(language, 'announcement.channel')}\n"
-        f"{t(language, 'donation.text')}\n{t(language, 'announcement.footer')}"
+        f"{t(language, 'donation.text')}\n{t(language, 'announcement.repository')}\n"
+        f"{t(language, 'announcement.footer')}"
     )
 
 

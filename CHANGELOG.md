@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.12] - 2026-08-08
+
+- Los anuncios y novedades ahora incluyen el enlace al repositorio oficial del bot.
+
 ## [0.11] - 2026-08-08
 
 - Correcciones y mejoras: el selector de idioma de `/config` agrupa opciones en filas compactas y los empates de `/galerazas` usan un guion alineado para distinguir las posiciones compartidas.

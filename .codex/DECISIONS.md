@@ -719,3 +719,7 @@ Galerazo se publica, despliega y revierte desde Bot Control Center. La vista Dep
 ## D-099 - Tableros compactos y empates distinguibles (2026-08-08)
 
 El selector de idiomas de `/config` agrupa dos botones por fila para mantener botones legibles incluso con etiquetas largas. En la tabla de Galerazas, la primera persona de una posicion empatada conserva el prefijo `N. ` y las siguientes usan un guion con el mismo ancho de prefijo, por ejemplo `-  Nombre`. La alineacion se conserva dentro de cada ancho de posicion: uno, dos, tres digitos y asi sucesivamente. Las paginas que comienzan dentro de un empate siguen repitiendo la posicion para ser autosuficientes.
+
+## D-100 - Enlace al repositorio en anuncios (2026-08-08)
+
+El formateador comun de anuncios agrega, despues del texto de donacion y antes del aviso de `/config`, la linea invariable `Repo: https://github.com/ldebortoli/galerazo-telegram-bot`. La misma ruta se usa para `/anuncio` y las novedades de version, por lo que ambos canales muestran exactamente el mismo pie y validan su longitud final antes de enviar.
