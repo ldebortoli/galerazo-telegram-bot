@@ -711,3 +711,7 @@ Las tablas comunes del chat permanecen en `Database`; las tablas propias de conf
 Los catalogos de interfaz se guardan como datos estaticos versionados: `i18n.py` conserva espanol argentino e ingles y `extra_translations.py` incorpora espanol de Espana, ruso, latin, japones, italiano, frances, aleman, holandes, chino simplificado/tradicional, portugues de Brasil/Portugal, catalan, vasco y guarani. Los catalogos se validan para que mantengan todas las claves, placeholders, URLs y comandos. El bot no consulta servicios de traduccion ni requiere una clave en ejecucion.
 
 Mapudungun estandar queda pendiente de una fuente linguistica completa revisable. Google Translate no ofrece el locale `arn`; las alternativas localizadas requieren un modelo de varios GB y evaluacion humana. No se publicara un catalogo inventado ni un fallback presentado como Mapudungun.
+
+## D-098 - Bot Control Center como unica interfaz de release (2026-08-08)
+
+Galerazo se publica, despliega y revierte desde Bot Control Center. La vista Deploy realiza los pre-flight checks, construye/publica una imagen inmutable, despliega por IAP, muestra el trabajo auditado y permite rollback. Para cambios nuevos se usa `Publicar y deployar`; `Deployar ultima imagen` queda reservado para reutilizar una imagen ya publicada. Los scripts PowerShell son la implementacion interna del agente local y solo se exponen como alternativa de diagnostico si Bot Control Center falla y el usuario pide utilizarlos.
