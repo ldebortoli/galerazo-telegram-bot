@@ -26,7 +26,7 @@ def build_galeraza_lines(scores: list[GalerazaScore], language: str = DEFAULT_LA
             prefix = f"{position}. "
             previous_points = score.points
         else:
-            prefix = " " * len(f"{position}. ")
+            prefix = _tied_position_prefix(position)
         lines.append(f"{prefix}{_score_line(score, language)}")
     return lines
 
@@ -69,3 +69,7 @@ def _shares_position(scores: list[GalerazaScore], index: int) -> bool:
 def _position_at(scores: list[GalerazaScore], index: int) -> int:
     points = scores[index].points
     return next(position for position, score in enumerate(scores, start=1) if score.points == points)
+
+
+def _tied_position_prefix(position: int) -> str:
+    return "-" + " " * (len(f"{position}. ") - 1)

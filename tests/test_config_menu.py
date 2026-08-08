@@ -5,6 +5,8 @@ from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from galerazo_bot.chat_config import (
+    LANGUAGES,
+    LANGUAGES_PER_ROW,
     build_announcements_menu,
     build_command_group_menu,
     build_command_groups_menu,
@@ -59,6 +61,14 @@ class ConfigMenuTests(unittest.IsolatedAsyncioTestCase):
 
         for menu in menus:
             self.assertIn("config:close", _callback_data(menu))
+
+    def test_language_menu_compacts_language_buttons_into_rows(self) -> None:
+        menu = build_language_menu("es")
+        language_rows = menu.inline_keyboard[:-1]
+
+        self.assertEqual(sum(len(row) for row in language_rows), len(LANGUAGES))
+        self.assertTrue(all(1 <= len(row) <= LANGUAGES_PER_ROW for row in language_rows))
+        self.assertTrue(any(len(row) == LANGUAGES_PER_ROW for row in language_rows))
 
     def test_close_callback_is_parsed(self) -> None:
         self.assertEqual(parse_config_callback("config:close"), ("close",))

@@ -98,7 +98,7 @@ class GalerazaRenderingTests(unittest.TestCase):
             [
                 "1. Galerazo (1) => 9",
                 "2. Jo (2) => 8",
-                "   Van (3) => 8",
+                "-  Van (3) => 8",
                 "4. Lil (4) => 7",
             ],
         )
@@ -114,8 +114,8 @@ class GalerazaRenderingTests(unittest.TestCase):
             build_galeraza_lines(tied_scores),
             [
                 "1. Galerazo (1) => 9",
-                "   Jo (2) => 9",
-                "   Van (3) => 9",
+                "-  Jo (2) => 9",
+                "-  Van (3) => 9",
             ],
         )
         self.assertEqual(build_galeraza_lines([]), ["Nadie tiene Galerazas hasta ahora."])
@@ -123,6 +123,26 @@ class GalerazaRenderingTests(unittest.TestCase):
             build_galeraza_lines([], language="en"),
             ["Nobody has any Galerazas yet."],
         )
+
+    def test_tied_rows_keep_the_name_column_aligned_within_each_position_width(self) -> None:
+        for position, tie_prefix in ((1, "-  "), (10, "-   "), (100, "-    ")):
+            with self.subTest(position=position):
+                scores = [
+                    GalerazaScore(str(index), None, f"Usuario {index}", position - index + 1)
+                    for index in range(1, position)
+                ]
+                scores.extend(
+                    [
+                        GalerazaScore(str(position), None, "Jo", 1),
+                        GalerazaScore(str(position + 1), None, "Van", 1),
+                    ]
+                )
+
+                lines = build_galeraza_lines(scores)
+
+                self.assertEqual(lines[-2], f"{position}. Jo ({position}) => 1")
+                self.assertEqual(lines[-1], f"{tie_prefix}Van ({position + 1}) => 1")
+                self.assertEqual(lines[-2].index("Jo"), lines[-1].index("Van"))
 
     def test_repeats_a_shared_position_only_at_the_start_of_a_new_page(self) -> None:
         scores = [

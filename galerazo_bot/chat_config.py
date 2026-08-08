@@ -8,6 +8,7 @@ from .i18n import t
 
 
 CONFIG_PREFIX = "config"
+LANGUAGES_PER_ROW = 2
 
 
 @dataclass(frozen=True)
@@ -58,15 +59,14 @@ def build_main_menu(language: str, include_command_groups: bool = True) -> Inlin
 
 
 def build_language_menu(current_language: str) -> InlineKeyboardMarkup:
-    rows = [
-        [
-            InlineKeyboardButton(
-                _selected_label(language.label, language.code == current_language),
-                callback_data=f"{CONFIG_PREFIX}:lang:{language.code}",
-            )
-        ]
+    buttons = [
+        InlineKeyboardButton(
+            _selected_label(language.label, language.code == current_language),
+            callback_data=f"{CONFIG_PREFIX}:lang:{language.code}",
+        )
         for language in LANGUAGES
     ]
+    rows = [buttons[index : index + LANGUAGES_PER_ROW] for index in range(0, len(buttons), LANGUAGES_PER_ROW)]
     rows.append(_navigation_row(current_language, f"{CONFIG_PREFIX}:main"))
     return InlineKeyboardMarkup(rows)
 

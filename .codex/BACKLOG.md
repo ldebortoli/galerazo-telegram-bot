@@ -12,7 +12,10 @@
 
 # IN PROGRESS
 
+
 # DONE
+
+- [2026-08-08] [USER_REQUEST] Compactar el selector de idiomas de `/config` en filas de dos botones y alinear los empates de `/galerazas` con guion y relleno equivalente a la posicion, dentro de cada cantidad de digitos. Version `0.11`; sin cambio de BotFather ni deploy. Validacion: 236 pruebas, cobertura 100% de sentencias/ramas, runtime, `pip check`, `compileall`, checkpoint y diff-check OK.
 
 - [2026-08-08] [USER_REQUEST] Agregar español de España, ruso, latín, japonés, italiano, francés, alemán, holandés, chino simplificado/tradicional, portugués de Brasil/Portugal, catalán, vasco y guaraní al selector de idioma y sus catálogos completos. Se conservan los nombres de comandos; los textos quedan estáticos y validados. Versión `0.10`; sin cambio de BotFather ni deploy.
 

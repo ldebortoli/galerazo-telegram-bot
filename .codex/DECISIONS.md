@@ -715,3 +715,7 @@ Mapudungun estandar queda pendiente de una fuente linguistica completa revisable
 ## D-098 - Bot Control Center como unica interfaz de release (2026-08-08)
 
 Galerazo se publica, despliega y revierte desde Bot Control Center. La vista Deploy realiza los pre-flight checks, construye/publica una imagen inmutable, despliega por IAP, muestra el trabajo auditado y permite rollback. Para cambios nuevos se usa `Publicar y deployar`; `Deployar ultima imagen` queda reservado para reutilizar una imagen ya publicada. Los scripts PowerShell son la implementacion interna del agente local y solo se exponen como alternativa de diagnostico si Bot Control Center falla y el usuario pide utilizarlos.
+
+## D-099 - Tableros compactos y empates distinguibles (2026-08-08)
+
+El selector de idiomas de `/config` agrupa dos botones por fila para mantener botones legibles incluso con etiquetas largas. En la tabla de Galerazas, la primera persona de una posicion empatada conserva el prefijo `N. ` y las siguientes usan un guion con el mismo ancho de prefijo, por ejemplo `-  Nombre`. La alineacion se conserva dentro de cada ancho de posicion: uno, dos, tres digitos y asi sucesivamente. Las paginas que comienzan dentro de un empate siguen repitiendo la posicion para ser autosuficientes.
