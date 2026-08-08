@@ -130,15 +130,15 @@ Si no encuentra cambios de runtime o dependencias, omite la suite y el build Doc
 La validacion local rapida y la cobertura reproducible se ejecutan dentro de `.venv`:
 
 ```powershell
-.\.venv\Scripts\python.exe -m unittest discover -s tests -v
+.\.venv\Scripts\python.exe -m pytest
 .\.venv\Scripts\python.exe -m coverage erase
-.\.venv\Scripts\python.exe -m coverage run -m unittest discover -s tests -v
+.\.venv\Scripts\python.exe -m coverage run -m pytest
 .\.venv\Scripts\python.exe -m coverage json
 .\.venv\Scripts\python.exe scripts\check_coverage.py
 .\.venv\Scripts\python.exe -m coverage report
 ```
 
-`coverage.py` mide sentencias/lineas y ramas; este stack no expone una metrica separada de funciones. Ambos minimos son 100% y cualquier linea o rama nueva sin prueba hace fallar la validacion. `galerazo_bot/control_panel.py` se excluye de la metrica multiplataforma porque su prueba de layout requiere Tk nativo de Windows y se ejecuta localmente; sus demas contratos siguen cubiertos por pruebas estaticas. `Quality` ejecuta la suite una sola vez bajo cobertura. La validacion Docker se activa solamente cuando cambia el runtime, el lock o el contenedor, y los workflows de deploy costosos siguen siendo manuales.
+`pytest` es el runner oficial y recoge tambien las pruebas existentes basadas en `unittest`, incluidos los casos `IsolatedAsyncioTestCase`; `pytest-asyncio` queda configurado para futuros tests async nativos. `coverage.py` mide sentencias/lineas y ramas; este stack no expone una metrica separada de funciones. Ambos minimos son 100% y cualquier linea o rama nueva sin prueba hace fallar la validacion. `galerazo_bot/control_panel.py` se excluye de la metrica multiplataforma porque su prueba de layout requiere Tk nativo de Windows y se ejecuta localmente; sus demas contratos siguen cubiertos por pruebas estaticas. `Quality` ejecuta la suite una sola vez bajo cobertura. La validacion Docker se activa solamente cuando cambia el runtime, el lock o el contenedor, y los workflows de deploy costosos siguen siendo manuales.
 
 Si aparece un problema despues de fusionar una actualizacion, ubica ese commit y revertirlo conserva el historial:
 

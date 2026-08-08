@@ -17,6 +17,8 @@
 
 # DONE
 
+- [2026-08-08] [USER_REQUEST] Migrar la ejecucion de la suite a `pytest`, preservando los casos `unittest` e `IsolatedAsyncioTestCase`. Se agregaron `pytest==9.1.1`, `pytest-asyncio==1.4.0` y configuracion central; setup Windows, Docker, builds y GitHub Actions usan el nuevo runner. Validacion: 233 pruebas con pytest, cobertura 100% de sentencias/ramas, runtime, `pip check`, `compileall`, checkpoint y diff-check OK. Sin release/deploy.
+
 - [2026-08-08] [USER_REQUEST] Procesar migraciones grupo-supergrupo mediante `MessageHandler(filters.StatusUpdate.MIGRATE)` antes del preprocesador general. La reclamacion atomica en SQLite garantiza que los dos eventos de Telegram solo trasladen datos una vez; `chat_migration.py` coordina, en la misma transaccion, los migradores de cada dominio y Galeraza conserva exclusivamente sus tablas. Validacion: 231 pruebas, cobertura 100% de sentencias/ramas, runtime, `pip check`, `compileall`, checkpoint y diff-check OK. Sin release/deploy.
 
 - [2026-08-08] [USER_QUEUE] Reemplazar el enrutamiento de texto libre por `CommandHandler`/`PrefixHandler`, exigir prefijo para todo comando y separar el registro/adaptadores de handlers por familia. Los comandos ahora requieren `/`, `!`, `.`, `>` o `$`; Galeraza conserva el `MessageHandler` prioritario para todo mensaje humano, incluidos eventos de servicio. `handler_registration.py` registra handlers nativos y `command_handlers/galerazas.py` contiene los adaptadores de la Galeraza. La proxima novedad de release acumula tambien entradas publicas aun no anunciadas. Version `0.9`; sin cambio de BotFather. Validacion: 231 pruebas, cobertura 100% de sentencias/ramas, runtime, `pip check`, `compileall` y diff-check OK. Sin release/deploy.

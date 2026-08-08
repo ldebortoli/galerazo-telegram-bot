@@ -701,3 +701,7 @@ El historial de la base conserva la ultima version anunciada. Al iniciar una ver
 Los eventos de Telegram `migrate_to_chat_id` y `migrate_from_chat_id` se reciben con un `MessageHandler(filters.StatusUpdate.MIGRATE)` en el grupo 0, antes del preprocesador comun. Ambos se normalizan al mismo par de IDs. `Database.migrate_chat_id()` inserta ese par en `chat_migrations` con `ON CONFLICT DO NOTHING` dentro de la transaccion: solo quien obtiene la reclamacion traslada datos; el segundo evento termina sin cambios.
 
 Las tablas comunes del chat permanecen en `Database`; las tablas propias de configuracion, reportes, restricciones, Galeraza, paginacion, reinicio, gastos, triggers y ruleta se migran desde sus respectivos modulos mediante `chat_migration.migrate_command_data()`. La delegacion no abre conexiones ni transacciones nuevas, de modo que el traslado completo sigue siendo atomico.
+
+## D-096 - Pytest como runner compatible (2026-08-08)
+
+`pytest` es el runner unico para desarrollo, setup Windows, test target Docker y workflows. Las pruebas existentes no se reescriben: pytest ejecuta directamente los casos `unittest.TestCase` e `IsolatedAsyncioTestCase`, por lo que se preservan mocks, fixtures y semantica. `pytest-asyncio` queda configurado con `asyncio_mode = auto` para que los nuevos tests async nativos puedan escribirse sin decoradores adicionales. La cobertura sigue usando `coverage.py` con `python -m coverage run -m pytest` y conserva los umbrales de 100% de sentencias y ramas.

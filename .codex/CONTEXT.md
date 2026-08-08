@@ -20,6 +20,7 @@ La misma politica se aplica globalmente desde `C:\Users\calei\.codex\AGENTS.md`.
 - `httpx` para consultar OpenAI Moderation, `Pillow` para normalizar imagenes y `PyAV` para extraer frames de video completamente en memoria.
 - `tzdata==2026.3` para convertir timestamps de Telegram al timezone IANA argentino tambien en Windows.
 - `coverage.py==7.15.2` para cobertura local/CI de sentencias y ramas.
+- `pytest==9.1.1` como runner de pruebas y `pytest-asyncio==1.4.0` con modo automatico para futuros tests async nativos.
 - Tkinter para el panel de escritorio de Windows.
 - Un lanzador minimo en C#/.NET Framework para abrir el panel sin consola.
 - Docker para deploy.
@@ -49,7 +50,7 @@ La misma politica se aplica globalmente desde `C:\Users\calei\.codex\AGENTS.md`.
 - `galerazo_bot/control_panel.py`: UI local, manejo del proceso, `.env` y logs.
 - `launcher/GalerazoBotControlLauncher.cs`: lanzador Windows.
 - `assets/`: PNG fuente e ICO multirresolucion del conejo con galera; todas las capas ICO son DIB BGRA de 32 bits con alfa y mascara AND. Las capas de 16 a 64 px usan una composicion compacta del conejo/cara/ala de la galera; 128 y 256 px conservan el arte completo.
-- `tests/`: pruebas `unittest` de regresion y comportamiento.
+- `tests/`: pruebas de regresion y comportamiento; el runner oficial es `pytest`, compatible con los casos heredados `unittest` e `IsolatedAsyncioTestCase`.
 - `.github/workflows/deploy.yml`: deploy Railway desactivado y disponible solo por ejecucion manual.
 - `.github/workflows/quality.yml`: suite Linux para cambios sustantivos; ignora documentacion/memoria y cancela runs obsoletos.
 - `.github/workflows/docker-quality.yml`: build y tests Docker solo cuando cambia el runtime o la configuracion del contenedor.
@@ -140,8 +141,8 @@ python -m compileall app.py control_panel.py galerazo_bot
 python -m galerazo_bot.cli /hola
 python -m galerazo_bot.cli help
 python -m galerazo_bot.cli nivel
-python -m unittest discover -s tests -v
-python -m coverage run -m unittest discover -s tests -v
+python -m pytest
+python -m coverage run -m pytest
 python -m coverage json
 python scripts/check_coverage.py
 python scripts/runtime_versions.py
@@ -149,7 +150,7 @@ python -m galerazo_bot.log_checkpoint
 git diff --check
 ```
 
-La suite automatizada usa `unittest` y cubre enrutamiento, permisos, config, Galeraza, ruleta, triggers, migraciones con colisiones, paginacion, serializacion de debug, logging, panel e instancia unica. La cobertura obligatoria del nucleo multiplataforma es 100% de sentencias y ramas; `galerazo_bot/control_panel.py` queda explicitamente fuera de esa metrica por depender del layout Tk nativo de Windows, donde mantiene su prueba especifica. La cobertura de Galeraza audita las 46 categorias actuales de `filters.StatusUpdate` y falla si PTB agrega una nueva sin mapear.
+La suite automatizada usa `pytest` y cubre enrutamiento, permisos, config, Galeraza, ruleta, triggers, migraciones con colisiones, paginacion, serializacion de debug, logging, panel e instancia unica. Conserva los casos heredados `unittest` e `IsolatedAsyncioTestCase`, y `pytest-asyncio` permite agregar tests async nativos. La cobertura obligatoria del nucleo multiplataforma es 100% de sentencias y ramas; `galerazo_bot/control_panel.py` queda explicitamente fuera de esa metrica por depender del layout Tk nativo de Windows, donde mantiene su prueba especifica. La cobertura de Galeraza audita las 46 categorias actuales de `filters.StatusUpdate` y falla si PTB agrega una nueva sin mapear.
 
 El panel usa un cliente inicial de `760x750`, minimo `680x730`; la pestaña Configuracion desplaza solamente el formulario y mantiene visibles las acciones y el estado del canal de logging.
 

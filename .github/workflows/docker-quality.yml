@@ -30,7 +30,7 @@ jobs:
         run: docker build --target test --tag galerazo-bot:test .
 
       - name: Run tests in image
-        run: docker run --rm galerazo-bot:test python -m unittest discover -s tests -v
+        run: docker run --rm galerazo-bot:test python -m pytest
 
       - name: Verify Docker Python
         run: docker run --rm galerazo-bot:test python scripts/runtime_versions.py

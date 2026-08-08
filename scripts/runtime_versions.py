@@ -14,6 +14,8 @@ REQUIREMENTS_LOCK = ROOT / "requirements.txt"
 DIRECT_DEPENDENCIES = {
     "av",
     "coverage",
+    "pytest",
+    "pytest-asyncio",
     "google-auth",
     "google-cloud-bigquery",
     "gspread",

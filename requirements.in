@@ -1,5 +1,7 @@
 av
 coverage
+pytest
+pytest-asyncio
 google-cloud-bigquery
 httpx
 Pillow

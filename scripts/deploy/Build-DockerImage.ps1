@@ -58,7 +58,7 @@ try {
         )
         Invoke-Native -Command "docker" -Arguments @(
             "run", "--rm", $testImage,
-            "python", "-m", "unittest", "discover", "-s", "tests", "-v"
+            "python", "-m", "pytest"
         )
         Invoke-Native -Command "docker" -Arguments @(
             "run", "--rm", $testImage, "python", "scripts/runtime_versions.py"

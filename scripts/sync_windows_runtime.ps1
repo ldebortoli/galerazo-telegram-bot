@@ -114,7 +114,7 @@ if ($LASTEXITCODE -ne 0) {
     throw "La compilacion de los modulos Python fallo."
 }
 if (-not $SkipTests) {
-    & $venvPython -m unittest discover -s (Join-Path $projectRoot "tests") -v
+    & $venvPython -m pytest
     if ($LASTEXITCODE -ne 0) {
         throw "La suite fallo con el runtime sincronizado."
     }
