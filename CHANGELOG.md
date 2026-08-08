@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.10] - 2026-08-08
+
+- `/config` incorpora Español de España, ruso, latín, japonés, italiano, francés, alemán, holandés, chino simplificado y tradicional, portugués de Brasil y Portugal, catalán, vasco y guaraní para todos los textos del bot. Los nombres de comandos se mantienen iguales en todos los idiomas.
+
 ## [0.9] - 2026-08-08
 
 - Correcciones y mejoras: todos los comandos ahora requieren un prefijo de ejecucion, para que los mensajes comunes no activen acciones del bot accidentalmente.

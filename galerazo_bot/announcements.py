@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from .i18n import t
+from .i18n import TRANSLATIONS, t
 
 
 @dataclass(frozen=True)
@@ -23,4 +23,4 @@ def format_announcement(text: str, language: str) -> str:
 
 
 def announcement_fits(text: str, max_chars: int) -> bool:
-    return all(len(format_announcement(text, language)) <= max_chars for language in ("es", "en"))
+    return all(len(format_announcement(text, language)) <= max_chars for language in TRANSLATIONS)

@@ -6,9 +6,34 @@ import unittest
 from galerazo_bot.i18n import TRANSLATIONS
 
 
-class SpanishTranslationsTests(unittest.TestCase):
+class TranslationTests(unittest.TestCase):
     def test_languages_have_the_same_keys(self) -> None:
-        self.assertEqual(set(TRANSLATIONS["es"]), set(TRANSLATIONS["en"]))
+        for language, translations in TRANSLATIONS.items():
+            with self.subTest(language=language):
+                self.assertEqual(set(TRANSLATIONS["es"]), set(translations))
+
+    def test_format_syntax_and_commands_are_preserved_in_every_language(self) -> None:
+        placeholder_pattern = re.compile(r"\{[^{}]+\}")
+        command_pattern = re.compile(
+            r"/(?:agregartrigger|anuncio|apagar|backup|bloquear|borrartrigger|bloqueados|chats|config|debug|"
+            r"desbloquear|desloquear|donar|gasto|galeraza|galerazas|habilitar|hola|listanegra|nivel|novedad|"
+            r"reiniciarbot|reportar|restringir|salir|start|triggers|version)"
+        )
+        url_pattern = re.compile(r"https?://[^\s]+")
+        for key, spanish_text in TRANSLATIONS["es"].items():
+            expected = (
+                placeholder_pattern.findall(spanish_text),
+                command_pattern.findall(spanish_text),
+                url_pattern.findall(spanish_text),
+            )
+            for language, translations in TRANSLATIONS.items():
+                with self.subTest(language=language, key=key):
+                    actual = (
+                        placeholder_pattern.findall(translations[key]),
+                        command_pattern.findall(translations[key]),
+                        url_pattern.findall(translations[key]),
+                    )
+                    self.assertEqual(actual, expected)
 
     def test_common_missing_accents_do_not_return(self) -> None:
         spanish = "\n".join(TRANSLATIONS["es"].values())

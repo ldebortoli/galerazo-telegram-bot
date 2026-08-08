@@ -705,3 +705,9 @@ Las tablas comunes del chat permanecen en `Database`; las tablas propias de conf
 ## D-096 - Pytest como runner compatible (2026-08-08)
 
 `pytest` es el runner unico para desarrollo, setup Windows, test target Docker y workflows. Las pruebas existentes no se reescriben: pytest ejecuta directamente los casos `unittest.TestCase` e `IsolatedAsyncioTestCase`, por lo que se preservan mocks, fixtures y semantica. `pytest-asyncio` queda configurado con `asyncio_mode = auto` para que los nuevos tests async nativos puedan escribirse sin decoradores adicionales. La cobertura sigue usando `coverage.py` con `python -m coverage run -m pytest` y conserva los umbrales de 100% de sentencias y ramas.
+
+## D-097 - Catalogos estaticos de idiomas y bloqueo de Mapudungun (2026-08-08)
+
+Los catalogos de interfaz se guardan como datos estaticos versionados: `i18n.py` conserva espanol argentino e ingles y `extra_translations.py` incorpora espanol de Espana, ruso, latin, japones, italiano, frances, aleman, holandes, chino simplificado/tradicional, portugues de Brasil/Portugal, catalan, vasco y guarani. Los catalogos se validan para que mantengan todas las claves, placeholders, URLs y comandos. El bot no consulta servicios de traduccion ni requiere una clave en ejecucion.
+
+Mapudungun estandar queda pendiente de una fuente linguistica completa revisable. Google Translate no ofrece el locale `arn`; las alternativas localizadas requieren un modelo de varios GB y evaluacion humana. No se publicara un catalogo inventado ni un fallback presentado como Mapudungun.

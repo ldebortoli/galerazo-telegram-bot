@@ -22,6 +22,7 @@ from galerazo_bot import pagination, roles, runtime, user_display
 from galerazo_bot.command_handlers import help as help_handler
 from galerazo_bot.command_handlers import nivel, ruletarusa
 from galerazo_bot.database import Database, RussianRouletteShot, User
+from galerazo_bot.i18n import TRANSLATIONS
 from galerazo_bot.roles import CommandContext, RussianRouletteHitResult, UserLevel
 
 
@@ -47,6 +48,11 @@ class MenuAndPaginationCompleteTests(unittest.TestCase):
             self.assertEqual(chat_config.command_group_label("triggers", "xx"), "Triggers")
             self.assertEqual(chat_config.command_group_label("unknown", "xx"), "unknown")
         self.assertTrue(chat_config.is_valid_language("en"))
+        self.assertTrue(chat_config.is_valid_language("es_ES"))
+        self.assertTrue(chat_config.is_valid_language("pt_BR"))
+        self.assertTrue(chat_config.is_valid_language("zh_Hant"))
+        self.assertTrue(chat_config.is_valid_language("gn"))
+        self.assertEqual({language.code for language in chat_config.LANGUAGES}, set(TRANSLATIONS))
         self.assertFalse(chat_config.is_valid_language("xx"))
         self.assertFalse(chat_config.is_valid_command_group("gastos"))
         self.assertFalse(chat_config.is_valid_command_group("unknown"))

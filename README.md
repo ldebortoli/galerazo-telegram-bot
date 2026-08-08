@@ -421,14 +421,14 @@ La fecha se calcula exclusivamente desde `message.date` de Telegram, convertido 
 
 Menu principal:
 
-- `Idioma`: permite elegir `Español` o `English`. El idioma actual aparece marcado entre corchetes.
+- `Idioma`: permite elegir Español (Argentina o España), English, Русский, Latine, 日本語, Italiano, Français, Deutsch, Nederlands, 中文 (简体 o 繁體), Português (Brasil o Portugal), Català, Euskara o Avañe'ẽ. El idioma actual aparece marcado entre corchetes.
 - `Comandos`: muestra los conjuntos de comandos configurables por grupo.
 
 Todos los submenus tienen un boton `< Atrás`. El menu principal no tiene boton de volver.
 
 Todos los niveles del menu incluyen una X roja para cerrar y eliminar el mensaje de configuracion. Igual que el resto del tablero, solo pueden usarla admines del chat, quien agrego el bot o devs.
 
-El idioma por defecto siempre es español. Si un grupo cambia a inglés, los textos que el bot muestra o envia en ese grupo pasan a inglés: respuestas de comandos, menús, popups de botoneras, backups/debug captions y mensajes de La Galeraza.
+El idioma por defecto siempre es español de Argentina. Si un grupo cambia de idioma, los textos que el bot muestra o envia en ese grupo se localizan: respuestas de comandos, menús, popups de botoneras, backups/debug captions y mensajes de La Galeraza. Los nombres de los comandos se mantienen sin traducir.
 
 Los conjuntos configurables son `Galeraza`, `Triggers`, `Gastos` y `Ruleta rusa`. Cada submenú muestra:
 

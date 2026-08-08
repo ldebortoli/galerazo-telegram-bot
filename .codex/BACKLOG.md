@@ -1,11 +1,10 @@
 # TODO
 
 ## P1
-
-- [BLOCKED: falta confirmar las variantes de portugues, chino y mapuche para preparar catalogos completos sin mezclar dialectos] [USER_REQUEST 2026-08-08] Agregar ruso, latin, japones, italiano, frances, aleman, holandes, chino, portugues, catalan, vasco, guarani y mapuche al selector de idioma y traducir todos los textos del bot, conservando los nombres de comandos.
 - [BLOCKED: el proyecto no tiene dataset ni tabla de exportacion; requiere confirmar `-AcknowledgeBillableResource`, habilitar manualmente `Costo de uso estandar` en Cloud Billing y esperar la tabla antes de configurar y desplegar] Activar en produccion el reporte diario de gasto de Google Cloud.
 - [BLOCKED: falta que el usuario confirme spreadsheet ID, worksheet y credenciales de service account] Conectar el sistema de gastos con el Google Sheet real.
 - [BLOCKED: el token `gh` no tiene scope `user`/Plan y el navegador disponible no tiene sesion GitHub; requiere iniciar sesion o autorizar explicitamente ampliar el scope] Confirmar visualmente si la cuenta personal tiene medio de pago cargado. La documentacion oficial confirma que, si no existe un medio valido, Actions se bloquea al agotar la cuota y no cobra excedentes.
+- [BLOCKED: Mapudungun estándar requiere una fuente lingüística completa y revisable. Google no ofrece `arn` y las alternativas disponibles exigen un modelo local de varios GB más revisión humana; no se incorporará una traducción inventada] [USER_REQUEST 2026-08-08] Agregar Mapudungun estándar al selector de idioma y su catálogo.
 
 ## P2
 
@@ -13,9 +12,9 @@
 
 # IN PROGRESS
 
-- No hay tareas activas.
-
 # DONE
+
+- [2026-08-08] [USER_REQUEST] Agregar español de España, ruso, latín, japonés, italiano, francés, alemán, holandés, chino simplificado/tradicional, portugués de Brasil/Portugal, catalán, vasco y guaraní al selector de idioma y sus catálogos completos. Se conservan los nombres de comandos; los textos quedan estáticos y validados. Versión `0.10`; sin cambio de BotFather ni deploy.
 
 - [2026-08-08] [USER_REQUEST] Migrar la ejecucion de la suite a `pytest`, preservando los casos `unittest` e `IsolatedAsyncioTestCase`. Se agregaron `pytest==9.1.1`, `pytest-asyncio==1.4.0` y configuracion central; setup Windows, Docker, builds y GitHub Actions usan el nuevo runner. Validacion: 233 pruebas con pytest, cobertura 100% de sentencias/ramas, runtime, `pip check`, `compileall`, checkpoint y diff-check OK. Sin release/deploy.
 

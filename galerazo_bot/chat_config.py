@@ -22,7 +22,25 @@ class CommandGroupOption:
     label: str
 
 
-LANGUAGES = (LanguageOption("es", "Español"), LanguageOption("en", "English"))
+LANGUAGES = (
+    LanguageOption("es", "Espa\u00f1ol"),
+    LanguageOption("es_ES", "Espa\u00f1ol (Espa\u00f1a)"),
+    LanguageOption("en", "English"),
+    LanguageOption("ru", "\u0420\u0443\u0441\u0441\u043a\u0438\u0439"),
+    LanguageOption("la", "Latine"),
+    LanguageOption("ja", "\u65e5\u672c\u8a9e"),
+    LanguageOption("it", "Italiano"),
+    LanguageOption("fr", "Fran\u00e7ais"),
+    LanguageOption("de", "Deutsch"),
+    LanguageOption("nl", "Nederlands"),
+    LanguageOption("zh_Hans", "\u4e2d\u6587 (\u7b80\u4f53)"),
+    LanguageOption("zh_Hant", "\u4e2d\u6587 (\u7e41\u9ad4)"),
+    LanguageOption("pt_BR", "Portugu\u00eas (Brasil)"),
+    LanguageOption("pt_PT", "Portugu\u00eas (Portugal)"),
+    LanguageOption("ca", "Catal\u00e0"),
+    LanguageOption("eu", "Euskara"),
+    LanguageOption("gn", "Ava\u00f1e'\u1ebd"),
+)
 COMMAND_GROUPS = (
     CommandGroupOption("galeraza", "Galeraza"),
     CommandGroupOption("triggers", "Triggers"),

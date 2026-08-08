@@ -421,6 +421,11 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
     },
 }
 
+from .extra_translations import EXTRA_TRANSLATIONS
+
+
+TRANSLATIONS.update(EXTRA_TRANSLATIONS)
+
 
 def t(language: str | None, key: str, **kwargs) -> str:
     normalized_language = language if language in TRANSLATIONS else DEFAULT_LANGUAGE
