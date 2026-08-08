@@ -1,4 +1,4 @@
-# Procesadas el 2026-07-26 (incorporadas al BACKLOG; implementacion en curso)
+# Procesadas el 2026-07-26 (incorporadas al BACKLOG y completadas)
 
 - hubo un bugazo, te paso el error, corregilo porfa:
 Error no handleado:
