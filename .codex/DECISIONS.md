@@ -687,3 +687,11 @@ El runtime usa nivel `DEBUG` para mejorar el diagnostico remoto. Se filtra solam
 ## D-092 - Ranking competitivo de Galerazas con paginas autosuficientes (2026-08-01)
 
 `/galerazas` usa ranking competitivo: las personas empatadas comparten posicion y la siguiente posicion equivale a su indice global. Dentro de una pagina, las filas empatadas posteriores se alinean dejando vacio el prefijo de posicion. Si una pagina inicia en medio de un empate, la primera fila repite la posicion compartida para conservar contexto. Las paginas se persisten ya renderizadas en la metadata de Galeraza; las metadata legacy con `header` y `lines` siguen siendo compatibles hasta expirar.
+
+## D-093 - Enrutamiento nativo con prefijos obligatorios (2026-08-08)
+
+Los comandos de Telegram se resuelven exclusivamente mediante `CommandHandler` para `/` y `PrefixHandler` para `!`, `.`, `>` y `$`. No existe un `MessageHandler` de texto libre que intente deducir comandos: una palabra como `galerazas` se trata como mensaje normal. El `MessageHandler` de preprocesamiento permanece en el grupo 0 para que la Galeraza evalúe primero todo mensaje original de una persona, incluidos eventos de servicio, antes de que los handlers de comando del grupo 1 respondan. `handler_registration.py` concentra la declaracion de handlers nativos y los adaptadores de la Galeraza se mantienen junto a su comando.
+
+## D-094 - Novedades acumuladas entre deploys (2026-08-08)
+
+El historial de la base conserva la ultima version anunciada. Al iniciar una version mas nueva, `pending_release_notes()` incluye la entrada actual y todas las entradas publicas posteriores a esa version que aun no se anunciaron. Asi, varios commits versionados antes de un unico deploy no pierden sus novedades; una instalacion nueva o una version previa desconocida recibe solo la entrada actual para evitar un historial excesivo.

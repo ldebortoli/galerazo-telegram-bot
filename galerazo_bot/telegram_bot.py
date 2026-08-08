@@ -10,7 +10,6 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from io import BytesIO
 from pathlib import Path
-from zoneinfo import ZoneInfo
 
 from telegram import (
     Bot,
@@ -25,7 +24,6 @@ from telegram import (
     InlineKeyboardMarkup,
     LinkPreviewOptions,
     Message,
-    MessageEntity,
     Update,
     User,
 )
@@ -34,12 +32,7 @@ from telegram.ext import (
     Application,
     ApplicationBuilder,
     CallbackContext,
-    CallbackQueryHandler,
-    ChatMemberHandler,
-    CommandHandler,
     ContextTypes,
-    MessageHandler,
-    filters,
 )
 
 from .chat_config import (
@@ -61,7 +54,13 @@ from .cloud_billing import (
     parse_report_time,
 )
 from .announcements import AnnouncementBroadcastResult, announcement_fits, format_announcement
-from .commands import COMMANDS, get_command, handle_command_async, is_command_invocation
+from .commands import (
+    COMMANDS,
+    SYMBOL_COMMAND_PREFIXES,
+    get_command,
+    handle_command_async,
+    is_command_invocation,
+)
 from .config import Settings, load_settings
 from .database import Database, Trigger
 from .expenses import (
@@ -71,18 +70,32 @@ from .expenses import (
     fallback_sheet_detail,
     format_amount,
 )
-from .galeraza import build_galeraza_header, build_galeraza_lines, build_galeraza_pages, render_galeraza_page
+from .command_handlers.galerazas import (
+    galeraza_game_date as _galeraza_game_date,
+    is_galeraza_candidate as _is_galeraza_candidate,
+    maybe_award_daily_galeraza as _maybe_award_daily_galeraza,
+    send_galerazas as _send_galerazas,
+    telegram_message_datetime as _telegram_message_datetime,
+)
+from .handler_registration import register_handlers
 from .google_sheets import GoogleSheetsConfig, GoogleSheetsExpenseWriter
 from .i18n import DEFAULT_LANGUAGE, t
 from .instance_lock import SingleInstance
 from .integration_status import save_logging_status
 from .logging_utils import configure_logging
 from .media_moderation import OpenAIMediaModerator, trigger_media_kind
-from .pagination import BUTTON_PREFIX, build_keyboard, parse_callback_data, render_page, render_prebuilt_pages
+from .pagination import (
+    BUTTON_PREFIX,
+    bold_first_line_entities as _bold_first_line_entities,
+    build_keyboard,
+    parse_callback_data,
+    render_page,
+    render_prebuilt_pages,
+)
 from .roles import BackupResult, RussianRouletteHitResult, TriggerModerationResult, TriggerPayload, UserLevel
 from .runtime import ensure_python_version
 from .update_processor import PerChatUpdateProcessor
-from .versioning import CURRENT_VERSION, current_release_notes
+from .versioning import CURRENT_VERSION, pending_release_notes
 
 
 logger = logging.getLogger(__name__)
@@ -97,7 +110,6 @@ RESTART_CALLBACK_PREFIX = "restart"
 SHUTDOWN_CALLBACK_PREFIX = "shutdown"
 UPDATE_DRAIN_TIMEOUT_SECONDS = 60
 DISABLED_LINK_PREVIEW_OPTIONS = LinkPreviewOptions(is_disabled=True)
-ARGENTINA_TIMEZONE = ZoneInfo("America/Argentina/Buenos_Aires")
 BOTFATHER_HIDDEN_COMMANDS = frozenset(
     {
         "habilitargastos",
@@ -115,14 +127,6 @@ POLLING_OPTIONS = {
 PANEL_MANAGED_ENV = "GALERAZO_PANEL_MANAGED"
 PANEL_PID_PATH = Path(__file__).resolve().parent.parent / "data" / "bot.pid"
 PANEL_RESTART_PATH = PANEL_PID_PATH.with_suffix(".restart")
-
-
-def _bold_first_line_entities(text: str) -> list[MessageEntity]:
-    title = text.partition("\n")[0]
-    if not title:
-        return []
-    utf16_length = len(title.encode("utf-16-le")) // 2
-    return [MessageEntity(type=MessageEntity.BOLD, offset=0, length=utf16_length)]
 
 
 @dataclass(frozen=True)
@@ -199,19 +203,20 @@ def _build_application(token: str, db: Database) -> Application:
 
 
 def _register_handlers(application: Application) -> None:
-    application.add_handler(MessageHandler(filters.ALL, _preprocess_message), group=0)
-
-    for command_name in COMMANDS:
-        application.add_handler(CommandHandler(command_name, _command_entrypoint), group=1)
-
-    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, _text_command_entrypoint), group=1)
-    application.add_handler(CallbackQueryHandler(_callback_query_entrypoint, pattern=f"^{BUTTON_PREFIX}:"), group=1)
-    application.add_handler(CallbackQueryHandler(_config_callback_entrypoint, pattern=f"^{CONFIG_PREFIX}:"), group=1)
-    application.add_handler(
-        CallbackQueryHandler(_restart_callback_entrypoint, pattern=f"^({RESTART_CALLBACK_PREFIX}|{SHUTDOWN_CALLBACK_PREFIX}):"),
-        group=1,
+    register_handlers(
+        application,
+        command_names=COMMANDS,
+        command_prefixes=tuple(prefix for prefix in SYMBOL_COMMAND_PREFIXES if prefix != "/"),
+        preprocess_message=_preprocess_message,
+        command_callback=_command_entrypoint,
+        pagination_callback=_callback_query_entrypoint,
+        config_callback=_config_callback_entrypoint,
+        power_callback=_restart_callback_entrypoint,
+        chat_member_callback=_my_chat_member_entrypoint,
+        pagination_pattern=f"^{BUTTON_PREFIX}:",
+        config_pattern=f"^{CONFIG_PREFIX}:",
+        power_pattern=f"^({RESTART_CALLBACK_PREFIX}|{SHUTDOWN_CALLBACK_PREFIX}):",
     )
-    application.add_handler(ChatMemberHandler(_my_chat_member_entrypoint, ChatMemberHandler.MY_CHAT_MEMBER), group=1)
 
 
 async def _post_init(application: Application) -> None:
@@ -240,11 +245,12 @@ async def _post_init(application: Application) -> None:
 
 
 async def _announce_current_release(db: Database, bot: Bot, settings: Settings) -> bool:
-    if db.get_announced_release_version() == CURRENT_VERSION:
+    announced_version = db.get_announced_release_version()
+    if announced_version == CURRENT_VERSION:
         return False
 
     try:
-        release_notes = current_release_notes()
+        release_notes = pending_release_notes(announced_version)
     except (OSError, ValueError) as exc:
         error_text = f"No pude leer el changelog de la version {CURRENT_VERSION}: {exc}"
         logger.error(error_text)
@@ -531,17 +537,6 @@ def _trigger_payload_data(trigger: Trigger) -> dict[str, object] | None:
 
 
 async def _command_entrypoint(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    await _handle_command_update(update, context)
-
-
-async def _text_command_entrypoint(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    message = update.effective_message
-    if message is None or not message.text:
-        return
-
-    if not is_command_invocation(message.text):
-        return
-
     await _handle_command_update(update, context)
 
 
@@ -1034,66 +1029,6 @@ async def _moderate_trigger_payload(
         if downloaded is not None:
             downloaded[:] = b"\x00" * len(downloaded)
             downloaded.clear()
-
-
-async def _maybe_award_daily_galeraza(
-    db: Database,
-    message: Message,
-    user_id: str,
-) -> None:
-    if message.chat.type not in {"group", "supergroup"}:
-        return
-    if not db.is_command_group_enabled(str(message.chat.id), "galeraza"):
-        return
-
-    message_date = _telegram_message_datetime(message)
-    game_date = _galeraza_game_date(message)
-    awarded = db.try_award_daily_galeraza(
-        chat_id=str(message.chat.id),
-        game_date=game_date,
-        user_id=user_id,
-        message_id=str(message.message_id),
-        message_date=message_date.isoformat(),
-    )
-    if not awarded:
-        return
-
-    await message.reply_text(t(_chat_language(db, message.chat.id), "galeraza.win"), do_quote=True)
-
-
-async def _send_galerazas(
-    db: Database,
-    message: Message,
-    requester_user_id: str,
-) -> bool:
-    language = _chat_language(db, message.chat.id)
-    scores = db.get_galeraza_scores(str(message.chat.id))
-    lines = build_galeraza_lines(scores, language)
-    page = render_galeraza_page(scores, page=1, language=language)
-    content_json = json.dumps({"pages": build_galeraza_pages(scores, language)}, ensure_ascii=False)
-    try:
-        entities = _bold_first_line_entities(page.text)
-        result = await message.reply_text(page.text, do_quote=True, entities=entities)
-        message_id = str(result.message_id)
-        if page.total_pages > 1 and message_id:
-            db.save_paginated_message_state(
-                chat_id=str(message.chat.id),
-                message_id=message_id,
-                list_type="galeraza",
-                requester_user_id=requester_user_id,
-                content_json=content_json,
-                unlocked=False,
-                current_page=page.page,
-            )
-            await result.edit_text(
-                text=page.text,
-                reply_markup=build_keyboard(message_id, page.page, page.total_pages, unlocked=False),
-                entities=entities,
-            )
-        return True
-    except TelegramError as exc:
-        logger.warning("No pude enviar ranking de Galeraza: %s", exc)
-        return False
 
 
 async def _send_text_response(
@@ -2048,18 +1983,3 @@ def _is_bot_removed_error(exc: TelegramError) -> bool:
         "forbidden",
     ]
     return any(marker in message for marker in markers)
-
-
-def _is_galeraza_candidate(update: Update, message: Message, user: User) -> bool:
-    return not user.is_bot and update.message is message
-
-
-def _telegram_message_datetime(message: Message) -> datetime:
-    message_date = message.date
-    if message_date.tzinfo is None:
-        return message_date.replace(tzinfo=timezone.utc)
-    return message_date
-
-
-def _galeraza_game_date(message: Message) -> str:
-    return _telegram_message_datetime(message).astimezone(ARGENTINA_TIMEZONE).date().isoformat()

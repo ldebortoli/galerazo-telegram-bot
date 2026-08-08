@@ -35,3 +35,52 @@ class VersioningTests(unittest.TestCase):
         with patch.object(versioning, "CHANGELOG_PATH", Path("missing.md")):
             with self.assertRaises(FileNotFoundError):
                 versioning.current_release_notes()
+
+    def test_pending_release_notes_includes_unannounced_entries_only(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            changelog = Path(directory) / "CHANGELOG.md"
+            changelog.write_text(
+                "\n".join(
+                    (
+                        "# Changelog",
+                        "",
+                        f"## [{versioning.CURRENT_VERSION}]",
+                        "",
+                        "- Actual `/hola`.",
+                        "",
+                        "## [0.8]",
+                        "",
+                        "- Tabla `galerazas`.",
+                        "",
+                        "## [0.7]",
+                        "",
+                        "- Anterior.",
+                    )
+                ),
+                encoding="utf-8",
+            )
+            with patch.object(versioning, "CHANGELOG_PATH", changelog):
+                self.assertNotIn("acumulados", versioning.pending_release_notes(None))
+                self.assertNotIn("acumulados", versioning.pending_release_notes("missing"))
+                self.assertNotIn("acumulados", versioning.pending_release_notes("0.8"))
+                accumulated = versioning.pending_release_notes("0.7")
+
+            self.assertIn("Cambios acumulados de v0.8", accumulated)
+            self.assertIn("Tabla galerazas.", accumulated)
+
+            changelog.write_text("## [0.8]\n\n- Anterior.\n", encoding="utf-8")
+            with patch.object(versioning, "CHANGELOG_PATH", changelog):
+                with self.assertRaisesRegex(ValueError, "no contiene la version"):
+                    versioning.pending_release_notes("0.7")
+
+            changelog.write_text(f"## [{versioning.CURRENT_VERSION}]\n\n## [0.7]\n", encoding="utf-8")
+            with patch.object(versioning, "CHANGELOG_PATH", changelog):
+                with self.assertRaisesRegex(ValueError, "no contiene cambios"):
+                    versioning.pending_release_notes("0.7")
+
+            changelog.write_text(
+                f"## [{versioning.CURRENT_VERSION}]\n\n- Actual.\n\n## [0.8]\n\n## [0.7]\n\n- Anterior.\n",
+                encoding="utf-8",
+            )
+            with patch.object(versioning, "CHANGELOG_PATH", changelog):
+                self.assertNotIn("v0.8", versioning.pending_release_notes("0.7"))

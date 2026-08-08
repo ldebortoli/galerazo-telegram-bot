@@ -27,6 +27,7 @@ from galerazo_bot.database import Database, Expense, PaginatedMessageState, Rest
 from galerazo_bot.google_sheets import GoogleSheetsConfig, GoogleSheetsExpenseWriter
 from galerazo_bot.roles import TriggerModerationResult, TriggerPayload, UserLevel
 from galerazo_bot import telegram_bot as tb
+from galerazo_bot.command_handlers import galerazas as galeraza_handlers
 
 
 def settings(**overrides) -> Settings:
@@ -260,18 +261,18 @@ class LifecycleAndBillingTests(unittest.IsolatedAsyncioTestCase):
         self.assertFalse(await tb._announce_current_release(db, bot, settings()))
 
         db.get_announced_release_version.return_value = None
-        with patch.object(tb, "current_release_notes", side_effect=ValueError("bad")), patch.object(
+        with patch.object(tb, "pending_release_notes", side_effect=ValueError("bad")), patch.object(
             tb, "_send_log_event", AsyncMock(return_value=True)
         ) as log:
             self.assertFalse(await tb._announce_current_release(db, bot, settings()))
         log.assert_awaited_once_with(bot, "-10", f"No pude leer el changelog de la version {tb.CURRENT_VERSION}: bad")
 
-        with patch.object(tb, "current_release_notes", return_value="notes"), patch.object(
+        with patch.object(tb, "pending_release_notes", return_value="notes"), patch.object(
             tb, "_broadcast_announcement", AsyncMock(return_value=tb.AnnouncementBroadcastResult())
         ):
             self.assertFalse(await tb._announce_current_release(db, bot, settings()))
 
-        with patch.object(tb, "current_release_notes", return_value="notes"), patch.object(
+        with patch.object(tb, "pending_release_notes", return_value="notes"), patch.object(
             tb,
             "_broadcast_announcement",
             AsyncMock(return_value=tb.AnnouncementBroadcastResult(announcement_channel_sent=True)),
@@ -415,16 +416,8 @@ class PreprocessAndTriggerTests(unittest.IsolatedAsyncioTestCase):
         self.assertIsNone(tb._trigger_payload_data(trigger(payload_json="[]")))
         self.assertEqual(tb._trigger_payload_data(trigger(payload_json='{"x":1}')), {"x": 1})
 
-    async def test_text_command_entrypoint_guards_and_forward(self) -> None:
+    async def test_command_entrypoint_forwards_to_the_shared_command_handler(self) -> None:
         context = MagicMock()
-        for message in (None, message_stub(text=None), message_stub(text="plain")):
-            update = SimpleNamespace(effective_message=message)
-            with patch.object(tb, "_handle_command_update", AsyncMock()) as handler:
-                await tb._text_command_entrypoint(update, context)
-            handler.assert_not_awaited()
-        with patch.object(tb, "_handle_command_update", AsyncMock()) as handler:
-            await tb._text_command_entrypoint(SimpleNamespace(effective_message=message_stub(text="!hola")), context)
-        handler.assert_awaited_once()
         with patch.object(tb, "_handle_command_update", AsyncMock()) as handler:
             await tb._command_entrypoint(SimpleNamespace(), context)
         handler.assert_awaited_once()
@@ -780,18 +773,14 @@ class GalerazaExpenseAndConfigTests(unittest.IsolatedAsyncioTestCase):
         db.save_paginated_message_state.assert_not_called()
 
         page = SimpleNamespace(text="Title\nrow", page=1, total_pages=2)
-        with patch.object(tb, "render_galeraza_page", return_value=page), patch.object(
-            tb, "build_galeraza_lines", return_value=["row"]
-        ):
+        with patch.object(galeraza_handlers, "render_galeraza_page", return_value=page):
             self.assertTrue(await tb._send_galerazas(db, message, "1"))
         db.save_paginated_message_state.assert_called()
         result.edit_text.assert_awaited()
 
         result.message_id = ""
         db.save_paginated_message_state.reset_mock()
-        with patch.object(tb, "render_galeraza_page", return_value=page), patch.object(
-            tb, "build_galeraza_lines", return_value=["row"]
-        ):
+        with patch.object(galeraza_handlers, "render_galeraza_page", return_value=page):
             self.assertTrue(await tb._send_galerazas(db, message, "1"))
         db.save_paginated_message_state.assert_not_called()
         message.reply_text.side_effect = BadRequest("send")

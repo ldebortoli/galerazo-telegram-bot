@@ -16,6 +16,8 @@
 
 # DONE
 
+- [2026-08-08] [USER_QUEUE] Reemplazar el enrutamiento de texto libre por `CommandHandler`/`PrefixHandler`, exigir prefijo para todo comando y separar el registro/adaptadores de handlers por familia. Los comandos ahora requieren `/`, `!`, `.`, `>` o `$`; Galeraza conserva el `MessageHandler` prioritario para todo mensaje humano, incluidos eventos de servicio. `handler_registration.py` registra handlers nativos y `command_handlers/galerazas.py` contiene los adaptadores de la Galeraza. La proxima novedad de release acumula tambien entradas publicas aun no anunciadas. Version `0.9`; sin cambio de BotFather. Validacion: 231 pruebas, cobertura 100% de sentencias/ramas, runtime, `pip check`, `compileall` y diff-check OK. Sin release/deploy.
+
 - [2026-08-01] Agregar posiciones competitivas a `/galerazas`, alinear empates, repetir la posicion solo cuando una pagina nueva inicia dentro de un empate y mostrar estado vacio sin puntajes. Version `0.8`; sin cambio de BotFather. Validacion: 229 pruebas, cobertura 100% de sentencias/ramas, runtime, `pip check`, `compileall` y diff-check OK. Sin release/deploy.
 
 - [2026-07-29] Elevar logging de runtime a DEBUG y omitir solo los polls `getUpdates` HTTP 200 del acceso de logs. Se aplicara con el proximo deploy. Validacion: 226 pruebas, cobertura 100% de sentencias/ramas. Sin release/deploy.

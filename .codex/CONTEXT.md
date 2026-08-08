@@ -30,9 +30,10 @@ La misma politica se aplica globalmente desde `C:\Users\calei\.codex\AGENTS.md`.
 - `app.py`: entrypoint del bot Telegram.
 - `AGENTS.md`: punto de entrada que obliga a cargar la memoria persistente.
 - `control_panel.py`: entrypoint del panel local de Windows.
-- `galerazo_bot/telegram_bot.py`: integracion con `python-telegram-bot`, registro de handlers y adaptacion de updates/callbacks al dominio.
+- `galerazo_bot/telegram_bot.py`: ciclo de vida e integracion con `python-telegram-bot`; conserva adaptadores comunes y delega el registro nativo de handlers.
+- `galerazo_bot/handler_registration.py`: registro central de `MessageHandler`, `CommandHandler`, `PrefixHandler`, `CallbackQueryHandler` y `ChatMemberHandler`, sin fallback que interprete texto libre como comando.
 - `galerazo_bot/commands.py`: dispatcher comun, normalizacion, permisos y ejecucion de comandos.
-- `galerazo_bot/command_handlers/`: un modulo por conjunto de comandos. Cada modulo exporta `COMMANDS`.
+- `galerazo_bot/command_handlers/`: un modulo por conjunto de comandos. Cada modulo exporta `COMMANDS`; `galerazas.py` tambien contiene los adaptadores de Telegram que otorgan y envian el ranking.
 - `galerazo_bot/database.py`: esquema SQLite y operaciones persistentes.
 - `galerazo_bot/pagination.py`: paginacion reutilizable y metadata de botoneras.
 - `galerazo_bot/chat_config.py`: menus y grupos de comandos configurables.
@@ -133,7 +134,7 @@ Validaciones disponibles:
 
 ```powershell
 python -m compileall app.py control_panel.py galerazo_bot
-python -m galerazo_bot.cli hola
+python -m galerazo_bot.cli /hola
 python -m galerazo_bot.cli help
 python -m galerazo_bot.cli nivel
 python -m unittest discover -s tests -v

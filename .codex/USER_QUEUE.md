@@ -102,7 +102,7 @@ Update JSON:
   "update_id": 253645075
 }
 - quiero que la lista de triggers sea como la lista de la galeraza, es decir que el título esté en negrita y haya un salto de línea antes de que comiencen los triggers.
-- quiero un nuevo comando /galeraza que sea igual al de /galerazas solo que sin s al final, es decir solo un alias porque a veces me olvido de la s final ajajaj. no debería ser mucho cambio en el código, no reimplementes todo para esto por favor, reusá todo y solo agregá un comando más.
+- [2026-08-08] Reestructurar el enrutamiento con handlers nativos de `python-telegram-bot`, exigir un prefijo de ejecucion para todos los comandos y preservar la prioridad de Galeraza. Incorporado al BACKLOG y completado.
 
 # Procesadas
 

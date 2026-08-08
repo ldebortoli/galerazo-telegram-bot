@@ -8,7 +8,7 @@ from .roles import UserLevel
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Probar Galerazo Bot localmente.")
-    parser.add_argument("message", nargs="+", help="Mensaje a procesar, por ejemplo: hola")
+    parser.add_argument("message", nargs="+", help="Mensaje a procesar, por ejemplo: /hola")
     args = parser.parse_args()
 
     settings = load_settings()

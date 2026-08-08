@@ -34,13 +34,13 @@ Base para un bot de Telegram con una version estable y reproducible de Python, `
 - `ruletarusa`: juega a la ruleta rusa en el grupo o supergrupo, si el conjunto está habilitado.
 - `salir`: hace que el bot salga de un grupo o supergrupo. Solo devs.
 
-También acepta los prefijos `/`, `!`, `.`, `>`, `$`, `galerazobot` y `galerazo_bot`. Por ejemplo: `!help`, `.hola` o `galerazobot ayuda`.
+Todo comando requiere un prefijo de ejecucion: `/`, `!`, `.`, `>` o `$`. Por ejemplo: `/help`, `!help` o `.hola`. Un texto comun como `hola` o `galerazas` no ejecuta comandos.
 
 Los comandos que no existen se ignoran silenciosamente. Cada comando implementado se procesa una sola vez y no cae en un handler generico posterior.
 
 ## Estructura de comandos
 
-Los handlers reales de Telegram se registran en `galerazo_bot/telegram_bot.py` con `CommandHandler`, `MessageHandler`, `CallbackQueryHandler` y `ChatMemberHandler`.
+Los handlers reales de Telegram se registran en `galerazo_bot/telegram_bot.py` con `CommandHandler`, `PrefixHandler`, `MessageHandler`, `CallbackQueryHandler` y `ChatMemberHandler`.
 
 El dispatcher de comandos esta en `galerazo_bot/commands.py`. Ese archivo normaliza el texto, valida permisos y ejecuta el handler de dominio registrado.
 
@@ -50,7 +50,7 @@ Los comandos especificos estan en `galerazo_bot/command_handlers/`. Cada archivo
 2. Definir un diccionario `COMMANDS` con los nombres/aliases que activa ese archivo.
 3. Importar ese `COMMANDS` en `galerazo_bot/command_handlers/__init__.py` y sumarlo al diccionario central.
 
-El handler de dominio de `/hola` esta en `galerazo_bot/command_handlers/hola.py`. El `CommandHandler` de Telegram que lo activa se registra en `galerazo_bot/telegram_bot.py`.
+El handler de dominio de `/hola` esta en `galerazo_bot/command_handlers/hola.py`. `galerazo_bot/handler_registration.py` concentra el registro nativo de `CommandHandler`, `PrefixHandler`, `CallbackQueryHandler` y `ChatMemberHandler`; `galerazo_bot/command_handlers/galerazas.py` contiene tanto el comando como los adaptadores de Telegram propios de la Galeraza.
 
 Los comandos que pertenecen a un conjunto configurable usan `configurable_group` en su definicion. Si ese conjunto esta deshabilitado para un chat, el bot ignora esos comandos para todos los usuarios, incluidos devs.
 

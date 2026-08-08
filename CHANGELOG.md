@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.9] - 2026-08-08
+
+- Correcciones y mejoras: todos los comandos ahora requieren un prefijo de ejecucion, para que los mensajes comunes no activen acciones del bot accidentalmente.
+
 ## [0.8] - 2026-08-01
 
 - La tabla de `/galerazas` ahora muestra posiciones compartidas ante empates y mantiene alineados los usuarios que comparten puesto, incluso al pasar entre paginas.

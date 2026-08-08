@@ -79,19 +79,19 @@ class CommandCoreCompleteTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(commands.normalize_command(" /HELP@bot x "), "help")
         self.assertEqual(commands.command_args("/help"), "")
         self.assertEqual(commands.command_args("   "), "")
-        self.assertTrue(commands.is_command_invocation("/"))
+        self.assertFalse(commands.is_command_invocation("/"))
         self.assertFalse(commands.is_command_invocation(""))
-        self.assertTrue(commands.is_command_invocation("help"))
-        self.assertFalse(commands.is_command_invocation("unknown"))
+        self.assertFalse(commands.is_command_invocation("help"))
+        self.assertTrue(commands.is_command_invocation("!unknown"))
         for text, expected in (
-            ("galerazobot", ("", "galerazobot")),
-            ("Galerazo_Bot hola x", ("hola x", "galerazo_bot")),
             ("!hola", ("hola", "!")),
             ("plain text", ("plain text", None)),
         ):
             self.assertEqual(commands._strip_command_prefix(text), expected)
         self.assertTrue(commands.command_exists("/hola"))
         self.assertIsNotNone(commands.get_command("/hola"))
+        self.assertFalse(commands.command_exists("hola"))
+        self.assertIsNone(commands.get_command("hola"))
         self.assertGreater(len(commands.iter_commands()), 1)
 
     async def test_handler_permission_variants_sync_and_async(self) -> None:
@@ -103,7 +103,7 @@ class CommandCoreCompleteTests(unittest.IsolatedAsyncioTestCase):
         async def async_handler(_context, _db):
             return "async"
         asynchronous = commands.Command("x", "", async_handler)
-        context = make_context(raw_text="x")
+        context = make_context(raw_text="/x")
         for command, expected in ((denied_key, "permiso"), (denied_text, "custom"), (default, "permisos")):
             with patch.dict(commands.COMMANDS, {"x": command}, clear=True):
                 self.assertIn(expected, await commands._handle_with_context(context, db))
@@ -122,8 +122,8 @@ class CommandCoreCompleteTests(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(commands._resolve_language(db, None, "group"), "es")
             self.assertEqual(commands._resolve_language(db, "-1", "private"), "es")
             self.assertEqual(commands._resolve_language(db, "-1", "group"), "en")
-            self.assertIn("Hola", commands.handle_text("hola", "1", db))
-            self.assertIn("Hola", commands.handle_command("hola", "1", db))
+            self.assertIn("Hola", commands.handle_text("/hola", "1", db))
+            self.assertIn("Hola", commands.handle_command("/hola", "1", db))
         command = commands.Command("two words", "", lambda *_: None)
         self.assertEqual(command.command_key, "two")
         explicit = commands.Command("x", "", lambda *_: None, command_key="key")

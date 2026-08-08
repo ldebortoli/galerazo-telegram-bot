@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup, MessageEntity
 
 
 MESSAGE_LIMIT = 4096
@@ -14,6 +14,14 @@ class PaginatedPage:
     text: str
     page: int
     total_pages: int
+
+
+def bold_first_line_entities(text: str) -> list[MessageEntity]:
+    title = text.partition("\n")[0]
+    if not title:
+        return []
+    utf16_length = len(title.encode("utf-16-le")) // 2
+    return [MessageEntity(type=MessageEntity.BOLD, offset=0, length=utf16_length)]
 
 
 def build_pages(header: str, lines: list[str], max_chars: int = MESSAGE_LIMIT) -> list[str]:

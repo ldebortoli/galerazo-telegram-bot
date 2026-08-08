@@ -14,7 +14,6 @@ CommandResult = Union[Optional[str], Awaitable[Optional[str]]]
 CommandHandler = Callable[[CommandContext, Database], CommandResult]
 DEFAULT_PERMISSION_ERROR_KEY = "permission_denied"
 SYMBOL_COMMAND_PREFIXES = ("!", "/", ".", ">", "$")
-WORD_COMMAND_PREFIXES = ("galerazobot", "galerazo_bot")
 
 
 @dataclass(frozen=True)
@@ -53,10 +52,7 @@ def command_args(text: str) -> str:
 
 def is_command_invocation(text: str) -> bool:
     stripped, prefix = _strip_command_prefix(text)
-    if not stripped:
-        return prefix is not None
-
-    return prefix is not None or normalize_command(stripped) in COMMANDS
+    return prefix is not None and bool(stripped)
 
 
 def _strip_command_prefix(text: str) -> tuple[str, str | None]:
@@ -66,20 +62,16 @@ def _strip_command_prefix(text: str) -> tuple[str, str | None]:
     if stripped.startswith(SYMBOL_COMMAND_PREFIXES):
         return stripped[1:].lstrip(), stripped[0]
 
-    lowered = stripped.casefold()
-    for prefix in WORD_COMMAND_PREFIXES:
-        if lowered == prefix:
-            return "", prefix
-        if lowered.startswith(prefix) and len(stripped) > len(prefix) and stripped[len(prefix)].isspace():
-            return stripped[len(prefix) :].lstrip(), prefix
     return stripped, None
 
 
 def command_exists(text: str) -> bool:
-    return normalize_command(text) in COMMANDS
+    return is_command_invocation(text) and normalize_command(text) in COMMANDS
 
 
 def get_command(text: str) -> Command | None:
+    if not is_command_invocation(text):
+        return None
     return COMMANDS.get(normalize_command(text))
 
 
@@ -264,6 +256,9 @@ async def handle_command_async(
 
 
 async def _handle_with_context(context: CommandContext, db: Database) -> str | None:
+    if not is_command_invocation(context.raw_text):
+        return None
+
     command_name = normalize_command(context.raw_text)
     command = COMMANDS.get(command_name)
     if command is None:
