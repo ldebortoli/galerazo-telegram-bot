@@ -57,6 +57,13 @@ class TranslationTests(unittest.TestCase):
             all(not text.startswith("rehegua\n") for text in TRANSLATIONS["gn"].values())
         )
 
+    def test_southern_quechua_preserves_named_game_and_message_lines(self) -> None:
+        self.assertIn("Galeraza", TRANSLATIONS["quz"]["galeraza.header"])
+        self.assertEqual(
+            TRANSLATIONS["quz"]["announcement.sent"].count("\n"),
+            TRANSLATIONS["es"]["announcement.sent"].count("\n"),
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -41,6 +41,7 @@ LANGUAGES = (
     LanguageOption("ca", "Catal\u00e0"),
     LanguageOption("eu", "Euskara"),
     LanguageOption("gn", "Ava\u00f1e'\u1ebd"),
+    LanguageOption("quz", "Runa Simi"),
 )
 COMMAND_GROUPS = (
     CommandGroupOption("galeraza", "Galeraza"),

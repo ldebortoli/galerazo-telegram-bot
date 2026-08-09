@@ -733,3 +733,9 @@ La constante `LANGUAGES_PER_ROW` es `4`, por lo que el selector de idioma de `/c
 El prefijo generado `rehegua\n` se elimina solo al inicio de cada texto del catalogo `gn`; los usos semanticos de la palabra dentro de una oracion se conservan. Una prueba de regresion impide que vuelva a anteponerse a los mensajes.
 
 Quechua no se incorpora como un catalogo generico: `qu` es un macroidioma que abarca variantes con diferencias reales. Antes de crear un catalogo localizado, se requiere elegir una variante concreta y una fuente linguistica revisable; no se usara una traduccion automatica sin revision como si fuese una interfaz validada.
+
+## D-103 - Quechua sureño estatico y cancelacion de Mapudungun (2026-08-09)
+
+Por instruccion explicita del usuario, se cancela definitivamente la tarea de Mapudungun y se incorpora Quechua sureño (`quz`, Runa Simi), la agrupacion quechua con mayor difusion. Esta decision reemplaza el bloqueo de Quechua de D-102.
+
+El catalogo `quz` se genero una vez con traduccion asistida y se versiona como datos estaticos; la ejecucion no contacta ningun servicio ni requiere clave. Los comandos, URLs, placeholders, saltos de linea y el nombre propio Galeraza estan protegidos y cubiertos por pruebas. La calidad linguistica queda sujeta a una futura revision de hablantes o especialistas antes de declarar el catalogo como normativo.

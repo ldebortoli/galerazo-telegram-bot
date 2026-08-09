@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.15] - 2026-08-09
+
+- `/config` incorpora Runa Simi, usando Quechua sureño para todos los textos del bot.
+
 ## [0.14] - 2026-08-09
 
 - Correcciones y mejoras: los textos en guaraní ya no muestran el prefijo incorrecto `rehegua` al comienzo de cada mensaje.

@@ -52,6 +52,7 @@ class MenuAndPaginationCompleteTests(unittest.TestCase):
         self.assertTrue(chat_config.is_valid_language("pt_BR"))
         self.assertTrue(chat_config.is_valid_language("zh_Hant"))
         self.assertTrue(chat_config.is_valid_language("gn"))
+        self.assertTrue(chat_config.is_valid_language("quz"))
         self.assertEqual({language.code for language in chat_config.LANGUAGES}, set(TRANSLATIONS))
         self.assertFalse(chat_config.is_valid_language("xx"))
         self.assertFalse(chat_config.is_valid_command_group("gastos"))
