@@ -1,6 +1,7 @@
 # TODO
 
 ## P1
+- [BLOCKED: `qu` es un macroidioma que comprende variantes de quechua; falta que el usuario elija la variante y aporte o apruebe una fuente linguistica revisable para el catalogo completo] [USER_QUEUE 2026-08-09] Agregar quechua al selector de idioma y su catalogo.
 - [BLOCKED: el proyecto no tiene dataset ni tabla de exportacion; requiere confirmar `-AcknowledgeBillableResource`, habilitar manualmente `Costo de uso estandar` en Cloud Billing y esperar la tabla antes de configurar y desplegar] Activar en produccion el reporte diario de gasto de Google Cloud.
 - [BLOCKED: falta que el usuario confirme spreadsheet ID, worksheet y credenciales de service account] Conectar el sistema de gastos con el Google Sheet real.
 - [BLOCKED: el token `gh` no tiene scope `user`/Plan y el navegador disponible no tiene sesion GitHub; requiere iniciar sesion o autorizar explicitamente ampliar el scope] Confirmar visualmente si la cuenta personal tiene medio de pago cargado. La documentacion oficial confirma que, si no existe un medio valido, Actions se bloquea al agotar la cuota y no cobra excedentes.
@@ -14,6 +15,8 @@
 
 
 # DONE
+
+- [2026-08-09] [USER_QUEUE] Corregir el prefijo espurio `rehegua` que aparecia al inicio de los textos en guarani. Se elimino solo al comienzo de 199 entradas y se agrego una prueba de regresion. Version `0.14`; sin cambio de BotFather ni deploy. Validacion: 237 pruebas, cobertura 100% de sentencias/ramas, runtime, `pip check`, `compileall`, checkpoint y diff-check OK.
 
 - [2026-08-08] [USER_REQUEST] Agrupar el selector de idiomas de `/config` en filas de cuatro botones para reducir su alto. Version `0.13`; sin cambio de BotFather ni deploy. Validacion: 236 pruebas, cobertura 100% de sentencias/ramas, runtime, `pip check`, `compileall`, checkpoint y diff-check OK.
 

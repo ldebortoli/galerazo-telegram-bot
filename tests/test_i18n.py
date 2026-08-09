@@ -52,6 +52,11 @@ class TranslationTests(unittest.TestCase):
             for text in translations.values():
                 self.assertFalse(any(marker in text for marker in mojibake_markers), text)
 
+    def test_guarani_catalog_has_no_spurious_prefix(self) -> None:
+        self.assertTrue(
+            all(not text.startswith("rehegua\n") for text in TRANSLATIONS["gn"].values())
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

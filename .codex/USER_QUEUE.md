@@ -4,6 +4,8 @@ No hay pedidos nuevos en la cola.
 
 # Procesadas
 
+- [2026-08-09] Agregar quechua como idioma en el bot.
+- [2026-08-09] Todos los mensajes en guaraní arrancan con `rehegua`, revisar y corregir el prefijo espurio.
 - [2026-08-08] Reestructurar el enrutamiento con handlers nativos de `python-telegram-bot`, exigir un prefijo de ejecucion para todos los comandos y preservar la prioridad de Galeraza.
 - [2026-07-29] Agregar `/donar` y el texto de Cafecito a todos los broadcasts antes del aviso de `/config`.
 - [2026-07-26] Corregir el `TimedOut` transitorio al responder `/triggers`; error trazado con la update `253645075`.

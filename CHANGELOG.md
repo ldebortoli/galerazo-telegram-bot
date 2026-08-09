@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.14] - 2026-08-09
+
+- Correcciones y mejoras: los textos en guaraní ya no muestran el prefijo incorrecto `rehegua` al comienzo de cada mensaje.
+
 ## [0.13] - 2026-08-08
 
 - Correcciones y mejoras: el selector de idioma de `/config` agrupa cuatro opciones por fila para ocupar menos espacio.

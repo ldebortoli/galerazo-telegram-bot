@@ -727,3 +727,9 @@ El formateador comun de anuncios agrega, despues del texto de donacion y antes d
 ## D-101 - Cuatro idiomas por fila (2026-08-08)
 
 La constante `LANGUAGES_PER_ROW` es `4`, por lo que el selector de idioma de `/config` muestra cuatro opciones por fila y una ultima fila parcial cuando corresponde. Esta decision reemplaza la parte de D-099 que fijaba dos botones por fila: las etiquetas actuales caben sin truncarse y el tablero reduce su alto de forma significativa.
+
+## D-102 - Correccion del catalogo guarani y alcance de quechua (2026-08-09)
+
+El prefijo generado `rehegua\n` se elimina solo al inicio de cada texto del catalogo `gn`; los usos semanticos de la palabra dentro de una oracion se conservan. Una prueba de regresion impide que vuelva a anteponerse a los mensajes.
+
+Quechua no se incorpora como un catalogo generico: `qu` es un macroidioma que abarca variantes con diferencias reales. Antes de crear un catalogo localizado, se requiere elegir una variante concreta y una fuente linguistica revisable; no se usara una traduccion automatica sin revision como si fuese una interfaz validada.
