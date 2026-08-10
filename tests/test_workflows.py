@@ -12,6 +12,9 @@ class RuntimeUpdateWorkflowTests(unittest.TestCase):
         ).read_text(encoding="utf-8")
 
         self.assertIn("docker build", workflow)
+        self.assertIn("--target runtime", workflow)
+        self.assertIn("ensure_python_version", workflow)
+        self.assertNotIn("galerazo-bot:update-test python -m pytest", workflow)
         self.assertIn("git push origin HEAD:main", workflow)
         self.assertNotIn("pull-requests: write", workflow)
         self.assertNotIn("gh pr create", workflow)

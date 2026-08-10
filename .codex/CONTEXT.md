@@ -55,7 +55,7 @@ La misma politica se aplica globalmente desde `C:\Users\calei\.codex\AGENTS.md`.
 - `.github/workflows/quality.yml`: suite Linux para cambios sustantivos; ignora documentacion/memoria y cancela runs obsoletos.
 - `.github/workflows/docker-quality.yml`: build y tests Docker solo cuando cambia el runtime o la configuracion del contenedor.
 - `.github/workflows/publish-gce-image.yml`: publicacion manual del target Docker de produccion en Artifact Registry mediante Workload Identity Federation; nunca corre por push.
-- `.github/workflows/runtime-update.yml`: actualizacion semanal de Python/dependencias; salta validaciones cuando no hay cambios y, despues de validar entorno nativo y Docker, publica un commit normal sobre `main` sin force push ni permisos de pull request.
+- `.github/workflows/runtime-update.yml`: actualizacion semanal de Python/dependencias; salta validaciones cuando no hay cambios, ejecuta la suite nativa una sola vez y valida el target Docker `runtime` con su comprobacion de version antes de publicar un commit normal sobre `main`, sin force push ni permisos de pull request.
 - `requirements.in`: dependencias directas; `requirements.txt`: lock completo reproducible.
 - `scripts/runtime_versions.py`: valida y sincroniza la version exacta entre runtime y Docker.
 - `scripts/check_coverage.py`: exige 100% de sentencias y 100% de ramas sobre el nucleo multiplataforma de `galerazo_bot`.

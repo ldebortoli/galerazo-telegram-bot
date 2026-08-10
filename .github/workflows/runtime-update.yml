@@ -62,9 +62,8 @@ jobs:
       - name: Validate updated Docker image
         if: steps.changes.outputs.changed == 'true'
         run: |
-          docker build --tag galerazo-bot:update-test .
-          docker run --rm galerazo-bot:update-test python -m pytest
-          docker run --rm galerazo-bot:update-test python scripts/runtime_versions.py
+          docker build --target runtime --tag galerazo-bot:update-test .
+          docker run --rm galerazo-bot:update-test python -c "from galerazo_bot.runtime import ensure_python_version; ensure_python_version(); print('Runtime image version check OK')"
 
       - name: Commit validated update
         if: steps.changes.outputs.changed == 'true'

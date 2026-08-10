@@ -739,3 +739,6 @@ Quechua no se incorpora como un catalogo generico: `qu` es un macroidioma que ab
 Por instruccion explicita del usuario, se cancela definitivamente la tarea de Mapudungun y se incorpora Quechua sureño (`quz`, Runa Simi), la agrupacion quechua con mayor difusion. Esta decision reemplaza el bloqueo de Quechua de D-102.
 
 El catalogo `quz` se genero una vez con traduccion asistida y se versiona como datos estaticos; la ejecucion no contacta ningun servicio ni requiere clave. Los comandos, URLs, placeholders, saltos de linea y el nombre propio Galeraza estan protegidos y cubiertos por pruebas. La calidad linguistica queda sujeta a una futura revision de hablantes o especialistas antes de declarar el catalogo como normativo.
+## D-104 - Smoke test del target Docker runtime (2026-08-10)
+
+El workflow semanal ya ejecuta pytest con cobertura en el entorno nativo actualizado. Su imagen Docker `runtime` no copia `tests/`, por lo que no debe ejecutar pytest dentro del contenedor: eso devuelve codigo 5 por coleccion vacia. La validacion Docker construye explicitamente el target `runtime` y ejecuta `ensure_python_version()`; la suite completa se mantiene una sola vez para controlar cuota de GitHub Actions.

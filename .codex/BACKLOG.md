@@ -14,6 +14,8 @@
 
 # DONE
 
+- [2026-08-10] [USER_REQUEST] Corregir el pipeline semanal `Update runtime and dependencies`: el target Docker runtime no contiene `tests/`, por lo que se reemplazo pytest sin coleccion por un smoke test de `ensure_python_version()`. Validacion: 238 pruebas, cobertura 100%, build y smoke test Docker locales, runtime, `pip check`, `compileall`, checkpoint y diff-check OK.
+
 - [2026-08-09] [USER_QUEUE] Agregar Quechua sureño (`quz`, Runa Simi) al selector de idioma y su catálogo estático completo. Se preservan comandos, URLs, placeholders, saltos de línea y el nombre Galeraza. Version `0.15`; sin cambio de BotFather ni deploy. Validacion: 238 pruebas, cobertura 100% de sentencias/ramas, runtime, `pip check`, `compileall`, checkpoint y diff-check OK.
 
 - [2026-08-09] [CANCELLED: instrucción explícita del usuario] Agregar Mapudungun estándar al selector de idioma y su catálogo. No se incorporará un catálogo de Mapudungun.
