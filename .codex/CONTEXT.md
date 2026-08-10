@@ -15,11 +15,11 @@ La misma politica se aplica globalmente desde `C:\Users\calei\.codex\AGENTS.md`.
 - `python-telegram-bot[job-queue]` con APScheduler para tareas diarias.
 - SQLite mediante `sqlite3` de la libreria estandar.
 - `gspread` y `google-auth` para Google Sheets.
-- `google-cloud-bigquery==3.42.2` y ADC para leer la exportacion estandar de Cloud Billing.
+- `google-cloud-bigquery==3.43.0` y ADC para leer la exportacion estandar de Cloud Billing.
 - `python-dotenv` para configuracion local desde `.env`.
 - `httpx` para consultar OpenAI Moderation, `Pillow` para normalizar imagenes y `PyAV` para extraer frames de video completamente en memoria.
 - `tzdata==2026.3` para convertir timestamps de Telegram al timezone IANA argentino tambien en Windows.
-- `coverage.py==7.15.2` para cobertura local/CI de sentencias y ramas.
+- `coverage.py==7.15.4` para cobertura local/CI de sentencias y ramas.
 - `pytest==9.1.1` como runner de pruebas y `pytest-asyncio==1.4.0` con modo automatico para futuros tests async nativos.
 - Tkinter para el panel de escritorio de Windows.
 - Un lanzador minimo en C#/.NET Framework para abrir el panel sin consola.
