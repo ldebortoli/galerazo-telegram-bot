@@ -6,6 +6,7 @@ Mantener Galerazo Bot reproducible en Windows, CI y Docker, con SQLite persisten
 
 ## Estado actual
 
+- Se corrigio el `TimedOut` no handleado al anunciar el ganador diario de La Galeraza: la adjudicacion persistida se conserva, el timeout se registra como warning y no se reintenta para evitar un aviso duplicado. Version `0.16`; 238 pruebas y cobertura 100% OK. No se cambio ningun comando ni se desplego.
 - Se compacto el selector de idiomas en filas de dos botones y las filas empatadas de `/galerazas` ahora usan un prefijo con guion alineado dentro de cada ancho de posicion. El guion es formato de salida, no una lista Markdown. Version `0.11`, commit `46cb093` pusheado a `main`; 236 pruebas y cobertura 100% OK. No hay deploy solicitado.
 - Se incluyo debajo de la donacion la linea `Repo: https://github.com/ldebortoli/galerazo-telegram-bot` en el formato comun de anuncios y novedades. El control de longitud final se conserva para todos los idiomas. Version `0.12`; 236 pruebas y cobertura 100% OK. No hay deploy solicitado.
 - El selector de idiomas de `/config` agrupa cuatro botones por fila para reducir su alto. Version `0.13`; la navegacion permanece en su propia fila. Validacion completa: 236 pruebas y cobertura 100% OK. No hay deploy solicitado.
@@ -31,6 +32,7 @@ Mantener Galerazo Bot reproducible en Windows, CI y Docker, con SQLite persisten
 
 ## Validacion reciente
 
+- Version `0.16`: 238 pruebas nativas OK; cobertura 100% de sentencias y ramas; `runtime_versions.py`, `pip check`, `compileall`, `git diff --check` y checkpoint de logs OK. Sin Docker por no cambiar runtime/contenedor; sin release/deploy.
 - Pipeline runtime semanal: 238 pruebas nativas OK, cobertura 100% de sentencias y ramas, build y smoke test Docker runtime OK; `compileall`, `runtime_versions.py`, `pip check`, `git diff --check` y checkpoint de logs OK. Sin release/deploy.
 - Version `0.15`: 238 pruebas nativas OK; cobertura 100% de sentencias y ramas; `compileall`, `runtime_versions.py`, `pip check`, `git diff --check` y checkpoint de logs OK. Sin release/deploy.
 - Version `0.14`: 237 pruebas nativas OK; cobertura 100% de sentencias y ramas; `compileall`, `runtime_versions.py`, `pip check`, `git diff --check` y checkpoint de logs OK. Sin release/deploy.
@@ -51,4 +53,4 @@ Mantener Galerazo Bot reproducible en Windows, CI y Docker, con SQLite persisten
 
 ## Siguiente paso exacto
 
-No hay trabajo local activo. Ante un pedido posterior de release, indicar el flujo de Bot Control Center: vista Deploy, `Verificar` y `Publicar y deployar`; no migrar datos locales. Los únicos pendientes requieren los datos o autorizaciones explicitados en BACKLOG.
+No hay trabajo local activo. El proximo release debe incluir la version `0.16` y las correcciones acumuladas; usar Bot Control Center, vista Deploy, `Verificar` y `Publicar y deployar`, sin migrar datos locales. Los unicos pendientes requieren los datos o autorizaciones explicitados en BACKLOG.

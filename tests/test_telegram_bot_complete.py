@@ -763,6 +763,13 @@ class GalerazaExpenseAndConfigTests(unittest.IsolatedAsyncioTestCase):
         await tb._maybe_award_daily_galeraza(db, message, "1")
         message.reply_text.assert_awaited_once()
 
+        message.reply_text.side_effect = TimedOut()
+        with self.assertLogs(galeraza_handlers.logger, level="WARNING") as captured:
+            await tb._maybe_award_daily_galeraza(db, message, "1")
+        self.assertIn("no se reintentara", captured.output[0])
+        self.assertEqual(message.reply_text.await_count, 2)
+        self.assertEqual(db.try_award_daily_galeraza.call_count, 3)
+
     async def test_send_galerazas_single_multi_empty_id_and_failure(self) -> None:
         db = MagicMock()
         db.get_chat_settings.return_value = SimpleNamespace(language="es")

@@ -743,3 +743,7 @@ El catalogo `quz` se genero una vez con traduccion asistida y se versiona como d
 ## D-104 - Smoke test del target Docker runtime (2026-08-10)
 
 El workflow semanal ya ejecuta pytest con cobertura en el entorno nativo actualizado. Su imagen Docker `runtime` no copia `tests/`, por lo que no debe ejecutar pytest dentro del contenedor: eso devuelve codigo 5 por coleccion vacia. La validacion Docker construye explicitamente el target `runtime` y ejecuta `ensure_python_version()`; la suite completa se mantiene una sola vez para controlar cuota de GitHub Actions.
+
+## D-105 - Timeout al anunciar un punto de Galeraza (2026-08-13)
+
+La adjudicacion diaria se confirma en SQLite antes de enviar el aviso al chat. Si ese `reply_text` termina en `TimedOut`, se conserva el punto, se registra un warning local y no se reintenta: Telegram puede haber aceptado el mensaje aunque el cliente no haya recibido la respuesta, por lo que repetirlo podria duplicar el aviso. Otros errores de Telegram siguen llegando al manejador global para conservar su diagnostico.

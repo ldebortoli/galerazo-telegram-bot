@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.16] - 2026-08-13
+
+- Correcciones y mejoras: una demora transitoria de Telegram al anunciar la Galeraza deja de generar un error interno o duplicar el aviso; el punto ganado se conserva.
+
 ## [0.15] - 2026-08-09
 
 - `/config` incorpora Runa Simi, usando Quechua sureño para todos los textos del bot.
