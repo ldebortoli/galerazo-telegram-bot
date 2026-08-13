@@ -6,7 +6,7 @@ Mantener Galerazo Bot reproducible en Windows, CI y Docker, con SQLite persisten
 
 ## Estado actual
 
-- Se corrigio el `TimedOut` no handleado al anunciar el ganador diario de La Galeraza: la adjudicacion persistida se conserva, el timeout se registra como warning y no se reintenta para evitar un aviso duplicado. Version `0.16`; 238 pruebas y cobertura 100% OK. No se cambio ningun comando ni se desplego.
+- Se ajusto el `TimedOut` al anunciar el ganador diario de La Galeraza: la adjudicacion persistida se conserva; el fallo se registra como error local con traceback y tambien en el canal de logging, donde aclara que Telegram pudo haber entregado igualmente el aviso sin confirmar la respuesta. No se reintenta para evitar duplicados y el preprocesamiento continua. Version `0.16`; 239 pruebas y cobertura 100% OK. No se cambio ningun comando ni se desplego.
 - Se compacto el selector de idiomas en filas de dos botones y las filas empatadas de `/galerazas` ahora usan un prefijo con guion alineado dentro de cada ancho de posicion. El guion es formato de salida, no una lista Markdown. Version `0.11`, commit `46cb093` pusheado a `main`; 236 pruebas y cobertura 100% OK. No hay deploy solicitado.
 - Se incluyo debajo de la donacion la linea `Repo: https://github.com/ldebortoli/galerazo-telegram-bot` en el formato comun de anuncios y novedades. El control de longitud final se conserva para todos los idiomas. Version `0.12`; 236 pruebas y cobertura 100% OK. No hay deploy solicitado.
 - El selector de idiomas de `/config` agrupa cuatro botones por fila para reducir su alto. Version `0.13`; la navegacion permanece en su propia fila. Validacion completa: 236 pruebas y cobertura 100% OK. No hay deploy solicitado.
@@ -32,7 +32,7 @@ Mantener Galerazo Bot reproducible en Windows, CI y Docker, con SQLite persisten
 
 ## Validacion reciente
 
-- Version `0.16`: 238 pruebas nativas OK; cobertura 100% de sentencias y ramas; `runtime_versions.py`, `pip check`, `compileall`, `git diff --check` y checkpoint de logs OK. Sin Docker por no cambiar runtime/contenedor; sin release/deploy.
+- Version `0.16`: 239 pruebas nativas OK; cobertura 100% de sentencias y ramas; `runtime_versions.py`, `pip check`, `compileall`, `git diff --check` y checkpoint de logs OK. Sin Docker por no cambiar runtime/contenedor; sin release/deploy.
 - Pipeline runtime semanal: 238 pruebas nativas OK, cobertura 100% de sentencias y ramas, build y smoke test Docker runtime OK; `compileall`, `runtime_versions.py`, `pip check`, `git diff --check` y checkpoint de logs OK. Sin release/deploy.
 - Version `0.15`: 238 pruebas nativas OK; cobertura 100% de sentencias y ramas; `compileall`, `runtime_versions.py`, `pip check`, `git diff --check` y checkpoint de logs OK. Sin release/deploy.
 - Version `0.14`: 237 pruebas nativas OK; cobertura 100% de sentencias y ramas; `compileall`, `runtime_versions.py`, `pip check`, `git diff --check` y checkpoint de logs OK. Sin release/deploy.

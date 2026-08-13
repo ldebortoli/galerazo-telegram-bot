@@ -2,7 +2,7 @@
 
 ## [0.16] - 2026-08-13
 
-- Correcciones y mejoras: una demora transitoria de Telegram al anunciar la Galeraza deja de generar un error interno o duplicar el aviso; el punto ganado se conserva.
+- Correcciones y mejoras: una demora transitoria de Telegram al anunciar la Galeraza queda registrada con su estado, conserva el punto ganado y no duplica el aviso.
 
 ## [0.15] - 2026-08-09
 

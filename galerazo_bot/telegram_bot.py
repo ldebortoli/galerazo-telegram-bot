@@ -440,11 +440,28 @@ async def _preprocess_message(update: Update, context: ContextTypes.DEFAULT_TYPE
         return
 
     if _is_galeraza_candidate(update, message, user):
-        await _maybe_award_daily_galeraza(
-            db=state.db,
-            message=message,
-            user_id=str(user.id),
-        )
+        try:
+            await _maybe_award_daily_galeraza(
+                db=state.db,
+                message=message,
+                user_id=str(user.id),
+            )
+        except TimedOut as exc:
+            timeout_log = (
+                "Error manejado al anunciar La Galeraza:\n"
+                f"{type(exc).__name__}: {exc}\n"
+                "El punto se conservo.\n"
+                "Telegram no confirmo la respuesta; el aviso pudo haberse enviado igualmente.\n"
+                "No se reintento para evitar duplicados.\n"
+                f"update_id={getattr(update, 'update_id', None)} "
+                f"chat_id={message.chat.id} message_id={message.message_id}"
+            )
+            logger.error(timeout_log, exc_info=True)
+            await _send_log_event(
+                context.bot,
+                state.settings.telegram_log_chat_id,
+                timeout_log,
+            )
 
     text = message.text or message.caption
     if not text or is_command_invocation(text):

@@ -14,6 +14,8 @@
 
 # DONE
 
+- [2026-08-13] [USER_REQUEST] Ajustar el manejo del `TimedOut` al anunciar La Galeraza: ahora se registra como error local con traceback y tambien en el canal de logging; el evento aclara que el punto se conservo, que Telegram pudo haber entregado igualmente el aviso sin confirmar la respuesta y que no se reintento. Version `0.16`; 239 pruebas y cobertura 100% de sentencias/ramas, runtime, dependencias, `compileall`, checkpoint y diff-check OK. Sin deploy.
+
 - [2026-08-13] [USER_REQUEST] Contener el `TimedOut` de Telegram al anunciar el ganador diario de La Galeraza. El punto ya adjudicado se conserva, el timeout queda como warning local y el aviso no se reintenta para evitar duplicados. Version `0.16`; 238 pruebas y cobertura 100% de sentencias/ramas, runtime, dependencias, `compileall`, checkpoint y diff-check OK. Sin deploy.
 
 - [2026-08-10] [USER_REQUEST] Corregir el pipeline semanal `Update runtime and dependencies`: el target Docker runtime no contiene `tests/`, por lo que se reemplazo pytest sin coleccion por un smoke test de `ensure_python_version()`. La ejecucion remota `31395803879` paso correctamente y actualizo el lock en `9a8a4b2`. Validacion: 238 pruebas y cobertura 100% nativas; 237 pruebas Docker con una omision Tk esperada; build/smoke Docker, runtime, `pip check`, `compileall`, checkpoint y diff-check OK. Sin deploy.

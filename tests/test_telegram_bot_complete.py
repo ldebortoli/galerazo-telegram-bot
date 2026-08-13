@@ -369,6 +369,40 @@ class PreprocessAndTriggerTests(unittest.IsolatedAsyncioTestCase):
             await tb._preprocess_message(update, context)
         send.assert_not_awaited()
 
+    async def test_preprocess_logs_galeraza_timeout_and_continues(self) -> None:
+        db = MagicMock()
+        db.is_user_blocked.return_value = False
+        context = context_for(state(db), MagicMock())
+        message = message_stub(text="primer mensaje")
+        user = SimpleNamespace(id=1, full_name="User", username=None, is_bot=False)
+        update = SimpleNamespace(
+            update_id=42,
+            effective_message=message,
+            effective_user=user,
+            effective_chat=message.chat,
+        )
+
+        with patch.object(tb, "_is_user_restricted_in_message_chat", return_value=False), patch.object(
+            tb, "_is_galeraza_candidate", return_value=True
+        ), patch.object(
+            tb, "_maybe_award_daily_galeraza", AsyncMock(side_effect=TimedOut())
+        ), patch.object(
+            tb, "_send_log_event", AsyncMock(return_value=True)
+        ) as log, patch.object(
+            tb, "_maybe_send_triggered_messages", AsyncMock()
+        ) as send, self.assertLogs(tb.logger, level="ERROR") as captured:
+            await tb._preprocess_message(update, context)
+
+        timeout_log = log.await_args.args[2]
+        self.assertIn("TimedOut", timeout_log)
+        self.assertIn("El punto se conservo", timeout_log)
+        self.assertIn("pudo haberse enviado igualmente", timeout_log)
+        self.assertIn("No se reintento", timeout_log)
+        self.assertIn("update_id=42 chat_id=-1 message_id=10", timeout_log)
+        self.assertIn("telegram.error.TimedOut", "\n".join(captured.output))
+        send.assert_awaited_once()
+        db.save_incoming_message.assert_called_with(sender_id="1", text="primer mensaje", chat_id="-1")
+
     async def test_maybe_triggered_early_match_nonmatch_and_error(self) -> None:
         db = MagicMock()
         bot = MagicMock()
@@ -764,9 +798,8 @@ class GalerazaExpenseAndConfigTests(unittest.IsolatedAsyncioTestCase):
         message.reply_text.assert_awaited_once()
 
         message.reply_text.side_effect = TimedOut()
-        with self.assertLogs(galeraza_handlers.logger, level="WARNING") as captured:
+        with self.assertRaises(TimedOut):
             await tb._maybe_award_daily_galeraza(db, message, "1")
-        self.assertIn("no se reintentara", captured.output[0])
         self.assertEqual(message.reply_text.await_count, 2)
         self.assertEqual(db.try_award_daily_galeraza.call_count, 3)
 

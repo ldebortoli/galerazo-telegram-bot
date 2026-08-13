@@ -747,3 +747,7 @@ El workflow semanal ya ejecuta pytest con cobertura en el entorno nativo actuali
 ## D-105 - Timeout al anunciar un punto de Galeraza (2026-08-13)
 
 La adjudicacion diaria se confirma en SQLite antes de enviar el aviso al chat. Si ese `reply_text` termina en `TimedOut`, se conserva el punto, se registra un warning local y no se reintenta: Telegram puede haber aceptado el mensaje aunque el cliente no haya recibido la respuesta, por lo que repetirlo podria duplicar el aviso. Otros errores de Telegram siguen llegando al manejador global para conservar su diagnostico.
+
+## D-106 - Error manejado de Galeraza visible en ambos logs (2026-08-13)
+
+Por indicacion del usuario, el `TimedOut` del aviso de Galeraza se registra como error local con traceback y tambien se envia al canal configurado de logging. El evento aclara que el punto ya quedo guardado, que Telegram no confirmo la respuesta y que el aviso pudo haberse entregado igualmente; no afirma una entrega imposible de verificar ni reintenta. Esta decision reemplaza el nivel warning y el alcance exclusivamente local de D-105.

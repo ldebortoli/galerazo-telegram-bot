@@ -7,7 +7,7 @@ from datetime import datetime, timezone
 from zoneinfo import ZoneInfo
 
 from telegram import Message, Update, User
-from telegram.error import TelegramError, TimedOut
+from telegram.error import TelegramError
 
 from ..command_model import Command
 from ..database import Database
@@ -68,15 +68,7 @@ async def maybe_award_daily_galeraza(
         message_date=message_date.isoformat(),
     )
     if awarded:
-        try:
-            await message.reply_text(t(_language(db, message.chat.id), "galeraza.win"), do_quote=True)
-        except TimedOut:
-            logger.warning(
-                "Se agoto el timeout al anunciar la Galeraza en chat %s (mensaje %s); "
-                "no se reintentara.",
-                message.chat.id,
-                message.message_id,
-            )
+        await message.reply_text(t(_language(db, message.chat.id), "galeraza.win"), do_quote=True)
 
 
 async def send_galerazas(
