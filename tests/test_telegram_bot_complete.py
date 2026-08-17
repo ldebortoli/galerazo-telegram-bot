@@ -181,21 +181,17 @@ class LifecycleAndBillingTests(unittest.IsolatedAsyncioTestCase):
     def test_build_application_uses_per_chat_processor(self) -> None:
         db = MagicMock()
         builder = MagicMock()
-        builder.token.return_value = builder
-        builder.connect_timeout.return_value = builder
-        builder.read_timeout.return_value = builder
-        builder.write_timeout.return_value = builder
-        builder.pool_timeout.return_value = builder
+        builder.bot.return_value = builder
         builder.post_init.return_value = builder
         builder.concurrent_updates.return_value = builder
         builder.build.return_value = "app"
-        with patch.object(tb, "ApplicationBuilder", return_value=builder):
+        retrying_bot = MagicMock()
+        with patch.object(tb, "ApplicationBuilder", return_value=builder), patch.object(
+            tb, "build_retrying_ext_bot", return_value=retrying_bot
+        ) as build_bot:
             self.assertEqual(tb._build_application("token", db), "app")
-        builder.token.assert_called_once_with("token")
-        builder.connect_timeout.assert_called_once_with(tb.TELEGRAM_REQUEST_TIMEOUT_SECONDS)
-        builder.read_timeout.assert_called_once_with(tb.TELEGRAM_REQUEST_TIMEOUT_SECONDS)
-        builder.write_timeout.assert_called_once_with(tb.TELEGRAM_REQUEST_TIMEOUT_SECONDS)
-        builder.pool_timeout.assert_called_once_with(tb.TELEGRAM_REQUEST_TIMEOUT_SECONDS)
+        build_bot.assert_called_once_with("token", tb.TELEGRAM_REQUEST_TIMEOUT_SECONDS)
+        builder.bot.assert_called_once_with(retrying_bot)
         self.assertIsInstance(builder.concurrent_updates.call_args.args[0], tb.PerChatUpdateProcessor)
 
     async def test_botfather_command_suggestions_are_public_and_scoped(self) -> None:
@@ -396,8 +392,9 @@ class PreprocessAndTriggerTests(unittest.IsolatedAsyncioTestCase):
         timeout_log = log.await_args.args[2]
         self.assertIn("TimedOut", timeout_log)
         self.assertIn("El punto se conservo", timeout_log)
-        self.assertIn("pudo haberse enviado igualmente", timeout_log)
-        self.assertIn("No se reintento", timeout_log)
+        self.assertIn("pudieron haberse enviado igualmente", timeout_log)
+        self.assertIn("3 intentos totales", timeout_log)
+        self.assertIn("pueden estar duplicados", timeout_log)
         self.assertIn("update_id=42 chat_id=-1 message_id=10", timeout_log)
         self.assertIn("telegram.error.TimedOut", "\n".join(captured.output))
         send.assert_awaited_once()
@@ -853,7 +850,17 @@ class GalerazaExpenseAndConfigTests(unittest.IsolatedAsyncioTestCase):
         db.save_paginated_message_state.assert_not_called()
 
         message.reply_text.side_effect = TimedOut()
-        await tb._send_text_response(db, message, "Triggers:\n\n- uno", "1", "triggers", True, bot, "-10")
+        with self.assertRaises(TimedOut):
+            await tb._send_text_response(
+                db,
+                message,
+                "Triggers:\n\n- uno",
+                "1",
+                "triggers",
+                True,
+                bot,
+                "-10",
+            )
 
         message.reply_text.side_effect = None
         message.reply_text.return_value = SimpleNamespace(message_id=3, edit_text=AsyncMock())

@@ -95,6 +95,7 @@ from .pagination import (
 )
 from .roles import BackupResult, RussianRouletteHitResult, TriggerModerationResult, TriggerPayload, UserLevel
 from .runtime import ensure_python_version
+from .telegram_retry import build_retrying_ext_bot
 from .update_processor import PerChatUpdateProcessor
 from .versioning import CURRENT_VERSION, pending_release_notes
 
@@ -192,11 +193,7 @@ def _mark_panel_restart_pending() -> None:
 def _build_application(token: str, db: Database) -> Application:
     return (
         ApplicationBuilder()
-        .token(token)
-        .connect_timeout(TELEGRAM_REQUEST_TIMEOUT_SECONDS)
-        .read_timeout(TELEGRAM_REQUEST_TIMEOUT_SECONDS)
-        .write_timeout(TELEGRAM_REQUEST_TIMEOUT_SECONDS)
-        .pool_timeout(TELEGRAM_REQUEST_TIMEOUT_SECONDS)
+        .bot(build_retrying_ext_bot(token, TELEGRAM_REQUEST_TIMEOUT_SECONDS))
         .post_init(_post_init)
         .concurrent_updates(PerChatUpdateProcessor(db.resolve_chat_id))
         .build()
@@ -451,8 +448,9 @@ async def _preprocess_message(update: Update, context: ContextTypes.DEFAULT_TYPE
                 "Error manejado al anunciar La Galeraza:\n"
                 f"{type(exc).__name__}: {exc}\n"
                 "El punto se conservo.\n"
-                "Telegram no confirmo la respuesta; el aviso pudo haberse enviado igualmente.\n"
-                "No se reintento para evitar duplicados.\n"
+                "Se realizaron 3 intentos totales: el original y 2 reintentos.\n"
+                "Telegram no confirmo ninguna respuesta; uno o mas avisos pudieron haberse "
+                "enviado igualmente y pueden estar duplicados.\n"
                 f"update_id={getattr(update, 'update_id', None)} "
                 f"chat_id={message.chat.id} message_id={message.message_id}"
             )
@@ -1085,11 +1083,7 @@ async def _send_text_response(
     page = render_page(header, body_lines, page=1)
 
     entities = _bold_first_line_entities(page.text) if list_type == "triggers" else None
-    try:
-        result = await message.reply_text(page.text, do_quote=True, entities=entities)
-    except TimedOut:
-        logger.warning("Se agoto el timeout al responder %s en chat %s.", list_type, message.chat.id)
-        return
+    result = await message.reply_text(page.text, do_quote=True, entities=entities)
     message_id = str(result.message_id)
     if page.total_pages <= 1 or not message_id:
         return

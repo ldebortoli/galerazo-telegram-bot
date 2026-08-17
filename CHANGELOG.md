@@ -1,8 +1,8 @@
 # Changelog
 
-## [0.16] - 2026-08-13
+## [0.16] - 2026-08-17
 
-- Correcciones y mejoras: una demora transitoria de Telegram al anunciar la Galeraza queda registrada con su estado, conserva el punto ganado y no duplica el aviso.
+- Correcciones y mejoras: los envios de texto con una demora transitoria de Telegram realizan hasta tres intentos para priorizar la entrega, aunque el aviso pueda repetirse. La Galeraza conserva el punto ganado y registra el resultado si los tres intentos fallan.
 
 ## [0.15] - 2026-08-09
 

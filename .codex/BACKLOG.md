@@ -14,6 +14,8 @@
 
 # DONE
 
+- [2026-08-17] [USER_REQUEST] Implementar tres intentos totales (envio original y dos reintentos) para todo `send_message` que falle con `TimedOut`. `RetryingExtBot` espera 1 y 2 segundos, corta al primer exito, registra y eleva el tercer timeout; se acepta explicitamente el riesgo de duplicados para priorizar la entrega. La Galeraza conserva el punto y reporta el conteo final. Version `0.16`; 244 pruebas y cobertura 100% de sentencias/ramas, runtime, dependencias, `compileall`, checkpoint y diff-check OK. Sin Docker ni deploy.
+
 - [2026-08-13] [USER_REQUEST] Ajustar el manejo del `TimedOut` al anunciar La Galeraza: ahora se registra como error local con traceback y tambien en el canal de logging; el evento aclara que el punto se conservo, que Telegram pudo haber entregado igualmente el aviso sin confirmar la respuesta y que no se reintento. Version `0.16`; 239 pruebas y cobertura 100% de sentencias/ramas, runtime, dependencias, `compileall`, checkpoint y diff-check OK. Sin deploy.
 
 - [2026-08-13] [USER_REQUEST] Contener el `TimedOut` de Telegram al anunciar el ganador diario de La Galeraza. El punto ya adjudicado se conserva, el timeout queda como warning local y el aviso no se reintenta para evitar duplicados. Version `0.16`; 238 pruebas y cobertura 100% de sentencias/ramas, runtime, dependencias, `compileall`, checkpoint y diff-check OK. Sin deploy.

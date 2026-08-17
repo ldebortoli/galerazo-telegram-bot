@@ -751,3 +751,7 @@ La adjudicacion diaria se confirma en SQLite antes de enviar el aviso al chat. S
 ## D-106 - Error manejado de Galeraza visible en ambos logs (2026-08-13)
 
 Por indicacion del usuario, el `TimedOut` del aviso de Galeraza se registra como error local con traceback y tambien se envia al canal configurado de logging. El evento aclara que el punto ya quedo guardado, que Telegram no confirmo la respuesta y que el aviso pudo haberse entregado igualmente; no afirma una entrega imposible de verificar ni reintenta. Esta decision reemplaza el nivel warning y el alcance exclusivamente local de D-105.
+
+## D-107 - Tres intentos para todo send_message (2026-08-17)
+
+Por preferencia explicita del usuario, se prioriza la entrega de texto sobre evitar duplicados. `RetryingExtBot` aplica a cada `send_message`, incluidos los `reply_text`, un maximo de tres intentos totales exclusivamente ante `TimedOut`, con esperas de 1 y 2 segundos y corte al primer exito. El tercer timeout se registra como error y se vuelve a elevar. Telegram puede haber aceptado cualquier intento cuya respuesta se perdio, por lo que se admite que el mensaje aparezca repetido. Esta decision reemplaza las politicas sin reintento de D-068, D-105 y D-106 para envios de texto; no se extiende a ediciones, documentos ni multimedia.
