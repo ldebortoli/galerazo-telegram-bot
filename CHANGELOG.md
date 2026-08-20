@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.22] - 2026-08-20
+
+- Los Hisopos falso y putrefacto ahora aparecen disfrazados de común, plateado, dorado o diamante y revelan su identidad al capturarlos.
+- El Hisopo radiactivo cambia de valor durante sus 20 minutos: permanece negativo durante la primera mitad y aumenta hasta 6 puntos cerca del vencimiento, mostrando el resultado recién al capturarlo.
+
 ## [0.21] - 2026-08-20
 
 - El Hisopo falso ahora se disfraza de común hasta la captura, y el misterioso contiene y revela uno de los otros tipos respetando sus probabilidades relativas.

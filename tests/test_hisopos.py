@@ -18,11 +18,13 @@ from galerazo_bot.hisopos import (
     FAKE_HISOPO,
     FLEETING_HISOPO,
     GOLD_HISOPO,
+    HISOPO_DISGUISE_PROBABILITY_RANGES,
     HISOPO_EXPIRATION,
     HISOPO_FLEETING_EXPIRATION,
     HISOPO_PROBABILITY_RANGES,
     MYSTERY_HISOPO,
     PUTRID_HISOPO,
+    RADIOACTIVE_HISOPO,
     RADIOACTIVE_POINT_VALUES,
     SILVER_HISOPO,
     TWIN_HISOPO,
@@ -30,8 +32,10 @@ from galerazo_bot.hisopos import (
     build_hisopo_pages,
     hisopo_kind_for_spawn,
     intensity_translation_key,
+    radioactive_points_at,
     random_next_day_datetime,
     render_hisopo_page,
+    select_hisopo_disguise,
     select_hisopo_kind,
     select_hisopo_spawn,
     should_spawn_hisopo,
@@ -77,7 +81,8 @@ class HisopoRulesTests(unittest.TestCase):
         radioactive = select_hisopo_kind(91, randbelow=lambda limit: limit - 1)
         self.assertEqual(mystery, MYSTERY_HISOPO)
         self.assertTrue(mystery.hides_points)
-        self.assertEqual(radioactive.points, RADIOACTIVE_POINT_VALUES[-1])
+        self.assertEqual(radioactive, RADIOACTIVE_HISOPO)
+        self.assertTrue(radioactive.hides_points)
         self.assertEqual(FLEETING_HISOPO.expiration, HISOPO_FLEETING_EXPIRATION)
         self.assertEqual(FAKE_HISOPO.next_day_spawns, 0)
         self.assertEqual(TWIN_HISOPO.next_day_spawns, 1)
@@ -119,9 +124,13 @@ class HisopoRulesTests(unittest.TestCase):
         self.assertEqual(common.actual, COMMON_HISOPO)
         self.assertEqual(common.appearance, COMMON_HISOPO)
 
-        fake = select_hisopo_spawn(95)
+        fake = select_hisopo_spawn(95, randbelow=lambda _limit: 0)
         self.assertEqual(fake.actual, FAKE_HISOPO)
         self.assertEqual(fake.appearance, COMMON_HISOPO)
+
+        putrid = select_hisopo_spawn(86, randbelow=lambda _limit: 99)
+        self.assertEqual(putrid.actual, PUTRID_HISOPO)
+        self.assertEqual(putrid.appearance, DIAMOND_HISOPO)
 
         mystery_common = select_hisopo_spawn(79, randbelow=lambda _limit: 0)
         self.assertEqual(mystery_common.actual, COMMON_HISOPO)
@@ -132,10 +141,10 @@ class HisopoRulesTests(unittest.TestCase):
         self.assertEqual(mystery_fake.actual, FAKE_HISOPO)
         self.assertEqual(mystery_fake.appearance, MYSTERY_HISOPO)
 
-        rolls = iter((83, 4))
+        rolls = iter((83,))
         mystery_radioactive = select_hisopo_spawn(79, randbelow=lambda _limit: next(rolls))
         self.assertEqual(mystery_radioactive.actual.key, "radioactive")
-        self.assertEqual(mystery_radioactive.actual.points, 6)
+        self.assertEqual(mystery_radioactive.actual.points, 0)
 
         expected_actuals = {
             0: "common",
@@ -163,6 +172,61 @@ class HisopoRulesTests(unittest.TestCase):
                 self.assertEqual(selected.actual.key, expected_key)
         with self.assertRaisesRegex(RuntimeError, "seleccionar"):
             hisopo_rules._select_weighted_non_mystery_kind(lambda limit: limit)
+
+    def test_disguise_probabilities_and_radioactive_timeline(self) -> None:
+        self.assertEqual(RADIOACTIVE_POINT_VALUES, (-3, -1, 2, 4, 6))
+        expected_disguises = {
+            0: COMMON_HISOPO,
+            74: COMMON_HISOPO,
+            75: SILVER_HISOPO,
+            88: SILVER_HISOPO,
+            89: GOLD_HISOPO,
+            98: GOLD_HISOPO,
+            99: DIAMOND_HISOPO,
+        }
+        for disguise_roll, expected in expected_disguises.items():
+            with self.subTest(disguise_roll=disguise_roll):
+                self.assertEqual(
+                    select_hisopo_disguise(lambda _limit, value=disguise_roll: value),
+                    expected,
+                )
+        probabilities = {
+            key: upper - lower + 1
+            for key, (lower, upper) in HISOPO_DISGUISE_PROBABILITY_RANGES.items()
+        }
+        self.assertEqual(
+            probabilities,
+            {"common": 75, "silver": 14, "gold": 10, "diamond": 1},
+        )
+        self.assertEqual(sum(probabilities.values()), 100)
+
+        spawned_at = datetime(2026, 8, 20, 12, tzinfo=timezone.utc)
+        expected_points = {
+            timedelta(minutes=-1): -3,
+            timedelta(0): -3,
+            timedelta(minutes=4, seconds=59): -3,
+            timedelta(minutes=5): -1,
+            timedelta(minutes=9, seconds=59): -1,
+            timedelta(minutes=10): 2,
+            timedelta(minutes=14, seconds=59): 2,
+            timedelta(minutes=15): 4,
+            timedelta(minutes=17, seconds=59): 4,
+            timedelta(minutes=18): 6,
+            timedelta(minutes=19, seconds=59): 6,
+        }
+        for elapsed, points in expected_points.items():
+            with self.subTest(elapsed=elapsed):
+                self.assertEqual(
+                    radioactive_points_at(spawned_at, spawned_at + elapsed),
+                    points,
+                )
+        self.assertEqual(
+            radioactive_points_at(
+                datetime(2026, 8, 20, 12),
+                datetime(2026, 8, 20, 12, 18),
+            ),
+            6,
+        )
 
     def test_next_day_is_random_local_calendar_day(self) -> None:
         now = datetime(2026, 8, 20, 23, 30, tzinfo=timezone.utc)
@@ -336,6 +400,30 @@ class HisopoDatabaseTests(unittest.TestCase):
         self.assertEqual(
             {score.user_id: score.points for score in self.db.get_hisopo_scores("-1")},
             {"2": 4, "3": -2},
+        )
+
+        self.db.save_hisopo_spawn(
+            "-1",
+            "303",
+            "radioactive",
+            0,
+            "message",
+            self.now.isoformat(),
+            (self.now + timedelta(minutes=20)).isoformat(),
+        )
+        radioactive = self.db.capture_hisopo(
+            "-1",
+            "303",
+            "2",
+            self.now + timedelta(minutes=18),
+            (),
+            points_at_capture=6,
+        )
+        self.assertEqual(radioactive.spawn.points, 6)
+        self.assertEqual(self.db.get_hisopo_spawn("-1", "303").points, 6)
+        self.assertEqual(
+            {score.user_id: score.points for score in self.db.get_hisopo_scores("-1")},
+            {"2": 10, "3": -2},
         )
 
 

@@ -1258,6 +1258,7 @@ class Database:
         user_id: str,
         now: datetime,
         next_scheduled_for: datetime | Iterable[datetime],
+        points_at_capture: int | None = None,
     ) -> HisopoCaptureResult:
         chat_id = self.resolve_chat_id(chat_id)
         self.get_or_create_user(user_id)
@@ -1290,13 +1291,15 @@ class Database:
                     _hisopo_spawn_from_row(row, status="rotten"),
                 )
 
+            awarded_points = spawn.points if points_at_capture is None else points_at_capture
+
             conn.execute(
                 """
                 UPDATE hisopo_spawns
-                SET status = 'captured', winner_user_id = ?, captured_at = ?
+                SET status = 'captured', winner_user_id = ?, captured_at = ?, points = ?
                 WHERE chat_id = ? AND message_id = ? AND status = 'active'
                 """,
-                (user_id, now_text, chat_id, message_id),
+                (user_id, now_text, awarded_points, chat_id, message_id),
             )
             conn.execute(
                 """
@@ -1306,7 +1309,7 @@ class Database:
                     points = hisopo_scores.points + excluded.points,
                     updated_at = CURRENT_TIMESTAMP
                 """,
-                (chat_id, user_id, spawn.points),
+                (chat_id, user_id, awarded_points),
             )
             scheduled_datetimes = (
                 (next_scheduled_for,)
@@ -1338,6 +1341,7 @@ class Database:
                 status="captured",
                 winner_user_id=user_id,
                 captured_at=now_text,
+                points=awarded_points,
             )
         return HisopoCaptureResult(
             "captured",
@@ -2063,6 +2067,7 @@ def _hisopo_spawn_from_row(
     status: str | None = None,
     winner_user_id: str | None = None,
     captured_at: str | None = None,
+    points: int | None = None,
 ) -> HisopoSpawn:
     return HisopoSpawn(
         chat_id=row["chat_id"],
@@ -2073,7 +2078,7 @@ def _hisopo_spawn_from_row(
             if "appearance_type" in row.keys() and row["appearance_type"] is not None
             else row["hisopo_type"]
         ),
-        points=row["points"],
+        points=points if points is not None else row["points"],
         source=row["source"],
         spawned_at=row["spawned_at"],
         expires_at=row["expires_at"],

@@ -88,6 +88,7 @@ from .hisopos import (
     HISOPO_CALLBACK_PREFIX,
     HISOPO_CAPTURE_CALLBACK,
     hisopo_kind_for_spawn,
+    radioactive_points_at,
     random_next_day_datetime,
     select_hisopo_spawn,
     should_spawn_hisopo,
@@ -693,17 +694,24 @@ async def _hisopo_callback_entrypoint(
     now = datetime.now(timezone.utc)
     spawn = state.db.get_hisopo_spawn(str(message.chat.id), str(message.message_id))
     next_scheduled_for = ()
+    points_at_capture = None
     if spawn is not None:
         kind = hisopo_kind_for_spawn(spawn.hisopo_type, spawn.points)
         next_scheduled_for = tuple(
             random_next_day_datetime(now) for _ in range(kind.next_day_spawns)
         )
+        if spawn.hisopo_type == "radioactive":
+            points_at_capture = radioactive_points_at(
+                datetime.fromisoformat(spawn.spawned_at),
+                now,
+            )
     result = state.db.capture_hisopo(
         chat_id=str(message.chat.id),
         message_id=str(message.message_id),
         user_id=str(user.id),
         now=now,
         next_scheduled_for=next_scheduled_for,
+        points_at_capture=points_at_capture,
     )
     if result.status == "captured" and result.spawn is not None:
         type_label = t(language, f"hisopos.type.{result.spawn.hisopo_type}")
