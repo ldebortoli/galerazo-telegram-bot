@@ -68,6 +68,7 @@ class DatabaseCompleteTests(unittest.TestCase):
         self.assertFalse(self.db.get_chat_settings("-2").announcements_enabled)
         self.assertEqual({chat.chat_id for chat in self.db.list_active_chats()}, {"-2", "-3"})
         self.assertTrue(self.db.is_command_group_enabled("-2", "galeraza"))
+        self.assertTrue(self.db.is_command_group_enabled("-2", "hisopos"))
         self.assertFalse(self.db.is_command_group_enabled("-2", "ruletarusa"))
         self.db.set_command_group_enabled("-2", "ruletarusa", True)
         self.assertTrue(self.db.is_command_group_enabled("-2", "ruletarusa"))

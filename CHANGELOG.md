@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.18] - 2026-08-20
+
+- El Recolector de Hisopos ahora viene habilitado por defecto en grupos y supergrupos. Los chats que lo hayan desactivado desde `/config` conservan su eleccion.
+
 ## [0.17] - 2026-08-20
 
 - Nuevo juego configurable `Recolector de Hisopos` para grupos y supergrupos, con apariciones aleatorias en cinco intensidades, hisopos comunes, plateados y dorados, captura por botonera y tabla `/hisopos`.

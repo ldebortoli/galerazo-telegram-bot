@@ -14,6 +14,10 @@
 
 # DONE
 
+- [2026-08-20] [USER_REQUEST] Habilitado por defecto el Recolector de Hisopos para chats sin preferencia guardada; toda desactivacion explicita en `/config` permanece vigente. Version `0.18`; 259 pruebas y cobertura 100% de sentencias/ramas, runtime, dependencias, compilacion y diff-check OK. Sin cambio de BotFather, Docker ni deploy.
+
+- [2026-08-20] [USER_QUEUE] Aplicada la politica de proteccion y privacidad del repositorio publico: historial y 164 archivos versionados auditados con Gitleaks 8.30.1 sin hallazgos; Secret Scanning y Push Protection habilitados, cero alertas; correo Git local `noreply`, nombre efectivo preservado, cero rutas absolutas de perfil y cero candidatos de correo personal versionados. Sin reescribir historial ni alterar el remoto.
+
 - [2026-08-20] [USER_REQUEST] Confirmar y proteger la edicion del mensaje al capturar un Hisopo: la leyenda conserva la foto, identifica ganador/rareza/puntos y la botonera desaparece. Las rarezas negativas futuras usaran un texto localizado de puntos perdidos; no se implemento ninguna rareza nueva sin eleccion del usuario. Validacion: 259 pruebas y cobertura 100% de sentencias/ramas, runtime, dependencias, compilacion y diff-check OK. Sin version nueva ni deploy.
 
 - [2026-08-20] [USER_REQUEST] Implementado localmente el juego configurable y traducido `Recolector de Hisopos`: intensidades 1/5/10/15/20%, rarezas comun/plateada/dorada, captura atomica, vencimiento a 20 minutos, ranking `/hisopos`, agenda persistente para el dia siguiente, migracion grupo-supergrupo y tres imagenes originales. Version `0.17`; 259 pruebas y cobertura 100% de sentencias/ramas, runtime, dependencias, compilacion, scripts, imagenes y checkpoint OK. BotFather sincronizado. Faltan solamente los tres `file_id` que aportara el usuario. Docker local no estaba iniciado; sin deploy.

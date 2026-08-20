@@ -106,6 +106,8 @@ class HisopoDatabaseTests(unittest.TestCase):
         )
 
     def test_settings_capture_score_and_schedule_lifecycle(self) -> None:
+        self.assertTrue(self.db.is_command_group_enabled("-1", "hisopos"))
+        self.db.set_command_group_enabled("-1", "hisopos", False)
         self.assertFalse(self.db.is_command_group_enabled("-1", "hisopos"))
         self.assertEqual(self.db.get_hisopo_intensity_percent("-1"), 10)
         self.db.set_hisopo_intensity_percent("-1", 20)

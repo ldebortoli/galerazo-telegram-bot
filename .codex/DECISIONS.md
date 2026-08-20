@@ -149,7 +149,7 @@ Este archivo es append-only a nivel conceptual: no borrar decisiones anteriores.
 - Estado: vigente.
 - Fecha: 2026-07-10.
 - Decision: la estructura `.codex/` y su flujo obligatorio se aplican a todos los proyectos activos y deben inicializarse automaticamente antes del primer trabajo en cualquier proyecto futuro.
-- Alcance: la instruccion global vive en `C:\Users\calei\.codex\AGENTS.md`; cada proyecto conserva su propia fuente de verdad en `.codex/`.
+- Alcance: la instruccion global vive en `%USERPROFILE%\.codex\AGENTS.md`; cada proyecto conserva su propia fuente de verdad en `.codex/`.
 - Motivo: continuidad entre sesiones, modelos y agentes sin depender de memoria conversacional.
 - Verificacion: la documentacion oficial de Codex confirma que al iniciar cada run carga primero el `AGENTS.md` global de `CODEX_HOME` y luego concatena las instrucciones del proyecto desde la raiz hacia el directorio actual.
 
@@ -233,7 +233,7 @@ Este archivo es append-only a nivel conceptual: no borrar decisiones anteriores.
 - Fecha: 2026-07-10.
 - Decision: toda tarea incorporada desde `USER_QUEUE` debe figurar en `IN PROGRESS`, `DONE` o con `[BLOCKED: causa exacta]` en su propia linea del backlog; no puede quedar como pendiente P1/P2 sin calificacion.
 - Cierre: antes de finalizar un run se auditan todas las entradas procesadas contra esos estados. Si se agota la cuota durante una tarea, queda en `IN PROGRESS` y el handoff registra el siguiente paso exacto.
-- Alcance: regla global en `C:\Users\calei\.codex\AGENTS.md` y en el inicializador de proyectos futuros.
+- Alcance: regla global en `%USERPROFILE%\.codex\AGENTS.md` y en el inicializador de proyectos futuros.
 
 ## D-026 - Ruleta rusa atomica y deshabilitada por defecto
 
@@ -769,3 +769,13 @@ Cada captura agenda exactamente una aparicion en un segundo aleatorio del siguie
 Al capturar un Hisopo, el bot edita la leyenda del mismo mensaje que contenia la foto y elimina por completo su botonera. El resultado identifica al usuario por su nombre visible, nombra la rareza capturada e informa el cambio de puntaje. Las rarezas positivas usan una formulacion equivalente a "sumo/gano"; cualquier rareza negativa futura debera usar una formulacion localizada equivalente a "perdio/resto", sin mostrar un signo ambiguo con el verbo incorrecto. Un Hisopo podrido tambien pierde la botonera.
 
 Las rarezas especiales y sus probabilidades no quedan definidas por esta decision. Se evaluaran por separado y no se incorporaran hasta que el usuario elija una mecanica concreta.
+
+## D-110 - Recolector de Hisopos habilitado por defecto (2026-08-20)
+
+El Recolector de Hisopos se considera habilitado cuando un chat no posee una preferencia explicita en `chat_command_settings`. Esta decision reemplaza solamente el default deshabilitado de D-108: una fila guardada con `enabled = 0` sigue desactivando el juego y no se sobrescribe al actualizar. Ruleta rusa y Gastos conservan sus defaults deshabilitados.
+
+## D-111 - Protecciones y privacidad del repositorio publico (2026-08-20)
+
+El remoto GitHub de Galerazobot permanece publico con Secret Scanning y Push Protection habilitados. Antes de confirmarlo se audito todo el historial alcanzable con Gitleaks y patrones adicionales sin encontrar secretos reales; la unica cadena con formato de token Telegram pertenece a una prueba y no coincide con la credencial local.
+
+La identidad Git local usa el correo `noreply` de la cuenta autenticada y conserva `user.name`. Los archivos versionados usan `%USERPROFILE%`, variables o placeholders en lugar de rutas absolutas del perfil de Windows y no incluyen correos personales. No se reescribe el historial ni se reemplaza el remoto para aplicar esta politica.

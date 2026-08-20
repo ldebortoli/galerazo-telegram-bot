@@ -832,7 +832,7 @@ class Database:
                 (chat_id, command_group),
             ).fetchone()
         if row is None:
-            return command_group not in {"gastos", "hisopos", "ruletarusa"}
+            return command_group not in {"gastos", "ruletarusa"}
         return bool(row["enabled"])
 
     def set_command_group_enabled(self, chat_id: str, command_group: str, enabled: bool) -> None:

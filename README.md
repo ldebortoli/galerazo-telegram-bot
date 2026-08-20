@@ -421,7 +421,7 @@ La fecha se calcula exclusivamente desde `message.date` de Telegram, convertido 
 
 ## Recolector de Hisopos
 
-El Recolector de Hisopos es un juego para grupos y supergrupos y viene deshabilitado por defecto. Un admin o dev puede activarlo desde `/config`, en `Comandos -> Recolector de Hisopos`, y elegir una de cinco intensidades:
+El Recolector de Hisopos es un juego para grupos y supergrupos y viene habilitado por defecto. Un admin o dev puede desactivarlo desde `/config`, en `Comandos -> Recolector de Hisopos`, y elegir una de cinco intensidades:
 
 - muy poca: 1 % por mensaje válido;
 - poca: 5 %;
@@ -467,7 +467,7 @@ Los conjuntos configurables son `Galeraza`, `Recolector de Hisopos`, `Triggers` 
 [ Sí ] - No
 ```
 
-`Galeraza` y `Triggers` vienen habilitados por defecto. `Recolector de Hisopos` y `Ruleta rusa` vienen deshabilitados hasta que un admin o dev del chat los habilite. El Recolector también permite elegir la intensidad de apariciones. La configuración, puntajes, hisopos activos y apariciones programadas se guardan en SQLite y se migran si Telegram convierte un grupo en supergrupo.
+`Galeraza`, `Triggers` y `Recolector de Hisopos` vienen habilitados por defecto. `Ruleta rusa` permanece deshabilitada hasta que un admin o dev del chat la habilite. El Recolector también permite elegir la intensidad de apariciones. Una desactivación explícita del juego se conserva. La configuración, puntajes, hisopos activos y apariciones programadas se guardan en SQLite y se migran si Telegram convierte un grupo en supergrupo.
 
 `/help` muestra todos los comandos correspondientes al nivel del usuario, incluidos los conjuntos configurables que estén apagados. Que aparezcan en la ayuda no evita que el bot respete la configuración del chat al intentar ejecutarlos.
 

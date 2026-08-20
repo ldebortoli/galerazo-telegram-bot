@@ -4,6 +4,7 @@ No hay pedidos nuevos en la cola.
 
 # Procesadas
 
+- [2026-08-20] Aplicar la politica global de proteccion y privacidad GitHub sin interrumpir el trabajo actual: para cada remoto GitHub de este proyecto, auditar secretos y habilitar/verificar Secret Scanning y Push Protection cuando GitHub lo admita; configurar `user.email` local con el correo `noreply` de la cuenta autenticada sin cambiar `user.name`; evitar en archivos versionados rutas absolutas del perfil de Windows y correos personales, usando rutas relativas, variables o placeholders; no reescribir historial ni crear/reemplazar remotos solo por esta tarea. Registrar y validar el resultado o el bloqueo exacto.
 - [2026-08-09] Agregar quechua como idioma en el bot.
 - [2026-08-09] Todos los mensajes en guaraní arrancan con `rehegua`, revisar y corregir el prefijo espurio.
 - [2026-08-08] Reestructurar el enrutamiento con handlers nativos de `python-telegram-bot`, exigir un prefijo de ejecucion para todos los comandos y preservar la prioridad de Galeraza.
