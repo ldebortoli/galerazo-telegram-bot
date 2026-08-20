@@ -4,6 +4,7 @@ import re
 import unittest
 
 from galerazo_bot.i18n import TRANSLATIONS
+from galerazo_bot.hisopo_translations import HISOPO_GIANT_COUNT_RULES
 
 
 class TranslationTests(unittest.TestCase):
@@ -58,11 +59,16 @@ class TranslationTests(unittest.TestCase):
         )
 
     def test_hisopo_rules_fit_in_one_telegram_message(self) -> None:
+        self.assertEqual(set(HISOPO_GIANT_COUNT_RULES), set(TRANSLATIONS))
         for language, translations in TRANSLATIONS.items():
             with self.subTest(language=language):
                 self.assertLessEqual(len(translations["hisopos.rules"]), 4096)
                 self.assertIn("/config", translations["hisopos.rules"])
                 self.assertIn("/hisopos", translations["hisopos.rules"])
+                self.assertIn(
+                    HISOPO_GIANT_COUNT_RULES[language],
+                    translations["hisopos.rules"],
+                )
 
     def test_southern_quechua_preserves_named_game_and_message_lines(self) -> None:
         self.assertIn("Galeraza", TRANSLATIONS["quz"]["galeraza.header"])

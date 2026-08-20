@@ -1443,6 +1443,27 @@ HISOPO_COOPERATIVE_RULE_UPDATES: dict[str, tuple[str, str, str]] = {
     ),
 }
 
+HISOPO_GIANT_COUNT_RULES: dict[str, str] = {
+    "es": "- Meta del Gigante: usa el total de miembros que informa Telegram menos Galerazo, con un máximo de 15. Esa consulta no distingue personas de otros bots, así que en chats pequeños esos bots también cuentan.",
+    "en": "- Giant target: it uses Telegram's reported member total minus Galerazo, capped at 15. That count does not distinguish people from other bots, so those bots also count in small chats.",
+    "es_ES": "- Objetivo del Gigante: usa el total de miembros que indica Telegram menos Galerazo, con un máximo de 15. Ese recuento no distingue personas de otros bots, por lo que esos bots también cuentan en chats pequeños.",
+    "ca": "- Objectiu del Gegant: usa el total de membres que informa Telegram menys Galerazo, amb un màxim de 15. Aquest recompte no distingeix persones d'altres bots, així que aquests bots també compten als xats petits.",
+    "de": "- Ziel des Riesen: Es verwendet die von Telegram gemeldete Mitgliederzahl abzüglich Galerazo, höchstens 15. Diese Zählung unterscheidet Menschen nicht von anderen Bots; in kleinen Chats zählen diese Bots daher mit.",
+    "eu": "- Erraldoiaren helburua: Telegramek emandako kide kopurua ken Galerazo erabiltzen du, gehienez 15. Zenbaketak ez ditu pertsonak eta beste botak bereizten; beraz, txat txikietan bot horiek ere zenbatzen dira.",
+    "fr": "- Objectif du Géant : il utilise le nombre total de membres indiqué par Telegram moins Galerazo, avec un maximum de 15. Ce comptage ne distingue pas les personnes des autres bots, qui comptent donc aussi dans les petits groupes.",
+    "gn": "- Tuichaitéva rembipota: oipuru Telegram omombe'úva tapicha atyguáva retakue, oipe'ávo Galerazo, ha 15 peve. Upe jepapa ndoikuaái tapicha ha ambue bot ojoavyha; upévare aty michĩvape umi bot avei ojepapa.",
+    "it": "- Obiettivo del Gigante: usa il totale dei membri indicato da Telegram meno Galerazo, fino a un massimo di 15. Questo conteggio non distingue le persone dagli altri bot, quindi nelle chat piccole contano anche quei bot.",
+    "ja": "- 巨大綿棒の目標人数：Telegramが報告するメンバー総数からGalerazoを1体引き、最大15人とします。この人数は人間と他のボットを区別しないため、小規模チャットでは他のボットも人数に含まれます。",
+    "la": "- Meta Gigantis: numero sodalium a Telegram nuntiato, Galerazo detracto, utitur, summo 15. Hic numerus homines ab aliis automatibus non distinguit; itaque in gregibus minoribus illa quoque numerantur.",
+    "nl": "- Doel van de Reus: gebruikt het door Telegram gemelde ledental min Galerazo, met een maximum van 15. Die telling maakt geen onderscheid tussen mensen en andere bots, dus in kleine chats tellen die bots ook mee.",
+    "pt_BR": "- Meta do Gigante: usa o total de membros informado pelo Telegram menos o Galerazo, limitado a 15. Essa contagem não distingue pessoas de outros bots, então esses bots também contam em chats pequenos.",
+    "pt_PT": "- Objetivo do Gigante: usa o total de membros indicado pelo Telegram menos o Galerazo, limitado a 15. Esta contagem não distingue pessoas de outros bots, por isso esses bots também contam em chats pequenos.",
+    "quz": "- Hatun hisopopa munasqan: Telegrampa willasqan llapan huñu runakunamanta Galerazota qichuspa yupakun, 15 kama. Kay yupayqa runakunata huk botkunamanta mana rakiyta atinchu; chayrayku uchuy huñukunapi chay botkuna kuska yupakun.",
+    "ru": "- Цель Гигантской палочки: используется число участников, указанное Telegram, минус Galerazo, но не более 15. Этот счётчик не отличает людей от других ботов, поэтому в маленьких чатах такие боты тоже учитываются.",
+    "zh_Hans": "- 巨型棉签目标人数：采用 Telegram 报告的成员总数减去 Galerazo，最多为15。该计数无法区分真人和其他机器人，因此小群中的其他机器人也会计入。",
+    "zh_Hant": "- 巨型棉花棒目標人數：採用 Telegram 回報的成員總數減去 Galerazo，最多為15。此計數無法區分真人與其他機器人，因此小群組中的其他機器人也會計入。",
+}
+
 for _language, _translations in HISOPO_SPECIAL_TRANSLATIONS.items():
     HISOPO_TRANSLATIONS[_language].update(_translations)
 for _language, _translations in HISOPO_RULE_TRANSLATIONS.items():
@@ -1462,3 +1483,7 @@ for _language, (_old_common, _new_common, _extra_rules) in HISOPO_COOPERATIVE_RU
         f"\n{_extra_rules}\n- /hisopos",
         1,
     )
+for _language, _count_rule in HISOPO_GIANT_COUNT_RULES.items():
+    HISOPO_TRANSLATIONS[_language]["hisopos.rules"] = HISOPO_TRANSLATIONS[_language][
+        "hisopos.rules"
+    ].replace("\n- /hisopos", f"\n{_count_rule}\n- /hisopos", 1)

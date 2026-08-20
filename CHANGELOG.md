@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.27] - 2026-08-20
+
+- Las reglas del Hisopo gigante ahora aclaran cómo se calcula su objetivo: el total de miembros informado por Telegram menos Galerazo, con un máximo de 15, incluyendo otros bots que formen parte de chats pequeños.
+
 ## [0.26] - 2026-08-20
 
 - El Hisopo milagroso ahora entrega el mayor valor entre 15 puntos y la mitad, redondeada hacia arriba, del puntaje del líder del grupo al momento de capturarlo.

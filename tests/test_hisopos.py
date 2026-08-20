@@ -709,6 +709,8 @@ class HisopoCommandTests(unittest.IsolatedAsyncioTestCase):
         self.assertIn("Común: 46,65 %", response)
         self.assertIn("Diamante: 1 %", response)
         self.assertIn("Gigante cooperativo: 0,25 %", response)
+        self.assertIn("total de miembros que informa Telegram menos Galerazo", response)
+        self.assertIn("otros bots", response)
         self.assertIn("Milagroso: 0,10 %", response)
         self.assertIn("mitad del puntaje del líder", response)
         self.assertIn("no le quita puntos a nadie", response)
