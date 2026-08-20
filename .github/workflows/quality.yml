@@ -5,14 +5,12 @@ on:
     branches:
       - main
     paths-ignore:
-      - ".codex/**"
       - "**/*.md"
       - ".gitignore"
   pull_request:
     branches:
       - main
     paths-ignore:
-      - ".codex/**"
       - "**/*.md"
       - ".gitignore"
   workflow_dispatch:

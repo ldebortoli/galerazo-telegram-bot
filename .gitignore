@@ -2,6 +2,8 @@ __pycache__/
 bin/
 *.py[cod]
 .env
+.env.*
+!.env.example
 .venv/
 venv/
 .coverage
@@ -20,3 +22,14 @@ backups/*.sqlite3-*
 debug/*.json
 deploy/out/
 gha-creds-*.json
+/secrets/
+*.pem
+*.key
+*.p12
+*.pfx
+service-account*.json
+
+# Local agent memory and private generated assets.
+/.codex/
+/AGENTS.md
+/assets/codex-logs.png

@@ -120,7 +120,7 @@ Si no encuentra cambios de runtime o dependencias, omite la suite y el build Doc
 
 ### CI y consumo de GitHub Actions
 
-- `Quality` ejecuta la suite Linux solo ante cambios sustantivos. Commits limitados a `.codex/`, Markdown o `.gitignore` no generan un run.
+- `Quality` ejecuta la suite Linux solo ante cambios sustantivos. Commits limitados a Markdown o `.gitignore` no generan un run.
 - Pushes nuevos a la misma rama cancelan un run anterior que todavia este activo.
 - `Docker quality` corre solo cuando cambian Dockerfile, `.python-version`, dependencias o la configuracion del propio workflow. Tambien puede iniciarse manualmente.
 - El deploy desactivado es exclusivamente manual y no crea runs omitidos en cada push.
@@ -171,13 +171,13 @@ TELEGRAM_BOT_TOKEN=token-de-botfather
 Los comandos sensibles solo los pueden usar los devs. Agrega tu user id de Telegram en `.env`:
 
 ```env
-TELEGRAM_DEV_USER_IDS=123456789
+TELEGRAM_DEV_USER_IDS=<tu-user-id>
 ```
 
 Si hay mas de un dev, separalos por coma:
 
 ```env
-TELEGRAM_DEV_USER_IDS=123456789,987654321
+TELEGRAM_DEV_USER_IDS=<tu-user-id>,<otro-user-id>
 ```
 
 Para conseguir tu user id podes usar `/debug` una vez que el bot este corriendo y te hayas configurado, o usar un bot externo de Telegram que muestre tu id.
@@ -197,7 +197,7 @@ Para configurarlo:
 4. Configura el id del chat en `.env`:
 
 ```env
-TELEGRAM_LOG_CHAT_ID=-1001234567890
+TELEGRAM_LOG_CHAT_ID=<id-del-chat-de-logs>
 ```
 
 ### 4. Configurar canal de anuncios
@@ -212,7 +212,7 @@ Para configurarlo:
 4. Configura el id del chat en `.env`:
 
 ```env
-TELEGRAM_ANNOUNCEMENTS_CHAT_ID=-1009876543210
+TELEGRAM_ANNOUNCEMENTS_CHAT_ID=<id-del-chat-de-anuncios>
 ```
 
 ### 5. Configurar la base de datos
@@ -232,9 +232,9 @@ Ejemplo:
 ```env
 TELEGRAM_BOT_TOKEN=token-de-botfather
 OPENAI_API_KEY=clave-restringida-de-moderacion
-TELEGRAM_DEV_USER_IDS=123456789
-TELEGRAM_LOG_CHAT_ID=-1001234567890
-TELEGRAM_ANNOUNCEMENTS_CHAT_ID=-1009876543210
+TELEGRAM_DEV_USER_IDS=
+TELEGRAM_LOG_CHAT_ID=
+TELEGRAM_ANNOUNCEMENTS_CHAT_ID=
 TELEGRAM_HISOPO_COMMON_FILE_ID=file-id-del-hisopo-comun
 TELEGRAM_HISOPO_SILVER_FILE_ID=file-id-del-hisopo-plateado
 TELEGRAM_HISOPO_GOLD_FILE_ID=file-id-del-hisopo-dorado
@@ -337,6 +337,8 @@ El canal de anuncios recibe mensajes enviados por devs con:
 ```
 
 ## Reportar bugs
+
+Los problemas de seguridad no deben publicarse en issues ni enviarse a chats compartidos. Usa el canal privado descrito en [SECURITY.md](SECURITY.md); los reportes funcionales comunes pueden seguir el flujo de abajo.
 
 Cualquier usuario puede enviar un reporte al canal de logging con:
 
