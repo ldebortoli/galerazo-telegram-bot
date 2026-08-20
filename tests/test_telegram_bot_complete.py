@@ -1827,6 +1827,76 @@ class HisopoTelegramTests(unittest.IsolatedAsyncioTestCase):
         callback.answer.assert_awaited_once_with("¡Hisopo capturado! Sumaste 6 pt.")
         job_queue.run_once.assert_called_once()
 
+    async def test_mystery_fleeting_after_its_minute_reveals_without_reward(self) -> None:
+        db = MagicMock()
+        db.get_chat_settings.return_value = SimpleNamespace(language="es")
+        db.is_user_blocked.return_value = False
+        app, _, bot, job_queue = self._application(
+            db,
+            telegram_hisopo_fleeting_file_id="fleeting-id",
+        )
+        message = SimpleNamespace(chat=SimpleNamespace(id=-1, type="group"), message_id=100)
+        callback = SimpleNamespace(
+            message=message,
+            data="hisopo:capture",
+            answer=AsyncMock(),
+            from_user=SimpleNamespace(id=2),
+        )
+        user = SimpleNamespace(id=2, full_name="Winner", username="winner")
+        update = SimpleNamespace(callback_query=callback, effective_user=user)
+        context = SimpleNamespace(application=app, bot=bot)
+        active = self._spawn(
+            hisopo_type="fleeting",
+            appearance_type="mystery",
+            points=5,
+            spawned_at="2026-08-20T12:00:00+00:00",
+            expires_at="2026-08-20T12:20:00+00:00",
+        )
+        db.get_hisopo_spawn.return_value = active
+
+        def capture(**kwargs):
+            return HisopoCaptureResult(
+                "captured",
+                self._spawn(
+                    hisopo_type="fleeting",
+                    appearance_type="mystery",
+                    points=kwargs["points_at_capture"],
+                    status="captured",
+                    winner_user_id="2",
+                    captured_at=kwargs["now"].isoformat(),
+                ),
+            )
+
+        db.capture_hisopo.side_effect = capture
+        captured_at = datetime(2026, 8, 20, 12, 2, tzinfo=timezone.utc)
+        with patch.object(tb, "datetime") as datetime_mock, patch.object(
+            tb,
+            "random_next_day_datetime",
+            return_value=datetime(2026, 8, 21, 1, tzinfo=timezone.utc),
+        ) as next_day, patch.object(
+            tb,
+            "_is_user_restricted_in_callback_chat",
+            return_value=False,
+        ):
+            datetime_mock.now.return_value = captured_at
+            datetime_mock.fromisoformat.side_effect = datetime.fromisoformat
+            await tb._hisopo_callback_entrypoint(update, context)
+
+        next_day.assert_not_called()
+        self.assertEqual(db.capture_hisopo.call_args.kwargs["points_at_capture"], 0)
+        self.assertEqual(db.capture_hisopo.call_args.kwargs["next_scheduled_for"], ())
+        media = bot.edit_message_media.await_args.kwargs["media"]
+        self.assertEqual(media.media, "fleeting-id")
+        self.assertEqual(
+            media.caption,
+            "Winner encontró un hisopo fugaz, pero ya había pasado su minuto fugaz. "
+            "No sumó puntos.",
+        )
+        callback.answer.assert_awaited_once_with(
+            "Había un hisopo fugaz, pero se pasó su minuto. No sumaste puntos."
+        )
+        job_queue.run_once.assert_not_called()
+
     async def test_caption_edit_failure_is_contained(self) -> None:
         bot = SimpleNamespace(edit_message_caption=AsyncMock(side_effect=BadRequest("edit")))
         with self.assertLogs(tb.logger, level="WARNING"):

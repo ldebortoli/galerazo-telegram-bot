@@ -171,6 +171,14 @@ def radioactive_points_at(spawned_at: datetime, captured_at: datetime) -> int:
     return RADIOACTIVE_POINT_VALUES[4]
 
 
+def is_fleeting_window_expired(spawned_at: datetime, captured_at: datetime) -> bool:
+    if spawned_at.tzinfo is None:
+        spawned_at = spawned_at.replace(tzinfo=timezone.utc)
+    if captured_at.tzinfo is None:
+        captured_at = captured_at.replace(tzinfo=timezone.utc)
+    return captured_at >= spawned_at + HISOPO_FLEETING_EXPIRATION
+
+
 def hisopo_kind_for_spawn(key: str, points: int) -> HisopoKind:
     try:
         return replace(HISOPO_KINDS[key], points=points)

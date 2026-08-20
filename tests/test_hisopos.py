@@ -32,6 +32,7 @@ from galerazo_bot.hisopos import (
     build_hisopo_pages,
     hisopo_kind_for_spawn,
     intensity_translation_key,
+    is_fleeting_window_expired,
     radioactive_points_at,
     random_next_day_datetime,
     render_hisopo_page,
@@ -226,6 +227,25 @@ class HisopoRulesTests(unittest.TestCase):
                 datetime(2026, 8, 20, 12, 18),
             ),
             6,
+        )
+
+        self.assertFalse(
+            is_fleeting_window_expired(
+                spawned_at,
+                spawned_at + timedelta(seconds=59, milliseconds=999),
+            )
+        )
+        self.assertTrue(
+            is_fleeting_window_expired(
+                spawned_at,
+                spawned_at + HISOPO_FLEETING_EXPIRATION,
+            )
+        )
+        self.assertTrue(
+            is_fleeting_window_expired(
+                datetime(2026, 8, 20, 12),
+                datetime(2026, 8, 20, 12, 1),
+            )
         )
 
     def test_next_day_is_random_local_calendar_day(self) -> None:

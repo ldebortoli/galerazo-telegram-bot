@@ -88,6 +88,7 @@ from .hisopos import (
     HISOPO_CALLBACK_PREFIX,
     HISOPO_CAPTURE_CALLBACK,
     hisopo_kind_for_spawn,
+    is_fleeting_window_expired,
     radioactive_points_at,
     random_next_day_datetime,
     select_hisopo_spawn,
@@ -695,16 +696,28 @@ async def _hisopo_callback_entrypoint(
     spawn = state.db.get_hisopo_spawn(str(message.chat.id), str(message.message_id))
     next_scheduled_for = ()
     points_at_capture = None
+    expired_mystery_fleeting = False
     if spawn is not None:
-        kind = hisopo_kind_for_spawn(spawn.hisopo_type, spawn.points)
-        next_scheduled_for = tuple(
-            random_next_day_datetime(now) for _ in range(kind.next_day_spawns)
+        expired_mystery_fleeting = (
+            spawn.hisopo_type == "fleeting"
+            and spawn.appearance_type == "mystery"
+            and is_fleeting_window_expired(
+                datetime.fromisoformat(spawn.spawned_at),
+                now,
+            )
         )
+        kind = hisopo_kind_for_spawn(spawn.hisopo_type, spawn.points)
+        if not expired_mystery_fleeting:
+            next_scheduled_for = tuple(
+                random_next_day_datetime(now) for _ in range(kind.next_day_spawns)
+            )
         if spawn.hisopo_type == "radioactive":
             points_at_capture = radioactive_points_at(
                 datetime.fromisoformat(spawn.spawned_at),
                 now,
             )
+        elif expired_mystery_fleeting:
+            points_at_capture = 0
     result = state.db.capture_hisopo(
         chat_id=str(message.chat.id),
         message_id=str(message.message_id),
@@ -715,7 +728,10 @@ async def _hisopo_callback_entrypoint(
     )
     if result.status == "captured" and result.spawn is not None:
         type_label = t(language, f"hisopos.type.{result.spawn.hisopo_type}")
-        if result.spawn.points < 0:
+        if expired_mystery_fleeting:
+            caption_key = "hisopos.expired_fleeting_caption"
+            popup_key = "hisopos.expired_fleeting_popup"
+        elif result.spawn.points < 0:
             caption_key = "hisopos.captured_caption_negative"
             popup_key = "hisopos.captured_popup_negative"
         elif result.spawn.points == 0:

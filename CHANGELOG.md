@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.23] - 2026-08-20
+
+- El Hisopo misterioso conserva sus 20 minutos aunque contenga un fugaz, pero el premio fugaz vence al minuto: después se revela sin sumar puntos ni programar otra aparición.
+
 ## [0.22] - 2026-08-20
 
 - Los Hisopos falso y putrefacto ahora aparecen disfrazados de común, plateado, dorado o diamante y revelan su identidad al capturarlos.
