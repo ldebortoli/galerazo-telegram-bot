@@ -1468,7 +1468,12 @@ class HisopoTelegramTests(unittest.IsolatedAsyncioTestCase):
             tb, "random_next_day_datetime", return_value=datetime(2026, 8, 21, tzinfo=timezone.utc)
         ):
             await tb._hisopo_callback_entrypoint(update, context)
-        bot.edit_message_caption.assert_awaited()
+        bot.edit_message_caption.assert_awaited_once_with(
+            chat_id=-1,
+            message_id=100,
+            caption="Winner capturó un hisopo común y sumó 1 pt.",
+            reply_markup=None,
+        )
         job_queue.run_once.assert_called_once()
         callback.answer.assert_awaited_once_with("¡Hisopo capturado! Sumaste 1 pt.")
 

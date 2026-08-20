@@ -7,11 +7,14 @@
 
 ## P2
 
+- [BLOCKED: falta que el usuario elija las rarezas, sus probabilidades y una mecanica concreta; no implementar automaticamente las ideas exploratorias] Diseñar una segunda tanda de Hisopos especiales, incluida la posibilidad de una rareza maligna o putrefacta con puntaje negativo.
 - [BLOCKED: requiere pedido explicito del usuario y luego verificar RAILWAY_TOKEN y RAILWAY_SERVICE_ID] Activar el deploy automatico de Railway.
 
 # IN PROGRESS
 
 # DONE
+
+- [2026-08-20] [USER_REQUEST] Confirmar y proteger la edicion del mensaje al capturar un Hisopo: la leyenda conserva la foto, identifica ganador/rareza/puntos y la botonera desaparece. Las rarezas negativas futuras usaran un texto localizado de puntos perdidos; no se implemento ninguna rareza nueva sin eleccion del usuario. Validacion: 259 pruebas y cobertura 100% de sentencias/ramas, runtime, dependencias, compilacion y diff-check OK. Sin version nueva ni deploy.
 
 - [2026-08-20] [USER_REQUEST] Implementado localmente el juego configurable y traducido `Recolector de Hisopos`: intensidades 1/5/10/15/20%, rarezas comun/plateada/dorada, captura atomica, vencimiento a 20 minutos, ranking `/hisopos`, agenda persistente para el dia siguiente, migracion grupo-supergrupo y tres imagenes originales. Version `0.17`; 259 pruebas y cobertura 100% de sentencias/ramas, runtime, dependencias, compilacion, scripts, imagenes y checkpoint OK. BotFather sincronizado. Faltan solamente los tres `file_id` que aportara el usuario. Docker local no estaba iniciado; sin deploy.
 

@@ -84,6 +84,7 @@ La misma politica se aplica globalmente desde `C:\Users\calei\.codex\AGENTS.md`.
 - La Galeraza usa una insercion atomica para garantizar un ganador por chat y dia.
 - La fecha de La Galeraza sale exclusivamente de `message.date` de Telegram convertido a `America/Argentina/Buenos_Aires`; todo `message` original de grupo/supergrupo con autor humano compite, incluidos los eventos de servicio. Bots, ediciones y updates sin usuario no compiten.
 - El Recolector de Hisopos viene deshabilitado por defecto. Por cada mensaje valido tira contra 1/5/10/15/20% segun intensidad; sus tres rarezas valen 1/2/3 puntos. Las capturas son atomicas, vencen a los 20 minutos y cada premio agenda en SQLite una aparicion aleatoria para el siguiente dia argentino.
+- Una captura exitosa edita la leyenda de la foto original, elimina la botonera y muestra el nombre visible del ganador, el tipo de Hisopo y los puntos obtenidos. Al pudrirse tambien elimina la botonera. Si se incorporan rarezas con puntaje negativo, el resultado debe distinguir en cada idioma entre puntos ganados y perdidos.
 - Las fotos del Recolector se reenvian con `TELEGRAM_HISOPO_COMMON_FILE_ID`, `TELEGRAM_HISOPO_SILVER_FILE_ID` y `TELEGRAM_HISOPO_GOLD_FILE_ID`. Los artes fuente versionados viven en `assets/hisopos/`.
 - La ruleta rusa usa `BEGIN IMMEDIATE` para consumir atomicamente una recamara por usuario/chat; viene deshabilitada por defecto y migra con el chat.
 - Los datos de chats no se eliminan cuando el bot es expulsado o bloqueado; solo cambia su estado de actividad.

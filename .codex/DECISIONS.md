@@ -763,3 +763,9 @@ El Recolector de Hisopos es un conjunto configurable deshabilitado por defecto p
 Cada aparicion se identifica por `(chat_id, message_id)` y vence a los 20 minutos. La captura usa `BEGIN IMMEDIATE`: solo la primera callback del chat puede pasar de `active` a `captured`, sumar puntaje y crear una programacion; las posteriores reciben un alerta. Un hisopo vencido pasa a `rotten`, pierde la botonera y no suma ni programa otro.
 
 Cada captura agenda exactamente una aparicion en un segundo aleatorio del siguiente dia calendario de `America/Argentina/Buenos_Aires`. La agenda vive en SQLite, vuelve `processing` a `pending` al arrancar y reconstruye jobs de aparicion y vencimiento, priorizando no perder la entrega tras un reinicio aunque un corte en el instante de envio pueda duplicarla. Si el juego esta deshabilitado al ejecutar el job, se cancela. Fotos y configuracion usan tres `file_id` globales de Telegram; el usuario los obtendra respondiendo `/debug` a cada imagen generada.
+
+## D-109 - Resultado de captura visible y sin botonera (2026-08-20)
+
+Al capturar un Hisopo, el bot edita la leyenda del mismo mensaje que contenia la foto y elimina por completo su botonera. El resultado identifica al usuario por su nombre visible, nombra la rareza capturada e informa el cambio de puntaje. Las rarezas positivas usan una formulacion equivalente a "sumo/gano"; cualquier rareza negativa futura debera usar una formulacion localizada equivalente a "perdio/resto", sin mostrar un signo ambiguo con el verbo incorrecto. Un Hisopo podrido tambien pierde la botonera.
+
+Las rarezas especiales y sus probabilidades no quedan definidas por esta decision. Se evaluaran por separado y no se incorporaran hasta que el usuario elija una mecanica concreta.

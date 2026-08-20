@@ -6,6 +6,7 @@ Mantener Galerazo Bot reproducible en Windows, CI y Docker, con SQLite persisten
 
 ## Estado actual
 
+- Confirmado y protegido por regresion que una captura de Hisopo edita la leyenda de la foto original con ganador, rareza y puntos, y elimina la botonera. Las rarezas negativas futuras deberan decir de forma localizada que el usuario perdio/resto puntos. No se eligio ni implemento aun ningun Hisopo especial adicional.
 - Implementado localmente el Recolector de Hisopos, version `0.17`: configurable por grupo/supergrupo y deshabilitado por defecto; intensidades 1/5/10/15/20%; rarezas comun/plateada/dorada de 1/2/3 puntos; captura atomica, vencimiento a 20 minutos, `/hisopos`, 18 idiomas, migracion completa y agenda SQLite para el dia siguiente. Los artes de 1254x1254 estan en `assets/hisopos/`. BotFather ya incluye `/hisopos` en grupos es/en. No se construyo Docker, publico imagen ni desplego.
 - Los tres `TELEGRAM_HISOPO_*_FILE_ID` aun no estan configurados. Para probar: enviar cada PNG al bot como foto, responder ese mensaje con `/debug`, copiar el `file_id` de la ultima entrada de `message.photo` al panel/.env y reiniciar el bot local. No usar `file_unique_id`.
 - Todos los `send_message`, incluidos los `reply_text`, usan `RetryingExtBot`: ante `TimedOut` realizan tres intentos totales con esperas de 1 y 2 segundos, cortan al primer exito y registran/elevan el tercer fallo. Por preferencia explicita del usuario se prioriza entrega sobre evitar duplicados. La Galeraza conserva el punto y el error final informa los tres intentos tanto localmente como en el canal de logging. Version `0.16`; 244 pruebas y cobertura 100% OK. No se cambio ningun comando ni se desplego.
@@ -34,6 +35,7 @@ Mantener Galerazo Bot reproducible en Windows, CI y Docker, con SQLite persisten
 
 ## Validacion reciente
 
+- Regresion del resultado de captura: 259 pruebas OK y cobertura 100% de sentencias/ramas; Python 3.14.7/lock, `pip check`, `compileall` y `git diff --check` OK. No hubo cambio funcional, version nueva, BotFather ni deploy.
 - Version `0.17`: 259 pruebas nativas OK; cobertura 100% de sentencias y ramas; Python 3.14.7 y lock alineados tras integrar el actualizador remoto `70d0070`; `pip check`, `compileall`, parse PowerShell/Bash, tres imagenes cuadradas, `git diff --check` y checkpoint de logs OK. Docker Desktop no estaba iniciado, por lo que no hubo repeticion local del target Docker; sin release/deploy.
 - Version `0.16`: 244 pruebas nativas OK; cobertura 100% de sentencias y ramas; `runtime_versions.py`, `pip check`, `compileall`, `git diff --check` y checkpoint de logs OK. Sin Docker por no cambiar runtime/contenedor; sin release/deploy.
 - Pipeline runtime semanal: 238 pruebas nativas OK, cobertura 100% de sentencias y ramas, build y smoke test Docker runtime OK; `compileall`, `runtime_versions.py`, `pip check`, `git diff --check` y checkpoint de logs OK. Sin release/deploy.
