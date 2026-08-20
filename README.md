@@ -29,6 +29,7 @@ Base para un bot de Telegram con una version estable y reproducible de Python, `
 - `config`: abre el tablero de configuracion del grupo. Solo admines del chat, quien agrego el bot o devs.
 - `galerazas`: muestra el ranking de La Galeraza en grupos/supergrupos.
 - `hisopos`: muestra la tabla del Recolector de Hisopos en grupos/supergrupos, si el juego está habilitado.
+- `reglashisopo`: muestra las reglas completas del Recolector de Hisopos, incluso si el juego está deshabilitado.
 - `agregartrigger` / `agrtrigger`: agrega un trigger respondiendo a un mensaje en grupos/supergrupos.
 - `borrartrigger` / `eliminartrigger` / `eltrigger`: borra un trigger por nombre en grupos/supergrupos.
 - `triggers`: lista los triggers del grupo o supergrupo.
@@ -432,6 +433,8 @@ La fecha se calcula exclusivamente desde `message.date` de Telegram, convertido 
 
 El Recolector de Hisopos es un juego para grupos y supergrupos y viene habilitado por defecto. Un admin o dev puede desactivarlo desde `/config`, en `Comandos -> Recolector de Hisopos`, y elegir una de cinco intensidades:
 
+`/reglashisopo` resume dentro de Telegram las probabilidades, vencimientos, premios y penalizaciones de todos los tipos. `/hisopos` muestra la tabla de puntajes del grupo.
+
 - muy poca: 1 % por mensaje válido;
 - poca: 5 %;
 - media: 10 %;
@@ -480,7 +483,7 @@ TELEGRAM_HISOPO_FAKE_FILE_ID=
 TELEGRAM_HISOPO_TWIN_FILE_ID=
 ```
 
-Para obtener cada valor, enviá la imagen al bot como foto y respondé ese mensaje con `/debug`. En el JSON, usá el `file_id` de la última entrada de `message.photo`, que corresponde al mayor tamaño. El campo `file_unique_id` no sirve para reenviar archivos. Reiniciá el bot local después de guardar los tres valores en `.env`.
+Para obtener cada valor, enviá la imagen al bot como foto y respondé ese mensaje con `/debug`. En el JSON, usá el `file_id` de la última entrada de `message.photo`, que corresponde al mayor tamaño. El campo `file_unique_id` no sirve para reenviar archivos. Reiniciá el bot local después de guardar los valores necesarios en `.env`.
 
 ## Configuracion por grupo
 

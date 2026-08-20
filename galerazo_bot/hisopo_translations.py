@@ -764,5 +764,356 @@ HISOPO_SPECIAL_TRANSLATIONS: dict[str, dict[str, str]] = {
     },
 }
 
+HISOPO_RULE_TRANSLATIONS: dict[str, dict[str, str]] = {
+    "es": {
+        "help.reglashisopo": "muestra las reglas del Recolector de Hisopos",
+        "hisopos.rules": (
+            "Reglas del Recolector de Hisopos\n\n"
+            "- Funciona en grupos y supergrupos. Viene habilitado y un admin puede ajustar en /config una intensidad de 1, 5, 10, 15 o 20 % por mensaje válido.\n"
+            "- Cuando aparece un Hisopo, la primera persona que toca «Capturar hisopo» se lo queda. Los clics posteriores no suman.\n"
+            "- Común: 47 %, +1 pt.\n"
+            "- Plateado: 14 %, +2 pt.\n"
+            "- Dorado: 10 %, +3 pt.\n"
+            "- Fugaz: 7 %, +5 pt y vence al minuto.\n"
+            "- Misterioso: 7 %, oculta uno de los otros tipos durante 20 minutos. Si contiene un Fugaz, sus +5 pt vencen al minuto; después revela el Fugaz por 0 pt.\n"
+            "- Putrefacto: 5 %, se disfraza de común, plateado, dorado o diamante y resta 2 pt al capturarlo.\n"
+            "- Radiactivo: 4 %, vale -3 pt en los minutos 0-4, -1 en 5-9, +2 en 10-14, +4 en 15-17 y +6 en 18-19.\n"
+            "- Falso: 3 %, aparece disfrazado, vale 0 y no programa otra aparición.\n"
+            "- Gemelo: 2 %, +4 pt, lanza otro Hisopo en el momento y programa uno para el día siguiente.\n"
+            "- Diamante: 1 %, +10 pt.\n"
+            "- Si nadie captura un Hisopo, se pudre y no le quita puntos a nadie. Los normales vencen a los 20 minutos y el Fugaz directo al minuto. Los puntajes pueden quedar negativos.\n"
+            "- Cada captura válida programa una aparición para el día siguiente, salvo el Falso y el Fugaz oculto cuyo minuto venció.\n"
+            "- /hisopos muestra la tabla del grupo."
+        ),
+    },
+    "en": {
+        "help.reglashisopo": "shows the Swab Collector rules",
+        "hisopos.rules": (
+            "Swab Collector rules\n\n"
+            "- It works in groups and supergroups. It starts enabled, and an admin can set a 1, 5, 10, 15, or 20% chance per valid message in /config.\n"
+            "- When a Swab appears, the first person to press ‘Capture swab’ gets it. Later taps score nothing.\n"
+            "- Common: 47%, +1 pt.\n"
+            "- Silver: 14%, +2 pt.\n"
+            "- Gold: 10%, +3 pt.\n"
+            "- Fleeting: 7%, +5 pt and expires after one minute.\n"
+            "- Mystery: 7%, hides one of the other types for 20 minutes. If it contains a Fleeting Swab, its +5 pt expire after one minute; it is then revealed for 0 pt.\n"
+            "- Putrid: 5%, disguises itself as common, silver, gold, or diamond and subtracts 2 pt when captured.\n"
+            "- Radioactive: 4%, worth -3 pt at minutes 0-4, -1 at 5-9, +2 at 10-14, +4 at 15-17, and +6 at 18-19.\n"
+            "- Fake: 3%, appears disguised, is worth 0, and schedules no extra appearance.\n"
+            "- Twin: 2%, +4 pt, spawns another Swab immediately and schedules one for the next day.\n"
+            "- Diamond: 1%, +10 pt.\n"
+            "- If nobody captures a Swab, it rots without taking points from anyone. Regular ones expire after 20 minutes and a direct Fleeting one after a minute. Scores may be negative.\n"
+            "- Every valid capture schedules an appearance for the next day, except a Fake and a hidden Fleeting whose minute expired.\n"
+            "- /hisopos shows the group leaderboard."
+        ),
+    },
+    "es_ES": {
+        "help.reglashisopo": "muestra las reglas del Recolector de Hisopos",
+        "hisopos.rules": (
+            "Reglas del Recolector de Hisopos\n\n"
+            "- Funciona en grupos y supergrupos. Viene activado y un administrador puede ajustar en /config una intensidad del 1, 5, 10, 15 o 20 % por mensaje válido.\n"
+            "- Cuando aparece un hisopo, se lo queda la primera persona que pulsa «Capturar hisopo». Las pulsaciones posteriores no suman.\n"
+            "- Común: 47 %, +1 pt.\n- Plateado: 14 %, +2 pt.\n- Dorado: 10 %, +3 pt.\n"
+            "- Fugaz: 7 %, +5 pt y caduca al minuto.\n"
+            "- Misterioso: 7 %, oculta uno de los demás tipos durante 20 minutos. Si contiene un Fugaz, sus +5 pt caducan al minuto; después lo revela por 0 pt.\n"
+            "- Putrefacto: 5 %, se disfraza de común, plateado, dorado o diamante y resta 2 pt al capturarlo.\n"
+            "- Radiactivo: 4 %, vale -3 pt en los minutos 0-4, -1 en 5-9, +2 en 10-14, +4 en 15-17 y +6 en 18-19.\n"
+            "- Falso: 3 %, aparece disfrazado, vale 0 y no programa otra aparición.\n"
+            "- Gemelo: 2 %, +4 pt, hace aparecer otro hisopo al instante y programa uno para el día siguiente.\n"
+            "- Diamante: 1 %, +10 pt.\n"
+            "- Si nadie captura un hisopo, se pudre sin quitar puntos a nadie. Los normales caducan a los 20 minutos y el Fugaz directo al minuto. La puntuación puede ser negativa.\n"
+            "- Cada captura válida programa una aparición para el día siguiente, salvo el Falso y el Fugaz oculto cuyo minuto caducó.\n"
+            "- /hisopos muestra la tabla del grupo."
+        ),
+    },
+    "ca": {
+        "help.reglashisopo": "mostra les regles del Recol·lector de Bastonets",
+        "hisopos.rules": (
+            "Regles del Recol·lector de Bastonets\n\n"
+            "- Funciona en grups i supergrups. Ve activat i un administrador pot ajustar a /config una probabilitat de l'1, 5, 10, 15 o 20 % per missatge vàlid.\n"
+            "- Quan apareix un bastonet, la primera persona que prem «Captura el bastonet» se'l queda. Els tocs posteriors no puntuen.\n"
+            "- Comú: 47 %, +1 pt.\n- Platejat: 14 %, +2 pt.\n- Daurat: 10 %, +3 pt.\n"
+            "- Fugaç: 7 %, +5 pt i caduca al cap d'un minut.\n"
+            "- Misteriós: 7 %, amaga un dels altres tipus durant 20 minuts. Si conté un Fugaç, els +5 pt caduquen al minut; després es revela per 0 pt.\n"
+            "- Putrefacte: 5 %, es disfressa de comú, platejat, daurat o diamant i resta 2 pt quan es captura.\n"
+            "- Radioactiu: 4 %, val -3 pt als minuts 0-4, -1 als 5-9, +2 als 10-14, +4 als 15-17 i +6 als 18-19.\n"
+            "- Fals: 3 %, apareix disfressat, val 0 i no programa cap altra aparició.\n"
+            "- Bessó: 2 %, +4 pt, fa aparèixer un altre bastonet al moment i en programa un per a l'endemà.\n"
+            "- Diamant: 1 %, +10 pt.\n"
+            "- Si ningú captura un bastonet, es podreix sense restar punts a ningú. Els normals caduquen als 20 minuts i el Fugaç directe al minut. La puntuació pot ser negativa.\n"
+            "- Cada captura vàlida programa una aparició per a l'endemà, tret del Fals i del Fugaç ocult amb el minut vençut.\n"
+            "- /hisopos mostra la classificació del grup."
+        ),
+    },
+    "de": {
+        "help.reglashisopo": "zeigt die Regeln des Wattestäbchen-Sammlers",
+        "hisopos.rules": (
+            "Regeln des Wattestäbchen-Sammlers\n\n"
+            "- Das Spiel läuft in Gruppen und Supergruppen und ist standardmäßig aktiv. Ein Admin stellt in /config eine Chance von 1, 5, 10, 15 oder 20 % pro gültiger Nachricht ein.\n"
+            "- Wer zuerst auf „Wattestäbchen fangen“ tippt, erhält es. Spätere Klicks geben keine Punkte.\n"
+            "- Gewöhnlich: 47 %, +1 Pkt.\n- Silber: 14 %, +2 Pkt.\n- Gold: 10 %, +3 Pkt.\n"
+            "- Flüchtig: 7 %, +5 Pkt. und verfällt nach einer Minute.\n"
+            "- Mysteriös: 7 %, verbirgt 20 Minuten lang einen anderen Typ. Enthält es ein Flüchtiges, verfallen dessen +5 Pkt. nach einer Minute; danach wird es für 0 Pkt. enthüllt.\n"
+            "- Verrottet: 5 %, tarnt sich als gewöhnlich, silbern, golden oder diamant und zieht beim Fangen 2 Pkt. ab.\n"
+            "- Radioaktiv: 4 %, gibt -3 Pkt. in Minute 0-4, -1 in 5-9, +2 in 10-14, +4 in 15-17 und +6 in 18-19.\n"
+            "- Falsch: 3 %, erscheint getarnt, ist 0 wert und plant kein weiteres Erscheinen.\n"
+            "- Zwilling: 2 %, +4 Pkt., erzeugt sofort ein weiteres und plant eines für den nächsten Tag.\n"
+            "- Diamant: 1 %, +10 Pkt.\n"
+            "- Wird keines gefangen, verrottet es ohne Punktabzug. Normale verfallen nach 20 Minuten, direkte Flüchtige nach einer Minute. Punktestände dürfen negativ sein.\n"
+            "- Jeder gültige Fang plant eines für den nächsten Tag, außer Falsch und einem versteckten Flüchtigen nach Ablauf seiner Minute.\n"
+            "- /hisopos zeigt die Gruppenrangliste."
+        ),
+    },
+    "eu": {
+        "help.reglashisopo": "Kotoi Biltzailearen arauak erakusten ditu",
+        "hisopos.rules": (
+            "Kotoi Biltzailearen arauak\n\n"
+            "- Talde eta supertaldeetan dabil eta lehenetsita aktibo dago. Administratzaileak /config bidez % 1, 5, 10, 15 edo 20ko aukera ezar dezake baliozko mezu bakoitzeko.\n"
+            "- «Harrapatu kotoi-zotza» lehenengo sakatzen duenak irabazten du; ondorengoek ez dute punturik.\n"
+            "- Arrunta: % 47, +1 puntu.\n- Zilarrezkoa: % 14, +2.\n- Urrezkoa: % 10, +3.\n"
+            "- Iheskorra: % 7, +5 eta minutu batean iraungitzen da.\n"
+            "- Misteriotsua: % 7, beste mota bat ezkutatzen du 20 minutuz. Iheskorra bada, +5 puntuak minutu batean iraungitzen dira; gero 0 punturekin agertzen da.\n"
+            "- Ustela: % 5, arrunt, zilar, urre edo diamante gisa mozorrotzen da eta harrapatzean 2 puntu kentzen ditu.\n"
+            "- Erradioaktiboa: % 4, -3 puntu 0-4 minutuetan, -1 5-9an, +2 10-14an, +4 15-17an eta +6 18-19an.\n"
+            "- Faltsua: % 3, mozorrotuta agertzen da, 0 balio du eta ez du beste agerpenik programatzen.\n"
+            "- Bikia: % 2, +4, berehala beste bat sortzen du eta biharamunerako bat programatzen du.\n"
+            "- Diamantea: % 1, +10.\n"
+            "- Inork harrapatzen ez badu, usteldu egiten da inori punturik kendu gabe. Arruntak 20 minutuan eta Iheskor zuzena minutu batean iraungitzen dira. Puntuazioa negatiboa izan daiteke.\n"
+            "- Baliozko harrapaketa bakoitzak biharamunerako agerpen bat programatzen du, Faltsuak eta iraungitako Iheskor ezkutuak izan ezik.\n"
+            "- /hisopos taldeko sailkapena da."
+        ),
+    },
+    "fr": {
+        "help.reglashisopo": "affiche les règles du Collectionneur de Cotons-tiges",
+        "hisopos.rules": (
+            "Règles du Collectionneur de Cotons-tiges\n\n"
+            "- Il fonctionne dans les groupes et supergroupes et est activé par défaut. Un admin règle dans /config une chance de 1, 5, 10, 15 ou 20 % par message valide.\n"
+            "- La première personne qui appuie sur « Capturer le coton-tige » le gagne. Les suivantes ne marquent rien.\n"
+            "- Commun : 47 %, +1 pt.\n- Argent : 14 %, +2 pt.\n- Or : 10 %, +3 pt.\n"
+            "- Fugace : 7 %, +5 pt et expire après une minute.\n"
+            "- Mystérieux : 7 %, cache un autre type pendant 20 minutes. S'il contient un Fugace, ses +5 pt expirent après une minute ; il est ensuite révélé pour 0 pt.\n"
+            "- Putride : 5 %, se déguise en commun, argent, or ou diamant et retire 2 pt à la capture.\n"
+            "- Radioactif : 4 %, vaut -3 pt aux minutes 0-4, -1 aux 5-9, +2 aux 10-14, +4 aux 15-17 et +6 aux 18-19.\n"
+            "- Faux : 3 %, apparaît déguisé, vaut 0 et ne programme aucune autre apparition.\n"
+            "- Jumeau : 2 %, +4 pt, fait apparaître immédiatement un autre coton-tige et en programme un pour le lendemain.\n"
+            "- Diamant : 1 %, +10 pt.\n"
+            "- Si personne ne le capture, il pourrit sans retirer de points. Les normaux expirent après 20 minutes et le Fugace direct après une minute. Les scores peuvent être négatifs.\n"
+            "- Chaque capture valide programme une apparition le lendemain, sauf le Faux et le Fugace caché dont la minute a expiré.\n"
+            "- /hisopos affiche le classement du groupe."
+        ),
+    },
+    "gn": {
+        "help.reglashisopo": "ohechauka Hisopo Ñembyatýha mbojojaha",
+        "hisopos.rules": (
+            "Hisopo Ñembyatýha mbojojaha\n\n"
+            "- Omba'apo aty ha supergrupo-pe ha oñemyendy ijeheguiete. Admin omoĩkuaa /config-pe 1, 5, 10, 15 térã 20 % opa ñe'ẽmondo oikóvare.\n"
+            "- Pe ojopy raẽva «Ejapyhy hisopo» ogueraha; umi ojopy upe rire ndohupytýi kyta.\n"
+            "- Jepivegua: 47 %, +1 kyta.\n- Plata: 14 %, +2.\n- Oro: 10 %, +3.\n"
+            "- Pya'e: 7 %, +5 ha oñembyai peteĩ minúto rire.\n"
+            "- Ñemigua: 7 %, oñomi ambueichagua 20 minúto aja. Pya'e ramo, +5 opa peteĩ minúto rire; upéi ojekuaa 0 kytáre.\n"
+            "- Tujúva: 5 %, oñemonde jepivegua, plata, oro térã diamánteramo ha ojehape'ã 2 kyta ojejapyhývo.\n"
+            "- Radiactivo: 4 %, -3 kyta minúto 0-4, -1 5-9, +2 10-14, +4 15-17 ha +6 18-19.\n"
+            "- Gua'u: 3 %, ojekuaa ñemiháme, 0 kyta ha nomoĩri ambue jehechauka.\n"
+            "- Kõi: 2 %, +4, omoheñói ambue hisopo upepete ha omoĩ peteĩ ko'ẽrõ g̃uarã.\n"
+            "- Diamante: 1 %, +10.\n"
+            "- Avave ndojapyhýiramo, oñembyai oipe'a'ỹre kyta avavégui. Jepivegua opa 20 minútope ha Pya'e tee peteĩ minútope. Ikatu oĩ kyta vai.\n"
+            "- Ojejapyhy porãvo oñemoĩ peteĩ jehechauka ko'ẽrõ g̃uarã, Gua'u ha Pya'e ñemi iminúto opámava'ỹre.\n"
+            "- /hisopos ohechauka aty rechaukaha."
+        ),
+    },
+    "it": {
+        "help.reglashisopo": "mostra le regole del Raccoglitore di Cotton Fioc",
+        "hisopos.rules": (
+            "Regole del Raccoglitore di Cotton Fioc\n\n"
+            "- Funziona in gruppi e supergruppi ed è attivo per impostazione predefinita. Un admin imposta in /config una probabilità dell'1, 5, 10, 15 o 20 % per messaggio valido.\n"
+            "- La prima persona che preme «Cattura cotton fioc» lo ottiene; i tocchi successivi non danno punti.\n"
+            "- Comune: 47 %, +1 pt.\n- Argento: 14 %, +2 pt.\n- Oro: 10 %, +3 pt.\n"
+            "- Fugace: 7 %, +5 pt e scade dopo un minuto.\n"
+            "- Misterioso: 7 %, nasconde un altro tipo per 20 minuti. Se contiene un Fugace, i suoi +5 pt scadono dopo un minuto; poi viene rivelato per 0 pt.\n"
+            "- Putrefatto: 5 %, si traveste da comune, argento, oro o diamante e sottrae 2 pt alla cattura.\n"
+            "- Radioattivo: 4 %, vale -3 pt ai minuti 0-4, -1 ai 5-9, +2 ai 10-14, +4 ai 15-17 e +6 ai 18-19.\n"
+            "- Falso: 3 %, appare travestito, vale 0 e non programma altre apparizioni.\n"
+            "- Gemello: 2 %, +4 pt, genera subito un altro cotton fioc e ne programma uno per il giorno seguente.\n"
+            "- Diamante: 1 %, +10 pt.\n"
+            "- Se nessuno lo cattura, marcisce senza sottrarre punti. I normali scadono dopo 20 minuti e il Fugace diretto dopo un minuto. I punteggi possono essere negativi.\n"
+            "- Ogni cattura valida programma un'apparizione per il giorno seguente, salvo il Falso e il Fugace nascosto il cui minuto è scaduto.\n"
+            "- /hisopos mostra la classifica del gruppo."
+        ),
+    },
+    "ja": {
+        "help.reglashisopo": "綿棒コレクターのルールを表示します",
+        "hisopos.rules": (
+            "綿棒コレクターのルール\n\n"
+            "- グループとスーパーグループで動作し、初期状態で有効です。管理者は /config で有効なメッセージごとの出現率を1、5、10、15、20%に設定できます。\n"
+            "- 「綿棒を捕獲」を最初に押した人が獲得し、それ以降のタップには得点がありません。\n"
+            "- 通常：47%、+1点。\n- 銀：14%、+2点。\n- 金：10%、+3点。\n"
+            "- 一瞬：7%、+5点、1分で期限切れ。\n"
+            "- ミステリー：7%、他の種類を20分間隠します。一瞬の綿棒なら+5点は1分で失効し、その後は0点として正体が分かります。\n"
+            "- 腐敗：5%、通常・銀・金・ダイヤに変装し、捕獲すると2点減ります。\n"
+            "- 放射性：4%、0-4分は-3点、5-9分は-1点、10-14分は+2点、15-17分は+4点、18-19分は+6点。\n"
+            "- 偽物：3%、変装して現れ、0点で、次の出現を予約しません。\n"
+            "- 双子：2%、+4点、直ちにもう1本出現させ、翌日分も1本予約します。\n"
+            "- ダイヤ：1%、+10点。\n"
+            "- 誰も捕獲しなければ誰の点も減らさず腐ります。通常は20分、直接出た一瞬は1分で期限切れです。得点は負になることがあります。\n"
+            "- 有効な捕獲は翌日の出現を予約しますが、偽物と1分を過ぎた隠れ一瞬は例外です。\n"
+            "- /hisopos でグループ順位を表示します。"
+        ),
+    },
+    "la": {
+        "help.reglashisopo": "regulas Collectoris Bacillorum ostendit",
+        "hisopos.rules": (
+            "Regulae Collectoris Bacillorum\n\n"
+            "- In gregibus et supergregibus operatur atque initio activum est. Administrator in /config probabilitatem 1, 5, 10, 15 aut 20 % pro nuntio valido statuit.\n"
+            "- Qui primus «Bacillum cape» premit id accipit; posteriores nulla puncta capiunt.\n"
+            "- Commune: 47 %, +1 punctum.\n- Argenteum: 14 %, +2.\n- Aureum: 10 %, +3.\n"
+            "- Fugax: 7 %, +5 et post unum minutum perit.\n"
+            "- Arcanum: 7 %, aliud genus per 20 minuta celat. Si Fugax inest, +5 post minutum pereunt; deinde pro 0 punctis revelatur.\n"
+            "- Putridum: 5 %, commune, argenteum, aureum aut adamantinum simulat et captum 2 puncta aufert.\n"
+            "- Radioactivum: 4 %, -3 puncta minutis 0-4, -1 5-9, +2 10-14, +4 15-17 et +6 18-19.\n"
+            "- Falsum: 3 %, simulatum apparet, 0 valet neque alium adventum ordinat.\n"
+            "- Geminum: 2 %, +4, statim aliud gignit et unum in posterum diem ordinat.\n"
+            "- Adamantinum: 1 %, +10.\n"
+            "- Si nemo capit, putrescit nec cuiquam puncta aufert. Communia post 20 minuta, Fugax directum post minutum pereunt. Puncta negativa esse possunt.\n"
+            "- Quaeque captura valida adventum in posterum diem ordinat, praeter Falsum et Fugax occultum cuius minutum periit.\n"
+            "- /hisopos tabulam gregis ostendit."
+        ),
+    },
+    "nl": {
+        "help.reglashisopo": "toont de regels van de Wattenstaafjesverzamelaar",
+        "hisopos.rules": (
+            "Regels van de Wattenstaafjesverzamelaar\n\n"
+            "- Werkt in groepen en supergroepen en staat standaard aan. Een beheerder stelt in /config een kans van 1, 5, 10, 15 of 20% per geldig bericht in.\n"
+            "- Wie het eerst op ‘Wattenstaafje vangen’ tikt, krijgt het. Latere tikken leveren niets op.\n"
+            "- Gewoon: 47%, +1 pt.\n- Zilver: 14%, +2 pt.\n- Goud: 10%, +3 pt.\n"
+            "- Vluchtig: 7%, +5 pt en verloopt na één minuut.\n"
+            "- Mysterieus: 7%, verbergt 20 minuten een ander type. Bevat het Vluchtig, dan vervalt +5 pt na één minuut; daarna wordt het voor 0 pt onthuld.\n"
+            "- Verrot: 5%, vermomt zich als gewoon, zilver, goud of diamant en trekt bij vangst 2 pt af.\n"
+            "- Radioactief: 4%, geeft -3 pt in minuut 0-4, -1 in 5-9, +2 in 10-14, +4 in 15-17 en +6 in 18-19.\n"
+            "- Nep: 3%, verschijnt vermomd, is 0 waard en plant geen nieuwe verschijning.\n"
+            "- Tweeling: 2%, +4 pt, laat meteen nog één verschijnen en plant er één voor de volgende dag.\n"
+            "- Diamant: 1%, +10 pt.\n"
+            "- Als niemand het vangt, rot het zonder punten af te trekken. Gewone verlopen na 20 minuten en directe Vluchtige na één minuut. Scores mogen negatief zijn.\n"
+            "- Elke geldige vangst plant er één voor de volgende dag, behalve Nep en een verborgen Vluchtig waarvan de minuut verstreek.\n"
+            "- /hisopos toont het groepsklassement."
+        ),
+    },
+    "pt_BR": {
+        "help.reglashisopo": "mostra as regras do Coletor de Cotonetes",
+        "hisopos.rules": (
+            "Regras do Coletor de Cotonetes\n\n"
+            "- Funciona em grupos e supergrupos e vem ativado. Um admin configura em /config uma chance de 1, 5, 10, 15 ou 20% por mensagem válida.\n"
+            "- A primeira pessoa que tocar em “Capturar cotonete” fica com ele. Toques posteriores não pontuam.\n"
+            "- Comum: 47%, +1 pt.\n- Prateado: 14%, +2 pt.\n- Dourado: 10%, +3 pt.\n"
+            "- Fugaz: 7%, +5 pt e expira em um minuto.\n"
+            "- Misterioso: 7%, esconde outro tipo por 20 minutos. Se contiver um Fugaz, os +5 pt expiram em um minuto; depois ele é revelado por 0 pt.\n"
+            "- Pútrido: 5%, se disfarça de comum, prateado, dourado ou diamante e tira 2 pt quando capturado.\n"
+            "- Radioativo: 4%, vale -3 pt nos minutos 0-4, -1 em 5-9, +2 em 10-14, +4 em 15-17 e +6 em 18-19.\n"
+            "- Falso: 3%, aparece disfarçado, vale 0 e não agenda outra aparição.\n"
+            "- Gêmeo: 2%, +4 pt, faz outro aparecer na hora e agenda um para o dia seguinte.\n"
+            "- Diamante: 1%, +10 pt.\n"
+            "- Se ninguém capturar, ele apodrece sem tirar pontos de ninguém. Os normais expiram em 20 minutos e o Fugaz direto em um minuto. A pontuação pode ficar negativa.\n"
+            "- Cada captura válida agenda uma aparição para o dia seguinte, exceto o Falso e o Fugaz escondido cujo minuto expirou.\n"
+            "- /hisopos mostra o ranking do grupo."
+        ),
+    },
+    "pt_PT": {
+        "help.reglashisopo": "mostra as regras do Coletor de Cotonetes",
+        "hisopos.rules": (
+            "Regras do Coletor de Cotonetes\n\n"
+            "- Funciona em grupos e supergrupos e vem ativado. Um administrador configura em /config uma probabilidade de 1, 5, 10, 15 ou 20 % por mensagem válida.\n"
+            "- A primeira pessoa que carregar em «Capturar cotonete» fica com ele. Os toques seguintes não pontuam.\n"
+            "- Comum: 47 %, +1 pt.\n- Prateado: 14 %, +2 pt.\n- Dourado: 10 %, +3 pt.\n"
+            "- Fugaz: 7 %, +5 pt e expira num minuto.\n"
+            "- Misterioso: 7 %, esconde outro tipo durante 20 minutos. Se contiver um Fugaz, os +5 pt expiram num minuto; depois é revelado por 0 pt.\n"
+            "- Pútrido: 5 %, disfarça-se de comum, prateado, dourado ou diamante e retira 2 pt ao ser capturado.\n"
+            "- Radioativo: 4 %, vale -3 pt nos minutos 0-4, -1 nos 5-9, +2 nos 10-14, +4 nos 15-17 e +6 nos 18-19.\n"
+            "- Falso: 3 %, aparece disfarçado, vale 0 e não agenda outra aparição.\n"
+            "- Gémeo: 2 %, +4 pt, faz aparecer outro no momento e agenda um para o dia seguinte.\n"
+            "- Diamante: 1 %, +10 pt.\n"
+            "- Se ninguém o capturar, apodrece sem retirar pontos. Os normais expiram em 20 minutos e o Fugaz direto num minuto. A pontuação pode ser negativa.\n"
+            "- Cada captura válida agenda uma aparição para o dia seguinte, exceto o Falso e o Fugaz oculto cujo minuto expirou.\n"
+            "- /hisopos mostra a classificação do grupo."
+        ),
+    },
+    "quz": {
+        "help.reglashisopo": "Hisopo Huñuqpa kamachinkunanta rikuchin",
+        "hisopos.rules": (
+            "Hisopo Huñuqpa kamachinkuna\n\n"
+            "- Huñunakuykunapi, supergrupokunapipas llamk'an, qallariypitaq hap'ichisqa. Admin /config nisqapi 1, 5, 10, 15 utaq 20 % chaylla churayta atin allin willakuypaq.\n"
+            "- «Hisopota hap'iy» ñawpaq ñit'iqmi hap'in; qhipapi ñit'iqkuna mana puntuta chaskinkuchu.\n"
+            "- Sapsi: 47 %, +1 puntu.\n- Qullqi: 14 %, +2.\n- Quri: 10 %, +3.\n"
+            "- Utqay: 7 %, +5, huk minutupi tukukun.\n"
+            "- Pakasqa: 7 %, huk rikch'aqta 20 minututa pakan. Utqay kaptinqa +5 puntun huk minutupi tukukun; chaymanta 0 puntuwan rikuchikun.\n"
+            "- Ismuq: 5 %, sapsi, qullqi, quri utaq diamante hina rikuchikun, hap'iptintaq 2 puntuta qichun.\n"
+            "- Radiactivo: 4 %, -3 puntu 0-4 minutupi, -1 5-9, +2 10-14, +4 15-17, +6 18-19.\n"
+            "- Llulla: 3 %, huk hina rikuchikun, 0 puntu, manataq huk rikuriyta wakichinchu.\n"
+            "- Iskay: 2 %, +4, huk hisopota chaylla rikurichin, huktaq paqarinpaq wakichin.\n"
+            "- Diamante: 1 %, +10.\n"
+            "- Mana pipas hap'iptinqa ismukun, manataq pipas puntuta chinkachinchu. Sapsikuna 20 minutupi, Utqay chiqaptaq huk minutupi tukukun. Yupayqa mana allinmanpas chayayta atin.\n"
+            "- Sapa allin hap'iy paqarinpaq huk rikuriyta wakichin, Llullatawan pakasqa Utqaypa minutun tukusqata mana.\n"
+            "- /hisopos huñunakuypa yupayninta rikuchin."
+        ),
+    },
+    "ru": {
+        "help.reglashisopo": "показывает правила Собирателя ватных палочек",
+        "hisopos.rules": (
+            "Правила Собирателя ватных палочек\n\n"
+            "- Игра работает в группах и супергруппах и включена по умолчанию. Администратор задаёт в /config шанс 1, 5, 10, 15 или 20 % на допустимое сообщение.\n"
+            "- Палочку получает тот, кто первым нажал «Поймать палочку». Последующие нажатия очков не дают.\n"
+            "- Обычная: 47 %, +1 очко.\n- Серебряная: 14 %, +2.\n- Золотая: 10 %, +3.\n"
+            "- Мимолётная: 7 %, +5 и исчезает через минуту.\n"
+            "- Таинственная: 7 %, скрывает другой вид 20 минут. Если внутри Мимолётная, её +5 сгорают через минуту; затем она раскрывается за 0 очков.\n"
+            "- Гнилая: 5 %, маскируется под обычную, серебряную, золотую или алмазную и отнимает 2 очка при поимке.\n"
+            "- Радиоактивная: 4 %, даёт -3 очка на минутах 0-4, -1 на 5-9, +2 на 10-14, +4 на 15-17 и +6 на 18-19.\n"
+            "- Поддельная: 3 %, появляется замаскированной, стоит 0 и не планирует новое появление.\n"
+            "- Близнец: 2 %, +4, сразу создаёт ещё одну палочку и планирует одну на следующий день.\n"
+            "- Алмазная: 1 %, +10.\n"
+            "- Если никто не поймал палочку, она сгниёт, никого не штрафуя. Обычные живут 20 минут, прямая Мимолётная — минуту. Счёт может быть отрицательным.\n"
+            "- Каждая удачная поимка планирует появление на следующий день, кроме Поддельной и скрытой Мимолётной с истёкшей минутой.\n"
+            "- /hisopos показывает таблицу группы."
+        ),
+    },
+    "zh_Hans": {
+        "help.reglashisopo": "显示棉签收集者规则",
+        "hisopos.rules": (
+            "棉签收集者规则\n\n"
+            "- 游戏用于群组和超级群组，默认开启。管理员可在 /config 中把每条有效消息的出现概率设为1%、5%、10%、15%或20%。\n"
+            "- 最先点击“捕获棉签”的人获得棉签；之后的点击不得分。\n"
+            "- 普通：47%，+1分。\n- 银：14%，+2分。\n- 金：10%，+3分。\n"
+            "- 瞬逝：7%，+5分，一分钟后失效。\n"
+            "- 神秘：7%，将其他一种类型隐藏20分钟。若其中是瞬逝棉签，+5分在一分钟后失效；之后以0分揭晓。\n"
+            "- 腐烂：5%，伪装成普通、银、金或钻石，捕获时扣2分。\n"
+            "- 放射性：4%，第0-4分钟为-3分，5-9分钟-1分，10-14分钟+2分，15-17分钟+4分，18-19分钟+6分。\n"
+            "- 假：3%，伪装出现，价值0分，不安排下一次出现。\n"
+            "- 双生：2%，+4分，立刻再生成一根，并安排次日一根。\n"
+            "- 钻石：1%，+10分。\n"
+            "- 若无人捕获，棉签会腐烂，不扣任何人的分。普通棉签20分钟失效，直接出现的瞬逝棉签一分钟失效。分数可以为负。\n"
+            "- 每次有效捕获都会安排次日出现，但假棉签和超过一分钟的隐藏瞬逝棉签除外。\n"
+            "- /hisopos 显示本群排行榜。"
+        ),
+    },
+    "zh_Hant": {
+        "help.reglashisopo": "顯示棉花棒收集者規則",
+        "hisopos.rules": (
+            "棉花棒收集者規則\n\n"
+            "- 遊戲用於群組和超級群組，預設開啟。管理員可在 /config 將每則有效訊息的出現機率設為1%、5%、10%、15%或20%。\n"
+            "- 最先點擊「捕獲棉花棒」的人獲得棉花棒；之後的點擊不得分。\n"
+            "- 普通：47%，+1分。\n- 銀：14%，+2分。\n- 金：10%，+3分。\n"
+            "- 瞬逝：7%，+5分，一分鐘後失效。\n"
+            "- 神秘：7%，將其他一種類型隱藏20分鐘。若其中是瞬逝棉花棒，+5分在一分鐘後失效；之後以0分揭曉。\n"
+            "- 腐爛：5%，偽裝成普通、銀、金或鑽石，捕獲時扣2分。\n"
+            "- 放射性：4%，第0-4分鐘為-3分，5-9分鐘-1分，10-14分鐘+2分，15-17分鐘+4分，18-19分鐘+6分。\n"
+            "- 假：3%，偽裝出現，價值0分，不安排下一次出現。\n"
+            "- 雙生：2%，+4分，立刻再生成一根，並安排次日一根。\n"
+            "- 鑽石：1%，+10分。\n"
+            "- 若無人捕獲，棉花棒會腐爛，不扣任何人的分。普通棉花棒20分鐘失效，直接出現的瞬逝棉花棒一分鐘失效。分數可以為負。\n"
+            "- 每次有效捕獲都會安排次日出現，但假棉花棒和超過一分鐘的隱藏瞬逝棉花棒除外。\n"
+            "- /hisopos 顯示本群排行榜。"
+        ),
+    },
+}
+
 for _language, _translations in HISOPO_SPECIAL_TRANSLATIONS.items():
+    HISOPO_TRANSLATIONS[_language].update(_translations)
+for _language, _translations in HISOPO_RULE_TRANSLATIONS.items():
     HISOPO_TRANSLATIONS[_language].update(_translations)

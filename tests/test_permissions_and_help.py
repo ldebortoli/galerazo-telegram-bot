@@ -127,10 +127,22 @@ class PermissionsAndHelpTests(unittest.TestCase):
                 "/agrtrigger:",
                 "/eliminartrigger:",
                 "/eltrigger:",
+                "/reglashisopo:",
                 "/ruletarusa:",
             ):
                 with self.subTest(command=command):
                     self.assertIn(command, response)
+
+            rules = asyncio.run(
+                handle_command_async(
+                    "/reglashisopo",
+                    "1",
+                    db,
+                    chat_id="-1",
+                    chat_type="group",
+                )
+            )
+            self.assertIn("Reglas del Recolector de Hisopos", rules)
 
 
 if __name__ == "__main__":

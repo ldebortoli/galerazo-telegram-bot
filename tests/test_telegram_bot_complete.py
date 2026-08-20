@@ -217,14 +217,18 @@ class LifecycleAndBillingTests(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(
             private_names,
-            {"help", "ayuda", "start", "hola", "lil", "nivel", "version", "chats", "reportar", "donar", "config"},
+            {"help", "ayuda", "start", "hola", "lil", "nivel", "version", "chats", "reportar", "donar", "config", "reglashisopo"},
         )
-        self.assertTrue({"galeraza", "galerazas", "triggers", "agregartrigger"} <= group_names)
+        self.assertTrue({"galeraza", "galerazas", "triggers", "agregartrigger", "reglashisopo"} <= group_names)
         self.assertIn("ruletarusa", group_names)
         self.assertFalse({"config", "backup", "debug", "gasto"} & group_names)
-        self.assertTrue({"config", "restringir", "habilitar", "restringidos"} <= admin_names)
+        self.assertTrue({"config", "restringir", "habilitar", "restringidos", "reglashisopo"} <= admin_names)
         self.assertFalse({"backup", "debug", "gasto", "estadogastos"} & admin_names)
         self.assertIn("shows this help", {command.description for command in english_commands})
+        self.assertIn(
+            "shows the Swab Collector rules",
+            {command.description for command in english_commands},
+        )
 
         bot = SimpleNamespace(set_my_commands=AsyncMock(), delete_my_commands=AsyncMock())
         await tb._sync_botfather_commands(bot)

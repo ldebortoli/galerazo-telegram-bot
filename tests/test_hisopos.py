@@ -475,6 +475,16 @@ class HisopoCommandTests(unittest.IsolatedAsyncioTestCase):
             )
         )
 
+    async def test_rules_are_available_even_when_the_game_is_disabled(self) -> None:
+        response = hisopo_handlers.handle_rules(self._context(), MagicMock())
+
+        self.assertIn("Reglas del Recolector de Hisopos", response)
+        self.assertIn("Común: 47 %", response)
+        self.assertIn("Diamante: 1 %", response)
+        self.assertIn("no le quita puntos a nadie", response)
+        self.assertIn("/hisopos", response)
+        self.assertLessEqual(len(response), 4096)
+
     async def test_send_ranking_success_pagination_and_failure(self) -> None:
         db = MagicMock()
         db.get_chat_settings.return_value = SimpleNamespace(language="es")

@@ -17,6 +17,10 @@ from ..roles import CommandContext
 logger = logging.getLogger(__name__)
 
 
+def handle_rules(context: CommandContext, _db: Database) -> str:
+    return context.t("hisopos.rules")
+
+
 async def handle(context: CommandContext, _db: Database) -> str | None:
     if context.chat_type not in {"group", "supergroup"}:
         return context.t("hisopos.group_only")
@@ -116,6 +120,11 @@ def migrate_chat_data(conn: sqlite3.Connection, old_chat_id: str, new_chat_id: s
 
 
 COMMANDS = {
+    "reglashisopo": Command(
+        "reglashisopo",
+        "muestra las reglas del Recolector de Hisopos",
+        handle_rules,
+    ),
     "hisopos": Command(
         "hisopos",
         "muestra la tabla del Recolector de Hisopos",

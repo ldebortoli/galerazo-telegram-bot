@@ -58,6 +58,14 @@ class CommandRoutingTests(unittest.TestCase):
             and "galeraza" in handler.commands
         ]
         self.assertEqual(len(galeraza_alias_handlers), 1)
+        rules_handlers = [
+            handler
+            for group, handler in application.handlers
+            if group == 1
+            and isinstance(handler, CommandHandler)
+            and "reglashisopo" in handler.commands
+        ]
+        self.assertEqual(len(rules_handlers), 1)
         prefix_handlers = [
             handler
             for group, handler in application.handlers
@@ -67,6 +75,7 @@ class CommandRoutingTests(unittest.TestCase):
         self.assertTrue(
             frozenset({f"{prefix}galerazas" for prefix in ("!", ".", ">", "$")})
             | frozenset({f"{prefix}galeraza" for prefix in ("!", ".", ">", "$")})
+            | frozenset({f"{prefix}reglashisopo" for prefix in ("!", ".", ">", "$")})
             <= prefix_handlers[0].commands,
         )
         self.assertFalse(

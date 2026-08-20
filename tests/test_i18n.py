@@ -17,7 +17,7 @@ class TranslationTests(unittest.TestCase):
         command_pattern = re.compile(
             r"/(?:agregartrigger|anuncio|apagar|backup|bloquear|borrartrigger|bloqueados|chats|config|debug|"
             r"desbloquear|desloquear|donar|gasto|galeraza|galerazas|habilitar|hola|listanegra|nivel|novedad|"
-            r"reiniciarbot|reportar|restringir|salir|start|triggers|version)"
+            r"hisopos|reiniciarbot|reportar|restringir|salir|start|triggers|version)"
         )
         url_pattern = re.compile(r"https?://[^\s]+")
         for key, spanish_text in TRANSLATIONS["es"].items():
@@ -56,6 +56,13 @@ class TranslationTests(unittest.TestCase):
         self.assertTrue(
             all(not text.startswith("rehegua\n") for text in TRANSLATIONS["gn"].values())
         )
+
+    def test_hisopo_rules_fit_in_one_telegram_message(self) -> None:
+        for language, translations in TRANSLATIONS.items():
+            with self.subTest(language=language):
+                self.assertLessEqual(len(translations["hisopos.rules"]), 4096)
+                self.assertIn("/config", translations["hisopos.rules"])
+                self.assertIn("/hisopos", translations["hisopos.rules"])
 
     def test_southern_quechua_preserves_named_game_and_message_lines(self) -> None:
         self.assertIn("Galeraza", TRANSLATIONS["quz"]["galeraza.header"])
