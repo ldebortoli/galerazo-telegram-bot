@@ -13,6 +13,7 @@ from .gastos import COMMANDS as GASTOS_COMMANDS
 from .galerazas import COMMANDS as GALERAZAS_COMMANDS
 from .help import COMMANDS as HELP_COMMANDS
 from .hola import COMMANDS as HOLA_COMMANDS
+from .hisopos import COMMANDS as HISOPOS_COMMANDS
 from .lil import COMMANDS as LIL_COMMANDS
 from .nivel import COMMANDS as NIVEL_COMMANDS
 from .novedad import COMMANDS as NOVEDAD_COMMANDS
@@ -47,6 +48,7 @@ COMMANDS: dict[str, Command] = {
     **CHATS_COMMANDS,
     **CONFIG_COMMANDS,
     **GALERAZAS_COMMANDS,
+    **HISOPOS_COMMANDS,
     **TRIGGERS_COMMANDS,
     **VERSION_COMMANDS,
     **SALIR_COMMANDS,

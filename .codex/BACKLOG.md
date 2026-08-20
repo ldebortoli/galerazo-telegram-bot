@@ -11,8 +11,9 @@
 
 # IN PROGRESS
 
-
 # DONE
+
+- [2026-08-20] [USER_REQUEST] Implementado localmente el juego configurable y traducido `Recolector de Hisopos`: intensidades 1/5/10/15/20%, rarezas comun/plateada/dorada, captura atomica, vencimiento a 20 minutos, ranking `/hisopos`, agenda persistente para el dia siguiente, migracion grupo-supergrupo y tres imagenes originales. Version `0.17`; 259 pruebas y cobertura 100% de sentencias/ramas, runtime, dependencias, compilacion, scripts, imagenes y checkpoint OK. BotFather sincronizado. Faltan solamente los tres `file_id` que aportara el usuario. Docker local no estaba iniciado; sin deploy.
 
 - [2026-08-17] [USER_REQUEST] Implementar tres intentos totales (envio original y dos reintentos) para todo `send_message` que falle con `TimedOut`. `RetryingExtBot` espera 1 y 2 segundos, corta al primer exito, registra y eleva el tercer timeout; se acepta explicitamente el riesgo de duplicados para priorizar la entrega. La Galeraza conserva el punto y reporta el conteo final. Version `0.16`; 244 pruebas y cobertura 100% de sentencias/ramas, runtime, dependencias, `compileall`, checkpoint y diff-check OK. Sin Docker ni deploy.
 

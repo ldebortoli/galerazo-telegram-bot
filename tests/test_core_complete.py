@@ -209,6 +209,9 @@ class ConfigurationAndEntrypointTests(unittest.TestCase):
             "TELEGRAM_DEV_USER_IDS": " 1, ,2 ",
             "TELEGRAM_LOG_CHAT_ID": "-1",
             "TELEGRAM_ANNOUNCEMENTS_CHAT_ID": "-2",
+            "TELEGRAM_HISOPO_COMMON_FILE_ID": "common",
+            "TELEGRAM_HISOPO_SILVER_FILE_ID": "silver",
+            "TELEGRAM_HISOPO_GOLD_FILE_ID": "gold",
             "DATABASE_PATH": "db.sqlite3",
             "GOOGLE_SHEETS_CREDENTIALS_JSON_PATH": "key.json",
             "GOOGLE_SHEETS_SPREADSHEET_ID": "sheet",
@@ -222,6 +225,9 @@ class ConfigurationAndEntrypointTests(unittest.TestCase):
             settings = config.load_settings()
         self.assertEqual(settings.telegram_dev_user_ids, frozenset({"1", "2"}))
         self.assertEqual(settings.google_sheets_credentials_json_path, Path("key.json"))
+        self.assertEqual(settings.telegram_hisopo_common_file_id, "common")
+        self.assertEqual(settings.telegram_hisopo_silver_file_id, "silver")
+        self.assertEqual(settings.telegram_hisopo_gold_file_id, "gold")
         self.assertIsNone(config._optional_path(None))
         self.assertEqual(config._optional_path("x"), Path("x"))
 

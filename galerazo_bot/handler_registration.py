@@ -23,10 +23,12 @@ def register_handlers(
     command_callback: Callable[..., Awaitable[None]],
     pagination_callback: Callable[..., Awaitable[None]],
     config_callback: Callable[..., Awaitable[None]],
+    hisopo_callback: Callable[..., Awaitable[None]],
     power_callback: Callable[..., Awaitable[None]],
     chat_member_callback: Callable[..., Awaitable[None]],
     pagination_pattern: str,
     config_pattern: str,
+    hisopo_pattern: str,
     power_pattern: str,
 ) -> None:
     """Wire Telegram's native handlers without interpreting ordinary text as commands."""
@@ -45,5 +47,6 @@ def register_handlers(
     )
     application.add_handler(CallbackQueryHandler(pagination_callback, pattern=pagination_pattern), group=1)
     application.add_handler(CallbackQueryHandler(config_callback, pattern=config_pattern), group=1)
+    application.add_handler(CallbackQueryHandler(hisopo_callback, pattern=hisopo_pattern), group=1)
     application.add_handler(CallbackQueryHandler(power_callback, pattern=power_pattern), group=1)
     application.add_handler(ChatMemberHandler(chat_member_callback, ChatMemberHandler.MY_CHAT_MEMBER), group=1)

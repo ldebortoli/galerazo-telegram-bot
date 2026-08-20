@@ -81,6 +81,7 @@ class CommandContext:
     create_backup: Callable[[], Awaitable[BackupResult]] | None = None
     send_debug_update: Callable[[], Awaitable[bool]] | None = None
     send_galerazas: Callable[[], Awaitable[bool]] | None = None
+    send_hisopos: Callable[[], Awaitable[bool]] | None = None
     send_config_menu: Callable[[], Awaitable[bool]] | None = None
     create_restart_confirmation: Callable[[], Awaitable[bool]] | None = None
     create_shutdown_confirmation: Callable[[], Awaitable[bool]] | None = None

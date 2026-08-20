@@ -45,6 +45,7 @@ LANGUAGES = (
 )
 COMMAND_GROUPS = (
     CommandGroupOption("galeraza", "Galeraza"),
+    CommandGroupOption("hisopos", "Recolector de Hisopos"),
     CommandGroupOption("triggers", "Triggers"),
     CommandGroupOption("ruletarusa", "Ruleta rusa"),
 )
@@ -111,6 +112,44 @@ def build_command_group_menu(command_group: str, enabled: bool, language: str) -
                     _selected_label(t(language, "config.no"), not enabled),
                     callback_data=f"{CONFIG_PREFIX}:set:{command_group}:0",
                 ),
+            ],
+            _navigation_row(language, f"{CONFIG_PREFIX}:commands"),
+        ]
+    )
+
+
+def build_hisopo_menu(enabled: bool, intensity_percent: int, language: str) -> InlineKeyboardMarkup:
+    intensity_buttons = [
+        InlineKeyboardButton(
+            _selected_label(
+                f"{t(language, f'hisopos.intensity.{key}')} ({percent}%)",
+                intensity_percent == percent,
+            ),
+            callback_data=f"{CONFIG_PREFIX}:intensity:{percent}",
+        )
+        for key, percent in (
+            ("very_low", 1),
+            ("low", 5),
+            ("medium", 10),
+            ("high", 15),
+            ("very_high", 20),
+        )
+    ]
+    return InlineKeyboardMarkup(
+        [
+            [
+                InlineKeyboardButton(
+                    _selected_label(t(language, "config.yes"), enabled),
+                    callback_data=f"{CONFIG_PREFIX}:set:hisopos:1",
+                ),
+                InlineKeyboardButton(
+                    _selected_label(t(language, "config.no"), not enabled),
+                    callback_data=f"{CONFIG_PREFIX}:set:hisopos:0",
+                ),
+            ],
+            *[
+                intensity_buttons[index : index + 2]
+                for index in range(0, len(intensity_buttons), 2)
             ],
             _navigation_row(language, f"{CONFIG_PREFIX}:commands"),
         ]

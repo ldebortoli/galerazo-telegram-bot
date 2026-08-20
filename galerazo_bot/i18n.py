@@ -424,9 +424,12 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
 }
 
 from .extra_translations import EXTRA_TRANSLATIONS
+from .hisopo_translations import HISOPO_TRANSLATIONS
 
 
 TRANSLATIONS.update(EXTRA_TRANSLATIONS)
+for _language, _catalog in HISOPO_TRANSLATIONS.items():
+    TRANSLATIONS[_language].update(_catalog)
 
 
 def t(language: str | None, key: str, **kwargs) -> str:

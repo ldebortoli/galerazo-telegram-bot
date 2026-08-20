@@ -6,6 +6,8 @@ Mantener Galerazo Bot reproducible en Windows, CI y Docker, con SQLite persisten
 
 ## Estado actual
 
+- Implementado localmente el Recolector de Hisopos, version `0.17`: configurable por grupo/supergrupo y deshabilitado por defecto; intensidades 1/5/10/15/20%; rarezas comun/plateada/dorada de 1/2/3 puntos; captura atomica, vencimiento a 20 minutos, `/hisopos`, 18 idiomas, migracion completa y agenda SQLite para el dia siguiente. Los artes de 1254x1254 estan en `assets/hisopos/`. BotFather ya incluye `/hisopos` en grupos es/en. No se construyo Docker, publico imagen ni desplego.
+- Los tres `TELEGRAM_HISOPO_*_FILE_ID` aun no estan configurados. Para probar: enviar cada PNG al bot como foto, responder ese mensaje con `/debug`, copiar el `file_id` de la ultima entrada de `message.photo` al panel/.env y reiniciar el bot local. No usar `file_unique_id`.
 - Todos los `send_message`, incluidos los `reply_text`, usan `RetryingExtBot`: ante `TimedOut` realizan tres intentos totales con esperas de 1 y 2 segundos, cortan al primer exito y registran/elevan el tercer fallo. Por preferencia explicita del usuario se prioriza entrega sobre evitar duplicados. La Galeraza conserva el punto y el error final informa los tres intentos tanto localmente como en el canal de logging. Version `0.16`; 244 pruebas y cobertura 100% OK. No se cambio ningun comando ni se desplego.
 - Se compacto el selector de idiomas en filas de dos botones y las filas empatadas de `/galerazas` ahora usan un prefijo con guion alineado dentro de cada ancho de posicion. El guion es formato de salida, no una lista Markdown. Version `0.11`, commit `46cb093` pusheado a `main`; 236 pruebas y cobertura 100% OK. No hay deploy solicitado.
 - Se incluyo debajo de la donacion la linea `Repo: https://github.com/ldebortoli/galerazo-telegram-bot` en el formato comun de anuncios y novedades. El control de longitud final se conserva para todos los idiomas. Version `0.12`; 236 pruebas y cobertura 100% OK. No hay deploy solicitado.
@@ -32,6 +34,7 @@ Mantener Galerazo Bot reproducible en Windows, CI y Docker, con SQLite persisten
 
 ## Validacion reciente
 
+- Version `0.17`: 259 pruebas nativas OK; cobertura 100% de sentencias y ramas; Python 3.14.7 y lock alineados tras integrar el actualizador remoto `70d0070`; `pip check`, `compileall`, parse PowerShell/Bash, tres imagenes cuadradas, `git diff --check` y checkpoint de logs OK. Docker Desktop no estaba iniciado, por lo que no hubo repeticion local del target Docker; sin release/deploy.
 - Version `0.16`: 244 pruebas nativas OK; cobertura 100% de sentencias y ramas; `runtime_versions.py`, `pip check`, `compileall`, `git diff --check` y checkpoint de logs OK. Sin Docker por no cambiar runtime/contenedor; sin release/deploy.
 - Pipeline runtime semanal: 238 pruebas nativas OK, cobertura 100% de sentencias y ramas, build y smoke test Docker runtime OK; `compileall`, `runtime_versions.py`, `pip check`, `git diff --check` y checkpoint de logs OK. Sin release/deploy.
 - Version `0.15`: 238 pruebas nativas OK; cobertura 100% de sentencias y ramas; `compileall`, `runtime_versions.py`, `pip check`, `git diff --check` y checkpoint de logs OK. Sin release/deploy.
@@ -53,4 +56,4 @@ Mantener Galerazo Bot reproducible en Windows, CI y Docker, con SQLite persisten
 
 ## Siguiente paso exacto
 
-No hay trabajo local activo. El proximo release debe incluir la version `0.16` y las correcciones acumuladas; usar Bot Control Center, vista Deploy, `Verificar` y `Publicar y deployar`, sin migrar datos locales. Los unicos pendientes requieren los datos o autorizaciones explicitados en BACKLOG.
+No hay trabajo de codigo local activo. El siguiente paso del usuario es elegir/aprobar los tres artes y aportar sus `file_id` para la prueba local. El proximo release debe incluir la version `0.17` y todas las correcciones acumuladas; usar Bot Control Center, vista Deploy, `Verificar` y `Publicar y deployar`, sin migrar datos locales. Los demas pendientes requieren los datos o autorizaciones explicitados en BACKLOG.

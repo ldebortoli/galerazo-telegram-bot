@@ -4,6 +4,7 @@ import asyncio
 import json
 import logging
 import os
+import secrets
 import sys
 import traceback
 from dataclasses import dataclass
@@ -40,6 +41,7 @@ from .chat_config import (
     build_announcements_menu,
     build_command_group_menu,
     build_command_groups_menu,
+    build_hisopo_menu,
     build_language_menu,
     build_main_menu,
     command_group_label,
@@ -63,7 +65,7 @@ from .commands import (
     is_command_invocation,
 )
 from .config import Settings, load_settings
-from .database import Database, Trigger
+from .database import Database, HisopoSchedule, HisopoSpawn, Trigger
 from .expenses import (
     ExpenseSheetStatus,
     ExpenseSubmissionResult,
@@ -78,7 +80,16 @@ from .command_handlers.galerazas import (
     send_galerazas as _send_galerazas,
     telegram_message_datetime as _telegram_message_datetime,
 )
+from .command_handlers.hisopos import send_hisopos as _send_hisopos
 from .handler_registration import register_handlers
+from .hisopos import (
+    HISOPO_CALLBACK_PREFIX,
+    HISOPO_CAPTURE_CALLBACK,
+    HISOPO_EXPIRATION,
+    random_next_day_datetime,
+    select_hisopo_kind,
+    should_spawn_hisopo,
+)
 from .google_sheets import GoogleSheetsConfig, GoogleSheetsExpenseWriter
 from .i18n import DEFAULT_LANGUAGE, t
 from .instance_lock import SingleInstance
@@ -210,10 +221,12 @@ def _register_handlers(application: Application) -> None:
         command_callback=_command_entrypoint,
         pagination_callback=_callback_query_entrypoint,
         config_callback=_config_callback_entrypoint,
+        hisopo_callback=_hisopo_callback_entrypoint,
         power_callback=_restart_callback_entrypoint,
         chat_member_callback=_my_chat_member_entrypoint,
         pagination_pattern=f"^{BUTTON_PREFIX}:",
         config_pattern=f"^{CONFIG_PREFIX}:",
+        hisopo_pattern=f"^{HISOPO_CALLBACK_PREFIX}:",
         power_pattern=f"^({RESTART_CALLBACK_PREFIX}|{SHUTDOWN_CALLBACK_PREFIX}):",
     )
 
@@ -239,6 +252,7 @@ async def _post_init(application: Application) -> None:
     await _sync_botfather_commands(application.bot)
     await _announce_current_release(db, application.bot, settings)
     await _cleanup_old_paginated_messages(db, application.bot)
+    _restore_hisopo_jobs(application)
     await _send_log_event(application.bot, settings.telegram_log_chat_id, "Galerazo Bot iniciado.")
     _schedule_google_cloud_billing_report(application, settings)
 
@@ -460,6 +474,10 @@ async def _preprocess_message(update: Update, context: ContextTypes.DEFAULT_TYPE
                 state.settings.telegram_log_chat_id,
                 timeout_log,
             )
+        await _maybe_spawn_hisopo_for_message(
+            application=context.application,
+            message=message,
+        )
 
     text = message.text or message.caption
     if not text or is_command_invocation(text):
@@ -471,6 +489,237 @@ async def _preprocess_message(update: Update, context: ContextTypes.DEFAULT_TYPE
         message=message,
     )
     state.db.save_incoming_message(sender_id=str(user.id), text=text, chat_id=str(chat.id))
+
+
+async def _maybe_spawn_hisopo_for_message(
+    application: Application,
+    message: Message,
+) -> HisopoSpawn | None:
+    state = application.bot_data["state"]
+    chat_id = str(message.chat.id)
+    if message.chat.type not in {"group", "supergroup"}:
+        return None
+    if not state.db.is_command_group_enabled(chat_id, "hisopos"):
+        return None
+    intensity_percent = state.db.get_hisopo_intensity_percent(chat_id)
+    if not should_spawn_hisopo(intensity_percent, secrets.randbelow(100) + 1):
+        return None
+    return await _spawn_hisopo(application, chat_id, source="message")
+
+
+async def _spawn_hisopo(
+    application: Application,
+    chat_id: str,
+    source: str,
+    now: datetime | None = None,
+) -> HisopoSpawn | None:
+    state = application.bot_data["state"]
+    kind = select_hisopo_kind(secrets.randbelow(100) + 1)
+    file_id = _hisopo_file_id(state.settings, kind.key)
+    if not file_id:
+        logger.warning(
+            "No pude lanzar un Hisopo %s en el chat %s: falta configurar su file_id de Telegram.",
+            kind.key,
+            chat_id,
+        )
+        return None
+
+    language = _chat_language(state.db, chat_id)
+    type_label = t(language, f"hisopos.type.{kind.key}")
+    keyboard = InlineKeyboardMarkup(
+        [[InlineKeyboardButton(t(language, "hisopos.capture_button"), callback_data=HISOPO_CAPTURE_CALLBACK)]]
+    )
+    try:
+        message = await application.bot.send_photo(
+            chat_id=_parse_chat_id(chat_id),
+            photo=file_id,
+            caption=t(
+                language,
+                "hisopos.appeared",
+                type_label=type_label,
+                points=kind.points,
+            ),
+            reply_markup=keyboard,
+        )
+    except TelegramError as exc:
+        logger.warning("No pude lanzar un Hisopo en el chat %s: %s", chat_id, exc)
+        return None
+
+    spawned_at = now or datetime.now(timezone.utc)
+    if spawned_at.tzinfo is None:
+        spawned_at = spawned_at.replace(tzinfo=timezone.utc)
+    spawn = state.db.save_hisopo_spawn(
+        chat_id=chat_id,
+        message_id=str(message.message_id),
+        hisopo_type=kind.key,
+        points=kind.points,
+        source=source,
+        spawned_at=spawned_at.isoformat(),
+        expires_at=(spawned_at + HISOPO_EXPIRATION).isoformat(),
+    )
+    _schedule_hisopo_expiration(application, spawn)
+    return spawn
+
+
+def _hisopo_file_id(settings: Settings, hisopo_type: str) -> str | None:
+    return {
+        "common": settings.telegram_hisopo_common_file_id,
+        "silver": settings.telegram_hisopo_silver_file_id,
+        "gold": settings.telegram_hisopo_gold_file_id,
+    }.get(hisopo_type)
+
+
+def _restore_hisopo_jobs(application: Application) -> None:
+    state = application.bot_data["state"]
+    state.db.reset_processing_hisopo_schedules()
+    for spawn in state.db.list_active_hisopo_spawns():
+        _schedule_hisopo_expiration(application, spawn)
+    for schedule in state.db.list_pending_hisopo_schedules():
+        _schedule_hisopo_appearance(application, schedule)
+
+
+def _schedule_hisopo_expiration(application: Application, spawn: HisopoSpawn) -> None:
+    application.job_queue.run_once(
+        _expire_hisopo_job,
+        when=_seconds_until(spawn.expires_at),
+        data={"chat_id": spawn.chat_id, "message_id": spawn.message_id},
+        name=f"hisopo-expire:{spawn.chat_id}:{spawn.message_id}",
+    )
+
+
+def _schedule_hisopo_appearance(application: Application, schedule: HisopoSchedule) -> None:
+    application.job_queue.run_once(
+        _scheduled_hisopo_job,
+        when=_seconds_until(schedule.scheduled_for),
+        data={"schedule_id": schedule.schedule_id},
+        name=f"hisopo-scheduled:{schedule.schedule_id}",
+    )
+
+
+def _seconds_until(timestamp: str) -> float:
+    target = datetime.fromisoformat(timestamp)
+    if target.tzinfo is None:
+        target = target.replace(tzinfo=timezone.utc)
+    return max((target - datetime.now(timezone.utc)).total_seconds(), 0.0)
+
+
+async def _expire_hisopo_job(context: ContextTypes.DEFAULT_TYPE) -> None:
+    state = _state(context)
+    data = context.job.data
+    chat_id = state.db.resolve_chat_id(str(data["chat_id"]))
+    message_id = str(data["message_id"])
+    if not state.db.mark_hisopo_rotten(chat_id, message_id, datetime.now(timezone.utc)):
+        return
+    spawn = state.db.get_hisopo_spawn(chat_id, message_id)
+    if spawn is not None:
+        await _edit_rotten_hisopo(context.bot, state.db, spawn)
+
+
+async def _scheduled_hisopo_job(context: ContextTypes.DEFAULT_TYPE) -> None:
+    state = _state(context)
+    schedule = state.db.claim_hisopo_schedule(int(context.job.data["schedule_id"]))
+    if schedule is None:
+        return
+    chat_id = state.db.resolve_chat_id(schedule.chat_id)
+    if not state.db.is_command_group_enabled(chat_id, "hisopos"):
+        state.db.complete_hisopo_schedule(schedule.schedule_id, "cancelled")
+        return
+    spawn = await _spawn_hisopo(context.application, chat_id, source="scheduled")
+    state.db.complete_hisopo_schedule(
+        schedule.schedule_id,
+        "sent" if spawn is not None else "failed",
+    )
+
+
+async def _hisopo_callback_entrypoint(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE,
+) -> None:
+    state = _state(context)
+    callback_query = update.callback_query
+    user = update.effective_user
+    message = callback_query.message if callback_query is not None else None
+    if callback_query is None or user is None or message is None:
+        return
+
+    language = _chat_language(state.db, message.chat.id)
+    state.db.get_or_create_user(str(user.id), _display_name(user), user.username)
+    if state.db.is_user_blocked(str(user.id)) or _is_user_restricted_in_callback_chat(
+        state.db,
+        callback_query,
+        str(user.id),
+    ):
+        await callback_query.answer()
+        return
+    if callback_query.data != HISOPO_CAPTURE_CALLBACK:
+        await callback_query.answer(t(language, "hisopos.unavailable_alert"), show_alert=True)
+        return
+
+    now = datetime.now(timezone.utc)
+    result = state.db.capture_hisopo(
+        chat_id=str(message.chat.id),
+        message_id=str(message.message_id),
+        user_id=str(user.id),
+        now=now,
+        next_scheduled_for=random_next_day_datetime(now),
+    )
+    if result.status == "captured" and result.spawn is not None and result.schedule is not None:
+        type_label = t(language, f"hisopos.type.{result.spawn.hisopo_type}")
+        await _edit_hisopo_caption(
+            context.bot,
+            result.spawn,
+            t(
+                language,
+                "hisopos.captured_caption",
+                user=_display_name(user),
+                type_label=type_label,
+                points=result.spawn.points,
+            ),
+        )
+        _schedule_hisopo_appearance(context.application, result.schedule)
+        await callback_query.answer(
+            t(language, "hisopos.captured_popup", points=result.spawn.points)
+        )
+        return
+    if result.status == "taken":
+        await callback_query.answer(t(language, "hisopos.taken_alert"), show_alert=True)
+        return
+    if result.status == "rotten":
+        if result.spawn is not None:
+            await _edit_rotten_hisopo(context.bot, state.db, result.spawn)
+        await callback_query.answer(t(language, "hisopos.rotten_alert"), show_alert=True)
+        return
+    await callback_query.answer(t(language, "hisopos.unavailable_alert"), show_alert=True)
+
+
+async def _edit_rotten_hisopo(bot: Bot, db: Database, spawn: HisopoSpawn) -> None:
+    language = _chat_language(db, spawn.chat_id)
+    await _edit_hisopo_caption(
+        bot,
+        spawn,
+        t(
+            language,
+            "hisopos.rotten_caption",
+            type_label=t(language, f"hisopos.type.{spawn.hisopo_type}"),
+        ),
+    )
+
+
+async def _edit_hisopo_caption(bot: Bot, spawn: HisopoSpawn, caption: str) -> None:
+    try:
+        await bot.edit_message_caption(
+            chat_id=_parse_chat_id(spawn.chat_id),
+            message_id=int(spawn.message_id),
+            caption=caption,
+            reply_markup=None,
+        )
+    except TelegramError as exc:
+        logger.warning(
+            "No pude quitar la botonera del Hisopo %s en el chat %s: %s",
+            spawn.message_id,
+            spawn.chat_id,
+            exc,
+        )
 
 
 async def _chat_migration_entrypoint(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -656,6 +905,7 @@ async def _handle_command_update(update: Update, context: ContextTypes.DEFAULT_T
         create_backup=lambda: _create_and_send_backup(state.db, message),
         send_debug_update=lambda: _send_debug_update(state.db, message, update),
         send_galerazas=lambda: _send_galerazas(state.db, message, str(user.id)),
+        send_hisopos=lambda: _send_hisopos(state.db, message, str(user.id)),
         send_config_menu=lambda: _send_config_menu(state.db, message),
         create_restart_confirmation=lambda: _create_restart_confirmation(
             state.db,
@@ -1327,6 +1577,13 @@ async def _handle_config_callback(db: Database, message: Message, parsed: tuple[
         if not is_valid_command_group(command_group):
             return None
         enabled = db.is_command_group_enabled(chat_id, command_group)
+        if command_group == "hisopos":
+            intensity_percent = db.get_hisopo_intensity_percent(chat_id)
+            await message.edit_text(
+                _hisopo_config_text(language),
+                reply_markup=build_hisopo_menu(enabled, intensity_percent, language),
+            )
+            return None
         await message.edit_text(
             f"{command_group_label(command_group, language)}\n\n{t(language, 'config.enabled_question')}",
             reply_markup=build_command_group_menu(command_group, enabled, language),
@@ -1342,9 +1599,38 @@ async def _handle_config_callback(db: Database, message: Message, parsed: tuple[
         if current_enabled == enabled:
             return None
         db.set_command_group_enabled(chat_id, command_group, enabled)
+        if command_group == "hisopos":
+            await message.edit_text(
+                _hisopo_config_text(language),
+                reply_markup=build_hisopo_menu(
+                    enabled,
+                    db.get_hisopo_intensity_percent(chat_id),
+                    language,
+                ),
+            )
+            return t(language, "config.updated")
         await message.edit_text(
             f"{command_group_label(command_group, language)}\n\n{t(language, 'config.enabled_question')}",
             reply_markup=build_command_group_menu(command_group, enabled, language),
+        )
+        return t(language, "config.updated")
+
+    if action == "intensity" and len(parsed) == 2:
+        try:
+            intensity_percent = int(parsed[1])
+            current_intensity = db.get_hisopo_intensity_percent(chat_id)
+            if current_intensity == intensity_percent:
+                return None
+            db.set_hisopo_intensity_percent(chat_id, intensity_percent)
+        except ValueError:
+            return None
+        await message.edit_text(
+            _hisopo_config_text(language),
+            reply_markup=build_hisopo_menu(
+                db.is_command_group_enabled(chat_id, "hisopos"),
+                intensity_percent,
+                language,
+            ),
         )
         return t(language, "config.updated")
 
@@ -1353,6 +1639,14 @@ async def _handle_config_callback(db: Database, message: Message, parsed: tuple[
 
 def _chat_supports_command_groups(chat_type: str) -> bool:
     return chat_type in {"group", "supergroup"}
+
+
+def _hisopo_config_text(language: str) -> str:
+    return (
+        f"{command_group_label('hisopos', language)}\n\n"
+        f"{t(language, 'config.enabled_question')}\n\n"
+        f"{t(language, 'hisopos.intensity.title')}"
+    )
 
 
 async def _handle_paginated_callback(
@@ -1588,13 +1882,13 @@ async def _edit_paginated_message(
         return
 
     content = json.loads(state.content_json)
-    if state.list_type == "galeraza" and "pages" in content:
+    if state.list_type in {"galeraza", "hisopos"} and "pages" in content:
         rendered = render_prebuilt_pages(content["pages"], page=page)
     else:
         rendered = render_page(content["header"], content["lines"], page=page)
     db.set_paginated_message_page(str(message.chat.id), message_id, rendered.page)
     edit_options = {}
-    if state.list_type in {"galeraza", "triggers"}:
+    if state.list_type in {"galeraza", "hisopos", "triggers"}:
         edit_options["entities"] = _bold_first_line_entities(rendered.text)
     await message.edit_text(
         text=rendered.text,

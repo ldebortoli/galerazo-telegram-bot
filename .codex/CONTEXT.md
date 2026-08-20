@@ -2,7 +2,7 @@
 
 ## Descripcion general
 
-Galerazo Bot es un bot de Telegram para chats privados, grupos, supergrupos y canales. Incluye administracion por niveles, listas paginadas, configuracion por chat, un juego diario llamado La Galeraza, triggers, registro de gastos con sincronizacion opcional a Google Sheets y un panel de control local para Windows.
+Galerazo Bot es un bot de Telegram para chats privados, grupos, supergrupos y canales. Incluye administracion por niveles, listas paginadas, configuracion por chat, La Galeraza, el Recolector de Hisopos, triggers, registro de gastos con sincronizacion opcional a Google Sheets y un panel de control local para Windows.
 
 La fuente de verdad operativa para agentes es esta carpeta `.codex/`. Al iniciar una sesion se deben leer, en orden: `CONTEXT.md`, `DECISIONS.md`, `BACKLOG.md`, `USER_QUEUE.md` y `SESSION_HANDOFF.md`.
 
@@ -83,6 +83,8 @@ La misma politica se aplica globalmente desde `C:\Users\calei\.codex\AGENTS.md`.
 - Los callbacks de botoneras se procesan en la misma secuencia del chat correspondiente.
 - La Galeraza usa una insercion atomica para garantizar un ganador por chat y dia.
 - La fecha de La Galeraza sale exclusivamente de `message.date` de Telegram convertido a `America/Argentina/Buenos_Aires`; todo `message` original de grupo/supergrupo con autor humano compite, incluidos los eventos de servicio. Bots, ediciones y updates sin usuario no compiten.
+- El Recolector de Hisopos viene deshabilitado por defecto. Por cada mensaje valido tira contra 1/5/10/15/20% segun intensidad; sus tres rarezas valen 1/2/3 puntos. Las capturas son atomicas, vencen a los 20 minutos y cada premio agenda en SQLite una aparicion aleatoria para el siguiente dia argentino.
+- Las fotos del Recolector se reenvian con `TELEGRAM_HISOPO_COMMON_FILE_ID`, `TELEGRAM_HISOPO_SILVER_FILE_ID` y `TELEGRAM_HISOPO_GOLD_FILE_ID`. Los artes fuente versionados viven en `assets/hisopos/`.
 - La ruleta rusa usa `BEGIN IMMEDIATE` para consumir atomicamente una recamara por usuario/chat; viene deshabilitada por defecto y migra con el chat.
 - Los datos de chats no se eliminan cuando el bot es expulsado o bloqueado; solo cambia su estado de actividad.
 
@@ -172,7 +174,7 @@ El panel usa un cliente inicial de `760x750`, minimo `680x730`; la pestaña Conf
 - Los `NetworkError` transitorios de `getUpdates` llegan sin update/job/coroutine y PTB los reintenta; se registran como warning local sin anunciar un falso error no handleado. Errores de red asociados a trabajo real si se anuncian.
 - El bot usa `RetryingExtBot` para todos los `send_message`, incluidos los `reply_text`: ante `TimedOut` realiza tres intentos totales (original y dos reintentos) con esperas de 1 y 2 segundos, deteniendose al primer exito. Se prioriza la entrega y se acepta que Telegram pueda haber aceptado intentos sin confirmarlos, por lo que pueden existir duplicados. El tercer timeout se eleva y registra como error. `ApplicationBuilder` conserva 30 segundos para los timeouts HTTP normales. En La Galeraza el punto ya persistido se conserva y el error final tambien llega al canal de logging con el conteo de intentos.
 - Al iniciar, el bot sincroniza los comandos sugeridos de BotFather por scope: privados reciben los comandos generales; grupos reciben comandos comunes excepto gastos y sus administradores reciben ademas los comandos `ADMIN`. Los comandos `DEV` y todos los de gastos no se sugieren; el menu global se limpia para no filtrarlos a canales.
-- `CURRENT_VERSION` es `0.16`; `CHANGELOG.md` contiene las notas por release y se actualiza con todo cambio funcional. El agente calcula la siguiente version salvo numero indicado por el usuario: capacidades importantes incrementan la menor y arreglos menores se agrupan como "Correcciones y mejoras". Si un comando cambia, tambien actualiza y sincroniza BotFather en esa ejecucion. SQLite anuncia cada version una vez al canal de novedades y `/version` la expone a todos.
+- `CURRENT_VERSION` es `0.17`; `CHANGELOG.md` contiene las notas por release y se actualiza con todo cambio funcional. El agente calcula la siguiente version salvo numero indicado por el usuario: capacidades importantes incrementan la menor y arreglos menores se agrupan como "Correcciones y mejoras". Si un comando cambia, tambien actualiza y sincroniza BotFather en esa ejecucion. SQLite anuncia cada version una vez al canal de novedades y `/version` la expone a todos.
 - `CHANGELOG.md` y las novedades distribuidas son publicos: solo describen cambios visibles para usuarios en comandos publicos. No mencionar comandos DEV, infraestructura, Docker, SQLite, migraciones, despliegues ni correcciones internas; esas notas viven en commits, documentacion tecnica y `.codex/`.
 - `/anuncio` es exclusivo de desarrollo. Envia el texto a los chats activos que tengan anuncios habilitados y al canal de anuncios, anexa el acceso a `/config` y valida el limite final antes de comenzar. Un error definitivo de Telegram marca el chat inactivo; timeouts y red transitoria no lo hacen. Los changelogs de una version desplegada usan el mismo envio.
 - Al finalizar un broadcast automatico de release que alcanzo el canal de anuncios, el bot envia al canal de logging el mismo resumen de contadores que devuelve `/anuncio`. El fallo de ese resumen no altera la marca de version anunciada.

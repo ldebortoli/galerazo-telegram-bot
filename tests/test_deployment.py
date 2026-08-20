@@ -248,6 +248,15 @@ class DeploymentAutomationTests(unittest.TestCase):
         self.assertIn("32768", patch_script)
         self.assertIn("umask 077", patch_script)
         self.assertIn("secret-patch.json", patch_script)
+        for key in (
+            "TELEGRAM_HISOPO_COMMON_FILE_ID",
+            "TELEGRAM_HISOPO_SILVER_FILE_ID",
+            "TELEGRAM_HISOPO_GOLD_FILE_ID",
+        ):
+            self.assertIn(key, status_script)
+            self.assertIn(key, patch_script)
+            self.assertIn(key, inspector)
+            self.assertIn(key, installer)
         self.assertIn('bool(values.get(key))', inspector)
         self.assertNotIn('print(values', inspector)
         self.assertIn("TELEGRAM_BOT_TOKEN no se puede eliminar", installer)

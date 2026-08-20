@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.17] - 2026-08-20
+
+- Nuevo juego configurable `Recolector de Hisopos` para grupos y supergrupos, con apariciones aleatorias en cinco intensidades, hisopos comunes, plateados y dorados, captura por botonera y tabla `/hisopos`.
+- Los hisopos vencen a los 20 minutos y cada captura programa una aparicion persistente para un horario aleatorio del dia siguiente.
+- El juego, sus mensajes y su configuracion estan disponibles en los 18 idiomas del bot y todos sus datos migran al convertir un grupo en supergrupo.
+
 ## [0.16] - 2026-08-17
 
 - Correcciones y mejoras: los envios de texto con una demora transitoria de Telegram realizan hasta tres intentos para priorizar la entrega, aunque el aviso pueda repetirse. La Galeraza conserva el punto ganado y registra el resultado si los tres intentos fallan.

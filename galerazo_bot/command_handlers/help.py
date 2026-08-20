@@ -11,7 +11,7 @@ HELP_GROUPS = (
     ("chat_admin", {"config", "restringir", "habilitar", "restringidos", "salir"}),
     ("galeraza", {"galeraza", "galerazas"}),
     ("triggers", {"agregartrigger", "agrtrigger", "borrartrigger", "eliminartrigger", "eltrigger", "triggers"}),
-    ("games", {"ruletarusa"}),
+    ("games", {"hisopos", "ruletarusa"}),
     ("expenses", {"habilitargastos", "deshabilitargastos", "gasto", "ultimosgastos", "estadogastos", "sincronizargastos"}),
     ("dev", {"anuncio", "novedad", "backup", "debug", "reiniciarbot", "apagar"}),
 )

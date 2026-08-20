@@ -755,3 +755,11 @@ Por indicacion del usuario, el `TimedOut` del aviso de Galeraza se registra como
 ## D-107 - Tres intentos para todo send_message (2026-08-17)
 
 Por preferencia explicita del usuario, se prioriza la entrega de texto sobre evitar duplicados. `RetryingExtBot` aplica a cada `send_message`, incluidos los `reply_text`, un maximo de tres intentos totales exclusivamente ante `TimedOut`, con esperas de 1 y 2 segundos y corte al primer exito. El tercer timeout se registra como error y se vuelve a elevar. Telegram puede haber aceptado cualquier intento cuya respuesta se perdio, por lo que se admite que el mensaje aparezca repetido. Esta decision reemplaza las politicas sin reintento de D-068, D-105 y D-106 para envios de texto; no se extiende a ediciones, documentos ni multimedia.
+
+## D-108 - Recolector de Hisopos persistente por chat (2026-08-20)
+
+El Recolector de Hisopos es un conjunto configurable deshabilitado por defecto para grupos y supergrupos. Cada mensaje original de autor humano que puede competir por La Galeraza tira contra el porcentaje guardado por chat: 1, 5, 10, 15 o 20. Una segunda tirada produce un hisopo comun de 1 punto en 1-50 y 81-100, plateado de 2 puntos en 51-70 o dorado de 3 puntos en 71-80.
+
+Cada aparicion se identifica por `(chat_id, message_id)` y vence a los 20 minutos. La captura usa `BEGIN IMMEDIATE`: solo la primera callback del chat puede pasar de `active` a `captured`, sumar puntaje y crear una programacion; las posteriores reciben un alerta. Un hisopo vencido pasa a `rotten`, pierde la botonera y no suma ni programa otro.
+
+Cada captura agenda exactamente una aparicion en un segundo aleatorio del siguiente dia calendario de `America/Argentina/Buenos_Aires`. La agenda vive en SQLite, vuelve `processing` a `pending` al arrancar y reconstruye jobs de aparicion y vencimiento, priorizando no perder la entrega tras un reinicio aunque un corte en el instante de envio pueda duplicarla. Si el juego esta deshabilitado al ejecutar el job, se cancela. Fotos y configuracion usan tres `file_id` globales de Telegram; el usuario los obtendra respondiendo `/debug` a cada imagen generada.

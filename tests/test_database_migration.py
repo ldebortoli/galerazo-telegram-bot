@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import tempfile
 import unittest
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 from galerazo_bot.database import Database, RussianRouletteShot
@@ -18,6 +19,18 @@ class DatabaseMigrationTests(unittest.TestCase):
             db.set_command_group_enabled("-1", "triggers", False)
             db.restrict_user_in_chat("-1", "2", "1")
             db.try_award_daily_galeraza("-1", "2026-07-10", "2", "100")
+            now = datetime(2026, 8, 20, 12, tzinfo=timezone.utc)
+            db.set_command_group_enabled("-1", "hisopos", True)
+            db.set_hisopo_intensity_percent("-1", 20)
+            db.save_hisopo_spawn(
+                "-1", "300", "silver", 2, "message", now.isoformat(),
+                (now + timedelta(minutes=20)).isoformat(),
+            )
+            db.capture_hisopo("-1", "300", "2", now, now + timedelta(days=1))
+            db.save_hisopo_spawn(
+                "-1", "301", "common", 1, "message", now.isoformat(),
+                (now + timedelta(minutes=20)).isoformat(),
+            )
             db.save_paginated_message_state("-1", "200", "test", "1", '{"lines": []}')
             db.save_paginated_message_state("-1", "201", "galeraza", "1", '{"lines": []}')
             db.try_record_daily_report("2", "2026-07-10", "-1")
@@ -36,6 +49,12 @@ class DatabaseMigrationTests(unittest.TestCase):
             db.play_russian_roulette("-1", "2", bullet_position=5)
             db.register_chat("-1001", "supergroup", "Supergroup", "1")
             db.try_award_daily_galeraza("-1001", "2026-07-10", "1", "999")
+            db.set_hisopo_intensity_percent("-1001", 1)
+            db.save_hisopo_spawn(
+                "-1001", "302", "common", 1, "message", now.isoformat(),
+                (now + timedelta(minutes=20)).isoformat(),
+            )
+            db.capture_hisopo("-1001", "302", "1", now, now + timedelta(days=1))
             db.save_paginated_message_state(
                 "-1001",
                 "200",
@@ -50,10 +69,20 @@ class DatabaseMigrationTests(unittest.TestCase):
             self.assertEqual(db.resolve_chat_id("-1"), "-1001")
             self.assertEqual(db.get_chat_settings("-1001").language, "en")
             self.assertFalse(db.is_command_group_enabled("-1001", "triggers"))
+            self.assertTrue(db.is_command_group_enabled("-1001", "hisopos"))
+            self.assertEqual(db.get_hisopo_intensity_percent("-1001"), 20)
             self.assertTrue(db.is_user_restricted_in_chat("-1001", "2"))
             self.assertEqual(
                 {score.user_id: score.points for score in db.get_galeraza_scores("-1001")},
                 {"1": 1, "2": 1},
+            )
+            self.assertEqual(
+                {score.user_id: score.points for score in db.get_hisopo_scores("-1001")},
+                {"1": 1, "2": 2},
+            )
+            self.assertEqual(db.get_hisopo_spawn("-1001", "301").chat_id, "-1001")
+            self.assertTrue(
+                all(schedule.chat_id == "-1001" for schedule in db.list_pending_hisopo_schedules())
             )
             pagination = db.get_paginated_message_state("-1001", "200")
             self.assertEqual(pagination.chat_id, "-1001")

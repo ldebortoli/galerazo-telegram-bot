@@ -28,6 +28,7 @@ Base para un bot de Telegram con una version estable y reproducible de Python, `
 - `chats`: muestra estadisticas de chats por estado y tipo.
 - `config`: abre el tablero de configuracion del grupo. Solo admines del chat, quien agrego el bot o devs.
 - `galerazas`: muestra el ranking de La Galeraza en grupos/supergrupos.
+- `hisopos`: muestra la tabla del Recolector de Hisopos en grupos/supergrupos, si el juego está habilitado.
 - `agregartrigger` / `agrtrigger`: agrega un trigger respondiendo a un mensaje en grupos/supergrupos.
 - `borrartrigger` / `eliminartrigger` / `eltrigger`: borra un trigger por nombre en grupos/supergrupos.
 - `triggers`: lista los triggers del grupo o supergrupo.
@@ -234,6 +235,9 @@ OPENAI_API_KEY=clave-restringida-de-moderacion
 TELEGRAM_DEV_USER_IDS=123456789
 TELEGRAM_LOG_CHAT_ID=-1001234567890
 TELEGRAM_ANNOUNCEMENTS_CHAT_ID=-1009876543210
+TELEGRAM_HISOPO_COMMON_FILE_ID=file-id-del-hisopo-comun
+TELEGRAM_HISOPO_SILVER_FILE_ID=file-id-del-hisopo-plateado
+TELEGRAM_HISOPO_GOLD_FILE_ID=file-id-del-hisopo-dorado
 DATABASE_PATH=data/galerazo.sqlite3
 GOOGLE_SHEETS_CREDENTIALS_JSON_PATH=secrets/google-service-account.json
 GOOGLE_SHEETS_SPREADSHEET_ID=replace-with-spreadsheet-id
@@ -413,7 +417,33 @@ El bot usa un `PerChatUpdateProcessor` basado en `BaseUpdateProcessor` de `pytho
 
 El premio diario usa una transaccion `BEGIN IMMEDIATE` y una insercion atomica en SQLite (`INSERT OR IGNORE`) por chat y fecha. Si llegan dos mensajes candidatos muy cerca, solo el primero que se procese para ese chat y dia suma el punto. Las migraciones a supergrupo unen la secuencia del ID viejo con la del nuevo.
 
-La fecha se calcula exclusivamente desde `message.date` de Telegram, convertido a `America/Argentina/Buenos_Aires` mediante `tzdata`; no usa la hora de recepción, el reloj local ni el timezone configurado en Windows, Docker o el servidor. Esto permite procesar updates pendientes después de una suspensión sin mover mensajes al día equivocado. Ediciones, bots, posts de canal y eventos de servicio no compiten por La Galeraza.
+La fecha se calcula exclusivamente desde `message.date` de Telegram, convertido a `America/Argentina/Buenos_Aires` mediante `tzdata`; no usa la hora de recepción, el reloj local ni el timezone configurado en Windows, Docker o el servidor. Esto permite procesar updates pendientes después de una suspensión sin mover mensajes al día equivocado. Compiten los mensajes originales de usuarios humanos en grupos y supergrupos, incluidos eventos de servicio; no compiten ediciones, bots ni posts de canal.
+
+## Recolector de Hisopos
+
+El Recolector de Hisopos es un juego para grupos y supergrupos y viene deshabilitado por defecto. Un admin o dev puede activarlo desde `/config`, en `Comandos -> Recolector de Hisopos`, y elegir una de cinco intensidades:
+
+- muy poca: 1 % por mensaje válido;
+- poca: 5 %;
+- media: 10 %;
+- alta: 15 %;
+- muy alta: 20 %.
+
+Cada mensaje original de un usuario humano que podría competir por La Galeraza genera una tirada de 1 a 100. Si la tirada entra en el porcentaje configurado, aparece un hisopo con foto y el botón `Capturar hisopo`. Las ediciones y los mensajes de bots no generan tiradas.
+
+Una segunda tirada define el premio: 1-50 y 81-100 producen un hisopo común de 1 punto, 51-70 uno plateado de 2 puntos y 71-80 uno dorado de 3 puntos. La primera callback procesada para ese chat reclama el premio dentro de una transacción inmediata de SQLite; las siguientes muestran un alerta de Telegram sin sumar. A los 20 minutos el hisopo se pudre, deja de valer y el mensaje pierde la botonera.
+
+Cada captura programa una aparición adicional en un segundo aleatorio del día calendario siguiente de Argentina. La programación se guarda en SQLite y se reconstruye al iniciar el bot, por lo que sobrevive reinicios. Si el juego está deshabilitado cuando llega el horario, la aparición programada se cancela. Los hisopos podridos no programan apariciones.
+
+Las imágenes se envían mediante los `file_id` persistentes de Telegram configurados en:
+
+```env
+TELEGRAM_HISOPO_COMMON_FILE_ID=
+TELEGRAM_HISOPO_SILVER_FILE_ID=
+TELEGRAM_HISOPO_GOLD_FILE_ID=
+```
+
+Para obtener cada valor, enviá la imagen al bot como foto y respondé ese mensaje con `/debug`. En el JSON, usá el `file_id` de la última entrada de `message.photo`, que corresponde al mayor tamaño. El campo `file_unique_id` no sirve para reenviar archivos. Reiniciá el bot local después de guardar los tres valores en `.env`.
 
 ## Configuracion por grupo
 
@@ -430,14 +460,14 @@ Todos los niveles del menu incluyen una X roja para cerrar y eliminar el mensaje
 
 El idioma por defecto siempre es español de Argentina. Si un grupo cambia de idioma, los textos que el bot muestra o envia en ese grupo se localizan: respuestas de comandos, menús, popups de botoneras, backups/debug captions y mensajes de La Galeraza. Los nombres de los comandos se mantienen sin traducir.
 
-Los conjuntos configurables son `Galeraza`, `Triggers`, `Gastos` y `Ruleta rusa`. Cada submenú muestra:
+Los conjuntos configurables son `Galeraza`, `Recolector de Hisopos`, `Triggers` y `Ruleta rusa`. Cada submenú muestra:
 
 ```text
 ¿Habilitado?
 [ Sí ] - No
 ```
 
-`Galeraza` y `Triggers` vienen habilitados por defecto. `Gastos` y `Ruleta rusa` vienen deshabilitados hasta que un admin o dev del chat los habilite. La configuración se guarda en SQLite y se migra si Telegram convierte un grupo en supergrupo.
+`Galeraza` y `Triggers` vienen habilitados por defecto. `Recolector de Hisopos` y `Ruleta rusa` vienen deshabilitados hasta que un admin o dev del chat los habilite. El Recolector también permite elegir la intensidad de apariciones. La configuración, puntajes, hisopos activos y apariciones programadas se guardan en SQLite y se migran si Telegram convierte un grupo en supergrupo.
 
 `/help` muestra todos los comandos correspondientes al nivel del usuario, incluidos los conjuntos configurables que estén apagados. Que aparezcan en la ayuda no evita que el bot respete la configuración del chat al intentar ejecutarlos.
 

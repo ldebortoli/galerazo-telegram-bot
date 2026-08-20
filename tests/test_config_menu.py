@@ -10,12 +10,13 @@ from galerazo_bot.chat_config import (
     build_announcements_menu,
     build_command_group_menu,
     build_command_groups_menu,
+    build_hisopo_menu,
     build_language_menu,
     build_main_menu,
     parse_config_callback,
 )
 from galerazo_bot.roles import UserLevel
-from galerazo_bot.telegram_bot import _config_callback_entrypoint
+from galerazo_bot.telegram_bot import _config_callback_entrypoint, _handle_config_callback
 
 
 def _callback_data(markup) -> list[str | None]:
@@ -57,6 +58,7 @@ class ConfigMenuTests(unittest.IsolatedAsyncioTestCase):
             build_language_menu("es"),
             build_command_groups_menu("es"),
             build_command_group_menu("galeraza", True, "es"),
+            build_hisopo_menu(True, 10, "es"),
         )
 
         for menu in menus:
@@ -81,6 +83,15 @@ class ConfigMenuTests(unittest.IsolatedAsyncioTestCase):
         menu = build_announcements_menu(True, "es")
         self.assertIn("config:setannouncements:1", _callback_data(menu))
         self.assertIn("config:setannouncements:0", _callback_data(menu))
+
+    def test_hisopo_menu_has_toggle_and_five_intensities(self) -> None:
+        callbacks = _callback_data(build_hisopo_menu(True, 10, "es"))
+        self.assertIn("config:set:hisopos:1", callbacks)
+        self.assertIn("config:set:hisopos:0", callbacks)
+        self.assertEqual(
+            {item for item in callbacks if item and item.startswith("config:intensity:")},
+            {f"config:intensity:{value}" for value in (1, 5, 10, 15, 20)},
+        )
 
     async def test_common_user_cannot_close_config_menu(self) -> None:
         update, context, state, message = _callback_fixture()
@@ -125,6 +136,38 @@ class ConfigMenuTests(unittest.IsolatedAsyncioTestCase):
 
         message.delete.assert_awaited_once_with()
         update.callback_query.answer.assert_awaited_once_with("mensaje eliminado")
+
+    async def test_hisopo_config_open_toggle_and_intensity_paths(self) -> None:
+        db = MagicMock()
+        db.get_chat_settings.return_value = SimpleNamespace(language="es")
+        db.is_command_group_enabled.return_value = True
+        db.get_hisopo_intensity_percent.return_value = 10
+        message = MagicMock()
+        message.chat = SimpleNamespace(id=-1, type="group")
+        message.edit_text = AsyncMock()
+
+        self.assertIsNone(await _handle_config_callback(db, message, ("command", "hisopos")))
+        self.assertIn("Intensidad", message.edit_text.await_args.args[0])
+
+        db.is_command_group_enabled.return_value = True
+        self.assertEqual(
+            await _handle_config_callback(db, message, ("set", "hisopos", "0")),
+            "Configuración actualizada.",
+        )
+        db.set_command_group_enabled.assert_called_with("-1", "hisopos", False)
+
+        db.get_hisopo_intensity_percent.return_value = 10
+        self.assertIsNone(await _handle_config_callback(db, message, ("intensity", "10")))
+        self.assertIsNone(await _handle_config_callback(db, message, ("intensity", "bad")))
+        db.set_hisopo_intensity_percent.side_effect = ValueError("bad")
+        self.assertIsNone(await _handle_config_callback(db, message, ("intensity", "3")))
+        db.set_hisopo_intensity_percent.side_effect = None
+        db.get_hisopo_intensity_percent.return_value = 10
+        self.assertEqual(
+            await _handle_config_callback(db, message, ("intensity", "20")),
+            "Configuración actualizada.",
+        )
+        db.set_hisopo_intensity_percent.assert_called_with("-1", 20)
 
 
 if __name__ == "__main__":

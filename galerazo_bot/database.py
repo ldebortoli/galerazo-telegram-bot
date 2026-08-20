@@ -66,6 +66,44 @@ class GalerazaScore:
 
 
 @dataclass(frozen=True)
+class HisopoScore:
+    user_id: str
+    username: str | None
+    display_name: str | None
+    points: int
+
+
+@dataclass(frozen=True)
+class HisopoSpawn:
+    chat_id: str
+    message_id: str
+    hisopo_type: str
+    points: int
+    source: str
+    spawned_at: str
+    expires_at: str
+    status: str
+    winner_user_id: str | None
+    captured_at: str | None
+
+
+@dataclass(frozen=True)
+class HisopoSchedule:
+    schedule_id: int
+    chat_id: str
+    scheduled_for: str
+    status: str
+    source_message_id: str
+
+
+@dataclass(frozen=True)
+class HisopoCaptureResult:
+    status: str
+    spawn: HisopoSpawn | None
+    schedule: HisopoSchedule | None = None
+
+
+@dataclass(frozen=True)
 class GalerazaMessageState:
     chat_id: str
     message_id: str
@@ -304,6 +342,69 @@ class Database:
                     FOREIGN KEY (chat_id) REFERENCES chats (chat_id),
                     FOREIGN KEY (user_id) REFERENCES users (user_id)
                 )
+                """
+            )
+            conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS hisopo_chat_settings (
+                    chat_id TEXT PRIMARY KEY,
+                    intensity_percent INTEGER NOT NULL DEFAULT 10,
+                    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (chat_id) REFERENCES chats (chat_id)
+                )
+                """
+            )
+            conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS hisopo_spawns (
+                    chat_id TEXT NOT NULL,
+                    message_id TEXT NOT NULL,
+                    hisopo_type TEXT NOT NULL,
+                    points INTEGER NOT NULL,
+                    source TEXT NOT NULL,
+                    spawned_at TEXT NOT NULL,
+                    expires_at TEXT NOT NULL,
+                    status TEXT NOT NULL DEFAULT 'active',
+                    winner_user_id TEXT,
+                    captured_at TEXT,
+                    PRIMARY KEY (chat_id, message_id),
+                    FOREIGN KEY (chat_id) REFERENCES chats (chat_id),
+                    FOREIGN KEY (winner_user_id) REFERENCES users (user_id)
+                )
+                """
+            )
+            conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS hisopo_scores (
+                    chat_id TEXT NOT NULL,
+                    user_id TEXT NOT NULL,
+                    points INTEGER NOT NULL DEFAULT 0,
+                    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    PRIMARY KEY (chat_id, user_id),
+                    FOREIGN KEY (chat_id) REFERENCES chats (chat_id),
+                    FOREIGN KEY (user_id) REFERENCES users (user_id)
+                )
+                """
+            )
+            conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS hisopo_schedules (
+                    schedule_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    chat_id TEXT NOT NULL,
+                    scheduled_for TEXT NOT NULL,
+                    status TEXT NOT NULL DEFAULT 'pending',
+                    source_message_id TEXT NOT NULL,
+                    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    completed_at TEXT,
+                    FOREIGN KEY (chat_id) REFERENCES chats (chat_id)
+                )
+                """
+            )
+            conn.execute(
+                """
+                CREATE INDEX IF NOT EXISTS idx_hisopo_schedules_pending
+                ON hisopo_schedules (status, scheduled_for)
                 """
             )
             conn.execute(
@@ -731,7 +832,7 @@ class Database:
                 (chat_id, command_group),
             ).fetchone()
         if row is None:
-            return command_group not in {"gastos", "ruletarusa"}
+            return command_group not in {"gastos", "hisopos", "ruletarusa"}
         return bool(row["enabled"])
 
     def set_command_group_enabled(self, chat_id: str, command_group: str, enabled: bool) -> None:
@@ -1041,6 +1142,269 @@ class Database:
             )
             for row in rows
         ]
+
+    def get_hisopo_intensity_percent(self, chat_id: str) -> int:
+        chat_id = self.resolve_chat_id(chat_id)
+        with self._connect() as conn:
+            conn.execute(
+                """
+                INSERT INTO hisopo_chat_settings (chat_id)
+                VALUES (?)
+                ON CONFLICT(chat_id) DO NOTHING
+                """,
+                (chat_id,),
+            )
+            row = conn.execute(
+                "SELECT intensity_percent FROM hisopo_chat_settings WHERE chat_id = ?",
+                (chat_id,),
+            ).fetchone()
+        return int(row["intensity_percent"])
+
+    def set_hisopo_intensity_percent(self, chat_id: str, intensity_percent: int) -> None:
+        if intensity_percent not in {1, 5, 10, 15, 20}:
+            raise ValueError("La intensidad de Hisopos debe ser 1, 5, 10, 15 o 20.")
+        chat_id = self.resolve_chat_id(chat_id)
+        with self._connect() as conn:
+            conn.execute(
+                """
+                INSERT INTO hisopo_chat_settings (chat_id, intensity_percent)
+                VALUES (?, ?)
+                ON CONFLICT(chat_id) DO UPDATE SET
+                    intensity_percent = excluded.intensity_percent,
+                    updated_at = CURRENT_TIMESTAMP
+                """,
+                (chat_id, intensity_percent),
+            )
+
+    def save_hisopo_spawn(
+        self,
+        chat_id: str,
+        message_id: str,
+        hisopo_type: str,
+        points: int,
+        source: str,
+        spawned_at: str,
+        expires_at: str,
+    ) -> HisopoSpawn:
+        chat_id = self.resolve_chat_id(chat_id)
+        with self._connect() as conn:
+            conn.execute(
+                """
+                INSERT INTO hisopo_spawns (
+                    chat_id, message_id, hisopo_type, points, source, spawned_at, expires_at
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+                """,
+                (chat_id, message_id, hisopo_type, points, source, spawned_at, expires_at),
+            )
+            row = conn.execute(
+                "SELECT * FROM hisopo_spawns WHERE chat_id = ? AND message_id = ?",
+                (chat_id, message_id),
+            ).fetchone()
+        return _hisopo_spawn_from_row(row)
+
+    def get_hisopo_spawn(self, chat_id: str, message_id: str) -> HisopoSpawn | None:
+        chat_id = self.resolve_chat_id(chat_id)
+        with self._connect() as conn:
+            row = conn.execute(
+                "SELECT * FROM hisopo_spawns WHERE chat_id = ? AND message_id = ?",
+                (chat_id, message_id),
+            ).fetchone()
+        return _hisopo_spawn_from_row(row) if row is not None else None
+
+    def list_active_hisopo_spawns(self) -> list[HisopoSpawn]:
+        with self._connect() as conn:
+            rows = conn.execute(
+                "SELECT * FROM hisopo_spawns WHERE status = 'active' ORDER BY expires_at"
+            ).fetchall()
+        return [_hisopo_spawn_from_row(row) for row in rows]
+
+    def capture_hisopo(
+        self,
+        chat_id: str,
+        message_id: str,
+        user_id: str,
+        now: datetime,
+        next_scheduled_for: datetime,
+    ) -> HisopoCaptureResult:
+        chat_id = self.resolve_chat_id(chat_id)
+        self.get_or_create_user(user_id)
+        now_text = now.isoformat()
+        with self._connect() as conn:
+            conn.execute("BEGIN IMMEDIATE")
+            row = conn.execute(
+                "SELECT * FROM hisopo_spawns WHERE chat_id = ? AND message_id = ?",
+                (chat_id, message_id),
+            ).fetchone()
+            if row is None:
+                return HisopoCaptureResult("missing", None)
+
+            spawn = _hisopo_spawn_from_row(row)
+            if spawn.status == "captured":
+                return HisopoCaptureResult("taken", spawn)
+            if spawn.status == "rotten":
+                return HisopoCaptureResult("rotten", spawn)
+            if now >= datetime.fromisoformat(spawn.expires_at):
+                conn.execute(
+                    """
+                    UPDATE hisopo_spawns
+                    SET status = 'rotten'
+                    WHERE chat_id = ? AND message_id = ? AND status = 'active'
+                    """,
+                    (chat_id, message_id),
+                )
+                return HisopoCaptureResult(
+                    "rotten",
+                    _hisopo_spawn_from_row(row, status="rotten"),
+                )
+
+            conn.execute(
+                """
+                UPDATE hisopo_spawns
+                SET status = 'captured', winner_user_id = ?, captured_at = ?
+                WHERE chat_id = ? AND message_id = ? AND status = 'active'
+                """,
+                (user_id, now_text, chat_id, message_id),
+            )
+            conn.execute(
+                """
+                INSERT INTO hisopo_scores (chat_id, user_id, points)
+                VALUES (?, ?, ?)
+                ON CONFLICT(chat_id, user_id) DO UPDATE SET
+                    points = hisopo_scores.points + excluded.points,
+                    updated_at = CURRENT_TIMESTAMP
+                """,
+                (chat_id, user_id, spawn.points),
+            )
+            cursor = conn.execute(
+                """
+                INSERT INTO hisopo_schedules (
+                    chat_id, scheduled_for, source_message_id
+                )
+                VALUES (?, ?, ?)
+                """,
+                (chat_id, next_scheduled_for.isoformat(), message_id),
+            )
+            schedule = HisopoSchedule(
+                schedule_id=int(cursor.lastrowid),
+                chat_id=chat_id,
+                scheduled_for=next_scheduled_for.isoformat(),
+                status="pending",
+                source_message_id=message_id,
+            )
+            captured_spawn = _hisopo_spawn_from_row(
+                row,
+                status="captured",
+                winner_user_id=user_id,
+                captured_at=now_text,
+            )
+        return HisopoCaptureResult("captured", captured_spawn, schedule)
+
+    def mark_hisopo_rotten(self, chat_id: str, message_id: str, now: datetime) -> bool:
+        chat_id = self.resolve_chat_id(chat_id)
+        with self._connect() as conn:
+            conn.execute("BEGIN IMMEDIATE")
+            row = conn.execute(
+                "SELECT status, expires_at FROM hisopo_spawns WHERE chat_id = ? AND message_id = ?",
+                (chat_id, message_id),
+            ).fetchone()
+            if (
+                row is None
+                or row["status"] != "active"
+                or now < datetime.fromisoformat(row["expires_at"])
+            ):
+                return False
+            conn.execute(
+                """
+                UPDATE hisopo_spawns
+                SET status = 'rotten'
+                WHERE chat_id = ? AND message_id = ? AND status = 'active'
+                """,
+                (chat_id, message_id),
+            )
+        return True
+
+    def get_hisopo_scores(self, chat_id: str) -> list[HisopoScore]:
+        chat_id = self.resolve_chat_id(chat_id)
+        with self._connect() as conn:
+            rows = conn.execute(
+                """
+                SELECT
+                    hisopo_scores.user_id,
+                    users.username,
+                    users.display_name,
+                    hisopo_scores.points
+                FROM hisopo_scores
+                LEFT JOIN users ON users.user_id = hisopo_scores.user_id
+                WHERE hisopo_scores.chat_id = ?
+                ORDER BY hisopo_scores.points DESC,
+                    lower(COALESCE(users.display_name, users.username, hisopo_scores.user_id)) ASC
+                """,
+                (chat_id,),
+            ).fetchall()
+        return [
+            HisopoScore(
+                user_id=row["user_id"],
+                username=row["username"],
+                display_name=row["display_name"],
+                points=row["points"],
+            )
+            for row in rows
+        ]
+
+    def reset_processing_hisopo_schedules(self) -> None:
+        with self._connect() as conn:
+            conn.execute(
+                "UPDATE hisopo_schedules SET status = 'pending' WHERE status = 'processing'"
+            )
+
+    def list_pending_hisopo_schedules(self) -> list[HisopoSchedule]:
+        with self._connect() as conn:
+            rows = conn.execute(
+                """
+                SELECT schedule_id, chat_id, scheduled_for, status, source_message_id
+                FROM hisopo_schedules
+                WHERE status = 'pending'
+                ORDER BY scheduled_for, schedule_id
+                """
+            ).fetchall()
+        return [_hisopo_schedule_from_row(row) for row in rows]
+
+    def claim_hisopo_schedule(self, schedule_id: int) -> HisopoSchedule | None:
+        with self._connect() as conn:
+            conn.execute("BEGIN IMMEDIATE")
+            cursor = conn.execute(
+                """
+                UPDATE hisopo_schedules
+                SET status = 'processing'
+                WHERE schedule_id = ? AND status = 'pending'
+                """,
+                (schedule_id,),
+            )
+            if cursor.rowcount == 0:
+                return None
+            row = conn.execute(
+                """
+                SELECT schedule_id, chat_id, scheduled_for, status, source_message_id
+                FROM hisopo_schedules
+                WHERE schedule_id = ?
+                """,
+                (schedule_id,),
+            ).fetchone()
+        return _hisopo_schedule_from_row(row)
+
+    def complete_hisopo_schedule(self, schedule_id: int, status: str) -> None:
+        if status not in {"sent", "failed", "cancelled"}:
+            raise ValueError("Estado final de programacion de Hisopos invalido.")
+        with self._connect() as conn:
+            conn.execute(
+                """
+                UPDATE hisopo_schedules
+                SET status = ?, completed_at = CURRENT_TIMESTAMP
+                WHERE schedule_id = ?
+                """,
+                (status, schedule_id),
+            )
 
     def save_paginated_message_state(
         self,
@@ -1644,6 +2008,37 @@ def _expense_from_row(row: sqlite3.Row) -> Expense:
         sheet_error=row["sheet_error"],
         created_at=row["created_at"],
         synced_at=row["synced_at"],
+    )
+
+
+def _hisopo_spawn_from_row(
+    row: sqlite3.Row,
+    *,
+    status: str | None = None,
+    winner_user_id: str | None = None,
+    captured_at: str | None = None,
+) -> HisopoSpawn:
+    return HisopoSpawn(
+        chat_id=row["chat_id"],
+        message_id=row["message_id"],
+        hisopo_type=row["hisopo_type"],
+        points=row["points"],
+        source=row["source"],
+        spawned_at=row["spawned_at"],
+        expires_at=row["expires_at"],
+        status=status or row["status"],
+        winner_user_id=winner_user_id if winner_user_id is not None else row["winner_user_id"],
+        captured_at=captured_at if captured_at is not None else row["captured_at"],
+    )
+
+
+def _hisopo_schedule_from_row(row: sqlite3.Row) -> HisopoSchedule:
+    return HisopoSchedule(
+        schedule_id=row["schedule_id"],
+        chat_id=row["chat_id"],
+        scheduled_for=row["scheduled_for"],
+        status=row["status"],
+        source_message_id=row["source_message_id"],
     )
 
 
