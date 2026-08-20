@@ -460,7 +460,7 @@ Una segunda y única tirada de `1` a `10.000` define la rareza, pero se hace sol
 | 9666-9865 | 2 % | gemelo | imagen y valor del gemelo | suma 4 puntos, lanza otro hisopo en el momento y agenda uno para el día siguiente |
 | 9866-9965 | 1 % | diamante | imagen y valor del diamante | suma 10 puntos |
 | 9966-9990 | 0,25 % | gigante cooperativo | imagen, premio y progreso del gigante | requiere cooperación; cada participante gana 4 puntos si se completa |
-| 9991-10000 | 0,10 % | milagroso | imagen y valor del milagroso | suma 15 puntos sin importar el puntaje previo ni el liderazgo |
+| 9991-10000 | 0,10 % | milagroso | imagen del milagroso y valor oculto | suma el máximo entre 15 puntos y la mitad del puntaje del líder actual |
 
 Falso y Putrefacto eligen una segunda apariencia: común 75 %, plateado 14 %, dorado 10 % y diamante 1 %. Son los mismos pesos de esos tipos en la tirada normal, pero el Común absorbe el 28 % de Fugaz, Misterioso, Putrefacto, Radiactivo, Falso y Gemelo, que no pueden usarse como disfraz. Antes del clic se muestran la foto y el valor aparente de esa máscara; al capturarlos revelan su foto, tipo y resultado reales.
 
@@ -470,7 +470,7 @@ El Misterioso contiene uno de los otros once tipos, sin otro Misterioso adentro.
 
 El Gigante cooperativo dura 20 minutos y requiere `min(15, miembros del chat - el bot)` participaciones únicas. En un chat con al menos 16 miembros pide 15 ayudas; en uno más pequeño deben ayudar todos los integrantes disponibles salvo el propio bot. Cada usuario puede ayudar una sola vez, la foto y el botón muestran el progreso y nadie recibe puntos parcialmente. Si alcanza el objetivo, cada participante gana 4 puntos y se programa una sola aparición total para el día siguiente; si se pudre incompleto, nadie gana ni pierde puntos y no se programa nada.
 
-El Milagroso dura 20 minutos y siempre entrega 15 puntos al capturador. El premio se suma tal cual aunque el usuario estuviera primero, último, en cero o con puntaje negativo, y programa una aparición para el día siguiente como una captura normal.
+El Milagroso dura 20 minutos y calcula su premio al capturarlo: entrega el máximo entre 15 puntos y la mitad del puntaje del líder actual del grupo, redondeada hacia arriba. Por ejemplo, con un líder de 31 puntos entrega 16; con un líder de 20, cero o negativo entrega 15. El cálculo y la captura se realizan en la misma transacción, su valor inicial permanece oculto y programa una aparición para el día siguiente como una captura normal.
 
 La primera callback procesada para ese chat reclama el premio dentro de una transacción inmediata de SQLite; las siguientes muestran un alerta de Telegram sin sumar. Al capturar un Falso, Putrefacto o Misterioso, el mismo mensaje reemplaza la foto por la del tipo real, informa el resultado y elimina la botonera. Salvo el Fugaz directo, a los 20 minutos el Hisopo se pudre, deja de valer y el mensaje pierde la botonera. Tocar un Fugaz después de su minuto no suma ni agenda nada: solamente informa que ya se pudrió. Si una rareza todavía no tiene todos los `file_id` que necesita para aparecer y revelarse, esa tirada usa el Hisopo común para no perder el evento.
 

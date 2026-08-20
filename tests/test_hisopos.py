@@ -101,6 +101,7 @@ class HisopoRulesTests(unittest.TestCase):
         self.assertEqual(FAKE_HISOPO.next_day_spawns, 0)
         self.assertEqual(TWIN_HISOPO.next_day_spawns, 1)
         self.assertEqual(TWIN_HISOPO.immediate_spawns, 1)
+        self.assertTrue(MIRACLE_HISOPO.hides_points)
         self.assertEqual(hisopo_kind_for_spawn("mystery", 10).points, 10)
         with self.assertRaisesRegex(ValueError, "desconocido"):
             hisopo_kind_for_spawn("unknown", 0)
@@ -530,7 +531,7 @@ class HisopoDatabaseTests(unittest.TestCase):
             "taken",
         )
 
-    def test_miracle_always_adds_fifteen_even_from_a_negative_score(self) -> None:
+    def test_miracle_adds_at_least_fifteen_or_half_the_leader_rounded_up(self) -> None:
         for message_id, kind, points in (
             ("410", "putrid", -2),
             ("411", "miracle", 15),
@@ -553,6 +554,53 @@ class HisopoDatabaseTests(unittest.TestCase):
             )
             self.assertEqual(result.status, "captured")
         self.assertEqual(self.db.get_hisopo_scores("-1")[0].points, 13)
+
+        self.db.get_or_create_user("5", "Leader")
+        self.db.save_hisopo_spawn(
+            "-1",
+            "412",
+            "common",
+            31,
+            "message",
+            self.now.isoformat(),
+            (self.now + timedelta(minutes=20)).isoformat(),
+        )
+        self.db.capture_hisopo(
+            "-1", "412", "5", self.now, self.now + timedelta(days=1)
+        )
+        self.db.save_hisopo_spawn(
+            "-1",
+            "413",
+            "miracle",
+            15,
+            "message",
+            self.now.isoformat(),
+            (self.now + timedelta(minutes=20)).isoformat(),
+        )
+        miracle = self.db.capture_hisopo(
+            "-1", "413", "3", self.now, self.now + timedelta(days=1)
+        )
+        self.assertEqual(miracle.spawn.points, 16)
+        self.assertEqual(
+            {score.user_id: score.points for score in self.db.get_hisopo_scores("-1")},
+            {"5": 31, "3": 29},
+        )
+
+    def test_miracle_without_an_existing_leader_adds_fifteen(self) -> None:
+        self.db.save_hisopo_spawn(
+            "-1",
+            "414",
+            "miracle",
+            15,
+            "message",
+            self.now.isoformat(),
+            (self.now + timedelta(minutes=20)).isoformat(),
+        )
+        result = self.db.capture_hisopo(
+            "-1", "414", "2", self.now, self.now + timedelta(days=1)
+        )
+        self.assertEqual(result.spawn.points, 15)
+        self.assertEqual(self.db.get_hisopo_scores("-1")[0].points, 15)
 
     def test_incomplete_giant_expires_without_points_or_schedule(self) -> None:
         with self.assertRaisesRegex(ValueError, "participante"):
@@ -662,6 +710,7 @@ class HisopoCommandTests(unittest.IsolatedAsyncioTestCase):
         self.assertIn("Diamante: 1 %", response)
         self.assertIn("Gigante cooperativo: 0,25 %", response)
         self.assertIn("Milagroso: 0,10 %", response)
+        self.assertIn("mitad del puntaje del líder", response)
         self.assertIn("no le quita puntos a nadie", response)
         self.assertIn("/hisopos", response)
         self.assertLessEqual(len(response), 4096)

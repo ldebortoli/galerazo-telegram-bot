@@ -1,9 +1,13 @@
 # Changelog
 
+## [0.26] - 2026-08-20
+
+- El Hisopo milagroso ahora entrega el mayor valor entre 15 puntos y la mitad, redondeada hacia arriba, del puntaje del líder del grupo al momento de capturarlo.
+
 ## [0.25] - 2026-08-20
 
 - El Recolector suma el Hisopo gigante cooperativo: pide hasta 15 ayudas únicas, muestra el progreso y entrega 4 puntos a cada participante solo si el grupo lo completa dentro de 20 minutos.
-- Nuevo Hisopo milagroso ultrarraro, con un premio fijo de 15 puntos sin importar el puntaje previo del capturador.
+- Nuevo Hisopo milagroso ultrarraro, con un premio especial calculado al capturarlo.
 - Las probabilidades incorporan al gigante con 0,25 % y al milagroso con 0,10 %, mientras el común queda en 46,65 %.
 
 ## [0.24] - 2026-08-20

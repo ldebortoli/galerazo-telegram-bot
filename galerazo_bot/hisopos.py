@@ -54,7 +54,7 @@ FAKE_HISOPO = HisopoKind("fake", 0, next_day_spawns=0)
 TWIN_HISOPO = HisopoKind("twin", 4, immediate_spawns=1)
 DIAMOND_HISOPO = HisopoKind("diamond", 10)
 GIANT_HISOPO = HisopoKind("giant", 4)
-MIRACLE_HISOPO = HisopoKind("miracle", 15)
+MIRACLE_HISOPO = HisopoKind("miracle", 15, hides_points=True)
 
 HISOPO_KINDS = {
     kind.key: kind

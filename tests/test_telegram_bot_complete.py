@@ -1537,7 +1537,7 @@ class HisopoTelegramTests(unittest.IsolatedAsyncioTestCase):
             miracle_spawn = await tb._spawn_hisopo(miracle_app, "-1", "message")
         self.assertEqual(miracle_spawn.hisopo_type, "miracle")
         self.assertEqual(miracle_spawn.points, 15)
-        self.assertIn("15 pt", miracle_bot.send_photo.await_args.kwargs["caption"])
+        self.assertIn("valor oculto", miracle_bot.send_photo.await_args.kwargs["caption"])
 
     def test_file_ids_restore_scheduling_and_seconds(self) -> None:
         app, bot_state, _bot, job_queue = self._application(

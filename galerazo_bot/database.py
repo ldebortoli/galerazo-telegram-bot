@@ -1338,7 +1338,17 @@ class Database:
                     _hisopo_spawn_from_row(row, status="rotten"),
                 )
 
-            awarded_points = spawn.points if points_at_capture is None else points_at_capture
+            if spawn.hisopo_type == "miracle":
+                leader_row = conn.execute(
+                    "SELECT MAX(points) AS points FROM hisopo_scores WHERE chat_id = ?",
+                    (chat_id,),
+                ).fetchone()
+                leader_points = int(leader_row["points"] or 0)
+                awarded_points = max(15, (leader_points + 1) // 2)
+            else:
+                awarded_points = (
+                    spawn.points if points_at_capture is None else points_at_capture
+                )
 
             conn.execute(
                 """
