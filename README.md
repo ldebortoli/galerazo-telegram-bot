@@ -442,18 +442,18 @@ Cada mensaje original de un usuario humano que podría competir por La Galeraza 
 
 Una segunda tirada define la rareza. Los rangos no se superponen y suman 100:
 
-| Tirada | Hisopo | Efecto |
-| --- | --- | --- |
-| 1-45 | común | suma 1 punto |
-| 46-58 | plateado | suma 2 puntos |
-| 59-68 | dorado | suma 3 puntos |
-| 69-75 | fugaz | suma 5 puntos y vence en 1 minuto |
-| 76-82 | misterioso | oculta un valor ya sorteado entre -3, -2, -1, 0, 1, 2, 3, 4, 5, 6 o 10 |
-| 83-87 | putrefacto | resta 2 puntos y puede dejar puntaje negativo |
-| 88-91 | radiactivo | sortea y muestra -3, -1, 2, 4 o 6 puntos |
-| 92-93 | falso | vale 0 y no programa una aparición para el día siguiente |
-| 94-95 | gemelo | suma 4 puntos y programa dos apariciones para el día siguiente |
-| 96-100 | diamante | suma 10 puntos |
+| Tirada | Aparición | Hisopo | Efecto |
+| --- | ---: | --- | --- |
+| 1-47 | 47 % | común | suma 1 punto |
+| 48-61 | 14 % | plateado | suma 2 puntos |
+| 62-71 | 10 % | dorado | suma 3 puntos |
+| 72-78 | 7 % | fugaz | suma 5 puntos y vence en 1 minuto |
+| 79-85 | 7 % | misterioso | oculta un valor ya sorteado entre -3, -2, -1, 0, 1, 2, 3, 4, 5, 6 o 10 |
+| 86-90 | 5 % | putrefacto | resta 2 puntos y puede dejar puntaje negativo |
+| 91-94 | 4 % | radiactivo | sortea y muestra -3, -1, 2, 4 o 6 puntos |
+| 95-97 | 3 % | falso | vale 0 y no programa una aparición para el día siguiente |
+| 98-99 | 2 % | gemelo | suma 4 puntos y programa dos apariciones para el día siguiente |
+| 100 | 1 % | diamante | suma 10 puntos |
 
 La primera callback procesada para ese chat reclama el premio dentro de una transacción inmediata de SQLite; las siguientes muestran un alerta de Telegram sin sumar. Salvo el fugaz, a los 20 minutos el hisopo se pudre, deja de valer y el mensaje pierde la botonera. Si una rareza todavía no tiene `file_id`, esa aparición usa el hisopo común para no perder el evento.
 

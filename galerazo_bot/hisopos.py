@@ -61,16 +61,16 @@ HISOPO_KINDS = {
     )
 }
 HISOPO_PROBABILITY_RANGES = {
-    "common": (1, 45),
-    "silver": (46, 58),
-    "gold": (59, 68),
-    "fleeting": (69, 75),
-    "mystery": (76, 82),
-    "putrid": (83, 87),
-    "radioactive": (88, 91),
-    "fake": (92, 93),
-    "twin": (94, 95),
-    "diamond": (96, 100),
+    "common": (1, 47),
+    "silver": (48, 61),
+    "gold": (62, 71),
+    "fleeting": (72, 78),
+    "mystery": (79, 85),
+    "putrid": (86, 90),
+    "radioactive": (91, 94),
+    "fake": (95, 97),
+    "twin": (98, 99),
+    "diamond": (100, 100),
 }
 RADIOACTIVE_POINT_VALUES = (-3, -1, 2, 4, 6)
 MYSTERY_POINT_VALUES = (-3, -2, -1, 0, 1, 2, 3, 4, 5, 6, 10)

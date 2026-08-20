@@ -51,28 +51,27 @@ class HisopoRulesTests(unittest.TestCase):
     def test_type_boundaries_and_invalid_values(self) -> None:
         expected = {
             1: COMMON_HISOPO,
-            45: COMMON_HISOPO,
-            46: SILVER_HISOPO,
-            58: SILVER_HISOPO,
-            59: GOLD_HISOPO,
-            68: GOLD_HISOPO,
-            69: FLEETING_HISOPO,
-            75: FLEETING_HISOPO,
-            83: PUTRID_HISOPO,
-            87: PUTRID_HISOPO,
-            92: FAKE_HISOPO,
-            93: FAKE_HISOPO,
-            94: TWIN_HISOPO,
-            95: TWIN_HISOPO,
-            96: DIAMOND_HISOPO,
+            47: COMMON_HISOPO,
+            48: SILVER_HISOPO,
+            61: SILVER_HISOPO,
+            62: GOLD_HISOPO,
+            71: GOLD_HISOPO,
+            72: FLEETING_HISOPO,
+            78: FLEETING_HISOPO,
+            86: PUTRID_HISOPO,
+            90: PUTRID_HISOPO,
+            95: FAKE_HISOPO,
+            97: FAKE_HISOPO,
+            98: TWIN_HISOPO,
+            99: TWIN_HISOPO,
             100: DIAMOND_HISOPO,
         }
         for roll, kind in expected.items():
             with self.subTest(roll=roll):
                 self.assertEqual(select_hisopo_kind(roll), kind)
 
-        mystery = select_hisopo_kind(76, randbelow=lambda _limit: 0)
-        radioactive = select_hisopo_kind(88, randbelow=lambda limit: limit - 1)
+        mystery = select_hisopo_kind(79, randbelow=lambda _limit: 0)
+        radioactive = select_hisopo_kind(91, randbelow=lambda limit: limit - 1)
         self.assertEqual(mystery.points, MYSTERY_POINT_VALUES[0])
         self.assertTrue(mystery.hides_points)
         self.assertEqual(radioactive.points, RADIOACTIVE_POINT_VALUES[-1])
@@ -86,6 +85,27 @@ class HisopoRulesTests(unittest.TestCase):
             sum(upper - lower + 1 for lower, upper in HISOPO_PROBABILITY_RANGES.values()),
             100,
         )
+        probabilities = {
+            key: upper - lower + 1
+            for key, (lower, upper) in HISOPO_PROBABILITY_RANGES.items()
+        }
+        self.assertEqual(
+            probabilities,
+            {
+                "common": 47,
+                "silver": 14,
+                "gold": 10,
+                "fleeting": 7,
+                "mystery": 7,
+                "putrid": 5,
+                "radioactive": 4,
+                "fake": 3,
+                "twin": 2,
+                "diamond": 1,
+            },
+        )
+        for more_likely in ("twin", "fake", "radioactive", "putrid"):
+            self.assertGreater(probabilities[more_likely], probabilities["diamond"])
         for roll in (0, 101):
             with self.subTest(roll=roll), self.assertRaisesRegex(ValueError, "tipo"):
                 select_hisopo_kind(roll)

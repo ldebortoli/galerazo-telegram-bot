@@ -1401,7 +1401,7 @@ class HisopoTelegramTests(unittest.IsolatedAsyncioTestCase):
             telegram_hisopo_common_file_id="common-id",
             telegram_hisopo_mystery_file_id="mystery-id",
         )
-        with patch.object(tb.secrets, "randbelow", side_effect=[75, 0]):
+        with patch.object(tb.secrets, "randbelow", side_effect=[78, 0]):
             mystery_spawn = await tb._spawn_hisopo(
                 mystery_app,
                 "-1",
@@ -1419,7 +1419,7 @@ class HisopoTelegramTests(unittest.IsolatedAsyncioTestCase):
             telegram_hisopo_common_file_id="common-id",
             telegram_hisopo_fleeting_file_id="fleeting-id",
         )
-        with patch.object(tb.secrets, "randbelow", return_value=68):
+        with patch.object(tb.secrets, "randbelow", return_value=71):
             fleeting_spawn = await tb._spawn_hisopo(
                 fleeting_app,
                 "-1",

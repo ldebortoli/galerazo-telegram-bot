@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.20] - 2026-08-20
+
+- Ajustamos las probabilidades del Recolector: el Hisopo diamante ahora es el más raro, mientras que el gemelo, falso, radiactivo y putrefacto aparecen con mayor frecuencia.
+
 ## [0.19] - 2026-08-20
 
 - El Recolector suma siete Hisopos especiales: diamante, fugaz, misterioso, putrefacto, radiactivo, falso y gemelo, con premios, penalizaciones y comportamientos propios.
