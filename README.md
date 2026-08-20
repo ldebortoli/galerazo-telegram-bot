@@ -238,6 +238,13 @@ TELEGRAM_ANNOUNCEMENTS_CHAT_ID=-1009876543210
 TELEGRAM_HISOPO_COMMON_FILE_ID=file-id-del-hisopo-comun
 TELEGRAM_HISOPO_SILVER_FILE_ID=file-id-del-hisopo-plateado
 TELEGRAM_HISOPO_GOLD_FILE_ID=file-id-del-hisopo-dorado
+TELEGRAM_HISOPO_DIAMOND_FILE_ID=file-id-del-hisopo-diamante
+TELEGRAM_HISOPO_FLEETING_FILE_ID=file-id-del-hisopo-fugaz
+TELEGRAM_HISOPO_MYSTERY_FILE_ID=file-id-del-hisopo-misterioso
+TELEGRAM_HISOPO_PUTRID_FILE_ID=file-id-del-hisopo-putrefacto
+TELEGRAM_HISOPO_RADIOACTIVE_FILE_ID=file-id-del-hisopo-radiactivo
+TELEGRAM_HISOPO_FAKE_FILE_ID=file-id-del-hisopo-falso
+TELEGRAM_HISOPO_TWIN_FILE_ID=file-id-del-hisopo-gemelo
 DATABASE_PATH=data/galerazo.sqlite3
 GOOGLE_SHEETS_CREDENTIALS_JSON_PATH=secrets/google-service-account.json
 GOOGLE_SHEETS_SPREADSHEET_ID=replace-with-spreadsheet-id
@@ -431,9 +438,24 @@ El Recolector de Hisopos es un juego para grupos y supergrupos y viene habilitad
 
 Cada mensaje original de un usuario humano que podría competir por La Galeraza genera una tirada de 1 a 100. Si la tirada entra en el porcentaje configurado, aparece un hisopo con foto y el botón `Capturar hisopo`. Las ediciones y los mensajes de bots no generan tiradas.
 
-Una segunda tirada define el premio: 1-50 y 81-100 producen un hisopo común de 1 punto, 51-70 uno plateado de 2 puntos y 71-80 uno dorado de 3 puntos. La primera callback procesada para ese chat reclama el premio dentro de una transacción inmediata de SQLite; las siguientes muestran un alerta de Telegram sin sumar. A los 20 minutos el hisopo se pudre, deja de valer y el mensaje pierde la botonera.
+Una segunda tirada define la rareza. Los rangos no se superponen y suman 100:
 
-Cada captura programa una aparición adicional en un segundo aleatorio del día calendario siguiente de Argentina. La programación se guarda en SQLite y se reconstruye al iniciar el bot, por lo que sobrevive reinicios. Si el juego está deshabilitado cuando llega el horario, la aparición programada se cancela. Los hisopos podridos no programan apariciones.
+| Tirada | Hisopo | Efecto |
+| --- | --- | --- |
+| 1-45 | común | suma 1 punto |
+| 46-58 | plateado | suma 2 puntos |
+| 59-68 | dorado | suma 3 puntos |
+| 69-75 | fugaz | suma 5 puntos y vence en 1 minuto |
+| 76-82 | misterioso | oculta un valor ya sorteado entre -3, -2, -1, 0, 1, 2, 3, 4, 5, 6 o 10 |
+| 83-87 | putrefacto | resta 2 puntos y puede dejar puntaje negativo |
+| 88-91 | radiactivo | sortea y muestra -3, -1, 2, 4 o 6 puntos |
+| 92-93 | falso | vale 0 y no programa una aparición para el día siguiente |
+| 94-95 | gemelo | suma 4 puntos y programa dos apariciones para el día siguiente |
+| 96-100 | diamante | suma 10 puntos |
+
+La primera callback procesada para ese chat reclama el premio dentro de una transacción inmediata de SQLite; las siguientes muestran un alerta de Telegram sin sumar. Salvo el fugaz, a los 20 minutos el hisopo se pudre, deja de valer y el mensaje pierde la botonera. Si una rareza todavía no tiene `file_id`, esa aparición usa el hisopo común para no perder el evento.
+
+Cada captura programa una aparición adicional en un segundo aleatorio del día calendario siguiente de Argentina; el gemelo programa dos y el falso ninguna. La programación se guarda en SQLite y se reconstruye al iniciar el bot, por lo que sobrevive reinicios. Si el juego está deshabilitado cuando llega el horario, la aparición programada se cancela. Los hisopos podridos no programan apariciones.
 
 Las imágenes se envían mediante los `file_id` persistentes de Telegram configurados en:
 
@@ -441,6 +463,13 @@ Las imágenes se envían mediante los `file_id` persistentes de Telegram configu
 TELEGRAM_HISOPO_COMMON_FILE_ID=
 TELEGRAM_HISOPO_SILVER_FILE_ID=
 TELEGRAM_HISOPO_GOLD_FILE_ID=
+TELEGRAM_HISOPO_DIAMOND_FILE_ID=
+TELEGRAM_HISOPO_FLEETING_FILE_ID=
+TELEGRAM_HISOPO_MYSTERY_FILE_ID=
+TELEGRAM_HISOPO_PUTRID_FILE_ID=
+TELEGRAM_HISOPO_RADIOACTIVE_FILE_ID=
+TELEGRAM_HISOPO_FAKE_FILE_ID=
+TELEGRAM_HISOPO_TWIN_FILE_ID=
 ```
 
 Para obtener cada valor, enviá la imagen al bot como foto y respondé ese mensaje con `/debug`. En el JSON, usá el `file_id` de la última entrada de `message.photo`, que corresponde al mayor tamaño. El campo `file_unique_id` no sirve para reenviar archivos. Reiniciá el bot local después de guardar los tres valores en `.env`.

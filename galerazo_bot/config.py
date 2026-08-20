@@ -24,6 +24,13 @@ class Settings:
     telegram_hisopo_common_file_id: str | None = None
     telegram_hisopo_silver_file_id: str | None = None
     telegram_hisopo_gold_file_id: str | None = None
+    telegram_hisopo_diamond_file_id: str | None = None
+    telegram_hisopo_fleeting_file_id: str | None = None
+    telegram_hisopo_mystery_file_id: str | None = None
+    telegram_hisopo_putrid_file_id: str | None = None
+    telegram_hisopo_radioactive_file_id: str | None = None
+    telegram_hisopo_fake_file_id: str | None = None
+    telegram_hisopo_twin_file_id: str | None = None
 
 
 def load_settings() -> Settings:
@@ -47,6 +54,13 @@ def load_settings() -> Settings:
         telegram_hisopo_common_file_id=os.getenv("TELEGRAM_HISOPO_COMMON_FILE_ID") or None,
         telegram_hisopo_silver_file_id=os.getenv("TELEGRAM_HISOPO_SILVER_FILE_ID") or None,
         telegram_hisopo_gold_file_id=os.getenv("TELEGRAM_HISOPO_GOLD_FILE_ID") or None,
+        telegram_hisopo_diamond_file_id=os.getenv("TELEGRAM_HISOPO_DIAMOND_FILE_ID") or None,
+        telegram_hisopo_fleeting_file_id=os.getenv("TELEGRAM_HISOPO_FLEETING_FILE_ID") or None,
+        telegram_hisopo_mystery_file_id=os.getenv("TELEGRAM_HISOPO_MYSTERY_FILE_ID") or None,
+        telegram_hisopo_putrid_file_id=os.getenv("TELEGRAM_HISOPO_PUTRID_FILE_ID") or None,
+        telegram_hisopo_radioactive_file_id=os.getenv("TELEGRAM_HISOPO_RADIOACTIVE_FILE_ID") or None,
+        telegram_hisopo_fake_file_id=os.getenv("TELEGRAM_HISOPO_FAKE_FILE_ID") or None,
+        telegram_hisopo_twin_file_id=os.getenv("TELEGRAM_HISOPO_TWIN_FILE_ID") or None,
     )
 
 

@@ -252,6 +252,13 @@ class DeploymentAutomationTests(unittest.TestCase):
             "TELEGRAM_HISOPO_COMMON_FILE_ID",
             "TELEGRAM_HISOPO_SILVER_FILE_ID",
             "TELEGRAM_HISOPO_GOLD_FILE_ID",
+            "TELEGRAM_HISOPO_DIAMOND_FILE_ID",
+            "TELEGRAM_HISOPO_FLEETING_FILE_ID",
+            "TELEGRAM_HISOPO_MYSTERY_FILE_ID",
+            "TELEGRAM_HISOPO_PUTRID_FILE_ID",
+            "TELEGRAM_HISOPO_RADIOACTIVE_FILE_ID",
+            "TELEGRAM_HISOPO_FAKE_FILE_ID",
+            "TELEGRAM_HISOPO_TWIN_FILE_ID",
         ):
             self.assertIn(key, status_script)
             self.assertIn(key, patch_script)

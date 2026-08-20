@@ -83,9 +83,10 @@ from .command_handlers.galerazas import (
 from .command_handlers.hisopos import send_hisopos as _send_hisopos
 from .handler_registration import register_handlers
 from .hisopos import (
+    COMMON_HISOPO,
     HISOPO_CALLBACK_PREFIX,
     HISOPO_CAPTURE_CALLBACK,
-    HISOPO_EXPIRATION,
+    hisopo_kind_for_spawn,
     random_next_day_datetime,
     select_hisopo_kind,
     should_spawn_hisopo,
@@ -514,15 +515,25 @@ async def _spawn_hisopo(
     now: datetime | None = None,
 ) -> HisopoSpawn | None:
     state = application.bot_data["state"]
-    kind = select_hisopo_kind(secrets.randbelow(100) + 1)
+    kind = select_hisopo_kind(
+        secrets.randbelow(100) + 1,
+        randbelow=secrets.randbelow,
+    )
     file_id = _hisopo_file_id(state.settings, kind.key)
     if not file_id:
-        logger.warning(
-            "No pude lanzar un Hisopo %s en el chat %s: falta configurar su file_id de Telegram.",
+        logger.info(
+            "El Hisopo %s aun no tiene file_id; uso el Hisopo comun en el chat %s.",
             kind.key,
             chat_id,
         )
-        return None
+        kind = COMMON_HISOPO
+        file_id = _hisopo_file_id(state.settings, kind.key)
+        if not file_id:
+            logger.warning(
+                "No pude lanzar un Hisopo en el chat %s: falta configurar el file_id comun.",
+                chat_id,
+            )
+            return None
 
     language = _chat_language(state.db, chat_id)
     type_label = t(language, f"hisopos.type.{kind.key}")
@@ -530,12 +541,13 @@ async def _spawn_hisopo(
         [[InlineKeyboardButton(t(language, "hisopos.capture_button"), callback_data=HISOPO_CAPTURE_CALLBACK)]]
     )
     try:
+        caption_key = "hisopos.appeared_mystery" if kind.hides_points else "hisopos.appeared"
         message = await application.bot.send_photo(
             chat_id=_parse_chat_id(chat_id),
             photo=file_id,
             caption=t(
                 language,
-                "hisopos.appeared",
+                caption_key,
                 type_label=type_label,
                 points=kind.points,
             ),
@@ -555,7 +567,7 @@ async def _spawn_hisopo(
         points=kind.points,
         source=source,
         spawned_at=spawned_at.isoformat(),
-        expires_at=(spawned_at + HISOPO_EXPIRATION).isoformat(),
+        expires_at=(spawned_at + kind.expiration).isoformat(),
     )
     _schedule_hisopo_expiration(application, spawn)
     return spawn
@@ -566,6 +578,13 @@ def _hisopo_file_id(settings: Settings, hisopo_type: str) -> str | None:
         "common": settings.telegram_hisopo_common_file_id,
         "silver": settings.telegram_hisopo_silver_file_id,
         "gold": settings.telegram_hisopo_gold_file_id,
+        "diamond": settings.telegram_hisopo_diamond_file_id,
+        "fleeting": settings.telegram_hisopo_fleeting_file_id,
+        "mystery": settings.telegram_hisopo_mystery_file_id,
+        "putrid": settings.telegram_hisopo_putrid_file_id,
+        "radioactive": settings.telegram_hisopo_radioactive_file_id,
+        "fake": settings.telegram_hisopo_fake_file_id,
+        "twin": settings.telegram_hisopo_twin_file_id,
     }.get(hisopo_type)
 
 
@@ -656,29 +675,46 @@ async def _hisopo_callback_entrypoint(
         return
 
     now = datetime.now(timezone.utc)
+    spawn = state.db.get_hisopo_spawn(str(message.chat.id), str(message.message_id))
+    next_scheduled_for = ()
+    if spawn is not None:
+        kind = hisopo_kind_for_spawn(spawn.hisopo_type, spawn.points)
+        next_scheduled_for = tuple(
+            random_next_day_datetime(now) for _ in range(kind.next_day_spawns)
+        )
     result = state.db.capture_hisopo(
         chat_id=str(message.chat.id),
         message_id=str(message.message_id),
         user_id=str(user.id),
         now=now,
-        next_scheduled_for=random_next_day_datetime(now),
+        next_scheduled_for=next_scheduled_for,
     )
-    if result.status == "captured" and result.spawn is not None and result.schedule is not None:
+    if result.status == "captured" and result.spawn is not None:
         type_label = t(language, f"hisopos.type.{result.spawn.hisopo_type}")
+        if result.spawn.points < 0:
+            caption_key = "hisopos.captured_caption_negative"
+            popup_key = "hisopos.captured_popup_negative"
+        elif result.spawn.points == 0:
+            caption_key = "hisopos.captured_caption_zero"
+            popup_key = "hisopos.captured_popup_zero"
+        else:
+            caption_key = "hisopos.captured_caption"
+            popup_key = "hisopos.captured_popup"
         await _edit_hisopo_caption(
             context.bot,
             result.spawn,
             t(
                 language,
-                "hisopos.captured_caption",
+                caption_key,
                 user=_display_name(user),
                 type_label=type_label,
-                points=result.spawn.points,
+                points=abs(result.spawn.points),
             ),
         )
-        _schedule_hisopo_appearance(context.application, result.schedule)
+        for schedule in result.schedules:
+            _schedule_hisopo_appearance(context.application, schedule)
         await callback_query.answer(
-            t(language, "hisopos.captured_popup", points=result.spawn.points)
+            t(language, popup_key, points=abs(result.spawn.points))
         )
         return
     if result.status == "taken":

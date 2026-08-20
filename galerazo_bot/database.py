@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import secrets
 import sqlite3
-from collections.abc import Iterator
+from collections.abc import Iterable, Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass
 from datetime import datetime
@@ -101,6 +101,13 @@ class HisopoCaptureResult:
     status: str
     spawn: HisopoSpawn | None
     schedule: HisopoSchedule | None = None
+    additional_schedules: tuple[HisopoSchedule, ...] = ()
+
+    @property
+    def schedules(self) -> tuple[HisopoSchedule, ...]:
+        if self.schedule is None:
+            return self.additional_schedules
+        return (self.schedule, *self.additional_schedules)
 
 
 @dataclass(frozen=True)
@@ -1225,7 +1232,7 @@ class Database:
         message_id: str,
         user_id: str,
         now: datetime,
-        next_scheduled_for: datetime,
+        next_scheduled_for: datetime | Iterable[datetime],
     ) -> HisopoCaptureResult:
         chat_id = self.resolve_chat_id(chat_id)
         self.get_or_create_user(user_id)
@@ -1276,29 +1283,43 @@ class Database:
                 """,
                 (chat_id, user_id, spawn.points),
             )
-            cursor = conn.execute(
-                """
-                INSERT INTO hisopo_schedules (
-                    chat_id, scheduled_for, source_message_id
+            scheduled_datetimes = (
+                (next_scheduled_for,)
+                if isinstance(next_scheduled_for, datetime)
+                else tuple(next_scheduled_for)
+            )
+            schedules = []
+            for scheduled_for in scheduled_datetimes:
+                cursor = conn.execute(
+                    """
+                    INSERT INTO hisopo_schedules (
+                        chat_id, scheduled_for, source_message_id
+                    )
+                    VALUES (?, ?, ?)
+                    """,
+                    (chat_id, scheduled_for.isoformat(), message_id),
                 )
-                VALUES (?, ?, ?)
-                """,
-                (chat_id, next_scheduled_for.isoformat(), message_id),
-            )
-            schedule = HisopoSchedule(
-                schedule_id=int(cursor.lastrowid),
-                chat_id=chat_id,
-                scheduled_for=next_scheduled_for.isoformat(),
-                status="pending",
-                source_message_id=message_id,
-            )
+                schedules.append(
+                    HisopoSchedule(
+                        schedule_id=int(cursor.lastrowid),
+                        chat_id=chat_id,
+                        scheduled_for=scheduled_for.isoformat(),
+                        status="pending",
+                        source_message_id=message_id,
+                    )
+                )
             captured_spawn = _hisopo_spawn_from_row(
                 row,
                 status="captured",
                 winner_user_id=user_id,
                 captured_at=now_text,
             )
-        return HisopoCaptureResult("captured", captured_spawn, schedule)
+        return HisopoCaptureResult(
+            "captured",
+            captured_spawn,
+            schedules[0] if schedules else None,
+            tuple(schedules[1:]),
+        )
 
     def mark_hisopo_rotten(self, chat_id: str, message_id: str, now: datetime) -> bool:
         chat_id = self.resolve_chat_id(chat_id)

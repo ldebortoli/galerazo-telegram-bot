@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.19] - 2026-08-20
+
+- El Recolector suma siete Hisopos especiales: diamante, fugaz, misterioso, putrefacto, radiactivo, falso y gemelo, con premios, penalizaciones y comportamientos propios.
+- La Tabla de Hisopos ahora admite puntajes negativos.
+
 ## [0.18] - 2026-08-20
 
 - El Recolector de Hisopos ahora viene habilitado por defecto en grupos y supergrupos. Los chats que lo hayan desactivado desde `/config` conservan su eleccion.

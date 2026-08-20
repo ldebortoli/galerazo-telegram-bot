@@ -6,13 +6,15 @@
 - [BLOCKED: el token `gh` no tiene scope `user`/Plan y el navegador disponible no tiene sesion GitHub; requiere iniciar sesion o autorizar explicitamente ampliar el scope] Confirmar visualmente si la cuenta personal tiene medio de pago cargado. La documentacion oficial confirma que, si no existe un medio valido, Actions se bloquea al agotar la cuota y no cobra excedentes.
 
 ## P2
-
-- [BLOCKED: falta que el usuario elija las rarezas, sus probabilidades y una mecanica concreta; no implementar automaticamente las ideas exploratorias] Diseñar una segunda tanda de Hisopos especiales, incluida la posibilidad de una rareza maligna o putrefacta con puntaje negativo.
+- [BLOCKED: el usuario debe subir los siete PNG nuevos a Telegram con `@galerazo_bot` y aportar los `file_id`] Configurar los `file_id` de los Hisopos diamante, fugaz, misterioso, putrefacto, radiactivo, falso y gemelo. Hasta entonces sus tiradas usan el Hisopo comun.
+- [BLOCKED: `@galerazo_bot` y `@testeoMensajePrivadoBot` ven el chat pero ninguno tiene el permiso `Cambiar informacion del grupo`; el usuario debe otorgarselo a uno] Actualizar la foto de `Codex - Logs` (`-1004440313456`) con `assets/codex-logs.png`.
 - [BLOCKED: requiere pedido explicito del usuario y luego verificar RAILWAY_TOKEN y RAILWAY_SERVICE_ID] Activar el deploy automatico de Railway.
 
 # IN PROGRESS
 
 # DONE
+
+- [2026-08-20] [USER_REQUEST] Version `0.19`: cargados y validados los `file_id` comun/plateado/dorado en local y configuracion remota persistente; implementados y traducidos a 18 idiomas los Hisopos diamante, fugaz, misterioso, putrefacto, radiactivo, falso y gemelo, con rangos 1-100, puntajes negativos, expiracion y agenda propias; generados ocho artes de 1254x1254. BotFather fue sincronizado y verificado exclusivamente en `@galerazo_bot`. La foto de `Codex - Logs` quedo separada como bloqueo de permisos. Validacion: 262 pruebas, cobertura 100% de sentencias/ramas, runtime, dependencias, compilacion, PowerShell/Bash, imagenes, diff-check y Gitleaks sobre 172 archivos OK. Sin reinicio, Docker ni deploy.
 
 - [2026-08-20] [USER_REQUEST] Habilitado por defecto el Recolector de Hisopos para chats sin preferencia guardada; toda desactivacion explicita en `/config` permanece vigente. Version `0.18`; 259 pruebas y cobertura 100% de sentencias/ramas, runtime, dependencias, compilacion y diff-check OK. Sin cambio de BotFather, Docker ni deploy.
 

@@ -779,3 +779,15 @@ El Recolector de Hisopos se considera habilitado cuando un chat no posee una pre
 El remoto GitHub de Galerazobot permanece publico con Secret Scanning y Push Protection habilitados. Antes de confirmarlo se audito todo el historial alcanzable con Gitleaks y patrones adicionales sin encontrar secretos reales; la unica cadena con formato de token Telegram pertenece a una prueba y no coincide con la credencial local.
 
 La identidad Git local usa el correo `noreply` de la cuenta autenticada y conserva `user.name`. Los archivos versionados usan `%USERPROFILE%`, variables o placeholders en lugar de rutas absolutas del perfil de Windows y no incluyen correos personales. No se reescribe el historial ni se reemplaza el remoto para aplicar esta politica.
+
+## D-112 - Segunda tanda de Hisopos y puntajes negativos (2026-08-20)
+
+La tabla de rarezas queda cerrada provisionalmente en 100 valores: comun 1-45 (+1), plateado 46-58 (+2), dorado 59-68 (+3), fugaz 69-75 (+5; expira en un minuto), misterioso 76-82 (valor oculto sorteado y persistido antes del envio entre -3, -2, -1, 0, 1, 2, 3, 4, 5, 6 y 10), putrefacto 83-87 (-2), radiactivo 88-91 (sortea -3, -1, 2, 4 o 6), falso 92-93 (0 y no agenda otra aparicion), gemelo 94-95 (+4 y agenda dos apariciones) y diamante 96-100 (+10). Los marcadores no se limitan en cero.
+
+## D-113 - File IDs incompletos no pierden apariciones (2026-08-20)
+
+Cada rareza posee su propia variable `TELEGRAM_HISOPO_*_FILE_ID`. Comun, plateado y dorado quedaron validados con los bots local y real, guardados en `.env` local y en la configuracion remota persistente sin reiniciar produccion. Hasta recibir los siete IDs restantes, una tirada especial sin imagen degrada a Hisopo comun en lugar de cancelar la aparicion.
+
+## D-114 - BotFather siempre apunta al Galerazo Bot verificado (2026-08-20)
+
+Antes de una sincronizacion manual se consulta `getMe` con el token elegido y solo se continua si el username es `galerazo_bot`. El `.env` de desarrollo identifica a `testeoMensajePrivadoBot`, por lo que no se usa para configurar los comandos reales. El 2026-08-20 se sincronizaron y verificaron en `@galerazo_bot` los seis scopes español/ingles de privados, grupos y administradores; los defaults quedaron vacios.

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import secrets
 from collections.abc import Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import datetime, time, timedelta, timezone
 from zoneinfo import ZoneInfo
 
@@ -13,6 +13,7 @@ from .pagination import MESSAGE_LIMIT, PaginatedPage, build_page_line_groups, re
 
 ARGENTINA_TIMEZONE = ZoneInfo("America/Argentina/Buenos_Aires")
 HISOPO_EXPIRATION = timedelta(minutes=20)
+HISOPO_FLEETING_EXPIRATION = timedelta(minutes=1)
 HISOPO_CALLBACK_PREFIX = "hisopo"
 HISOPO_CAPTURE_CALLBACK = f"{HISOPO_CALLBACK_PREFIX}:capture"
 HISOPO_INTENSITIES = {
@@ -28,11 +29,51 @@ HISOPO_INTENSITIES = {
 class HisopoKind:
     key: str
     points: int
+    expiration: timedelta = HISOPO_EXPIRATION
+    next_day_spawns: int = 1
+    hides_points: bool = False
 
 
 COMMON_HISOPO = HisopoKind("common", 1)
 SILVER_HISOPO = HisopoKind("silver", 2)
 GOLD_HISOPO = HisopoKind("gold", 3)
+FLEETING_HISOPO = HisopoKind("fleeting", 5, expiration=HISOPO_FLEETING_EXPIRATION)
+MYSTERY_HISOPO = HisopoKind("mystery", 0, hides_points=True)
+PUTRID_HISOPO = HisopoKind("putrid", -2)
+RADIOACTIVE_HISOPO = HisopoKind("radioactive", 0)
+FAKE_HISOPO = HisopoKind("fake", 0, next_day_spawns=0)
+TWIN_HISOPO = HisopoKind("twin", 4, next_day_spawns=2)
+DIAMOND_HISOPO = HisopoKind("diamond", 10)
+
+HISOPO_KINDS = {
+    kind.key: kind
+    for kind in (
+        COMMON_HISOPO,
+        SILVER_HISOPO,
+        GOLD_HISOPO,
+        FLEETING_HISOPO,
+        MYSTERY_HISOPO,
+        PUTRID_HISOPO,
+        RADIOACTIVE_HISOPO,
+        FAKE_HISOPO,
+        TWIN_HISOPO,
+        DIAMOND_HISOPO,
+    )
+}
+HISOPO_PROBABILITY_RANGES = {
+    "common": (1, 45),
+    "silver": (46, 58),
+    "gold": (59, 68),
+    "fleeting": (69, 75),
+    "mystery": (76, 82),
+    "putrid": (83, 87),
+    "radioactive": (88, 91),
+    "fake": (92, 93),
+    "twin": (94, 95),
+    "diamond": (96, 100),
+}
+RADIOACTIVE_POINT_VALUES = (-3, -1, 2, 4, 6)
+MYSTERY_POINT_VALUES = (-3, -2, -1, 0, 1, 2, 3, 4, 5, 6, 10)
 
 
 def should_spawn_hisopo(intensity_percent: int, roll: int) -> bool:
@@ -43,14 +84,29 @@ def should_spawn_hisopo(intensity_percent: int, roll: int) -> bool:
     return roll <= intensity_percent
 
 
-def select_hisopo_kind(roll: int) -> HisopoKind:
+def select_hisopo_kind(
+    roll: int,
+    randbelow: Callable[[int], int] = secrets.randbelow,
+) -> HisopoKind:
     if not 1 <= roll <= 100:
         raise ValueError("La tirada de tipo de Hisopo debe estar entre 1 y 100.")
-    if roll <= 50 or roll >= 81:
-        return COMMON_HISOPO
-    if roll <= 70:
-        return SILVER_HISOPO
-    return GOLD_HISOPO
+    kind = next(
+        HISOPO_KINDS[key]
+        for key, (lower, upper) in HISOPO_PROBABILITY_RANGES.items()
+        if lower <= roll <= upper
+    )
+    if kind.key == "radioactive":
+        return replace(kind, points=RADIOACTIVE_POINT_VALUES[randbelow(len(RADIOACTIVE_POINT_VALUES))])
+    if kind.key == "mystery":
+        return replace(kind, points=MYSTERY_POINT_VALUES[randbelow(len(MYSTERY_POINT_VALUES))])
+    return kind
+
+
+def hisopo_kind_for_spawn(key: str, points: int) -> HisopoKind:
+    try:
+        return replace(HISOPO_KINDS[key], points=points)
+    except KeyError as exc:
+        raise ValueError(f"Tipo de Hisopo desconocido: {key}") from exc
 
 
 def random_next_day_datetime(

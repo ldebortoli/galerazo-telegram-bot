@@ -13,10 +13,20 @@ from galerazo_bot.command_handlers import hisopos as hisopo_handlers
 from galerazo_bot.database import Database, HisopoScore
 from galerazo_bot.hisopos import (
     COMMON_HISOPO,
+    DIAMOND_HISOPO,
+    FAKE_HISOPO,
+    FLEETING_HISOPO,
     GOLD_HISOPO,
+    HISOPO_FLEETING_EXPIRATION,
+    HISOPO_PROBABILITY_RANGES,
+    MYSTERY_POINT_VALUES,
+    PUTRID_HISOPO,
+    RADIOACTIVE_POINT_VALUES,
     SILVER_HISOPO,
+    TWIN_HISOPO,
     build_hisopo_lines,
     build_hisopo_pages,
+    hisopo_kind_for_spawn,
     intensity_translation_key,
     random_next_day_datetime,
     render_hisopo_page,
@@ -39,12 +49,43 @@ class HisopoRulesTests(unittest.TestCase):
                 should_spawn_hisopo(10, roll)
 
     def test_type_boundaries_and_invalid_values(self) -> None:
-        for roll in (1, 50, 81, 100):
-            self.assertEqual(select_hisopo_kind(roll), COMMON_HISOPO)
-        for roll in (51, 70):
-            self.assertEqual(select_hisopo_kind(roll), SILVER_HISOPO)
-        for roll in (71, 80):
-            self.assertEqual(select_hisopo_kind(roll), GOLD_HISOPO)
+        expected = {
+            1: COMMON_HISOPO,
+            45: COMMON_HISOPO,
+            46: SILVER_HISOPO,
+            58: SILVER_HISOPO,
+            59: GOLD_HISOPO,
+            68: GOLD_HISOPO,
+            69: FLEETING_HISOPO,
+            75: FLEETING_HISOPO,
+            83: PUTRID_HISOPO,
+            87: PUTRID_HISOPO,
+            92: FAKE_HISOPO,
+            93: FAKE_HISOPO,
+            94: TWIN_HISOPO,
+            95: TWIN_HISOPO,
+            96: DIAMOND_HISOPO,
+            100: DIAMOND_HISOPO,
+        }
+        for roll, kind in expected.items():
+            with self.subTest(roll=roll):
+                self.assertEqual(select_hisopo_kind(roll), kind)
+
+        mystery = select_hisopo_kind(76, randbelow=lambda _limit: 0)
+        radioactive = select_hisopo_kind(88, randbelow=lambda limit: limit - 1)
+        self.assertEqual(mystery.points, MYSTERY_POINT_VALUES[0])
+        self.assertTrue(mystery.hides_points)
+        self.assertEqual(radioactive.points, RADIOACTIVE_POINT_VALUES[-1])
+        self.assertEqual(FLEETING_HISOPO.expiration, HISOPO_FLEETING_EXPIRATION)
+        self.assertEqual(FAKE_HISOPO.next_day_spawns, 0)
+        self.assertEqual(TWIN_HISOPO.next_day_spawns, 2)
+        self.assertEqual(hisopo_kind_for_spawn("mystery", 10).points, 10)
+        with self.assertRaisesRegex(ValueError, "desconocido"):
+            hisopo_kind_for_spawn("unknown", 0)
+        self.assertEqual(
+            sum(upper - lower + 1 for lower, upper in HISOPO_PROBABILITY_RANGES.values()),
+            100,
+        )
         for roll in (0, 101):
             with self.subTest(roll=roll), self.assertRaisesRegex(ValueError, "tipo"):
                 select_hisopo_kind(roll)
@@ -170,6 +211,58 @@ class HisopoDatabaseTests(unittest.TestCase):
         )
         self.assertEqual(expired.status, "rotten")
         self.assertEqual(self.db.get_hisopo_spawn("-1", "201").status, "rotten")
+
+    def test_negative_zero_and_twin_rewards(self) -> None:
+        self.db.save_hisopo_spawn(
+            "-1",
+            "300",
+            "putrid",
+            -2,
+            "message",
+            self.now.isoformat(),
+            (self.now + timedelta(minutes=20)).isoformat(),
+        )
+        negative = self.db.capture_hisopo("-1", "300", "3", self.now, ())
+        self.assertEqual(negative.spawn.points, -2)
+        self.assertEqual(negative.schedules, ())
+        self.assertEqual(self.db.get_hisopo_scores("-1")[0].points, -2)
+
+        self.db.save_hisopo_spawn(
+            "-1",
+            "301",
+            "fake",
+            0,
+            "message",
+            self.now.isoformat(),
+            (self.now + timedelta(minutes=20)).isoformat(),
+        )
+        fake = self.db.capture_hisopo("-1", "301", "2", self.now, ())
+        self.assertIsNone(fake.schedule)
+        self.assertEqual(fake.schedules, ())
+
+        self.db.save_hisopo_spawn(
+            "-1",
+            "302",
+            "twin",
+            4,
+            "message",
+            self.now.isoformat(),
+            (self.now + timedelta(minutes=20)).isoformat(),
+        )
+        schedule_times = (
+            self.now + timedelta(days=1),
+            self.now + timedelta(days=1, hours=1),
+        )
+        twin = self.db.capture_hisopo("-1", "302", "2", self.now, schedule_times)
+        self.assertEqual(len(twin.schedules), 2)
+        self.assertEqual(
+            tuple(schedule.scheduled_for for schedule in twin.schedules),
+            tuple(value.isoformat() for value in schedule_times),
+        )
+        self.assertEqual(
+            {score.user_id: score.points for score in self.db.get_hisopo_scores("-1")},
+            {"2": 4, "3": -2},
+        )
 
 
 class HisopoCommandTests(unittest.IsolatedAsyncioTestCase):

@@ -212,6 +212,13 @@ class ConfigurationAndEntrypointTests(unittest.TestCase):
             "TELEGRAM_HISOPO_COMMON_FILE_ID": "common",
             "TELEGRAM_HISOPO_SILVER_FILE_ID": "silver",
             "TELEGRAM_HISOPO_GOLD_FILE_ID": "gold",
+            "TELEGRAM_HISOPO_DIAMOND_FILE_ID": "diamond",
+            "TELEGRAM_HISOPO_FLEETING_FILE_ID": "fleeting",
+            "TELEGRAM_HISOPO_MYSTERY_FILE_ID": "mystery",
+            "TELEGRAM_HISOPO_PUTRID_FILE_ID": "putrid",
+            "TELEGRAM_HISOPO_RADIOACTIVE_FILE_ID": "radioactive",
+            "TELEGRAM_HISOPO_FAKE_FILE_ID": "fake",
+            "TELEGRAM_HISOPO_TWIN_FILE_ID": "twin",
             "DATABASE_PATH": "db.sqlite3",
             "GOOGLE_SHEETS_CREDENTIALS_JSON_PATH": "key.json",
             "GOOGLE_SHEETS_SPREADSHEET_ID": "sheet",
@@ -228,6 +235,13 @@ class ConfigurationAndEntrypointTests(unittest.TestCase):
         self.assertEqual(settings.telegram_hisopo_common_file_id, "common")
         self.assertEqual(settings.telegram_hisopo_silver_file_id, "silver")
         self.assertEqual(settings.telegram_hisopo_gold_file_id, "gold")
+        self.assertEqual(settings.telegram_hisopo_diamond_file_id, "diamond")
+        self.assertEqual(settings.telegram_hisopo_fleeting_file_id, "fleeting")
+        self.assertEqual(settings.telegram_hisopo_mystery_file_id, "mystery")
+        self.assertEqual(settings.telegram_hisopo_putrid_file_id, "putrid")
+        self.assertEqual(settings.telegram_hisopo_radioactive_file_id, "radioactive")
+        self.assertEqual(settings.telegram_hisopo_fake_file_id, "fake")
+        self.assertEqual(settings.telegram_hisopo_twin_file_id, "twin")
         self.assertIsNone(config._optional_path(None))
         self.assertEqual(config._optional_path("x"), Path("x"))
 
