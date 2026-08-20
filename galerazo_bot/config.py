@@ -31,6 +31,8 @@ class Settings:
     telegram_hisopo_radioactive_file_id: str | None = None
     telegram_hisopo_fake_file_id: str | None = None
     telegram_hisopo_twin_file_id: str | None = None
+    telegram_hisopo_giant_file_id: str | None = None
+    telegram_hisopo_miracle_file_id: str | None = None
 
 
 def load_settings() -> Settings:
@@ -61,6 +63,8 @@ def load_settings() -> Settings:
         telegram_hisopo_radioactive_file_id=os.getenv("TELEGRAM_HISOPO_RADIOACTIVE_FILE_ID") or None,
         telegram_hisopo_fake_file_id=os.getenv("TELEGRAM_HISOPO_FAKE_FILE_ID") or None,
         telegram_hisopo_twin_file_id=os.getenv("TELEGRAM_HISOPO_TWIN_FILE_ID") or None,
+        telegram_hisopo_giant_file_id=os.getenv("TELEGRAM_HISOPO_GIANT_FILE_ID") or None,
+        telegram_hisopo_miracle_file_id=os.getenv("TELEGRAM_HISOPO_MIRACLE_FILE_ID") or None,
     )
 
 

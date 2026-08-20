@@ -21,7 +21,10 @@ from galerazo_bot.hisopos import (
     HISOPO_DISGUISE_PROBABILITY_RANGES,
     HISOPO_EXPIRATION,
     HISOPO_FLEETING_EXPIRATION,
+    HISOPO_TYPE_ROLL_MAX,
     HISOPO_PROBABILITY_RANGES,
+    GIANT_HISOPO,
+    MIRACLE_HISOPO,
     MYSTERY_HISOPO,
     PUTRID_HISOPO,
     RADIOACTIVE_HISOPO,
@@ -30,6 +33,7 @@ from galerazo_bot.hisopos import (
     TWIN_HISOPO,
     build_hisopo_lines,
     build_hisopo_pages,
+    giant_required_helpers,
     hisopo_kind_for_spawn,
     intensity_translation_key,
     is_fleeting_window_expired,
@@ -59,27 +63,36 @@ class HisopoRulesTests(unittest.TestCase):
     def test_type_boundaries_and_invalid_values(self) -> None:
         expected = {
             1: COMMON_HISOPO,
-            47: COMMON_HISOPO,
-            48: SILVER_HISOPO,
-            61: SILVER_HISOPO,
-            62: GOLD_HISOPO,
-            71: GOLD_HISOPO,
-            72: FLEETING_HISOPO,
-            78: FLEETING_HISOPO,
-            86: PUTRID_HISOPO,
-            90: PUTRID_HISOPO,
-            95: FAKE_HISOPO,
-            97: FAKE_HISOPO,
-            98: TWIN_HISOPO,
-            99: TWIN_HISOPO,
-            100: DIAMOND_HISOPO,
+            4665: COMMON_HISOPO,
+            4666: SILVER_HISOPO,
+            6065: SILVER_HISOPO,
+            6066: GOLD_HISOPO,
+            7065: GOLD_HISOPO,
+            7066: FLEETING_HISOPO,
+            7765: FLEETING_HISOPO,
+            7766: MYSTERY_HISOPO,
+            8465: MYSTERY_HISOPO,
+            8466: PUTRID_HISOPO,
+            8965: PUTRID_HISOPO,
+            8966: RADIOACTIVE_HISOPO,
+            9365: RADIOACTIVE_HISOPO,
+            9366: FAKE_HISOPO,
+            9665: FAKE_HISOPO,
+            9666: TWIN_HISOPO,
+            9865: TWIN_HISOPO,
+            9866: DIAMOND_HISOPO,
+            9965: DIAMOND_HISOPO,
+            9966: GIANT_HISOPO,
+            9990: GIANT_HISOPO,
+            9991: MIRACLE_HISOPO,
+            10000: MIRACLE_HISOPO,
         }
         for roll, kind in expected.items():
             with self.subTest(roll=roll):
                 self.assertEqual(select_hisopo_kind(roll), kind)
 
-        mystery = select_hisopo_kind(79, randbelow=lambda _limit: 0)
-        radioactive = select_hisopo_kind(91, randbelow=lambda limit: limit - 1)
+        mystery = select_hisopo_kind(7766, randbelow=lambda _limit: 0)
+        radioactive = select_hisopo_kind(8966, randbelow=lambda limit: limit - 1)
         self.assertEqual(mystery, MYSTERY_HISOPO)
         self.assertTrue(mystery.hides_points)
         self.assertEqual(radioactive, RADIOACTIVE_HISOPO)
@@ -93,7 +106,7 @@ class HisopoRulesTests(unittest.TestCase):
             hisopo_kind_for_spawn("unknown", 0)
         self.assertEqual(
             sum(upper - lower + 1 for lower, upper in HISOPO_PROBABILITY_RANGES.values()),
-            100,
+            HISOPO_TYPE_ROLL_MAX,
         )
         probabilities = {
             key: upper - lower + 1
@@ -102,21 +115,23 @@ class HisopoRulesTests(unittest.TestCase):
         self.assertEqual(
             probabilities,
             {
-                "common": 47,
-                "silver": 14,
-                "gold": 10,
-                "fleeting": 7,
-                "mystery": 7,
-                "putrid": 5,
-                "radioactive": 4,
-                "fake": 3,
-                "twin": 2,
-                "diamond": 1,
+                "common": 4665,
+                "silver": 1400,
+                "gold": 1000,
+                "fleeting": 700,
+                "mystery": 700,
+                "putrid": 500,
+                "radioactive": 400,
+                "fake": 300,
+                "twin": 200,
+                "diamond": 100,
+                "giant": 25,
+                "miracle": 10,
             },
         )
         for more_likely in ("twin", "fake", "radioactive", "putrid"):
             self.assertGreater(probabilities[more_likely], probabilities["diamond"])
-        for roll in (0, 101):
+        for roll in (0, HISOPO_TYPE_ROLL_MAX + 1):
             with self.subTest(roll=roll), self.assertRaisesRegex(ValueError, "tipo"):
                 select_hisopo_kind(roll)
 
@@ -125,54 +140,69 @@ class HisopoRulesTests(unittest.TestCase):
         self.assertEqual(common.actual, COMMON_HISOPO)
         self.assertEqual(common.appearance, COMMON_HISOPO)
 
-        fake = select_hisopo_spawn(95, randbelow=lambda _limit: 0)
+        fake = select_hisopo_spawn(9366, randbelow=lambda _limit: 0)
         self.assertEqual(fake.actual, FAKE_HISOPO)
         self.assertEqual(fake.appearance, COMMON_HISOPO)
 
-        putrid = select_hisopo_spawn(86, randbelow=lambda _limit: 99)
+        putrid = select_hisopo_spawn(8466, randbelow=lambda _limit: 99)
         self.assertEqual(putrid.actual, PUTRID_HISOPO)
         self.assertEqual(putrid.appearance, DIAMOND_HISOPO)
 
-        mystery_common = select_hisopo_spawn(79, randbelow=lambda _limit: 0)
+        mystery_common = select_hisopo_spawn(7766, randbelow=lambda _limit: 0)
         self.assertEqual(mystery_common.actual, COMMON_HISOPO)
         self.assertEqual(mystery_common.appearance, MYSTERY_HISOPO)
         self.assertEqual(mystery_common.appearance.expiration, HISOPO_EXPIRATION)
 
-        mystery_fake = select_hisopo_spawn(79, randbelow=lambda _limit: 87)
+        mystery_fake = select_hisopo_spawn(7766, randbelow=lambda _limit: 8665)
         self.assertEqual(mystery_fake.actual, FAKE_HISOPO)
         self.assertEqual(mystery_fake.appearance, MYSTERY_HISOPO)
 
-        rolls = iter((83,))
-        mystery_radioactive = select_hisopo_spawn(79, randbelow=lambda _limit: next(rolls))
+        rolls = iter((8265,))
+        mystery_radioactive = select_hisopo_spawn(7766, randbelow=lambda _limit: next(rolls))
         self.assertEqual(mystery_radioactive.actual.key, "radioactive")
         self.assertEqual(mystery_radioactive.actual.points, 0)
 
         expected_actuals = {
             0: "common",
-            46: "common",
-            47: "silver",
-            60: "silver",
-            61: "gold",
-            70: "gold",
-            71: "fleeting",
-            77: "fleeting",
-            78: "putrid",
-            82: "putrid",
-            87: "fake",
-            89: "fake",
-            90: "twin",
-            91: "twin",
-            92: "diamond",
+            4664: "common",
+            4665: "silver",
+            6064: "silver",
+            6065: "gold",
+            7064: "gold",
+            7065: "fleeting",
+            7764: "fleeting",
+            7765: "putrid",
+            8264: "putrid",
+            8265: "radioactive",
+            8664: "radioactive",
+            8665: "fake",
+            8964: "fake",
+            8965: "twin",
+            9164: "twin",
+            9165: "diamond",
+            9264: "diamond",
+            9265: "giant",
+            9289: "giant",
+            9290: "miracle",
+            9299: "miracle",
         }
         for weighted_roll, expected_key in expected_actuals.items():
             with self.subTest(weighted_roll=weighted_roll):
                 selected = select_hisopo_spawn(
-                    79,
+                    7766,
                     randbelow=lambda _limit, value=weighted_roll: value,
                 )
                 self.assertEqual(selected.actual.key, expected_key)
         with self.assertRaisesRegex(RuntimeError, "seleccionar"):
             hisopo_rules._select_weighted_non_mystery_kind(lambda limit: limit)
+
+    def test_giant_helper_threshold_uses_every_small_chat_member_and_caps_at_fifteen(self) -> None:
+        self.assertEqual(giant_required_helpers(1), 1)
+        self.assertEqual(giant_required_helpers(6), 5)
+        self.assertEqual(giant_required_helpers(16), 15)
+        self.assertEqual(giant_required_helpers(500), 15)
+        with self.assertRaisesRegex(ValueError, "miembros"):
+            giant_required_helpers(0)
 
     def test_disguise_probabilities_and_radioactive_timeline(self) -> None:
         self.assertEqual(RADIOACTIVE_POINT_VALUES, (-3, -1, 2, 4, 6))
@@ -446,6 +476,155 @@ class HisopoDatabaseTests(unittest.TestCase):
             {"2": 10, "3": -2},
         )
 
+    def test_giant_contributions_are_unique_atomic_and_reward_every_helper(self) -> None:
+        self.db.get_or_create_user("4", "Final")
+        spawn = self.db.save_hisopo_spawn(
+            "-1",
+            "400",
+            "giant",
+            4,
+            "message",
+            self.now.isoformat(),
+            (self.now + timedelta(minutes=20)).isoformat(),
+            appearance_type="mystery",
+            required_helpers=3,
+        )
+        self.assertEqual(spawn.required_helpers, 3)
+        scheduled_for = self.now + timedelta(days=1)
+
+        first = self.db.contribute_to_giant_hisopo(
+            "-1", "400", "2", self.now, scheduled_for
+        )
+        self.assertEqual(first.status, "joined")
+        self.assertTrue(first.revealed)
+        self.assertEqual(first.spawn.appearance_type, "giant")
+        self.assertEqual(first.participant_user_ids, ("2",))
+        self.assertEqual(self.db.get_giant_contribution_count("-1", "400"), 1)
+
+        duplicate = self.db.contribute_to_giant_hisopo(
+            "-1", "400", "2", self.now, scheduled_for
+        )
+        self.assertEqual(duplicate.status, "already_joined")
+        self.assertEqual(duplicate.contribution_count, 1)
+        self.assertEqual(self.db.get_hisopo_scores("-1"), [])
+
+        second = self.db.contribute_to_giant_hisopo(
+            "-1", "400", "3", self.now + timedelta(seconds=1), scheduled_for
+        )
+        self.assertEqual(second.status, "joined")
+        completed = self.db.contribute_to_giant_hisopo(
+            "-1", "400", "4", self.now + timedelta(seconds=2), scheduled_for
+        )
+        self.assertEqual(completed.status, "completed")
+        self.assertEqual(completed.contribution_count, 3)
+        self.assertEqual(completed.participant_user_ids, ("2", "3", "4"))
+        self.assertEqual(completed.schedule.scheduled_for, scheduled_for.isoformat())
+        self.assertEqual(
+            {score.user_id: score.points for score in self.db.get_hisopo_scores("-1")},
+            {"2": 4, "3": 4, "4": 4},
+        )
+        self.assertEqual(
+            self.db.contribute_to_giant_hisopo(
+                "-1", "400", "1", self.now + timedelta(seconds=3), scheduled_for
+            ).status,
+            "taken",
+        )
+
+    def test_miracle_always_adds_fifteen_even_from_a_negative_score(self) -> None:
+        for message_id, kind, points in (
+            ("410", "putrid", -2),
+            ("411", "miracle", 15),
+        ):
+            self.db.save_hisopo_spawn(
+                "-1",
+                message_id,
+                kind,
+                points,
+                "message",
+                self.now.isoformat(),
+                (self.now + timedelta(minutes=20)).isoformat(),
+            )
+            result = self.db.capture_hisopo(
+                "-1",
+                message_id,
+                "3",
+                self.now,
+                self.now + timedelta(days=1),
+            )
+            self.assertEqual(result.status, "captured")
+        self.assertEqual(self.db.get_hisopo_scores("-1")[0].points, 13)
+
+    def test_incomplete_giant_expires_without_points_or_schedule(self) -> None:
+        with self.assertRaisesRegex(ValueError, "participante"):
+            self.db.save_hisopo_spawn(
+                "-1",
+                "invalid",
+                "giant",
+                4,
+                "message",
+                self.now.isoformat(),
+                (self.now + timedelta(minutes=20)).isoformat(),
+                required_helpers=0,
+            )
+        self.db.save_hisopo_spawn(
+            "-1",
+            "401",
+            "giant",
+            4,
+            "message",
+            self.now.isoformat(),
+            (self.now + timedelta(minutes=20)).isoformat(),
+            required_helpers=2,
+        )
+        self.assertEqual(
+            self.db.contribute_to_giant_hisopo(
+                "-1", "401", "2", self.now, self.now + timedelta(days=1)
+            ).status,
+            "joined",
+        )
+        expired = self.db.contribute_to_giant_hisopo(
+            "-1",
+            "401",
+            "3",
+            self.now + timedelta(minutes=20),
+            self.now + timedelta(days=1),
+        )
+        self.assertEqual(expired.status, "rotten")
+        self.assertEqual(self.db.get_hisopo_scores("-1"), [])
+        self.assertEqual(self.db.list_pending_hisopo_schedules(), [])
+
+        self.assertEqual(
+            self.db.contribute_to_giant_hisopo(
+                "-1", "missing", "2", self.now, self.now + timedelta(days=1)
+            ).status,
+            "missing",
+        )
+        self._spawn("402")
+        self.assertEqual(
+            self.db.contribute_to_giant_hisopo(
+                "-1", "402", "2", self.now, self.now + timedelta(days=1)
+            ).status,
+            "invalid",
+        )
+        self.db.save_hisopo_spawn(
+            "-1",
+            "403",
+            "giant",
+            4,
+            "message",
+            self.now.isoformat(),
+            (self.now + timedelta(minutes=20)).isoformat(),
+        )
+        self.assertTrue(
+            self.db.mark_hisopo_rotten("-1", "403", self.now + timedelta(minutes=20))
+        )
+        self.assertEqual(
+            self.db.contribute_to_giant_hisopo(
+                "-1", "403", "2", self.now, self.now + timedelta(days=1)
+            ).status,
+            "rotten",
+        )
+
 
 class HisopoCommandTests(unittest.IsolatedAsyncioTestCase):
     def _context(self, **overrides) -> CommandContext:
@@ -479,8 +658,10 @@ class HisopoCommandTests(unittest.IsolatedAsyncioTestCase):
         response = hisopo_handlers.handle_rules(self._context(), MagicMock())
 
         self.assertIn("Reglas del Recolector de Hisopos", response)
-        self.assertIn("Común: 47 %", response)
+        self.assertIn("Común: 46,65 %", response)
         self.assertIn("Diamante: 1 %", response)
+        self.assertIn("Gigante cooperativo: 0,25 %", response)
+        self.assertIn("Milagroso: 0,10 %", response)
         self.assertIn("no le quita puntos a nadie", response)
         self.assertIn("/hisopos", response)
         self.assertLessEqual(len(response), 4096)

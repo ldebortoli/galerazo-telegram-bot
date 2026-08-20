@@ -219,6 +219,8 @@ class ConfigurationAndEntrypointTests(unittest.TestCase):
             "TELEGRAM_HISOPO_RADIOACTIVE_FILE_ID": "radioactive",
             "TELEGRAM_HISOPO_FAKE_FILE_ID": "fake",
             "TELEGRAM_HISOPO_TWIN_FILE_ID": "twin",
+            "TELEGRAM_HISOPO_GIANT_FILE_ID": "giant",
+            "TELEGRAM_HISOPO_MIRACLE_FILE_ID": "miracle",
             "DATABASE_PATH": "db.sqlite3",
             "GOOGLE_SHEETS_CREDENTIALS_JSON_PATH": "key.json",
             "GOOGLE_SHEETS_SPREADSHEET_ID": "sheet",
@@ -242,6 +244,8 @@ class ConfigurationAndEntrypointTests(unittest.TestCase):
         self.assertEqual(settings.telegram_hisopo_radioactive_file_id, "radioactive")
         self.assertEqual(settings.telegram_hisopo_fake_file_id, "fake")
         self.assertEqual(settings.telegram_hisopo_twin_file_id, "twin")
+        self.assertEqual(settings.telegram_hisopo_giant_file_id, "giant")
+        self.assertEqual(settings.telegram_hisopo_miracle_file_id, "miracle")
         self.assertIsNone(config._optional_path(None))
         self.assertEqual(config._optional_path("x"), Path("x"))
 

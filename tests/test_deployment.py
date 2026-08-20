@@ -259,6 +259,8 @@ class DeploymentAutomationTests(unittest.TestCase):
             "TELEGRAM_HISOPO_RADIOACTIVE_FILE_ID",
             "TELEGRAM_HISOPO_FAKE_FILE_ID",
             "TELEGRAM_HISOPO_TWIN_FILE_ID",
+            "TELEGRAM_HISOPO_GIANT_FILE_ID",
+            "TELEGRAM_HISOPO_MIRACLE_FILE_ID",
         ):
             self.assertIn(key, status_script)
             self.assertIn(key, patch_script)

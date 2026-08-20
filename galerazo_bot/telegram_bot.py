@@ -85,8 +85,12 @@ from .command_handlers.hisopos import send_hisopos as _send_hisopos
 from .handler_registration import register_handlers
 from .hisopos import (
     COMMON_HISOPO,
+    GIANT_HISOPO,
     HISOPO_CALLBACK_PREFIX,
     HISOPO_CAPTURE_CALLBACK,
+    HISOPO_GIANT_MAX_HELPERS,
+    HISOPO_TYPE_ROLL_MAX,
+    giant_required_helpers,
     hisopo_kind_for_spawn,
     is_fleeting_window_expired,
     radioactive_points_at,
@@ -519,7 +523,7 @@ async def _spawn_hisopo(
 ) -> HisopoSpawn | None:
     state = application.bot_data["state"]
     selection = select_hisopo_spawn(
-        secrets.randbelow(100) + 1,
+        secrets.randbelow(HISOPO_TYPE_ROLL_MAX) + 1,
         randbelow=secrets.randbelow,
     )
     actual_kind = selection.actual
@@ -548,17 +552,50 @@ async def _spawn_hisopo(
         )
         return None
 
+    required_helpers = 1
+    if actual_kind.key == GIANT_HISOPO.key:
+        try:
+            member_count = await application.bot.get_chat_member_count(
+                _parse_chat_id(chat_id)
+            )
+        except TelegramError as exc:
+            member_count = HISOPO_GIANT_MAX_HELPERS + 1
+            logger.warning(
+                "No pude consultar los miembros del chat %s para el Hisopo gigante; "
+                "uso %s participantes: %s",
+                chat_id,
+                HISOPO_GIANT_MAX_HELPERS,
+                exc,
+            )
+        required_helpers = giant_required_helpers(member_count)
+
     language = _chat_language(state.db, chat_id)
     type_label = t(language, f"hisopos.type.{appearance_kind.key}")
+    button_key = (
+        "hisopos.giant_help_button"
+        if appearance_kind.key == GIANT_HISOPO.key
+        else "hisopos.capture_button"
+    )
     keyboard = InlineKeyboardMarkup(
-        [[InlineKeyboardButton(t(language, "hisopos.capture_button"), callback_data=HISOPO_CAPTURE_CALLBACK)]]
+        [[
+            InlineKeyboardButton(
+                t(
+                    language,
+                    button_key,
+                    current=0,
+                    required=required_helpers,
+                ),
+                callback_data=HISOPO_CAPTURE_CALLBACK,
+            )
+        ]]
     )
     try:
-        caption_key = (
-            "hisopos.appeared_mystery"
-            if appearance_kind.hides_points
-            else "hisopos.appeared"
-        )
+        if appearance_kind.key == GIANT_HISOPO.key:
+            caption_key = "hisopos.appeared_giant"
+        elif appearance_kind.hides_points:
+            caption_key = "hisopos.appeared_mystery"
+        else:
+            caption_key = "hisopos.appeared"
         message = await application.bot.send_photo(
             chat_id=_parse_chat_id(chat_id),
             photo=file_id,
@@ -567,6 +604,8 @@ async def _spawn_hisopo(
                 caption_key,
                 type_label=type_label,
                 points=appearance_kind.points,
+                current=0,
+                required=required_helpers,
             ),
             reply_markup=keyboard,
         )
@@ -586,6 +625,7 @@ async def _spawn_hisopo(
         source=source,
         spawned_at=spawned_at.isoformat(),
         expires_at=(spawned_at + appearance_kind.expiration).isoformat(),
+        required_helpers=required_helpers,
     )
     _schedule_hisopo_expiration(application, spawn)
     return spawn
@@ -603,6 +643,8 @@ def _hisopo_file_id(settings: Settings, hisopo_type: str) -> str | None:
         "radioactive": settings.telegram_hisopo_radioactive_file_id,
         "fake": settings.telegram_hisopo_fake_file_id,
         "twin": settings.telegram_hisopo_twin_file_id,
+        "giant": settings.telegram_hisopo_giant_file_id,
+        "miracle": settings.telegram_hisopo_miracle_file_id,
     }.get(hisopo_type)
 
 
@@ -698,6 +740,16 @@ async def _hisopo_callback_entrypoint(
     points_at_capture = None
     expired_mystery_fleeting = False
     if spawn is not None:
+        if spawn.hisopo_type == GIANT_HISOPO.key:
+            await _handle_giant_hisopo_callback(
+                context=context,
+                callback_query=callback_query,
+                user=user,
+                spawn=spawn,
+                language=language,
+                now=now,
+            )
+            return
         expired_mystery_fleeting = (
             spawn.hisopo_type == "fleeting"
             and spawn.appearance_type == "mystery"
@@ -779,16 +831,168 @@ async def _hisopo_callback_entrypoint(
     await callback_query.answer(t(language, "hisopos.unavailable_alert"), show_alert=True)
 
 
+async def _handle_giant_hisopo_callback(
+    context: ContextTypes.DEFAULT_TYPE,
+    callback_query,
+    user: User,
+    spawn: HisopoSpawn,
+    language: str,
+    now: datetime,
+) -> None:
+    state = _state(context)
+    result = state.db.contribute_to_giant_hisopo(
+        chat_id=spawn.chat_id,
+        message_id=spawn.message_id,
+        user_id=str(user.id),
+        now=now,
+        next_scheduled_for=random_next_day_datetime(now),
+    )
+    if result.status == "joined" and result.spawn is not None:
+        await _edit_giant_hisopo_progress(
+            context.bot,
+            state.settings,
+            result.spawn,
+            language,
+            result.contribution_count,
+            result.required_helpers,
+            result.revealed,
+        )
+        await callback_query.answer(
+            t(
+                language,
+                "hisopos.giant_joined_popup",
+                current=result.contribution_count,
+                required=result.required_helpers,
+            )
+        )
+        return
+    if result.status == "already_joined":
+        await callback_query.answer(
+            t(
+                language,
+                "hisopos.giant_already_joined_popup",
+                current=result.contribution_count,
+                required=result.required_helpers,
+            ),
+            show_alert=True,
+        )
+        return
+    if result.status == "completed" and result.spawn is not None:
+        await _edit_hisopo_result(
+            context.bot,
+            state.settings,
+            result.spawn,
+            t(
+                language,
+                "hisopos.giant_completed_caption",
+                participants=result.contribution_count,
+                points=result.spawn.points,
+            ),
+            force_media=result.revealed,
+        )
+        if result.schedule is not None:
+            _schedule_hisopo_appearance(context.application, result.schedule)
+        await callback_query.answer(
+            t(
+                language,
+                "hisopos.giant_completed_popup",
+                points=result.spawn.points,
+            )
+        )
+        return
+    if result.status == "taken":
+        await callback_query.answer(t(language, "hisopos.taken_alert"), show_alert=True)
+        return
+    if result.status == "rotten":
+        if result.spawn is not None:
+            await _edit_rotten_hisopo(context.bot, state.db, result.spawn)
+        await callback_query.answer(t(language, "hisopos.rotten_alert"), show_alert=True)
+        return
+    await callback_query.answer(t(language, "hisopos.unavailable_alert"), show_alert=True)
+
+
+async def _edit_giant_hisopo_progress(
+    bot: Bot,
+    settings: Settings,
+    spawn: HisopoSpawn,
+    language: str,
+    current: int,
+    required: int,
+    revealed: bool,
+) -> None:
+    caption = t(
+        language,
+        "hisopos.giant_progress_caption",
+        current=current,
+        required=required,
+        points=spawn.points,
+    )
+    keyboard = InlineKeyboardMarkup(
+        [[
+            InlineKeyboardButton(
+                t(
+                    language,
+                    "hisopos.giant_help_button",
+                    current=current,
+                    required=required,
+                ),
+                callback_data=HISOPO_CAPTURE_CALLBACK,
+            )
+        ]]
+    )
+    if revealed:
+        file_id = _hisopo_file_id(settings, GIANT_HISOPO.key)
+        if file_id:
+            try:
+                await bot.edit_message_media(
+                    chat_id=_parse_chat_id(spawn.chat_id),
+                    message_id=int(spawn.message_id),
+                    media=InputMediaPhoto(media=file_id, caption=caption),
+                    reply_markup=keyboard,
+                )
+                return
+            except TelegramError as exc:
+                logger.warning(
+                    "No pude revelar el Hisopo gigante %s en el chat %s: %s",
+                    spawn.message_id,
+                    spawn.chat_id,
+                    exc,
+                )
+    try:
+        await bot.edit_message_caption(
+            chat_id=_parse_chat_id(spawn.chat_id),
+            message_id=int(spawn.message_id),
+            caption=caption,
+            reply_markup=keyboard,
+        )
+    except TelegramError as exc:
+        logger.warning(
+            "No pude actualizar el progreso del Hisopo gigante %s en el chat %s: %s",
+            spawn.message_id,
+            spawn.chat_id,
+            exc,
+        )
+
+
 async def _edit_rotten_hisopo(bot: Bot, db: Database, spawn: HisopoSpawn) -> None:
     language = _chat_language(db, spawn.chat_id)
-    await _edit_hisopo_caption(
-        bot,
-        spawn,
-        t(
+    if spawn.hisopo_type == GIANT_HISOPO.key and spawn.appearance_type == GIANT_HISOPO.key:
+        caption = t(
+            language,
+            "hisopos.giant_rotten_caption",
+            current=db.get_giant_contribution_count(spawn.chat_id, spawn.message_id),
+            required=spawn.required_helpers,
+        )
+    else:
+        caption = t(
             language,
             "hisopos.rotten_caption",
             type_label=t(language, f"hisopos.type.{spawn.appearance_type}"),
-        ),
+        )
+    await _edit_hisopo_caption(
+        bot,
+        spawn,
+        caption,
     )
 
 
@@ -797,8 +1001,10 @@ async def _edit_hisopo_result(
     settings: Settings,
     spawn: HisopoSpawn,
     caption: str,
+    *,
+    force_media: bool = False,
 ) -> None:
-    if spawn.appearance_type != spawn.hisopo_type:
+    if force_media or spawn.appearance_type != spawn.hisopo_type:
         file_id = _hisopo_file_id(settings, spawn.hisopo_type)
         if file_id:
             try:

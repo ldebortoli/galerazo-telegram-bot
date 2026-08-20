@@ -246,6 +246,8 @@ TELEGRAM_HISOPO_PUTRID_FILE_ID=file-id-del-hisopo-putrefacto
 TELEGRAM_HISOPO_RADIOACTIVE_FILE_ID=file-id-del-hisopo-radiactivo
 TELEGRAM_HISOPO_FAKE_FILE_ID=file-id-del-hisopo-falso
 TELEGRAM_HISOPO_TWIN_FILE_ID=file-id-del-hisopo-gemelo
+TELEGRAM_HISOPO_GIANT_FILE_ID=file-id-del-hisopo-gigante
+TELEGRAM_HISOPO_MIRACLE_FILE_ID=file-id-del-hisopo-milagroso
 DATABASE_PATH=data/galerazo.sqlite3
 GOOGLE_SHEETS_CREDENTIALS_JSON_PATH=secrets/google-service-account.json
 GOOGLE_SHEETS_SPREADSHEET_ID=replace-with-spreadsheet-id
@@ -443,26 +445,32 @@ El Recolector de Hisopos es un juego para grupos y supergrupos y viene habilitad
 
 Cada mensaje original de un usuario humano que podría competir por La Galeraza genera una tirada de 1 a 100. Si la tirada entra en el porcentaje configurado, aparece un hisopo con foto y el botón `Capturar hisopo`. Las ediciones y los mensajes de bots no generan tiradas.
 
-Una segunda tirada define la rareza. Los rangos no se superponen y suman 100:
+Una segunda y única tirada de `1` a `10.000` define la rareza, pero se hace solamente después de que la intensidad decidió que habrá una aparición. No existen tiradas previas independientes para los especiales. Los rangos no se superponen y suman el 100 %:
 
 | Tirada | Aparición | Tipo sorteado | Qué muestra al aparecer | Efecto al capturarlo |
 | --- | ---: | --- | --- | --- |
-| 1-47 | 47 % | común | imagen y valor del común | suma 1 punto |
-| 48-61 | 14 % | plateado | imagen y valor del plateado | suma 2 puntos |
-| 62-71 | 10 % | dorado | imagen y valor del dorado | suma 3 puntos |
-| 72-78 | 7 % | fugaz | imagen y valor del fugaz | suma 5 puntos; se pudre en 1 minuto |
-| 79-85 | 7 % | misterioso | imagen de misterioso y valor oculto | revela uno de los otros nueve tipos y aplica su efecto |
-| 86-90 | 5 % | putrefacto | se disfraza de común, plateado, dorado o diamante | revela el putrefacto, resta 2 puntos y puede dejar puntaje negativo |
-| 91-94 | 4 % | radiactivo | imagen de radiactivo y valor oculto | calcula al capturarlo `-3`, `-1`, `2`, `4` o `6` según el tiempo transcurrido |
-| 95-97 | 3 % | falso | se disfraza de común, plateado, dorado o diamante | revela el falso, vale 0 y no agenda para el día siguiente |
-| 98-99 | 2 % | gemelo | imagen y valor del gemelo | suma 4 puntos, lanza otro hisopo en el momento y agenda uno para el día siguiente |
-| 100 | 1 % | diamante | imagen y valor del diamante | suma 10 puntos |
+| 1-4665 | 46,65 % | común | imagen y valor del común | suma 1 punto |
+| 4666-6065 | 14 % | plateado | imagen y valor del plateado | suma 2 puntos |
+| 6066-7065 | 10 % | dorado | imagen y valor del dorado | suma 3 puntos |
+| 7066-7765 | 7 % | fugaz | imagen y valor del fugaz | suma 5 puntos; se pudre en 1 minuto |
+| 7766-8465 | 7 % | misterioso | imagen de misterioso y valor oculto | contiene uno de los otros once tipos y aplica su efecto |
+| 8466-8965 | 5 % | putrefacto | se disfraza de común, plateado, dorado o diamante | revela el putrefacto, resta 2 puntos y puede dejar puntaje negativo |
+| 8966-9365 | 4 % | radiactivo | imagen de radiactivo y valor oculto | calcula al capturarlo `-3`, `-1`, `2`, `4` o `6` según el tiempo transcurrido |
+| 9366-9665 | 3 % | falso | se disfraza de común, plateado, dorado o diamante | revela el falso, vale 0 y no agenda para el día siguiente |
+| 9666-9865 | 2 % | gemelo | imagen y valor del gemelo | suma 4 puntos, lanza otro hisopo en el momento y agenda uno para el día siguiente |
+| 9866-9965 | 1 % | diamante | imagen y valor del diamante | suma 10 puntos |
+| 9966-9990 | 0,25 % | gigante cooperativo | imagen, premio y progreso del gigante | requiere cooperación; cada participante gana 4 puntos si se completa |
+| 9991-10000 | 0,10 % | milagroso | imagen y valor del milagroso | suma 15 puntos sin importar el puntaje previo ni el liderazgo |
 
 Falso y Putrefacto eligen una segunda apariencia: común 75 %, plateado 14 %, dorado 10 % y diamante 1 %. Son los mismos pesos de esos tipos en la tirada normal, pero el Común absorbe el 28 % de Fugaz, Misterioso, Putrefacto, Radiactivo, Falso y Gemelo, que no pueden usarse como disfraz. Antes del clic se muestran la foto y el valor aparente de esa máscara; al capturarlos revelan su foto, tipo y resultado reales.
 
 El Radiactivo dura 20 minutos y calcula su puntaje recién dentro de la captura atómica: `-3` desde 0:00 hasta 4:59, `-1` desde 5:00 hasta 9:59, `+2` desde 10:00 hasta 14:59, `+4` desde 15:00 hasta 17:59 y `+6` desde 18:00 hasta 19:59. Así permanece negativo durante exactamente la primera mitad y los niveles positivos más altos ocupan intervalos cada vez más cortos cerca del vencimiento. Su mensaje inicial oculta el valor; la edición posterior informa cuántos puntos ganó o perdió el capturador.
 
-El Misterioso contiene uno de los otros nueve tipos, sin otro Misterioso adentro. La selección interna conserva sus pesos relativos: común 50,54 %, plateado 15,05 %, dorado 10,75 %, fugaz 7,53 %, putrefacto 5,38 %, radiactivo 4,30 %, falso 3,23 %, gemelo 2,15 % y diamante 1,08 %. Su contenido y su valor permanecen ocultos hasta la captura. La envoltura Misteriosa siempre dura 20 minutos, incluso si contiene un Fugaz; en ese caso, los 5 puntos solo están disponibles durante el primer minuto. Desde el minuto 1 todavía puede reclamarse y revela el Fugaz, pero entrega 0 puntos y no agenda otra aparición. Si la envoltura se pudre a los 20 minutos, no revela el contenido.
+El Misterioso contiene uno de los otros once tipos, sin otro Misterioso adentro. La selección interna conserva sus pesos relativos: común 50,16 %, plateado 15,05 %, dorado 10,75 %, fugaz 7,53 %, putrefacto 5,38 %, radiactivo 4,30 %, falso 3,23 %, gemelo 2,15 %, diamante 1,08 %, gigante 0,27 % y milagroso 0,11 %. Su contenido y su valor permanecen ocultos hasta la captura. La envoltura Misteriosa siempre dura 20 minutos, incluso si contiene un Fugaz; en ese caso, los 5 puntos solo están disponibles durante el primer minuto. Desde el minuto 1 todavía puede reclamarse y revela el Fugaz, pero entrega 0 puntos y no agenda otra aparición. Si contiene un Gigante, la primera ayuda lo revela, cuenta como la primera participación y el grupo continúa viendo el progreso. Si la envoltura se pudre a los 20 minutos sin ninguna ayuda, no revela el contenido.
+
+El Gigante cooperativo dura 20 minutos y requiere `min(15, miembros del chat - el bot)` participaciones únicas. En un chat con al menos 16 miembros pide 15 ayudas; en uno más pequeño deben ayudar todos los integrantes disponibles salvo el propio bot. Cada usuario puede ayudar una sola vez, la foto y el botón muestran el progreso y nadie recibe puntos parcialmente. Si alcanza el objetivo, cada participante gana 4 puntos y se programa una sola aparición total para el día siguiente; si se pudre incompleto, nadie gana ni pierde puntos y no se programa nada.
+
+El Milagroso dura 20 minutos y siempre entrega 15 puntos al capturador. El premio se suma tal cual aunque el usuario estuviera primero, último, en cero o con puntaje negativo, y programa una aparición para el día siguiente como una captura normal.
 
 La primera callback procesada para ese chat reclama el premio dentro de una transacción inmediata de SQLite; las siguientes muestran un alerta de Telegram sin sumar. Al capturar un Falso, Putrefacto o Misterioso, el mismo mensaje reemplaza la foto por la del tipo real, informa el resultado y elimina la botonera. Salvo el Fugaz directo, a los 20 minutos el Hisopo se pudre, deja de valer y el mensaje pierde la botonera. Tocar un Fugaz después de su minuto no suma ni agenda nada: solamente informa que ya se pudrió. Si una rareza todavía no tiene todos los `file_id` que necesita para aparecer y revelarse, esa tirada usa el Hisopo común para no perder el evento.
 
@@ -481,9 +489,11 @@ TELEGRAM_HISOPO_PUTRID_FILE_ID=
 TELEGRAM_HISOPO_RADIOACTIVE_FILE_ID=
 TELEGRAM_HISOPO_FAKE_FILE_ID=
 TELEGRAM_HISOPO_TWIN_FILE_ID=
+TELEGRAM_HISOPO_GIANT_FILE_ID=
+TELEGRAM_HISOPO_MIRACLE_FILE_ID=
 ```
 
-Para obtener cada valor, enviá la imagen al bot como foto y respondé ese mensaje con `/debug`. En el JSON, usá el `file_id` de la última entrada de `message.photo`, que corresponde al mayor tamaño. El campo `file_unique_id` no sirve para reenviar archivos. Reiniciá el bot local después de guardar los valores necesarios en `.env`.
+Los artes fuente y sus indicaciones de generación están en [`assets/hisopos`](assets/hisopos/README.md). Para obtener cada valor, enviá la imagen al bot como foto y respondé ese mensaje con `/debug`. En el JSON, usá el `file_id` de la última entrada de `message.photo`, que corresponde al mayor tamaño. El campo `file_unique_id` no sirve para reenviar archivos. Reiniciá el bot local después de guardar los valores necesarios en `.env`.
 
 ## Configuracion por grupo
 

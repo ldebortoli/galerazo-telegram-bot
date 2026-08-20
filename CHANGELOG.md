@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.25] - 2026-08-20
+
+- El Recolector suma el Hisopo gigante cooperativo: pide hasta 15 ayudas únicas, muestra el progreso y entrega 4 puntos a cada participante solo si el grupo lo completa dentro de 20 minutos.
+- Nuevo Hisopo milagroso ultrarraro, con un premio fijo de 15 puntos sin importar el puntaje previo del capturador.
+- Las probabilidades incorporan al gigante con 0,25 % y al milagroso con 0,10 %, mientras el común queda en 46,65 %.
+
 ## [0.24] - 2026-08-20
 
 - Nuevo comando `/reglashisopo` con las reglas completas, probabilidades, vencimientos y efectos del Recolector de Hisopos en los 18 idiomas del bot.

@@ -42,6 +42,8 @@ FIELDS = (
     ("TELEGRAM_HISOPO_RADIOACTIVE_FILE_ID", "File ID del hisopo radiactivo", False),
     ("TELEGRAM_HISOPO_FAKE_FILE_ID", "File ID del hisopo falso", False),
     ("TELEGRAM_HISOPO_TWIN_FILE_ID", "File ID del hisopo gemelo", False),
+    ("TELEGRAM_HISOPO_GIANT_FILE_ID", "File ID del hisopo gigante", False),
+    ("TELEGRAM_HISOPO_MIRACLE_FILE_ID", "File ID del hisopo milagroso", False),
     ("DATABASE_PATH", "Base de datos", False),
     ("GOOGLE_SHEETS_CREDENTIALS_JSON_PATH", "Credenciales de Google", False),
     ("GOOGLE_SHEETS_SPREADSHEET_ID", "ID de Google Sheet", False),

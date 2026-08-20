@@ -27,6 +27,7 @@ from galerazo_bot.database import (
     Database,
     Expense,
     HisopoCaptureResult,
+    HisopoGiantContributionResult,
     HisopoSchedule,
     HisopoSpawn,
     PaginatedMessageState,
@@ -1319,6 +1320,7 @@ class HisopoTelegramTests(unittest.IsolatedAsyncioTestCase):
             send_photo=AsyncMock(return_value=SimpleNamespace(message_id=100)),
             edit_message_caption=AsyncMock(),
             edit_message_media=AsyncMock(),
+            get_chat_member_count=AsyncMock(return_value=16),
         )
         job_queue = MagicMock()
         application = SimpleNamespace(
@@ -1390,6 +1392,7 @@ class HisopoTelegramTests(unittest.IsolatedAsyncioTestCase):
                     "source",
                     "spawned_at",
                     "expires_at",
+                    "required_helpers",
                 }
             }
         )
@@ -1398,7 +1401,7 @@ class HisopoTelegramTests(unittest.IsolatedAsyncioTestCase):
             db,
             telegram_hisopo_common_file_id="common-id",
         )
-        with patch.object(tb.secrets, "randbelow", return_value=95):
+        with patch.object(tb.secrets, "randbelow", side_effect=[9365, 0]):
             fallback_spawn = await tb._spawn_hisopo(fallback_app, "-1", "message")
         self.assertEqual(fallback_spawn.hisopo_type, "common")
         self.assertEqual(fallback_bot.send_photo.await_args.kwargs["photo"], "common-id")
@@ -1408,7 +1411,7 @@ class HisopoTelegramTests(unittest.IsolatedAsyncioTestCase):
             telegram_hisopo_common_file_id="common-id",
             telegram_hisopo_mystery_file_id="mystery-id",
         )
-        with patch.object(tb.secrets, "randbelow", side_effect=[78, 0]):
+        with patch.object(tb.secrets, "randbelow", side_effect=[7765, 0]):
             mystery_spawn = await tb._spawn_hisopo(
                 mystery_app,
                 "-1",
@@ -1429,7 +1432,7 @@ class HisopoTelegramTests(unittest.IsolatedAsyncioTestCase):
             telegram_hisopo_mystery_file_id="mystery-id",
             telegram_hisopo_fleeting_file_id="fleeting-id",
         )
-        with patch.object(tb.secrets, "randbelow", side_effect=[78, 71]):
+        with patch.object(tb.secrets, "randbelow", side_effect=[7765, 7065]):
             mystery_fleeting = await tb._spawn_hisopo(
                 mystery_fleeting_app,
                 "-1",
@@ -1445,7 +1448,7 @@ class HisopoTelegramTests(unittest.IsolatedAsyncioTestCase):
             telegram_hisopo_common_file_id="common-id",
             telegram_hisopo_fake_file_id="fake-id",
         )
-        with patch.object(tb.secrets, "randbelow", side_effect=[94, 0]):
+        with patch.object(tb.secrets, "randbelow", side_effect=[9365, 0]):
             fake_spawn = await tb._spawn_hisopo(fake_app, "-1", "message")
         self.assertEqual(fake_spawn.hisopo_type, "fake")
         self.assertEqual(fake_spawn.appearance_type, "common")
@@ -1459,7 +1462,7 @@ class HisopoTelegramTests(unittest.IsolatedAsyncioTestCase):
             telegram_hisopo_diamond_file_id="diamond-id",
             telegram_hisopo_putrid_file_id="putrid-id",
         )
-        with patch.object(tb.secrets, "randbelow", side_effect=[85, 99]):
+        with patch.object(tb.secrets, "randbelow", side_effect=[8465, 99]):
             putrid_spawn = await tb._spawn_hisopo(putrid_app, "-1", "message")
         self.assertEqual(putrid_spawn.hisopo_type, "putrid")
         self.assertEqual(putrid_spawn.appearance_type, "diamond")
@@ -1472,7 +1475,7 @@ class HisopoTelegramTests(unittest.IsolatedAsyncioTestCase):
             db,
             telegram_hisopo_radioactive_file_id="radioactive-id",
         )
-        with patch.object(tb.secrets, "randbelow", return_value=90):
+        with patch.object(tb.secrets, "randbelow", return_value=8965):
             radioactive_spawn = await tb._spawn_hisopo(
                 radioactive_app,
                 "-1",
@@ -1489,7 +1492,7 @@ class HisopoTelegramTests(unittest.IsolatedAsyncioTestCase):
             telegram_hisopo_common_file_id="common-id",
             telegram_hisopo_fleeting_file_id="fleeting-id",
         )
-        with patch.object(tb.secrets, "randbelow", return_value=71):
+        with patch.object(tb.secrets, "randbelow", return_value=7065):
             fleeting_spawn = await tb._spawn_hisopo(
                 fleeting_app,
                 "-1",
@@ -1498,6 +1501,43 @@ class HisopoTelegramTests(unittest.IsolatedAsyncioTestCase):
             )
         self.assertEqual(fleeting_spawn.hisopo_type, "fleeting")
         self.assertEqual(fleeting_spawn.expires_at, "2026-08-20T12:01:00+00:00")
+
+        giant_app, _, giant_bot, _ = self._application(
+            db,
+            telegram_hisopo_giant_file_id="giant-id",
+        )
+        giant_bot.get_chat_member_count.return_value = 12
+        with patch.object(tb.secrets, "randbelow", return_value=9965):
+            giant_spawn = await tb._spawn_hisopo(giant_app, "-1", "message")
+        self.assertEqual(giant_spawn.hisopo_type, "giant")
+        self.assertEqual(giant_spawn.required_helpers, 11)
+        self.assertEqual(
+            giant_bot.send_photo.await_args.kwargs["caption"],
+            "¡Apareció un Hisopo gigante cooperativo!\n"
+            "Progreso: 0/11 · Premio: 4 pt por participante",
+        )
+        self.assertEqual(
+            giant_bot.send_photo.await_args.kwargs["reply_markup"].inline_keyboard[0][0].text,
+            "Ayudar a capturarlo (0/11)",
+        )
+        giant_bot.get_chat_member_count.side_effect = BadRequest("members")
+        with self.assertLogs(tb.logger, level="WARNING"), patch.object(
+            tb.secrets,
+            "randbelow",
+            return_value=9965,
+        ):
+            fallback_giant = await tb._spawn_hisopo(giant_app, "-1", "message")
+        self.assertEqual(fallback_giant.required_helpers, 15)
+
+        miracle_app, _, miracle_bot, _ = self._application(
+            db,
+            telegram_hisopo_miracle_file_id="miracle-id",
+        )
+        with patch.object(tb.secrets, "randbelow", return_value=9990):
+            miracle_spawn = await tb._spawn_hisopo(miracle_app, "-1", "message")
+        self.assertEqual(miracle_spawn.hisopo_type, "miracle")
+        self.assertEqual(miracle_spawn.points, 15)
+        self.assertIn("15 pt", miracle_bot.send_photo.await_args.kwargs["caption"])
 
     def test_file_ids_restore_scheduling_and_seconds(self) -> None:
         app, bot_state, _bot, job_queue = self._application(
@@ -1511,6 +1551,8 @@ class HisopoTelegramTests(unittest.IsolatedAsyncioTestCase):
             telegram_hisopo_radioactive_file_id="r",
             telegram_hisopo_fake_file_id="f",
             telegram_hisopo_twin_file_id="t",
+            telegram_hisopo_giant_file_id="gi",
+            telegram_hisopo_miracle_file_id="mi",
         )
         expected_ids = {
             "common": "c",
@@ -1523,6 +1565,8 @@ class HisopoTelegramTests(unittest.IsolatedAsyncioTestCase):
             "radioactive": "r",
             "fake": "f",
             "twin": "t",
+            "giant": "gi",
+            "miracle": "mi",
         }
         for kind, file_id in expected_ids.items():
             self.assertEqual(tb._hisopo_file_id(bot_state.settings, kind), file_id)
@@ -1769,6 +1813,227 @@ class HisopoTelegramTests(unittest.IsolatedAsyncioTestCase):
         immediate_spawn.assert_awaited_once_with(app, "-1", source="twin")
         callback.answer.assert_awaited_once_with("¡Hisopo capturado! Sumaste 4 pt.")
 
+    async def test_giant_callback_reveals_progress_prevents_duplicates_and_completes(self) -> None:
+        db = MagicMock()
+        db.get_chat_settings.return_value = SimpleNamespace(language="es")
+        app, _, bot, job_queue = self._application(
+            db,
+            telegram_hisopo_giant_file_id="giant-id",
+        )
+        callback = SimpleNamespace(answer=AsyncMock())
+        context = SimpleNamespace(application=app, bot=bot)
+        user = SimpleNamespace(id=2, full_name="Helper", username="helper")
+        active = self._spawn(
+            hisopo_type="giant",
+            appearance_type="mystery",
+            points=4,
+            required_helpers=2,
+        )
+        revealed = self._spawn(
+            hisopo_type="giant",
+            appearance_type="giant",
+            points=4,
+            required_helpers=2,
+        )
+        scheduled = HisopoSchedule(
+            1,
+            "-1",
+            "2026-08-21T10:00:00+00:00",
+            "pending",
+            "100",
+        )
+        db.contribute_to_giant_hisopo.return_value = HisopoGiantContributionResult(
+            "joined",
+            revealed,
+            ("2",),
+            1,
+            2,
+            revealed=True,
+        )
+        with patch.object(
+            tb,
+            "random_next_day_datetime",
+            return_value=datetime(2026, 8, 21, 10, tzinfo=timezone.utc),
+        ):
+            await tb._handle_giant_hisopo_callback(
+                context,
+                callback,
+                user,
+                active,
+                "es",
+                datetime(2026, 8, 20, 12, tzinfo=timezone.utc),
+            )
+        self.assertEqual(bot.edit_message_media.await_args.kwargs["media"].media, "giant-id")
+        self.assertIn("Progreso: 1/2", bot.edit_message_media.await_args.kwargs["media"].caption)
+        callback.answer.assert_awaited_once_with("¡Ayudaste! Van 1/2.")
+
+        bot.edit_message_media.reset_mock()
+        callback.answer.reset_mock()
+        db.contribute_to_giant_hisopo.return_value = HisopoGiantContributionResult(
+            "already_joined",
+            revealed,
+            ("2",),
+            1,
+            2,
+        )
+        await tb._handle_giant_hisopo_callback(
+            context,
+            callback,
+            user,
+            revealed,
+            "es",
+            datetime(2026, 8, 20, 12, tzinfo=timezone.utc),
+        )
+        callback.answer.assert_awaited_once_with(
+            "Ya ayudaste con este Hisopo. Van 1/2.",
+            show_alert=True,
+        )
+        bot.edit_message_media.assert_not_awaited()
+
+        callback.answer.reset_mock()
+        db.contribute_to_giant_hisopo.return_value = HisopoGiantContributionResult(
+            "completed",
+            replace(revealed, status="captured", winner_user_id="2"),
+            ("2", "3"),
+            2,
+            2,
+            scheduled,
+            True,
+        )
+        await tb._handle_giant_hisopo_callback(
+            context,
+            callback,
+            user,
+            active,
+            "es",
+            datetime(2026, 8, 20, 12, tzinfo=timezone.utc),
+        )
+        media = bot.edit_message_media.await_args.kwargs["media"]
+        self.assertEqual(media.media, "giant-id")
+        self.assertEqual(
+            media.caption,
+            "¡Hisopo gigante capturado! Cooperaron 2 personas y cada una ganó 4 pt.",
+        )
+        self.assertIsNone(bot.edit_message_media.await_args.kwargs["reply_markup"])
+        callback.answer.assert_awaited_once_with("¡Lo lograron! Ganaste 4 pt.")
+        job_queue.run_once.assert_called_once()
+
+    async def test_giant_entrypoint_and_remaining_callback_outcomes(self) -> None:
+        db = MagicMock()
+        db.get_chat_settings.return_value = SimpleNamespace(language="es")
+        db.is_user_blocked.return_value = False
+        db.get_giant_contribution_count.return_value = 1
+        app, _, bot, job_queue = self._application(
+            db,
+            telegram_hisopo_giant_file_id="giant-id",
+        )
+        active = self._spawn(
+            hisopo_type="giant",
+            appearance_type="giant",
+            points=4,
+            required_helpers=2,
+        )
+        message = SimpleNamespace(chat=SimpleNamespace(id=-1, type="group"), message_id=100)
+        user = SimpleNamespace(id=2, full_name="Helper", username="helper")
+        callback = SimpleNamespace(
+            message=message,
+            data="hisopo:capture",
+            answer=AsyncMock(),
+            from_user=user,
+        )
+        context = SimpleNamespace(application=app, bot=bot)
+        db.get_hisopo_spawn.return_value = active
+        db.contribute_to_giant_hisopo.return_value = HisopoGiantContributionResult(
+            "taken",
+            replace(active, status="captured"),
+        )
+        with patch.object(tb, "_is_user_restricted_in_callback_chat", return_value=False):
+            await tb._hisopo_callback_entrypoint(
+                SimpleNamespace(callback_query=callback, effective_user=user),
+                context,
+            )
+        callback.answer.assert_awaited_once_with(
+            "Uh, qué mala suerte, se te adelantaron.",
+            show_alert=True,
+        )
+
+        callback.answer.reset_mock()
+        db.contribute_to_giant_hisopo.return_value = HisopoGiantContributionResult(
+            "completed",
+            replace(active, status="captured", winner_user_id="2"),
+            ("2", "3"),
+            2,
+            2,
+        )
+        await tb._handle_giant_hisopo_callback(
+            context,
+            callback,
+            user,
+            active,
+            "es",
+            datetime(2026, 8, 20, 12, tzinfo=timezone.utc),
+        )
+        job_queue.run_once.assert_not_called()
+        callback.answer.assert_awaited_once_with("¡Lo lograron! Ganaste 4 pt.")
+
+        callback.answer.reset_mock()
+        db.contribute_to_giant_hisopo.return_value = HisopoGiantContributionResult(
+            "rotten",
+            replace(active, status="rotten"),
+        )
+        await tb._handle_giant_hisopo_callback(
+            context,
+            callback,
+            user,
+            active,
+            "es",
+            datetime(2026, 8, 20, 12, tzinfo=timezone.utc),
+        )
+        self.assertEqual(
+            bot.edit_message_caption.await_args.kwargs["caption"],
+            "El Hisopo gigante se pudrió con 1/2 ayudas. No se entregaron puntos.",
+        )
+        callback.answer.assert_awaited_once_with(
+            "Uh, se pudrió el hisopo. Ya no suma puntos.",
+            show_alert=True,
+        )
+
+        callback.answer.reset_mock()
+        db.contribute_to_giant_hisopo.return_value = HisopoGiantContributionResult(
+            "rotten",
+            None,
+        )
+        await tb._handle_giant_hisopo_callback(
+            context,
+            callback,
+            user,
+            active,
+            "es",
+            datetime(2026, 8, 20, 12, tzinfo=timezone.utc),
+        )
+        callback.answer.assert_awaited_once_with(
+            "Uh, se pudrió el hisopo. Ya no suma puntos.",
+            show_alert=True,
+        )
+
+        callback.answer.reset_mock()
+        db.contribute_to_giant_hisopo.return_value = HisopoGiantContributionResult(
+            "invalid",
+            active,
+        )
+        await tb._handle_giant_hisopo_callback(
+            context,
+            callback,
+            user,
+            active,
+            "es",
+            datetime(2026, 8, 20, 12, tzinfo=timezone.utc),
+        )
+        callback.answer.assert_awaited_once_with(
+            "Este hisopo ya no está disponible.",
+            show_alert=True,
+        )
+
     async def test_radioactive_capture_calculates_and_reveals_final_points(self) -> None:
         db = MagicMock()
         db.get_chat_settings.return_value = SimpleNamespace(language="es")
@@ -1908,6 +2173,7 @@ class HisopoTelegramTests(unittest.IsolatedAsyncioTestCase):
 
         app, bot_state, reveal_bot, _ = self._application(
             telegram_hisopo_fake_file_id="fake-id",
+            telegram_hisopo_giant_file_id="giant-id",
         )
         reveal_bot.edit_message_media.side_effect = BadRequest("media")
         disguised = self._spawn(hisopo_type="fake", appearance_type="common", points=0)
@@ -1919,6 +2185,61 @@ class HisopoTelegramTests(unittest.IsolatedAsyncioTestCase):
                 "caption",
             )
         reveal_bot.edit_message_caption.assert_awaited_once()
+
+        reveal_bot.edit_message_media.reset_mock()
+        reveal_bot.edit_message_caption.reset_mock()
+        reveal_bot.edit_message_media.side_effect = BadRequest("giant media")
+        with self.assertLogs(tb.logger, level="WARNING"):
+            await tb._edit_giant_hisopo_progress(
+                reveal_bot,
+                bot_state.settings,
+                self._spawn(
+                    hisopo_type="giant",
+                    appearance_type="giant",
+                    points=4,
+                    required_helpers=2,
+                ),
+                "es",
+                1,
+                2,
+                True,
+            )
+        reveal_bot.edit_message_caption.assert_awaited_once()
+
+        reveal_bot.edit_message_caption.reset_mock()
+        reveal_bot.edit_message_caption.side_effect = BadRequest("giant caption")
+        with self.assertLogs(tb.logger, level="WARNING"):
+            await tb._edit_giant_hisopo_progress(
+                reveal_bot,
+                bot_state.settings,
+                self._spawn(
+                    hisopo_type="giant",
+                    appearance_type="giant",
+                    points=4,
+                    required_helpers=2,
+                ),
+                "es",
+                1,
+                2,
+                False,
+            )
+
+        _, missing_state, missing_bot, _ = self._application()
+        await tb._edit_giant_hisopo_progress(
+            missing_bot,
+            missing_state.settings,
+            self._spawn(
+                hisopo_type="giant",
+                appearance_type="giant",
+                points=4,
+                required_helpers=2,
+            ),
+            "es",
+            1,
+            2,
+            True,
+        )
+        missing_bot.edit_message_caption.assert_awaited_once()
 
 
 if __name__ == "__main__":

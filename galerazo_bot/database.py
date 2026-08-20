@@ -86,6 +86,7 @@ class HisopoSpawn:
     status: str
     winner_user_id: str | None
     captured_at: str | None
+    required_helpers: int = 1
 
 
 @dataclass(frozen=True)
@@ -109,6 +110,17 @@ class HisopoCaptureResult:
         if self.schedule is None:
             return self.additional_schedules
         return (self.schedule, *self.additional_schedules)
+
+
+@dataclass(frozen=True)
+class HisopoGiantContributionResult:
+    status: str
+    spawn: HisopoSpawn | None
+    participant_user_ids: tuple[str, ...] = ()
+    contribution_count: int = 0
+    required_helpers: int = 0
+    schedule: HisopoSchedule | None = None
+    revealed: bool = False
 
 
 @dataclass(frozen=True)
@@ -371,6 +383,7 @@ class Database:
                     hisopo_type TEXT NOT NULL,
                     appearance_type TEXT NOT NULL,
                     points INTEGER NOT NULL,
+                    required_helpers INTEGER NOT NULL DEFAULT 1,
                     source TEXT NOT NULL,
                     spawned_at TEXT NOT NULL,
                     expires_at TEXT NOT NULL,
@@ -557,6 +570,36 @@ class Database:
         if applied is None:
             conn.execute("DROP TABLE IF EXISTS galeraza_message_states")
             conn.execute("INSERT INTO schema_migrations (migration_id) VALUES (?)", (migration_id,))
+
+        migration_id = "20260820_add_cooperative_hisopos"
+        applied = conn.execute(
+            "SELECT 1 FROM schema_migrations WHERE migration_id = ?", (migration_id,)
+        ).fetchone()
+        if applied is None:
+            _ensure_column(
+                conn,
+                "hisopo_spawns",
+                "required_helpers",
+                "INTEGER NOT NULL DEFAULT 1",
+            )
+            conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS hisopo_giant_contributions (
+                    chat_id TEXT NOT NULL,
+                    message_id TEXT NOT NULL,
+                    user_id TEXT NOT NULL,
+                    contributed_at TEXT NOT NULL,
+                    PRIMARY KEY (chat_id, message_id, user_id),
+                    FOREIGN KEY (chat_id, message_id)
+                        REFERENCES hisopo_spawns (chat_id, message_id),
+                    FOREIGN KEY (user_id) REFERENCES users (user_id)
+                )
+                """
+            )
+            conn.execute(
+                "INSERT INTO schema_migrations (migration_id) VALUES (?)",
+                (migration_id,),
+            )
 
         migration_id = "20260820_add_hisopo_appearance_type"
         applied = conn.execute(
@@ -1207,16 +1250,19 @@ class Database:
         spawned_at: str,
         expires_at: str,
         appearance_type: str | None = None,
+        required_helpers: int = 1,
     ) -> HisopoSpawn:
+        if required_helpers < 1:
+            raise ValueError("El Hisopo debe requerir al menos un participante.")
         chat_id = self.resolve_chat_id(chat_id)
         with self._connect() as conn:
             conn.execute(
                 """
                 INSERT INTO hisopo_spawns (
                     chat_id, message_id, hisopo_type, appearance_type, points,
-                    source, spawned_at, expires_at
+                    required_helpers, source, spawned_at, expires_at
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     chat_id,
@@ -1224,6 +1270,7 @@ class Database:
                     hisopo_type,
                     appearance_type or hisopo_type,
                     points,
+                    required_helpers,
                     source,
                     spawned_at,
                     expires_at,
@@ -1349,6 +1396,163 @@ class Database:
             schedules[0] if schedules else None,
             tuple(schedules[1:]),
         )
+
+    def contribute_to_giant_hisopo(
+        self,
+        chat_id: str,
+        message_id: str,
+        user_id: str,
+        now: datetime,
+        next_scheduled_for: datetime,
+    ) -> HisopoGiantContributionResult:
+        chat_id = self.resolve_chat_id(chat_id)
+        self.get_or_create_user(user_id)
+        now_text = now.isoformat()
+        with self._connect() as conn:
+            conn.execute("BEGIN IMMEDIATE")
+            row = conn.execute(
+                "SELECT * FROM hisopo_spawns WHERE chat_id = ? AND message_id = ?",
+                (chat_id, message_id),
+            ).fetchone()
+            if row is None:
+                return HisopoGiantContributionResult("missing", None)
+
+            spawn = _hisopo_spawn_from_row(row)
+            if spawn.status == "captured":
+                return HisopoGiantContributionResult("taken", spawn)
+            if spawn.status == "rotten":
+                return HisopoGiantContributionResult("rotten", spawn)
+            if spawn.hisopo_type != "giant":
+                return HisopoGiantContributionResult("invalid", spawn)
+            if now >= datetime.fromisoformat(spawn.expires_at):
+                conn.execute(
+                    """
+                    UPDATE hisopo_spawns
+                    SET status = 'rotten'
+                    WHERE chat_id = ? AND message_id = ? AND status = 'active'
+                    """,
+                    (chat_id, message_id),
+                )
+                return HisopoGiantContributionResult(
+                    "rotten",
+                    _hisopo_spawn_from_row(row, status="rotten"),
+                )
+
+            existing = conn.execute(
+                """
+                SELECT 1 FROM hisopo_giant_contributions
+                WHERE chat_id = ? AND message_id = ? AND user_id = ?
+                """,
+                (chat_id, message_id, user_id),
+            ).fetchone()
+            if existing is not None:
+                participants = _giant_participant_ids(conn, chat_id, message_id)
+                return HisopoGiantContributionResult(
+                    "already_joined",
+                    spawn,
+                    participants,
+                    len(participants),
+                    spawn.required_helpers,
+                )
+
+            conn.execute(
+                """
+                INSERT INTO hisopo_giant_contributions (
+                    chat_id, message_id, user_id, contributed_at
+                )
+                VALUES (?, ?, ?, ?)
+                """,
+                (chat_id, message_id, user_id, now_text),
+            )
+            revealed = spawn.appearance_type != "giant"
+            if revealed:
+                conn.execute(
+                    """
+                    UPDATE hisopo_spawns
+                    SET appearance_type = 'giant'
+                    WHERE chat_id = ? AND message_id = ?
+                    """,
+                    (chat_id, message_id),
+                )
+                spawn = _hisopo_spawn_from_row(row, appearance_type="giant")
+
+            participants = _giant_participant_ids(conn, chat_id, message_id)
+            contribution_count = len(participants)
+            if contribution_count < spawn.required_helpers:
+                return HisopoGiantContributionResult(
+                    "joined",
+                    spawn,
+                    participants,
+                    contribution_count,
+                    spawn.required_helpers,
+                    revealed=revealed,
+                )
+
+            conn.execute(
+                """
+                UPDATE hisopo_spawns
+                SET status = 'captured', winner_user_id = ?, captured_at = ?,
+                    appearance_type = 'giant'
+                WHERE chat_id = ? AND message_id = ? AND status = 'active'
+                """,
+                (user_id, now_text, chat_id, message_id),
+            )
+            for participant_user_id in participants:
+                conn.execute(
+                    """
+                    INSERT INTO hisopo_scores (chat_id, user_id, points)
+                    VALUES (?, ?, ?)
+                    ON CONFLICT(chat_id, user_id) DO UPDATE SET
+                        points = hisopo_scores.points + excluded.points,
+                        updated_at = CURRENT_TIMESTAMP
+                    """,
+                    (chat_id, participant_user_id, spawn.points),
+                )
+            cursor = conn.execute(
+                """
+                INSERT INTO hisopo_schedules (
+                    chat_id, scheduled_for, source_message_id
+                )
+                VALUES (?, ?, ?)
+                """,
+                (chat_id, next_scheduled_for.isoformat(), message_id),
+            )
+            schedule = HisopoSchedule(
+                schedule_id=int(cursor.lastrowid),
+                chat_id=chat_id,
+                scheduled_for=next_scheduled_for.isoformat(),
+                status="pending",
+                source_message_id=message_id,
+            )
+            completed_spawn = _hisopo_spawn_from_row(
+                row,
+                status="captured",
+                winner_user_id=user_id,
+                captured_at=now_text,
+                appearance_type="giant",
+            )
+        return HisopoGiantContributionResult(
+            "completed",
+            completed_spawn,
+            participants,
+            contribution_count,
+            completed_spawn.required_helpers,
+            schedule,
+            revealed,
+        )
+
+    def get_giant_contribution_count(self, chat_id: str, message_id: str) -> int:
+        chat_id = self.resolve_chat_id(chat_id)
+        with self._connect() as conn:
+            row = conn.execute(
+                """
+                SELECT COUNT(*) AS total
+                FROM hisopo_giant_contributions
+                WHERE chat_id = ? AND message_id = ?
+                """,
+                (chat_id, message_id),
+            ).fetchone()
+        return int(row["total"])
 
     def mark_hisopo_rotten(self, chat_id: str, message_id: str, now: datetime) -> bool:
         chat_id = self.resolve_chat_id(chat_id)
@@ -2068,17 +2272,24 @@ def _hisopo_spawn_from_row(
     winner_user_id: str | None = None,
     captured_at: str | None = None,
     points: int | None = None,
+    appearance_type: str | None = None,
 ) -> HisopoSpawn:
     return HisopoSpawn(
         chat_id=row["chat_id"],
         message_id=row["message_id"],
         hisopo_type=row["hisopo_type"],
-        appearance_type=(
+        appearance_type=appearance_type
+        or (
             row["appearance_type"]
             if "appearance_type" in row.keys() and row["appearance_type"] is not None
             else row["hisopo_type"]
         ),
         points=points if points is not None else row["points"],
+        required_helpers=(
+            row["required_helpers"]
+            if "required_helpers" in row.keys() and row["required_helpers"] is not None
+            else 1
+        ),
         source=row["source"],
         spawned_at=row["spawned_at"],
         expires_at=row["expires_at"],
@@ -2086,6 +2297,23 @@ def _hisopo_spawn_from_row(
         winner_user_id=winner_user_id if winner_user_id is not None else row["winner_user_id"],
         captured_at=captured_at if captured_at is not None else row["captured_at"],
     )
+
+
+def _giant_participant_ids(
+    conn: sqlite3.Connection,
+    chat_id: str,
+    message_id: str,
+) -> tuple[str, ...]:
+    rows = conn.execute(
+        """
+        SELECT user_id
+        FROM hisopo_giant_contributions
+        WHERE chat_id = ? AND message_id = ?
+        ORDER BY contributed_at, user_id
+        """,
+        (chat_id, message_id),
+    ).fetchall()
+    return tuple(str(row["user_id"]) for row in rows)
 
 
 def _hisopo_schedule_from_row(row: sqlite3.Row) -> HisopoSchedule:

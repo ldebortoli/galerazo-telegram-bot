@@ -16,6 +16,8 @@ HISOPO_EXPIRATION = timedelta(minutes=20)
 HISOPO_FLEETING_EXPIRATION = timedelta(minutes=1)
 HISOPO_CALLBACK_PREFIX = "hisopo"
 HISOPO_CAPTURE_CALLBACK = f"{HISOPO_CALLBACK_PREFIX}:capture"
+HISOPO_TYPE_ROLL_MAX = 10_000
+HISOPO_GIANT_MAX_HELPERS = 15
 HISOPO_INTENSITIES = {
     "very_low": 1,
     "low": 5,
@@ -51,6 +53,8 @@ RADIOACTIVE_HISOPO = HisopoKind("radioactive", 0, hides_points=True)
 FAKE_HISOPO = HisopoKind("fake", 0, next_day_spawns=0)
 TWIN_HISOPO = HisopoKind("twin", 4, immediate_spawns=1)
 DIAMOND_HISOPO = HisopoKind("diamond", 10)
+GIANT_HISOPO = HisopoKind("giant", 4)
+MIRACLE_HISOPO = HisopoKind("miracle", 15)
 
 HISOPO_KINDS = {
     kind.key: kind
@@ -65,19 +69,23 @@ HISOPO_KINDS = {
         FAKE_HISOPO,
         TWIN_HISOPO,
         DIAMOND_HISOPO,
+        GIANT_HISOPO,
+        MIRACLE_HISOPO,
     )
 }
 HISOPO_PROBABILITY_RANGES = {
-    "common": (1, 47),
-    "silver": (48, 61),
-    "gold": (62, 71),
-    "fleeting": (72, 78),
-    "mystery": (79, 85),
-    "putrid": (86, 90),
-    "radioactive": (91, 94),
-    "fake": (95, 97),
-    "twin": (98, 99),
-    "diamond": (100, 100),
+    "common": (1, 4665),
+    "silver": (4666, 6065),
+    "gold": (6066, 7065),
+    "fleeting": (7066, 7765),
+    "mystery": (7766, 8465),
+    "putrid": (8466, 8965),
+    "radioactive": (8966, 9365),
+    "fake": (9366, 9665),
+    "twin": (9666, 9865),
+    "diamond": (9866, 9965),
+    "giant": (9966, 9990),
+    "miracle": (9991, 10_000),
 }
 RADIOACTIVE_POINT_VALUES = (-3, -1, 2, 4, 6)
 HISOPO_DISGUISE_PROBABILITY_RANGES = {
@@ -100,8 +108,8 @@ def select_hisopo_kind(
     roll: int,
     randbelow: Callable[[int], int] = secrets.randbelow,
 ) -> HisopoKind:
-    if not 1 <= roll <= 100:
-        raise ValueError("La tirada de tipo de Hisopo debe estar entre 1 y 100.")
+    if not 1 <= roll <= HISOPO_TYPE_ROLL_MAX:
+        raise ValueError("La tirada de tipo de Hisopo debe estar entre 1 y 10000.")
     kind = next(
         HISOPO_KINDS[key]
         for key, (lower, upper) in HISOPO_PROBABILITY_RANGES.items()
@@ -184,6 +192,13 @@ def hisopo_kind_for_spawn(key: str, points: int) -> HisopoKind:
         return replace(HISOPO_KINDS[key], points=points)
     except KeyError as exc:
         raise ValueError(f"Tipo de Hisopo desconocido: {key}") from exc
+
+
+def giant_required_helpers(chat_member_count: int) -> int:
+    if chat_member_count < 1:
+        raise ValueError("La cantidad de miembros del chat debe ser positiva.")
+    human_member_count = max(chat_member_count - 1, 1)
+    return min(human_member_count, HISOPO_GIANT_MAX_HELPERS)
 
 
 def random_next_day_datetime(

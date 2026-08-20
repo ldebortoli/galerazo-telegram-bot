@@ -1113,7 +1113,352 @@ HISOPO_RULE_TRANSLATIONS: dict[str, dict[str, str]] = {
     },
 }
 
+HISOPO_COOPERATIVE_TRANSLATIONS: dict[str, dict[str, str]] = {
+    "es": {
+        "hisopos.type.giant": "hisopo gigante cooperativo",
+        "hisopos.type.miracle": "hisopo milagroso",
+        "hisopos.appeared_giant": "¡Apareció un Hisopo gigante cooperativo!\nProgreso: {current}/{required} · Premio: {points} pt por participante",
+        "hisopos.giant_help_button": "Ayudar a capturarlo ({current}/{required})",
+        "hisopos.giant_progress_caption": "¡El grupo está capturando un Hisopo gigante!\nProgreso: {current}/{required} · Premio: {points} pt por participante",
+        "hisopos.giant_joined_popup": "¡Ayudaste! Van {current}/{required}.",
+        "hisopos.giant_already_joined_popup": "Ya ayudaste con este Hisopo. Van {current}/{required}.",
+        "hisopos.giant_completed_caption": "¡Hisopo gigante capturado! Cooperaron {participants} personas y cada una ganó {points} pt.",
+        "hisopos.giant_completed_popup": "¡Lo lograron! Ganaste {points} pt.",
+        "hisopos.giant_rotten_caption": "El Hisopo gigante se pudrió con {current}/{required} ayudas. No se entregaron puntos.",
+    },
+    "en": {
+        "hisopos.type.giant": "cooperative giant swab",
+        "hisopos.type.miracle": "miracle swab",
+        "hisopos.appeared_giant": "A cooperative Giant Swab appeared!\nProgress: {current}/{required} · Reward: {points} pt per participant",
+        "hisopos.giant_help_button": "Help capture it ({current}/{required})",
+        "hisopos.giant_progress_caption": "The group is capturing a Giant Swab!\nProgress: {current}/{required} · Reward: {points} pt per participant",
+        "hisopos.giant_joined_popup": "You helped! Progress is {current}/{required}.",
+        "hisopos.giant_already_joined_popup": "You already helped with this Swab. Progress is {current}/{required}.",
+        "hisopos.giant_completed_caption": "Giant Swab captured! {participants} people cooperated and each earned {points} pt.",
+        "hisopos.giant_completed_popup": "You did it! You earned {points} pt.",
+        "hisopos.giant_rotten_caption": "The Giant Swab rotted at {current}/{required} helpers. No points were awarded.",
+    },
+    "es_ES": {
+        "hisopos.type.giant": "hisopo gigante cooperativo",
+        "hisopos.type.miracle": "hisopo milagroso",
+        "hisopos.appeared_giant": "¡Ha aparecido un Hisopo gigante cooperativo!\nProgreso: {current}/{required} · Premio: {points} pt por participante",
+        "hisopos.giant_help_button": "Ayudar a capturarlo ({current}/{required})",
+        "hisopos.giant_progress_caption": "¡El grupo está capturando un Hisopo gigante!\nProgreso: {current}/{required} · Premio: {points} pt por participante",
+        "hisopos.giant_joined_popup": "¡Has ayudado! Van {current}/{required}.",
+        "hisopos.giant_already_joined_popup": "Ya has ayudado con este Hisopo. Van {current}/{required}.",
+        "hisopos.giant_completed_caption": "¡Hisopo gigante capturado! Han cooperado {participants} personas y cada una ha ganado {points} pt.",
+        "hisopos.giant_completed_popup": "¡Lo habéis logrado! Has ganado {points} pt.",
+        "hisopos.giant_rotten_caption": "El Hisopo gigante se pudrió con {current}/{required} ayudas. No se entregaron puntos.",
+    },
+    "ca": {
+        "hisopos.type.giant": "bastonet gegant cooperatiu",
+        "hisopos.type.miracle": "bastonet miraculós",
+        "hisopos.appeared_giant": "Ha aparegut un Bastonet gegant cooperatiu!\nProgrés: {current}/{required} · Premi: {points} pt per participant",
+        "hisopos.giant_help_button": "Ajuda a capturar-lo ({current}/{required})",
+        "hisopos.giant_progress_caption": "El grup està capturant un Bastonet gegant!\nProgrés: {current}/{required} · Premi: {points} pt per participant",
+        "hisopos.giant_joined_popup": "Hi has ajudat! Van {current}/{required}.",
+        "hisopos.giant_already_joined_popup": "Ja has ajudat amb aquest bastonet. Van {current}/{required}.",
+        "hisopos.giant_completed_caption": "Bastonet gegant capturat! Hi han cooperat {participants} persones i cadascuna ha guanyat {points} pt.",
+        "hisopos.giant_completed_popup": "Ho heu aconseguit! Has guanyat {points} pt.",
+        "hisopos.giant_rotten_caption": "El Bastonet gegant s'ha podrit amb {current}/{required} ajudes. No s'han donat punts.",
+    },
+    "de": {
+        "hisopos.type.giant": "kooperatives Riesen-Wattestäbchen",
+        "hisopos.type.miracle": "Wunder-Wattestäbchen",
+        "hisopos.appeared_giant": "Ein kooperatives Riesen-Wattestäbchen ist erschienen!\nFortschritt: {current}/{required} · Belohnung: {points} Pkt. pro Person",
+        "hisopos.giant_help_button": "Beim Fangen helfen ({current}/{required})",
+        "hisopos.giant_progress_caption": "Die Gruppe fängt ein Riesen-Wattestäbchen!\nFortschritt: {current}/{required} · Belohnung: {points} Pkt. pro Person",
+        "hisopos.giant_joined_popup": "Du hast geholfen! Stand: {current}/{required}.",
+        "hisopos.giant_already_joined_popup": "Du hast schon geholfen. Stand: {current}/{required}.",
+        "hisopos.giant_completed_caption": "Riesen-Wattestäbchen gefangen! {participants} Personen halfen und erhielten je {points} Pkt.",
+        "hisopos.giant_completed_popup": "Geschafft! Du erhältst {points} Pkt.",
+        "hisopos.giant_rotten_caption": "Das Riesen-Wattestäbchen verrottete bei {current}/{required} Helfern. Es gab keine Punkte.",
+    },
+    "eu": {
+        "hisopos.type.giant": "kotoi-zotz erraldoi kooperatiboa",
+        "hisopos.type.miracle": "kotoi-zotz miragarria",
+        "hisopos.appeared_giant": "Kotoi-zotz erraldoi kooperatibo bat agertu da!\nAurrerapena: {current}/{required} · Saria: {points} puntu parte-hartzaileko",
+        "hisopos.giant_help_button": "Lagundu harrapatzen ({current}/{required})",
+        "hisopos.giant_progress_caption": "Taldea kotoi-zotz erraldoia harrapatzen ari da!\nAurrerapena: {current}/{required} · Saria: {points} puntu parte-hartzaileko",
+        "hisopos.giant_joined_popup": "Lagundu duzu! {current}/{required} doaz.",
+        "hisopos.giant_already_joined_popup": "Dagoeneko lagundu duzu. {current}/{required} doaz.",
+        "hisopos.giant_completed_caption": "Kotoi-zotz erraldoia harrapatuta! {participants} lagunek parte hartu dute eta bakoitzak {points} puntu irabazi ditu.",
+        "hisopos.giant_completed_popup": "Lortu duzue! {points} puntu irabazi dituzu.",
+        "hisopos.giant_rotten_caption": "Kotoi-zotz erraldoia usteldu da {current}/{required} laguntzarekin. Ez da punturik eman.",
+    },
+    "fr": {
+        "hisopos.type.giant": "coton-tige géant coopératif",
+        "hisopos.type.miracle": "coton-tige miraculeux",
+        "hisopos.appeared_giant": "Un Coton-tige géant coopératif est apparu !\nProgression : {current}/{required} · Gain : {points} pt par participant",
+        "hisopos.giant_help_button": "Aider à le capturer ({current}/{required})",
+        "hisopos.giant_progress_caption": "Le groupe capture un Coton-tige géant !\nProgression : {current}/{required} · Gain : {points} pt par participant",
+        "hisopos.giant_joined_popup": "Tu as aidé ! Progression : {current}/{required}.",
+        "hisopos.giant_already_joined_popup": "Tu as déjà aidé. Progression : {current}/{required}.",
+        "hisopos.giant_completed_caption": "Coton-tige géant capturé ! {participants} personnes ont coopéré et gagné {points} pt chacune.",
+        "hisopos.giant_completed_popup": "Réussi ! Tu gagnes {points} pt.",
+        "hisopos.giant_rotten_caption": "Le Coton-tige géant a pourri à {current}/{required} aides. Aucun point attribué.",
+    },
+    "gn": {
+        "hisopos.type.giant": "hisopo tuicha joajúva",
+        "hisopos.type.miracle": "hisopo hechapyrãva",
+        "hisopos.appeared_giant": "Ojekuaa peteĩ Hisopo tuicha joajúva!\nJejapo: {current}/{required} · Jopói: {points} kyta peteĩteĩme",
+        "hisopos.giant_help_button": "Eipytyvõ ojejapyhy hag̃ua ({current}/{required})",
+        "hisopos.giant_progress_caption": "Aty ojapyhy hína peteĩ Hisopo tuicháva!\nJejapo: {current}/{required} · Jopói: {points} kyta peteĩteĩme",
+        "hisopos.giant_joined_popup": "Reipytyvõma! Oho {current}/{required}.",
+        "hisopos.giant_already_joined_popup": "Reipytyvõma ko hisópope. Oho {current}/{required}.",
+        "hisopos.giant_completed_caption": "Hisopo tuicha ojejapyhy! {participants} tapicha oñopytyvõ ha peteĩteĩ ohupyty {points} kyta.",
+        "hisopos.giant_completed_popup": "Pejapóma! Rehupyty {points} kyta.",
+        "hisopos.giant_rotten_caption": "Hisopo tuicha oñembyai {current}/{required} pytyvõ reheve. Ndoñeme'ẽi kyta.",
+    },
+    "it": {
+        "hisopos.type.giant": "cotton fioc gigante cooperativo",
+        "hisopos.type.miracle": "cotton fioc miracoloso",
+        "hisopos.appeared_giant": "È apparso un Cotton fioc gigante cooperativo!\nProgresso: {current}/{required} · Premio: {points} pt per partecipante",
+        "hisopos.giant_help_button": "Aiuta a catturarlo ({current}/{required})",
+        "hisopos.giant_progress_caption": "Il gruppo sta catturando un Cotton fioc gigante!\nProgresso: {current}/{required} · Premio: {points} pt per partecipante",
+        "hisopos.giant_joined_popup": "Hai aiutato! Siete a {current}/{required}.",
+        "hisopos.giant_already_joined_popup": "Hai già aiutato. Siete a {current}/{required}.",
+        "hisopos.giant_completed_caption": "Cotton fioc gigante catturato! Hanno cooperato {participants} persone, ottenendo {points} pt ciascuna.",
+        "hisopos.giant_completed_popup": "Ce l'avete fatta! Hai guadagnato {points} pt.",
+        "hisopos.giant_rotten_caption": "Il Cotton fioc gigante è marcito con {current}/{required} aiuti. Nessun punto assegnato.",
+    },
+    "ja": {
+        "hisopos.type.giant": "協力型巨大綿棒",
+        "hisopos.type.miracle": "奇跡の綿棒",
+        "hisopos.appeared_giant": "協力型巨大綿棒が現れた！\n進捗：{current}/{required}・報酬：参加者1人につき{points}点",
+        "hisopos.giant_help_button": "捕獲を手伝う（{current}/{required}）",
+        "hisopos.giant_progress_caption": "グループで巨大綿棒を捕獲中！\n進捗：{current}/{required}・報酬：参加者1人につき{points}点",
+        "hisopos.giant_joined_popup": "協力しました！現在{current}/{required}です。",
+        "hisopos.giant_already_joined_popup": "すでに協力済みです。現在{current}/{required}です。",
+        "hisopos.giant_completed_caption": "巨大綿棒を捕獲！{participants}人が協力し、全員が{points}点を獲得しました。",
+        "hisopos.giant_completed_popup": "成功！{points}点を獲得しました。",
+        "hisopos.giant_rotten_caption": "巨大綿棒は{current}/{required}人の時点で腐りました。得点はありません。",
+    },
+    "la": {
+        "hisopos.type.giant": "bacillum giganteum cooperativum",
+        "hisopos.type.miracle": "bacillum miraculosum",
+        "hisopos.appeared_giant": "Bacillum giganteum cooperativum apparuit!\nProgressus: {current}/{required} · Praemium: {points} puncta cuique",
+        "hisopos.giant_help_button": "Ad capturam adiuva ({current}/{required})",
+        "hisopos.giant_progress_caption": "Grex bacillum giganteum capit!\nProgressus: {current}/{required} · Praemium: {points} puncta cuique",
+        "hisopos.giant_joined_popup": "Adiuvis! Nunc {current}/{required}.",
+        "hisopos.giant_already_joined_popup": "Iam adiuvis. Nunc {current}/{required}.",
+        "hisopos.giant_completed_caption": "Bacillum giganteum captum! {participants} homines cooperati sunt et quisque {points} puncta accepit.",
+        "hisopos.giant_completed_popup": "Perfecistis! {points} puncta accepisti.",
+        "hisopos.giant_rotten_caption": "Bacillum giganteum cum {current}/{required} auxiliis putruit. Nulla puncta data sunt.",
+    },
+    "nl": {
+        "hisopos.type.giant": "coöperatief reuzenwattenstaafje",
+        "hisopos.type.miracle": "wonderwattenstaafje",
+        "hisopos.appeared_giant": "Er verscheen een coöperatief Reuzenwattenstaafje!\nVoortgang: {current}/{required} · Beloning: {points} pt per deelnemer",
+        "hisopos.giant_help_button": "Help het vangen ({current}/{required})",
+        "hisopos.giant_progress_caption": "De groep vangt een Reuzenwattenstaafje!\nVoortgang: {current}/{required} · Beloning: {points} pt per deelnemer",
+        "hisopos.giant_joined_popup": "Je hebt geholpen! Stand: {current}/{required}.",
+        "hisopos.giant_already_joined_popup": "Je hebt al geholpen. Stand: {current}/{required}.",
+        "hisopos.giant_completed_caption": "Reuzenwattenstaafje gevangen! {participants} mensen werkten samen en kregen elk {points} pt.",
+        "hisopos.giant_completed_popup": "Gelukt! Je kreeg {points} pt.",
+        "hisopos.giant_rotten_caption": "Het Reuzenwattenstaafje rotte bij {current}/{required} helpers. Er zijn geen punten gegeven.",
+    },
+    "pt_BR": {
+        "hisopos.type.giant": "cotonete gigante cooperativo",
+        "hisopos.type.miracle": "cotonete milagroso",
+        "hisopos.appeared_giant": "Apareceu um Cotonete gigante cooperativo!\nProgresso: {current}/{required} · Prêmio: {points} pt por participante",
+        "hisopos.giant_help_button": "Ajudar a capturar ({current}/{required})",
+        "hisopos.giant_progress_caption": "O grupo está capturando um Cotonete gigante!\nProgresso: {current}/{required} · Prêmio: {points} pt por participante",
+        "hisopos.giant_joined_popup": "Você ajudou! Estão em {current}/{required}.",
+        "hisopos.giant_already_joined_popup": "Você já ajudou. Estão em {current}/{required}.",
+        "hisopos.giant_completed_caption": "Cotonete gigante capturado! {participants} pessoas cooperaram e cada uma ganhou {points} pt.",
+        "hisopos.giant_completed_popup": "Conseguiram! Você ganhou {points} pt.",
+        "hisopos.giant_rotten_caption": "O Cotonete gigante apodreceu com {current}/{required} ajudas. Ninguém ganhou pontos.",
+    },
+    "pt_PT": {
+        "hisopos.type.giant": "cotonete gigante cooperativo",
+        "hisopos.type.miracle": "cotonete milagroso",
+        "hisopos.appeared_giant": "Apareceu um Cotonete gigante cooperativo!\nProgresso: {current}/{required} · Prémio: {points} pt por participante",
+        "hisopos.giant_help_button": "Ajudar a capturar ({current}/{required})",
+        "hisopos.giant_progress_caption": "O grupo está a capturar um Cotonete gigante!\nProgresso: {current}/{required} · Prémio: {points} pt por participante",
+        "hisopos.giant_joined_popup": "Ajudaste! Estão em {current}/{required}.",
+        "hisopos.giant_already_joined_popup": "Já ajudaste. Estão em {current}/{required}.",
+        "hisopos.giant_completed_caption": "Cotonete gigante capturado! {participants} pessoas cooperaram e cada uma ganhou {points} pt.",
+        "hisopos.giant_completed_popup": "Conseguiram! Ganhaste {points} pt.",
+        "hisopos.giant_rotten_caption": "O Cotonete gigante apodreceu com {current}/{required} ajudas. Ninguém ganhou pontos.",
+    },
+    "quz": {
+        "hisopos.type.giant": "yanapanakuspa hatun hisopo",
+        "hisopos.type.miracle": "milagroso hisopo",
+        "hisopos.appeared_giant": "Yanapanakuspa Hatun hisopo rikurimun!\nÑawpaqman: {current}/{required} · Quykuy: sapanka runapaq {points} puntu",
+        "hisopos.giant_help_button": "Hap'iyta yanapay ({current}/{required})",
+        "hisopos.giant_progress_caption": "Huñunakuy Hatun hisopota hap'ichkan!\nÑawpaqman: {current}/{required} · Quykuy: sapanka runapaq {points} puntu",
+        "hisopos.giant_joined_popup": "Yanaparqanki! {current}/{required} kachkan.",
+        "hisopos.giant_already_joined_popup": "Ñam yanaparqankña. {current}/{required} kachkan.",
+        "hisopos.giant_completed_caption": "Hatun hisopo hap'isqa! {participants} runakuna yanapanakuspa sapanka {points} puntuta chaskirqanku.",
+        "hisopos.giant_completed_popup": "Atirqankichik! {points} puntuta chaskirqanki.",
+        "hisopos.giant_rotten_caption": "Hatun hisopo {current}/{required} yanapaywan ismurqan. Mana puntuta qukurqanchu.",
+    },
+    "ru": {
+        "hisopos.type.giant": "кооперативная гигантская палочка",
+        "hisopos.type.miracle": "чудесная ватная палочка",
+        "hisopos.appeared_giant": "Появилась кооперативная Гигантская палочка!\nПрогресс: {current}/{required} · Награда: {points} очк. каждому",
+        "hisopos.giant_help_button": "Помочь поймать ({current}/{required})",
+        "hisopos.giant_progress_caption": "Группа ловит Гигантскую палочку!\nПрогресс: {current}/{required} · Награда: {points} очк. каждому",
+        "hisopos.giant_joined_popup": "Вы помогли! Сейчас {current}/{required}.",
+        "hisopos.giant_already_joined_popup": "Вы уже помогли. Сейчас {current}/{required}.",
+        "hisopos.giant_completed_caption": "Гигантская палочка поймана! {participants} участников получили по {points} очк.",
+        "hisopos.giant_completed_popup": "Получилось! Вы получили {points} очк.",
+        "hisopos.giant_rotten_caption": "Гигантская палочка сгнила при {current}/{required} помощниках. Очки не начислены.",
+    },
+    "zh_Hans": {
+        "hisopos.type.giant": "合作巨型棉签",
+        "hisopos.type.miracle": "奇迹棉签",
+        "hisopos.appeared_giant": "合作巨型棉签出现了！\n进度：{current}/{required} · 奖励：每位参与者{points}分",
+        "hisopos.giant_help_button": "协助捕获（{current}/{required}）",
+        "hisopos.giant_progress_caption": "本群正在捕获巨型棉签！\n进度：{current}/{required} · 奖励：每位参与者{points}分",
+        "hisopos.giant_joined_popup": "你已协助！当前{current}/{required}。",
+        "hisopos.giant_already_joined_popup": "你已经协助过了。当前{current}/{required}。",
+        "hisopos.giant_completed_caption": "巨型棉签捕获成功！{participants}人合作，每人获得{points}分。",
+        "hisopos.giant_completed_popup": "成功了！你获得{points}分。",
+        "hisopos.giant_rotten_caption": "巨型棉签在{current}/{required}人时腐烂了，没有分数奖励。",
+    },
+    "zh_Hant": {
+        "hisopos.type.giant": "合作巨型棉花棒",
+        "hisopos.type.miracle": "奇蹟棉花棒",
+        "hisopos.appeared_giant": "合作巨型棉花棒出現了！\n進度：{current}/{required} · 獎勵：每位參與者{points}分",
+        "hisopos.giant_help_button": "協助捕獲（{current}/{required}）",
+        "hisopos.giant_progress_caption": "本群正在捕獲巨型棉花棒！\n進度：{current}/{required} · 獎勵：每位參與者{points}分",
+        "hisopos.giant_joined_popup": "你已協助！目前{current}/{required}。",
+        "hisopos.giant_already_joined_popup": "你已經協助過了。目前{current}/{required}。",
+        "hisopos.giant_completed_caption": "巨型棉花棒捕獲成功！{participants}人合作，每人獲得{points}分。",
+        "hisopos.giant_completed_popup": "成功了！你獲得{points}分。",
+        "hisopos.giant_rotten_caption": "巨型棉花棒在{current}/{required}人時腐爛了，沒有分數獎勵。",
+    },
+}
+
+HISOPO_COOPERATIVE_RULE_UPDATES: dict[str, tuple[str, str, str]] = {
+    "es": (
+        "Común: 47 %",
+        "Común: 46,65 %",
+        "- Gigante cooperativo: 0,25 %, necesita hasta 15 participantes; en chats más pequeños necesita a todos los miembros disponibles. Cada persona ayuda una sola vez y, si lo completan dentro de 20 minutos, todos ganan +4 pt. Muestra el progreso; si estaba oculto por un Misterioso, la primera ayuda lo revela y cuenta.\n"
+        "- Milagroso: 0,10 %, +15 pt sin importar el puntaje previo o el liderazgo.",
+    ),
+    "en": (
+        "Common: 47%",
+        "Common: 46.65%",
+        "- Cooperative Giant: 0.25%, requires up to 15 participants; smaller chats require every available member. Each person helps once and, if completed within 20 minutes, everyone earns +4 pt. Progress is shown; if hidden by a Mystery Swab, the first helper reveals it and counts.\n"
+        "- Miracle: 0.10%, +15 pt regardless of previous score or leaderboard position.",
+    ),
+    "es_ES": (
+        "Común: 47 %",
+        "Común: 46,65 %",
+        "- Gigante cooperativo: 0,25 %, necesita hasta 15 participantes; en chats más pequeños necesita a todos los miembros disponibles. Cada persona ayuda una sola vez y, si lo completan en 20 minutos, todos ganan +4 pt. Muestra el progreso; si estaba oculto por un Misterioso, la primera ayuda lo revela y cuenta.\n"
+        "- Milagroso: 0,10 %, +15 pt sin importar la puntuación previa ni el liderazgo.",
+    ),
+    "ca": (
+        "Comú: 47 %",
+        "Comú: 46,65 %",
+        "- Gegant cooperatiu: 0,25 %, necessita fins a 15 participants; als xats més petits necessita tots els membres disponibles. Cada persona ajuda una sola vegada i, si el completen en 20 minuts, tothom guanya +4 pt. Mostra el progrés; si l'amagava un Misteriós, la primera ajuda el revela i compta.\n"
+        "- Miraculós: 0,10 %, +15 pt independentment de la puntuació prèvia o del lideratge.",
+    ),
+    "de": (
+        "Gewöhnlich: 47 %",
+        "Gewöhnlich: 46,65 %",
+        "- Kooperativ riesig: 0,25 %, benötigt bis zu 15 Teilnehmende; in kleineren Chats alle verfügbaren Mitglieder. Jede Person hilft einmal. Bei Abschluss innerhalb von 20 Minuten erhalten alle +4 Pkt. Der Fortschritt ist sichtbar; war es im Mysteriösen verborgen, enthüllt und zählt die erste Hilfe.\n"
+        "- Wunder: 0,10 %, +15 Pkt. unabhängig vom bisherigen Punktestand oder Rang.",
+    ),
+    "eu": (
+        "Arrunta: % 47",
+        "Arrunta: % 46,65",
+        "- Erraldoi kooperatiboa: % 0,25, gehienez 15 parte-hartzaile behar ditu; txat txikiagoetan, kide erabilgarri guztiak. Pertsona bakoitzak behin laguntzen du eta 20 minutuan osatuz gero denek +4 puntu lortzen dituzte. Aurrerapena ikusgai dago; Misteriotsu batek ezkutatzen bazuen, lehen laguntzak agerian uzten du eta zenbatzen du.\n"
+        "- Miragarria: % 0,10, +15 puntu aurreko puntuazioa edo sailkapena edozein dela ere.",
+    ),
+    "fr": (
+        "Commun : 47 %",
+        "Commun : 46,65 %",
+        "- Géant coopératif : 0,25 %, demande jusqu'à 15 participants ; dans les petits groupes, tous les membres disponibles. Chaque personne aide une fois et, s'il est terminé en 20 minutes, tous gagnent +4 pt. La progression est affichée ; s'il était caché par un Mystérieux, la première aide le révèle et compte.\n"
+        "- Miraculeux : 0,10 %, +15 pt quel que soit le score précédent ou le classement.",
+    ),
+    "gn": (
+        "Jepivegua: 47 %",
+        "Jepivegua: 46,65 %",
+        "- Tuichaitéva oñondive: 0,25 %, oikotevẽ 15 peve tapicha; aty michĩvape, opa tapicha oĩva. Peteĩteĩ oipytyvõ peteĩ jevy ha, ojapopa ramo 20 aravo'i ryepýpe, opavave ohupyty +4 kyta. Ojehechauka mba'éichapa oho; Ojekuaa'ỹva omokañýrõ, pe pytyvõ peteĩha ohechauka ha oñeipapa.\n"
+        "- Marangatu: 0,10 %, +15 kyta taha'e ha'éva kyta yma térã ñemohenda.",
+    ),
+    "it": (
+        "Comune: 47 %",
+        "Comune: 46,65 %",
+        "- Gigante cooperativo: 0,25 %, richiede fino a 15 partecipanti; nelle chat più piccole servono tutti i membri disponibili. Ogni persona aiuta una volta e, se viene completato entro 20 minuti, tutti guadagnano +4 pt. Mostra i progressi; se era nascosto da un Misterioso, il primo aiuto lo rivela e conta.\n"
+        "- Miracoloso: 0,10 %, +15 pt indipendentemente dal punteggio precedente o dalla posizione.",
+    ),
+    "ja": (
+        "通常：47%",
+        "通常：46.65%",
+        "- 協力型巨大：0.25%。最大15人が必要で、より小さいチャットでは参加可能な全メンバーが必要です。各自1回だけ協力でき、20分以内に完成すると全員が+4点を獲得します。進捗を表示し、ミステリーに隠れていた場合は最初の協力で正体が明かされ、その1人も数えます。\n"
+        "- 奇跡：0.10%。それまでの得点や順位に関係なく+15点です。",
+    ),
+    "la": (
+        "Commune: 47 %",
+        "Commune: 46,65 %",
+        "- Gigante cooperativum: 0,25 %, usque ad 15 participes requirit; in gregibus minoribus omnes sodales praesentes. Quisque semel adiuvat et, si intra 20 minuta completur, omnes +4 puncta accipiunt. Progressus ostenditur; si a Mysterioso celabatur, primum auxilium id revelat et numeratur.\n"
+        "- Miraculosum: 0,10 %, +15 puncta sine respectu punctorum priorum vel loci.",
+    ),
+    "nl": (
+        "Gewoon: 47%",
+        "Gewoon: 46,65%",
+        "- Coöperatieve reus: 0,25%, vereist maximaal 15 deelnemers; in kleinere chats alle beschikbare leden. Iedereen helpt één keer en als hij binnen 20 minuten voltooid wordt, krijgt iedereen +4 pt. De voortgang is zichtbaar; zat hij in een Mysterieus wattenstaafje, dan onthult en telt de eerste hulp.\n"
+        "- Wonderbaarlijk: 0,10%, +15 pt ongeacht de eerdere score of rang.",
+    ),
+    "pt_BR": (
+        "Comum: 47%",
+        "Comum: 46,65%",
+        "- Gigante cooperativo: 0,25%, exige até 15 participantes; em chats menores, todos os membros disponíveis. Cada pessoa ajuda uma vez e, se concluírem em 20 minutos, todos ganham +4 pt. O progresso aparece; se estava oculto por um Misterioso, a primeira ajuda o revela e conta.\n"
+        "- Milagroso: 0,10%, +15 pt independentemente da pontuação anterior ou da liderança.",
+    ),
+    "pt_PT": (
+        "Comum: 47 %",
+        "Comum: 46,65 %",
+        "- Gigante cooperativo: 0,25 %, exige até 15 participantes; em chats menores, todos os membros disponíveis. Cada pessoa ajuda uma vez e, se o concluírem em 20 minutos, todos ganham +4 pt. O progresso é mostrado; se estava oculto por um Misterioso, a primeira ajuda revela-o e conta.\n"
+        "- Milagroso: 0,10 %, +15 pt independentemente da pontuação anterior ou da liderança.",
+    ),
+    "quz": (
+        "Sapsi: 47 %",
+        "Sapsi: 46,65 %",
+        "- Hatun yanapanakuy: 0,25 %, 15 kama runakunata munan; aswan uchuy huñunakuykunapi, llapan tarikuq runakunata. Sapa runa huk kutilla yanapan, 20 minutopi tukuchiptinku llapanku +4 puntu chaskinku. Ñawpaqman riyta rikuchin; Pakasqa ukhunpi kashaptin, ñawpaq yanapakuq rikurichin hinaspa yupakun.\n"
+        "- Milagroso: 0,10 %, ñawpaq puntu utaq ñawpaq kay mana qhawaspa +15 puntu.",
+    ),
+    "ru": (
+        "Обычная: 47 %",
+        "Обычная: 46,65 %",
+        "- Кооперативная гигантская: 0,25 %, требует до 15 участников; в меньших чатах — всех доступных участников. Каждый помогает один раз. Если завершить за 20 минут, все получают +4 очка. Прогресс виден; если она скрыта в Таинственной, первая помощь раскрывает её и засчитывается.\n"
+        "- Чудесная: 0,10 %, +15 очков независимо от прежнего счёта или места.",
+    ),
+    "zh_Hans": (
+        "普通：47%",
+        "普通：46.65%",
+        "- 合作巨型：0.25%，最多需要15人；较小的群组需要所有可参与成员。每人只能协助一次，若在20分钟内完成，所有人各得+4分。消息会显示进度；若藏在神秘棉签中，首次协助会揭晓并计入人数。\n"
+        "- 奇迹：0.10%，无论原有分数或排名，一律+15分。",
+    ),
+    "zh_Hant": (
+        "普通：47%",
+        "普通：46.65%",
+        "- 合作巨型：0.25%，最多需要15人；較小的群組需要所有可參與成員。每人只能協助一次，若在20分鐘內完成，所有人各得+4分。訊息會顯示進度；若藏在神秘棉花棒中，首次協助會揭曉並計入人數。\n"
+        "- 奇蹟：0.10%，無論原有分數或排名，一律+15分。",
+    ),
+}
+
 for _language, _translations in HISOPO_SPECIAL_TRANSLATIONS.items():
     HISOPO_TRANSLATIONS[_language].update(_translations)
 for _language, _translations in HISOPO_RULE_TRANSLATIONS.items():
     HISOPO_TRANSLATIONS[_language].update(_translations)
+for _language, _translations in HISOPO_COOPERATIVE_TRANSLATIONS.items():
+    HISOPO_TRANSLATIONS[_language].update(_translations)
+for _language, (_old_common, _new_common, _extra_rules) in HISOPO_COOPERATIVE_RULE_UPDATES.items():
+    _rules = HISOPO_TRANSLATIONS[_language]["hisopos.rules"]
+    if _old_common not in _rules or "\n- /hisopos" not in _rules:  # pragma: no cover
+        raise RuntimeError(f"No pude extender las reglas de Hisopos para {_language}.")
+    HISOPO_TRANSLATIONS[_language]["hisopos.rules"] = _rules.replace(
+        _old_common,
+        _new_common,
+        1,
+    ).replace(
+        "\n- /hisopos",
+        f"\n{_extra_rules}\n- /hisopos",
+        1,
+    )

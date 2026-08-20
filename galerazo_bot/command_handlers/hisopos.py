@@ -102,15 +102,41 @@ def migrate_chat_data(conn: sqlite3.Connection, old_chat_id: str, new_chat_id: s
     conn.execute(
         """
         INSERT OR IGNORE INTO hisopo_spawns (
-            chat_id, message_id, hisopo_type, appearance_type, points, source,
-            spawned_at, expires_at, status, winner_user_id, captured_at
+            chat_id, message_id, hisopo_type, appearance_type, points,
+            required_helpers, source, spawned_at, expires_at, status,
+            winner_user_id, captured_at
         )
-        SELECT ?, message_id, hisopo_type, appearance_type, points, source,
-               spawned_at, expires_at, status, winner_user_id, captured_at
+        SELECT ?, message_id, hisopo_type, appearance_type, points,
+               required_helpers, source, spawned_at, expires_at, status,
+               winner_user_id, captured_at
         FROM hisopo_spawns
         WHERE chat_id = ?
         """,
         (new_chat_id, old_chat_id),
+    )
+    conn.execute(
+        """
+        INSERT OR IGNORE INTO hisopo_giant_contributions (
+            chat_id, message_id, user_id, contributed_at
+        )
+        SELECT ?, contribution.message_id, contribution.user_id,
+               contribution.contributed_at
+        FROM hisopo_giant_contributions AS contribution
+        JOIN hisopo_spawns AS old_spawn
+          ON old_spawn.chat_id = contribution.chat_id
+         AND old_spawn.message_id = contribution.message_id
+        JOIN hisopo_spawns AS new_spawn
+          ON new_spawn.chat_id = ?
+         AND new_spawn.message_id = old_spawn.message_id
+         AND new_spawn.hisopo_type = old_spawn.hisopo_type
+         AND new_spawn.spawned_at = old_spawn.spawned_at
+        WHERE contribution.chat_id = ?
+        """,
+        (new_chat_id, new_chat_id, old_chat_id),
+    )
+    conn.execute(
+        "DELETE FROM hisopo_giant_contributions WHERE chat_id = ?",
+        (old_chat_id,),
     )
     conn.execute("DELETE FROM hisopo_spawns WHERE chat_id = ?", (old_chat_id,))
     conn.execute(

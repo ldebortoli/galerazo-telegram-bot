@@ -32,6 +32,14 @@ class DatabaseMigrationTests(unittest.TestCase):
                 (now + timedelta(minutes=20)).isoformat(),
                 appearance_type="mystery",
             )
+            db.save_hisopo_spawn(
+                "-1", "303", "giant", 4, "message", now.isoformat(),
+                (now + timedelta(minutes=20)).isoformat(),
+                required_helpers=2,
+            )
+            db.contribute_to_giant_hisopo(
+                "-1", "303", "2", now, now + timedelta(days=1)
+            )
             db.save_paginated_message_state("-1", "200", "test", "1", '{"lines": []}')
             db.save_paginated_message_state("-1", "201", "galeraza", "1", '{"lines": []}')
             db.try_record_daily_report("2", "2026-07-10", "-1")
@@ -86,6 +94,8 @@ class DatabaseMigrationTests(unittest.TestCase):
                 db.get_hisopo_spawn("-1001", "301").appearance_type,
                 "mystery",
             )
+            self.assertEqual(db.get_hisopo_spawn("-1001", "303").required_helpers, 2)
+            self.assertEqual(db.get_giant_contribution_count("-1001", "303"), 1)
             self.assertTrue(
                 all(schedule.chat_id == "-1001" for schedule in db.list_pending_hisopo_schedules())
             )
