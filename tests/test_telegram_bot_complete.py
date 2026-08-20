@@ -1297,6 +1297,7 @@ class HisopoTelegramTests(unittest.IsolatedAsyncioTestCase):
             chat_id="-1",
             message_id="100",
             hisopo_type="common",
+            appearance_type="common",
             points=1,
             source="message",
             spawned_at="2026-08-20T12:00:00+00:00",
@@ -1313,6 +1314,7 @@ class HisopoTelegramTests(unittest.IsolatedAsyncioTestCase):
         bot = SimpleNamespace(
             send_photo=AsyncMock(return_value=SimpleNamespace(message_id=100)),
             edit_message_caption=AsyncMock(),
+            edit_message_media=AsyncMock(),
         )
         job_queue = MagicMock()
         application = SimpleNamespace(
@@ -1379,6 +1381,7 @@ class HisopoTelegramTests(unittest.IsolatedAsyncioTestCase):
                     "chat_id",
                     "message_id",
                     "hisopo_type",
+                    "appearance_type",
                     "points",
                     "source",
                     "spawned_at",
@@ -1408,10 +1411,43 @@ class HisopoTelegramTests(unittest.IsolatedAsyncioTestCase):
                 "message",
                 now=datetime(2026, 8, 20, 12, tzinfo=timezone.utc),
             )
-        self.assertEqual(mystery_spawn.points, -3)
+        self.assertEqual(mystery_spawn.hisopo_type, "common")
+        self.assertEqual(mystery_spawn.appearance_type, "mystery")
+        self.assertEqual(mystery_spawn.points, 1)
+        self.assertEqual(mystery_spawn.expires_at, "2026-08-20T12:20:00+00:00")
         self.assertEqual(
             mystery_bot.send_photo.await_args.kwargs["caption"],
             "¡Apareció un nuevo hisopo!\nhisopo misterioso · valor oculto",
+        )
+
+        mystery_fleeting_app, _, _, _ = self._application(
+            db,
+            telegram_hisopo_mystery_file_id="mystery-id",
+            telegram_hisopo_fleeting_file_id="fleeting-id",
+        )
+        with patch.object(tb.secrets, "randbelow", side_effect=[78, 71]):
+            mystery_fleeting = await tb._spawn_hisopo(
+                mystery_fleeting_app,
+                "-1",
+                "message",
+                now=datetime(2026, 8, 20, 12, tzinfo=timezone.utc),
+            )
+        self.assertEqual(mystery_fleeting.hisopo_type, "fleeting")
+        self.assertEqual(mystery_fleeting.appearance_type, "mystery")
+        self.assertEqual(mystery_fleeting.expires_at, "2026-08-20T12:20:00+00:00")
+
+        fake_app, _, fake_bot, _ = self._application(
+            db,
+            telegram_hisopo_common_file_id="common-id",
+            telegram_hisopo_fake_file_id="fake-id",
+        )
+        with patch.object(tb.secrets, "randbelow", return_value=94):
+            fake_spawn = await tb._spawn_hisopo(fake_app, "-1", "message")
+        self.assertEqual(fake_spawn.hisopo_type, "fake")
+        self.assertEqual(fake_spawn.appearance_type, "common")
+        self.assertEqual(
+            fake_bot.send_photo.await_args.kwargs["caption"],
+            "¡Apareció un nuevo hisopo!\nhisopo común · 1 pt",
         )
 
         fleeting_app, _, _, _ = self._application(
@@ -1570,11 +1606,23 @@ class HisopoTelegramTests(unittest.IsolatedAsyncioTestCase):
             callback.answer.assert_awaited_once_with(expected, show_alert=True)
 
         callback.answer.reset_mock()
-        db.capture_hisopo.return_value = HisopoCaptureResult("rotten", self._spawn(status="rotten"))
+        db.capture_hisopo.return_value = HisopoCaptureResult(
+            "rotten",
+            self._spawn(
+                hisopo_type="fleeting",
+                appearance_type="mystery",
+                points=5,
+                status="rotten",
+            ),
+        )
         with patch.object(tb, "_is_user_restricted_in_callback_chat", return_value=False):
             await tb._hisopo_callback_entrypoint(update, context)
         callback.answer.assert_awaited_once_with(
             "Uh, se pudrió el hisopo. Ya no suma puntos.", show_alert=True
+        )
+        self.assertEqual(
+            bot.edit_message_caption.await_args.kwargs["caption"],
+            "Este hisopo misterioso se pudrió. Ya no se puede capturar.",
         )
         callback.answer.reset_mock()
         db.capture_hisopo.return_value = HisopoCaptureResult("rotten", None)
@@ -1586,7 +1634,10 @@ class HisopoTelegramTests(unittest.IsolatedAsyncioTestCase):
         db = MagicMock()
         db.get_chat_settings.return_value = SimpleNamespace(language="es")
         db.is_user_blocked.return_value = False
-        app, _, bot, job_queue = self._application(db)
+        app, _, bot, job_queue = self._application(
+            db,
+            telegram_hisopo_fake_file_id="fake-id",
+        )
         message = SimpleNamespace(chat=SimpleNamespace(id=-1, type="group"), message_id=100)
         callback = SimpleNamespace(
             message=message,
@@ -1619,9 +1670,14 @@ class HisopoTelegramTests(unittest.IsolatedAsyncioTestCase):
 
         bot.edit_message_caption.reset_mock()
         callback.answer.reset_mock()
-        active_fake = self._spawn(hisopo_type="fake", points=0)
+        active_fake = self._spawn(
+            hisopo_type="fake",
+            appearance_type="common",
+            points=0,
+        )
         captured_fake = self._spawn(
             hisopo_type="fake",
+            appearance_type="common",
             points=0,
             status="captured",
             winner_user_id="2",
@@ -1636,15 +1692,16 @@ class HisopoTelegramTests(unittest.IsolatedAsyncioTestCase):
             (),
         )
         self.assertEqual(
-            bot.edit_message_caption.await_args.kwargs["caption"],
+            bot.edit_message_media.await_args.kwargs["media"].caption,
             "Winner capturó un hisopo falso, pero no sumó ningún punto.",
         )
+        self.assertEqual(bot.edit_message_media.await_args.kwargs["media"].media, "fake-id")
         callback.answer.assert_awaited_once_with("Este hisopo no valía puntos.")
 
         bot.edit_message_caption.reset_mock()
+        bot.edit_message_media.reset_mock()
         callback.answer.reset_mock()
         first_schedule = HisopoSchedule(1, "-1", "2026-08-21T01:00:00+00:00", "pending", "100")
-        second_schedule = HisopoSchedule(2, "-1", "2026-08-21T02:00:00+00:00", "pending", "100")
         active_twin = self._spawn(hisopo_type="twin", points=4)
         captured_twin = self._spawn(
             hisopo_type="twin",
@@ -1658,24 +1715,37 @@ class HisopoTelegramTests(unittest.IsolatedAsyncioTestCase):
             "captured",
             captured_twin,
             first_schedule,
-            (second_schedule,),
         )
-        with patch.object(tb, "_is_user_restricted_in_callback_chat", return_value=False), patch.object(
+        with patch.object(
+            tb, "_is_user_restricted_in_callback_chat", return_value=False
+        ), patch.object(
             tb,
             "random_next_day_datetime",
-            side_effect=[
-                datetime(2026, 8, 21, 1, tzinfo=timezone.utc),
-                datetime(2026, 8, 21, 2, tzinfo=timezone.utc),
-            ],
-        ):
+            return_value=datetime(2026, 8, 21, 1, tzinfo=timezone.utc),
+        ), patch.object(tb, "_spawn_hisopo", AsyncMock()) as immediate_spawn:
             await tb._hisopo_callback_entrypoint(update, context)
-        self.assertEqual(job_queue.run_once.call_count, 2)
+        self.assertEqual(job_queue.run_once.call_count, 1)
+        immediate_spawn.assert_awaited_once_with(app, "-1", source="twin")
         callback.answer.assert_awaited_once_with("¡Hisopo capturado! Sumaste 4 pt.")
 
     async def test_caption_edit_failure_is_contained(self) -> None:
         bot = SimpleNamespace(edit_message_caption=AsyncMock(side_effect=BadRequest("edit")))
         with self.assertLogs(tb.logger, level="WARNING"):
             await tb._edit_hisopo_caption(bot, self._spawn(), "caption")
+
+        app, bot_state, reveal_bot, _ = self._application(
+            telegram_hisopo_fake_file_id="fake-id",
+        )
+        reveal_bot.edit_message_media.side_effect = BadRequest("media")
+        disguised = self._spawn(hisopo_type="fake", appearance_type="common", points=0)
+        with self.assertLogs(tb.logger, level="WARNING"):
+            await tb._edit_hisopo_result(
+                reveal_bot,
+                bot_state.settings,
+                disguised,
+                "caption",
+            )
+        reveal_bot.edit_message_caption.assert_awaited_once()
 
 
 if __name__ == "__main__":

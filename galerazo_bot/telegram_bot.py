@@ -23,6 +23,7 @@ from telegram import (
     ChatMember,
     InlineKeyboardButton,
     InlineKeyboardMarkup,
+    InputMediaPhoto,
     LinkPreviewOptions,
     Message,
     Update,
@@ -88,7 +89,7 @@ from .hisopos import (
     HISOPO_CAPTURE_CALLBACK,
     hisopo_kind_for_spawn,
     random_next_day_datetime,
-    select_hisopo_kind,
+    select_hisopo_spawn,
     should_spawn_hisopo,
 )
 from .google_sheets import GoogleSheetsConfig, GoogleSheetsExpenseWriter
@@ -515,33 +516,47 @@ async def _spawn_hisopo(
     now: datetime | None = None,
 ) -> HisopoSpawn | None:
     state = application.bot_data["state"]
-    kind = select_hisopo_kind(
+    selection = select_hisopo_spawn(
         secrets.randbelow(100) + 1,
         randbelow=secrets.randbelow,
     )
-    file_id = _hisopo_file_id(state.settings, kind.key)
-    if not file_id:
+    actual_kind = selection.actual
+    appearance_kind = selection.appearance
+    required_types = {actual_kind.key, appearance_kind.key}
+    missing_types = sorted(
+        hisopo_type
+        for hisopo_type in required_types
+        if not _hisopo_file_id(state.settings, hisopo_type)
+    )
+    if missing_types:
         logger.info(
-            "El Hisopo %s aun no tiene file_id; uso el Hisopo comun en el chat %s.",
-            kind.key,
+            "El Hisopo %s aun no tiene todos sus file_id (%s); "
+            "uso el Hisopo comun en el chat %s.",
+            actual_kind.key,
+            ", ".join(missing_types),
             chat_id,
         )
-        kind = COMMON_HISOPO
-        file_id = _hisopo_file_id(state.settings, kind.key)
-        if not file_id:
-            logger.warning(
-                "No pude lanzar un Hisopo en el chat %s: falta configurar el file_id comun.",
-                chat_id,
-            )
-            return None
+        actual_kind = COMMON_HISOPO
+        appearance_kind = COMMON_HISOPO
+    file_id = _hisopo_file_id(state.settings, appearance_kind.key)
+    if not file_id:
+        logger.warning(
+            "No pude lanzar un Hisopo en el chat %s: falta configurar el file_id comun.",
+            chat_id,
+        )
+        return None
 
     language = _chat_language(state.db, chat_id)
-    type_label = t(language, f"hisopos.type.{kind.key}")
+    type_label = t(language, f"hisopos.type.{appearance_kind.key}")
     keyboard = InlineKeyboardMarkup(
         [[InlineKeyboardButton(t(language, "hisopos.capture_button"), callback_data=HISOPO_CAPTURE_CALLBACK)]]
     )
     try:
-        caption_key = "hisopos.appeared_mystery" if kind.hides_points else "hisopos.appeared"
+        caption_key = (
+            "hisopos.appeared_mystery"
+            if appearance_kind.hides_points
+            else "hisopos.appeared"
+        )
         message = await application.bot.send_photo(
             chat_id=_parse_chat_id(chat_id),
             photo=file_id,
@@ -549,7 +564,7 @@ async def _spawn_hisopo(
                 language,
                 caption_key,
                 type_label=type_label,
-                points=kind.points,
+                points=appearance_kind.points,
             ),
             reply_markup=keyboard,
         )
@@ -563,11 +578,12 @@ async def _spawn_hisopo(
     spawn = state.db.save_hisopo_spawn(
         chat_id=chat_id,
         message_id=str(message.message_id),
-        hisopo_type=kind.key,
-        points=kind.points,
+        hisopo_type=actual_kind.key,
+        appearance_type=appearance_kind.key,
+        points=actual_kind.points,
         source=source,
         spawned_at=spawned_at.isoformat(),
-        expires_at=(spawned_at + kind.expiration).isoformat(),
+        expires_at=(spawned_at + appearance_kind.expiration).isoformat(),
     )
     _schedule_hisopo_expiration(application, spawn)
     return spawn
@@ -700,8 +716,9 @@ async def _hisopo_callback_entrypoint(
         else:
             caption_key = "hisopos.captured_caption"
             popup_key = "hisopos.captured_popup"
-        await _edit_hisopo_caption(
+        await _edit_hisopo_result(
             context.bot,
+            state.settings,
             result.spawn,
             t(
                 language,
@@ -716,6 +733,16 @@ async def _hisopo_callback_entrypoint(
         await callback_query.answer(
             t(language, popup_key, points=abs(result.spawn.points))
         )
+        captured_kind = hisopo_kind_for_spawn(
+            result.spawn.hisopo_type,
+            result.spawn.points,
+        )
+        for _ in range(captured_kind.immediate_spawns):
+            await _spawn_hisopo(
+                context.application,
+                result.spawn.chat_id,
+                source="twin",
+            )
         return
     if result.status == "taken":
         await callback_query.answer(t(language, "hisopos.taken_alert"), show_alert=True)
@@ -736,9 +763,44 @@ async def _edit_rotten_hisopo(bot: Bot, db: Database, spawn: HisopoSpawn) -> Non
         t(
             language,
             "hisopos.rotten_caption",
-            type_label=t(language, f"hisopos.type.{spawn.hisopo_type}"),
+            type_label=t(language, f"hisopos.type.{spawn.appearance_type}"),
         ),
     )
+
+
+async def _edit_hisopo_result(
+    bot: Bot,
+    settings: Settings,
+    spawn: HisopoSpawn,
+    caption: str,
+) -> None:
+    if spawn.appearance_type != spawn.hisopo_type:
+        file_id = _hisopo_file_id(settings, spawn.hisopo_type)
+        if file_id:
+            try:
+                await bot.edit_message_media(
+                    chat_id=_parse_chat_id(spawn.chat_id),
+                    message_id=int(spawn.message_id),
+                    media=InputMediaPhoto(media=file_id, caption=caption),
+                    reply_markup=None,
+                )
+                return
+            except TelegramError as exc:
+                logger.warning(
+                    "No pude revelar la imagen del Hisopo %s en el chat %s: %s",
+                    spawn.message_id,
+                    spawn.chat_id,
+                    exc,
+                )
+        else:
+            logger.warning(
+                "No pude revelar la imagen del Hisopo %s en el chat %s: "
+                "falta el file_id de %s.",
+                spawn.message_id,
+                spawn.chat_id,
+                spawn.hisopo_type,
+            )
+    await _edit_hisopo_caption(bot, spawn, caption)
 
 
 async def _edit_hisopo_caption(bot: Bot, spawn: HisopoSpawn, caption: str) -> None:

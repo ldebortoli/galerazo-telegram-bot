@@ -30,6 +30,7 @@ class DatabaseMigrationTests(unittest.TestCase):
             db.save_hisopo_spawn(
                 "-1", "301", "common", 1, "message", now.isoformat(),
                 (now + timedelta(minutes=20)).isoformat(),
+                appearance_type="mystery",
             )
             db.save_paginated_message_state("-1", "200", "test", "1", '{"lines": []}')
             db.save_paginated_message_state("-1", "201", "galeraza", "1", '{"lines": []}')
@@ -81,6 +82,10 @@ class DatabaseMigrationTests(unittest.TestCase):
                 {"1": 1, "2": 2},
             )
             self.assertEqual(db.get_hisopo_spawn("-1001", "301").chat_id, "-1001")
+            self.assertEqual(
+                db.get_hisopo_spawn("-1001", "301").appearance_type,
+                "mystery",
+            )
             self.assertTrue(
                 all(schedule.chat_id == "-1001" for schedule in db.list_pending_hisopo_schedules())
             )

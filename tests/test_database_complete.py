@@ -211,6 +211,25 @@ class DatabaseCompleteTests(unittest.TestCase):
                 );
                 INSERT INTO galeraza_message_states (chat_id, message_id, requester_user_id)
                 VALUES ('-1', '10', '1');
+                CREATE TABLE hisopo_spawns (
+                    chat_id TEXT NOT NULL,
+                    message_id TEXT NOT NULL,
+                    hisopo_type TEXT NOT NULL,
+                    points INTEGER NOT NULL,
+                    source TEXT NOT NULL,
+                    spawned_at TEXT NOT NULL,
+                    expires_at TEXT NOT NULL,
+                    status TEXT NOT NULL DEFAULT 'active',
+                    winner_user_id TEXT,
+                    captured_at TEXT,
+                    PRIMARY KEY (chat_id, message_id)
+                );
+                INSERT INTO hisopo_spawns (
+                    chat_id, message_id, hisopo_type, points, source, spawned_at, expires_at
+                ) VALUES (
+                    '-1', '20', 'silver', 2, 'message',
+                    '2026-08-20T12:00:00+00:00', '2026-08-20T12:20:00+00:00'
+                );
                 """
             )
         legacy = Database(path)
@@ -219,12 +238,24 @@ class DatabaseCompleteTests(unittest.TestCase):
         with legacy._connect() as connection:
             self.assertFalse(_table_exists(connection, "galeraza_message_states"))
             self.assertEqual(
-                connection.execute("SELECT migration_id FROM schema_migrations").fetchone()[0],
-                "20260729_drop_legacy_galeraza_message_states",
+                {
+                    row["migration_id"]
+                    for row in connection.execute(
+                        "SELECT migration_id FROM schema_migrations"
+                    ).fetchall()
+                },
+                {
+                    "20260729_drop_legacy_galeraza_message_states",
+                    "20260820_add_hisopo_appearance_type",
+                },
             )
             columns = {row["name"] for row in connection.execute("PRAGMA table_info(paginated_message_states)")}
+            hisopo = connection.execute(
+                "SELECT hisopo_type, appearance_type FROM hisopo_spawns WHERE message_id = '20'"
+            ).fetchone()
         self.assertIn("content_json", columns)
         self.assertIn("current_page", columns)
+        self.assertEqual((hisopo["hisopo_type"], hisopo["appearance_type"]), ("silver", "silver"))
 
 
 if __name__ == "__main__":

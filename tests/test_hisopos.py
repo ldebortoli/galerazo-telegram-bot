@@ -9,6 +9,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 from telegram.error import TimedOut
 
+from galerazo_bot import hisopos as hisopo_rules
 from galerazo_bot.command_handlers import hisopos as hisopo_handlers
 from galerazo_bot.database import Database, HisopoScore
 from galerazo_bot.hisopos import (
@@ -17,9 +18,10 @@ from galerazo_bot.hisopos import (
     FAKE_HISOPO,
     FLEETING_HISOPO,
     GOLD_HISOPO,
+    HISOPO_EXPIRATION,
     HISOPO_FLEETING_EXPIRATION,
     HISOPO_PROBABILITY_RANGES,
-    MYSTERY_POINT_VALUES,
+    MYSTERY_HISOPO,
     PUTRID_HISOPO,
     RADIOACTIVE_POINT_VALUES,
     SILVER_HISOPO,
@@ -31,6 +33,7 @@ from galerazo_bot.hisopos import (
     random_next_day_datetime,
     render_hisopo_page,
     select_hisopo_kind,
+    select_hisopo_spawn,
     should_spawn_hisopo,
 )
 from galerazo_bot.roles import CommandContext, UserLevel
@@ -72,12 +75,13 @@ class HisopoRulesTests(unittest.TestCase):
 
         mystery = select_hisopo_kind(79, randbelow=lambda _limit: 0)
         radioactive = select_hisopo_kind(91, randbelow=lambda limit: limit - 1)
-        self.assertEqual(mystery.points, MYSTERY_POINT_VALUES[0])
+        self.assertEqual(mystery, MYSTERY_HISOPO)
         self.assertTrue(mystery.hides_points)
         self.assertEqual(radioactive.points, RADIOACTIVE_POINT_VALUES[-1])
         self.assertEqual(FLEETING_HISOPO.expiration, HISOPO_FLEETING_EXPIRATION)
         self.assertEqual(FAKE_HISOPO.next_day_spawns, 0)
-        self.assertEqual(TWIN_HISOPO.next_day_spawns, 2)
+        self.assertEqual(TWIN_HISOPO.next_day_spawns, 1)
+        self.assertEqual(TWIN_HISOPO.immediate_spawns, 1)
         self.assertEqual(hisopo_kind_for_spawn("mystery", 10).points, 10)
         with self.assertRaisesRegex(ValueError, "desconocido"):
             hisopo_kind_for_spawn("unknown", 0)
@@ -109,6 +113,56 @@ class HisopoRulesTests(unittest.TestCase):
         for roll in (0, 101):
             with self.subTest(roll=roll), self.assertRaisesRegex(ValueError, "tipo"):
                 select_hisopo_kind(roll)
+
+    def test_fake_and_mystery_selections_keep_appearance_separate(self) -> None:
+        common = select_hisopo_spawn(1)
+        self.assertEqual(common.actual, COMMON_HISOPO)
+        self.assertEqual(common.appearance, COMMON_HISOPO)
+
+        fake = select_hisopo_spawn(95)
+        self.assertEqual(fake.actual, FAKE_HISOPO)
+        self.assertEqual(fake.appearance, COMMON_HISOPO)
+
+        mystery_common = select_hisopo_spawn(79, randbelow=lambda _limit: 0)
+        self.assertEqual(mystery_common.actual, COMMON_HISOPO)
+        self.assertEqual(mystery_common.appearance, MYSTERY_HISOPO)
+        self.assertEqual(mystery_common.appearance.expiration, HISOPO_EXPIRATION)
+
+        mystery_fake = select_hisopo_spawn(79, randbelow=lambda _limit: 87)
+        self.assertEqual(mystery_fake.actual, FAKE_HISOPO)
+        self.assertEqual(mystery_fake.appearance, MYSTERY_HISOPO)
+
+        rolls = iter((83, 4))
+        mystery_radioactive = select_hisopo_spawn(79, randbelow=lambda _limit: next(rolls))
+        self.assertEqual(mystery_radioactive.actual.key, "radioactive")
+        self.assertEqual(mystery_radioactive.actual.points, 6)
+
+        expected_actuals = {
+            0: "common",
+            46: "common",
+            47: "silver",
+            60: "silver",
+            61: "gold",
+            70: "gold",
+            71: "fleeting",
+            77: "fleeting",
+            78: "putrid",
+            82: "putrid",
+            87: "fake",
+            89: "fake",
+            90: "twin",
+            91: "twin",
+            92: "diamond",
+        }
+        for weighted_roll, expected_key in expected_actuals.items():
+            with self.subTest(weighted_roll=weighted_roll):
+                selected = select_hisopo_spawn(
+                    79,
+                    randbelow=lambda _limit, value=weighted_roll: value,
+                )
+                self.assertEqual(selected.actual.key, expected_key)
+        with self.assertRaisesRegex(RuntimeError, "seleccionar"):
+            hisopo_rules._select_weighted_non_mystery_kind(lambda limit: limit)
 
     def test_next_day_is_random_local_calendar_day(self) -> None:
         now = datetime(2026, 8, 20, 23, 30, tzinfo=timezone.utc)

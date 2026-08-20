@@ -442,22 +442,26 @@ Cada mensaje original de un usuario humano que podría competir por La Galeraza 
 
 Una segunda tirada define la rareza. Los rangos no se superponen y suman 100:
 
-| Tirada | Aparición | Hisopo | Efecto |
-| --- | ---: | --- | --- |
-| 1-47 | 47 % | común | suma 1 punto |
-| 48-61 | 14 % | plateado | suma 2 puntos |
-| 62-71 | 10 % | dorado | suma 3 puntos |
-| 72-78 | 7 % | fugaz | suma 5 puntos y vence en 1 minuto |
-| 79-85 | 7 % | misterioso | oculta un valor ya sorteado entre -3, -2, -1, 0, 1, 2, 3, 4, 5, 6 o 10 |
-| 86-90 | 5 % | putrefacto | resta 2 puntos y puede dejar puntaje negativo |
-| 91-94 | 4 % | radiactivo | sortea y muestra -3, -1, 2, 4 o 6 puntos |
-| 95-97 | 3 % | falso | vale 0 y no programa una aparición para el día siguiente |
-| 98-99 | 2 % | gemelo | suma 4 puntos y programa dos apariciones para el día siguiente |
-| 100 | 1 % | diamante | suma 10 puntos |
+| Tirada | Aparición | Tipo sorteado | Qué muestra al aparecer | Efecto al capturarlo |
+| --- | ---: | --- | --- | --- |
+| 1-47 | 47 % | común | imagen y valor del común | suma 1 punto |
+| 48-61 | 14 % | plateado | imagen y valor del plateado | suma 2 puntos |
+| 62-71 | 10 % | dorado | imagen y valor del dorado | suma 3 puntos |
+| 72-78 | 7 % | fugaz | imagen y valor del fugaz | suma 5 puntos; se pudre en 1 minuto |
+| 79-85 | 7 % | misterioso | imagen de misterioso y valor oculto | revela uno de los otros nueve tipos y aplica su efecto |
+| 86-90 | 5 % | putrefacto | imagen de putrefacto y `-2` | resta 2 puntos y puede dejar puntaje negativo |
+| 91-94 | 4 % | radiactivo | imagen de radiactivo y el valor fijo ya sorteado | suma o resta `-3`, `-1`, `2`, `4` o `6` puntos |
+| 95-97 | 3 % | falso | se disfraza con imagen y valor aparente de común | revela el falso, vale 0 y no agenda para el día siguiente |
+| 98-99 | 2 % | gemelo | imagen y valor del gemelo | suma 4 puntos, lanza otro hisopo en el momento y agenda uno para el día siguiente |
+| 100 | 1 % | diamante | imagen y valor del diamante | suma 10 puntos |
 
-La primera callback procesada para ese chat reclama el premio dentro de una transacción inmediata de SQLite; las siguientes muestran un alerta de Telegram sin sumar. Salvo el fugaz, a los 20 minutos el hisopo se pudre, deja de valer y el mensaje pierde la botonera. Si una rareza todavía no tiene `file_id`, esa aparición usa el hisopo común para no perder el evento.
+El valor del Radiactivo se sortea una sola vez al aparecer y queda guardado: no cambia con el tiempo ni con cada clic. El Putrefacto directo anuncia desde el comienzo que resta 2 puntos.
 
-Cada captura programa una aparición adicional en un segundo aleatorio del día calendario siguiente de Argentina; el gemelo programa dos y el falso ninguna. La programación se guarda en SQLite y se reconstruye al iniciar el bot, por lo que sobrevive reinicios. Si el juego está deshabilitado cuando llega el horario, la aparición programada se cancela. Los hisopos podridos no programan apariciones.
+El Misterioso contiene uno de los otros nueve tipos, sin otro Misterioso adentro. La selección interna conserva sus pesos relativos: común 50,54 %, plateado 15,05 %, dorado 10,75 %, fugaz 7,53 %, putrefacto 5,38 %, radiactivo 4,30 %, falso 3,23 %, gemelo 2,15 % y diamante 1,08 %. Su contenido y su valor permanecen ocultos hasta la captura. La envoltura Misteriosa siempre dura 20 minutos, incluso si contiene un Fugaz; si se pudre, no revela el contenido.
+
+La primera callback procesada para ese chat reclama el premio dentro de una transacción inmediata de SQLite; las siguientes muestran un alerta de Telegram sin sumar. Al capturar un Falso o un Misterioso, el mismo mensaje reemplaza la foto por la del tipo real, informa el resultado y elimina la botonera. Salvo el Fugaz directo, a los 20 minutos el Hisopo se pudre, deja de valer y el mensaje pierde la botonera. Tocar un Fugaz después de su minuto no suma ni agenda nada: solamente informa que ya se pudrió. Si una rareza todavía no tiene todos los `file_id` que necesita para aparecer y revelarse, esa tirada usa el Hisopo común para no perder el evento.
+
+Cada captura programa una aparición adicional en un segundo aleatorio del día calendario siguiente de Argentina; el Falso no programa ninguna y el Gemelo, además de esa agenda normal, lanza una aparición nueva inmediatamente. La programación se guarda en SQLite y se reconstruye al iniciar el bot, por lo que sobrevive reinicios. Si el juego está deshabilitado cuando llega el horario, la aparición programada se cancela. Los Hisopos podridos no programan apariciones.
 
 Las imágenes se envían mediante los `file_id` persistentes de Telegram configurados en:
 

@@ -78,6 +78,7 @@ class HisopoSpawn:
     chat_id: str
     message_id: str
     hisopo_type: str
+    appearance_type: str
     points: int
     source: str
     spawned_at: str
@@ -368,6 +369,7 @@ class Database:
                     chat_id TEXT NOT NULL,
                     message_id TEXT NOT NULL,
                     hisopo_type TEXT NOT NULL,
+                    appearance_type TEXT NOT NULL,
                     points INTEGER NOT NULL,
                     source TEXT NOT NULL,
                     spawned_at TEXT NOT NULL,
@@ -554,6 +556,18 @@ class Database:
         ).fetchone()
         if applied is None:
             conn.execute("DROP TABLE IF EXISTS galeraza_message_states")
+            conn.execute("INSERT INTO schema_migrations (migration_id) VALUES (?)", (migration_id,))
+
+        migration_id = "20260820_add_hisopo_appearance_type"
+        applied = conn.execute(
+            "SELECT 1 FROM schema_migrations WHERE migration_id = ?", (migration_id,)
+        ).fetchone()
+        if applied is None:
+            _ensure_column(conn, "hisopo_spawns", "appearance_type", "TEXT")
+            conn.execute(
+                "UPDATE hisopo_spawns SET appearance_type = hisopo_type "
+                "WHERE appearance_type IS NULL"
+            )
             conn.execute("INSERT INTO schema_migrations (migration_id) VALUES (?)", (migration_id,))
 
     def get_announced_release_version(self) -> str | None:
@@ -1192,17 +1206,28 @@ class Database:
         source: str,
         spawned_at: str,
         expires_at: str,
+        appearance_type: str | None = None,
     ) -> HisopoSpawn:
         chat_id = self.resolve_chat_id(chat_id)
         with self._connect() as conn:
             conn.execute(
                 """
                 INSERT INTO hisopo_spawns (
-                    chat_id, message_id, hisopo_type, points, source, spawned_at, expires_at
+                    chat_id, message_id, hisopo_type, appearance_type, points,
+                    source, spawned_at, expires_at
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                 """,
-                (chat_id, message_id, hisopo_type, points, source, spawned_at, expires_at),
+                (
+                    chat_id,
+                    message_id,
+                    hisopo_type,
+                    appearance_type or hisopo_type,
+                    points,
+                    source,
+                    spawned_at,
+                    expires_at,
+                ),
             )
             row = conn.execute(
                 "SELECT * FROM hisopo_spawns WHERE chat_id = ? AND message_id = ?",
@@ -2043,6 +2068,11 @@ def _hisopo_spawn_from_row(
         chat_id=row["chat_id"],
         message_id=row["message_id"],
         hisopo_type=row["hisopo_type"],
+        appearance_type=(
+            row["appearance_type"]
+            if "appearance_type" in row.keys() and row["appearance_type"] is not None
+            else row["hisopo_type"]
+        ),
         points=row["points"],
         source=row["source"],
         spawned_at=row["spawned_at"],

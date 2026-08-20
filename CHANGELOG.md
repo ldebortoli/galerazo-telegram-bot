@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.21] - 2026-08-20
+
+- El Hisopo falso ahora se disfraza de común hasta la captura, y el misterioso contiene y revela uno de los otros tipos respetando sus probabilidades relativas.
+- El Hisopo gemelo lanza una nueva aparición inmediatamente al capturarlo y conserva una sola aparición programada para el día siguiente.
+- El tipo real, la apariencia inicial y los valores aleatorios quedan persistidos y migran correctamente entre grupos y supergrupos.
+
 ## [0.20] - 2026-08-20
 
 - Ajustamos las probabilidades del Recolector: el Hisopo diamante ahora es el más raro, mientras que el gemelo, falso, radiactivo y putrefacto aparecen con mayor frecuencia.

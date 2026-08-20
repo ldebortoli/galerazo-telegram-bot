@@ -31,7 +31,14 @@ class HisopoKind:
     points: int
     expiration: timedelta = HISOPO_EXPIRATION
     next_day_spawns: int = 1
+    immediate_spawns: int = 0
     hides_points: bool = False
+
+
+@dataclass(frozen=True)
+class HisopoSelection:
+    actual: HisopoKind
+    appearance: HisopoKind
 
 
 COMMON_HISOPO = HisopoKind("common", 1)
@@ -42,7 +49,7 @@ MYSTERY_HISOPO = HisopoKind("mystery", 0, hides_points=True)
 PUTRID_HISOPO = HisopoKind("putrid", -2)
 RADIOACTIVE_HISOPO = HisopoKind("radioactive", 0)
 FAKE_HISOPO = HisopoKind("fake", 0, next_day_spawns=0)
-TWIN_HISOPO = HisopoKind("twin", 4, next_day_spawns=2)
+TWIN_HISOPO = HisopoKind("twin", 4, immediate_spawns=1)
 DIAMOND_HISOPO = HisopoKind("diamond", 10)
 
 HISOPO_KINDS = {
@@ -73,7 +80,6 @@ HISOPO_PROBABILITY_RANGES = {
     "diamond": (100, 100),
 }
 RADIOACTIVE_POINT_VALUES = (-3, -1, 2, 4, 6)
-MYSTERY_POINT_VALUES = (-3, -2, -1, 0, 1, 2, 3, 4, 5, 6, 10)
 
 
 def should_spawn_hisopo(intensity_percent: int, roll: int) -> bool:
@@ -95,10 +101,48 @@ def select_hisopo_kind(
         for key, (lower, upper) in HISOPO_PROBABILITY_RANGES.items()
         if lower <= roll <= upper
     )
-    if kind.key == "radioactive":
-        return replace(kind, points=RADIOACTIVE_POINT_VALUES[randbelow(len(RADIOACTIVE_POINT_VALUES))])
-    if kind.key == "mystery":
-        return replace(kind, points=MYSTERY_POINT_VALUES[randbelow(len(MYSTERY_POINT_VALUES))])
+    return _resolve_dynamic_points(kind, randbelow)
+
+
+def select_hisopo_spawn(
+    roll: int,
+    randbelow: Callable[[int], int] = secrets.randbelow,
+) -> HisopoSelection:
+    outer_kind = select_hisopo_kind(roll, randbelow=randbelow)
+    if outer_kind.key == "mystery":
+        actual_kind = _select_weighted_non_mystery_kind(randbelow)
+        return HisopoSelection(actual=actual_kind, appearance=MYSTERY_HISOPO)
+    if outer_kind.key == "fake":
+        return HisopoSelection(actual=outer_kind, appearance=COMMON_HISOPO)
+    return HisopoSelection(actual=outer_kind, appearance=outer_kind)
+
+
+def _select_weighted_non_mystery_kind(
+    randbelow: Callable[[int], int],
+) -> HisopoKind:
+    weighted_kinds = [
+        (HISOPO_KINDS[key], upper - lower + 1)
+        for key, (lower, upper) in HISOPO_PROBABILITY_RANGES.items()
+        if key != MYSTERY_HISOPO.key
+    ]
+    roll = randbelow(sum(weight for _kind, weight in weighted_kinds)) + 1
+    cumulative = 0
+    for kind, weight in weighted_kinds:
+        cumulative += weight
+        if roll <= cumulative:
+            return _resolve_dynamic_points(kind, randbelow)
+    raise RuntimeError("No se pudo seleccionar el contenido del Hisopo misterioso.")
+
+
+def _resolve_dynamic_points(
+    kind: HisopoKind,
+    randbelow: Callable[[int], int],
+) -> HisopoKind:
+    if kind.key == RADIOACTIVE_HISOPO.key:
+        return replace(
+            kind,
+            points=RADIOACTIVE_POINT_VALUES[randbelow(len(RADIOACTIVE_POINT_VALUES))],
+        )
     return kind
 
 
