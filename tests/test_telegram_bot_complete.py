@@ -423,6 +423,7 @@ class PreprocessAndTriggerTests(unittest.IsolatedAsyncioTestCase):
             await tb._preprocess_message(update, context)
 
         timeout_log = log.await_args.args[2]
+        self.assertTrue(timeout_log.startswith("TimedOut: Timed out\n"))
         self.assertIn("TimedOut", timeout_log)
         self.assertIn("El punto se conservo", timeout_log)
         self.assertIn("pudieron haberse enviado igualmente", timeout_log)
@@ -1253,7 +1254,9 @@ class PermissionsLoggingBackupAndMiscTests(unittest.IsolatedAsyncioTestCase):
                 raise RuntimeError("x" * 3000)
             except RuntimeError as exc:
                 await tb._send_unhandled_error_event(bot, "-10", exc, None)
-        self.assertIn("Error no handleado", send.await_args.args[2])
+        error_text = send.await_args.args[2]
+        self.assertTrue(error_text.startswith("RuntimeError: "))
+        self.assertIn("Error no handleado", error_text)
         with patch.object(tb, "save_logging_status") as status:
             self.assertFalse(await tb._send_log_event(bot, None, "x"))
         status.assert_called_once()

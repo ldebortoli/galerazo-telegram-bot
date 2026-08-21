@@ -102,7 +102,7 @@ from .google_sheets import GoogleSheetsConfig, GoogleSheetsExpenseWriter
 from .i18n import DEFAULT_LANGUAGE, t
 from .instance_lock import SingleInstance
 from .integration_status import save_logging_status
-from .logging_utils import configure_logging
+from .logging_utils import configure_logging, exception_summary, redact_secrets
 from .media_moderation import OpenAIMediaModerator, trigger_media_kind
 from .pagination import (
     BUTTON_PREFIX,
@@ -476,8 +476,8 @@ async def _preprocess_message(update: Update, context: ContextTypes.DEFAULT_TYPE
             )
         except TimedOut as exc:
             timeout_log = (
+                f"{exception_summary(exc)}\n\n"
                 "Error manejado al anunciar La Galeraza:\n"
-                f"{type(exc).__name__}: {exc}\n"
                 "El punto se conservo.\n"
                 "Se realizaron 3 intentos totales: el original y 2 reintentos.\n"
                 "Telegram no confirmo ninguna respuesta; uno o mas avisos pudieron haberse "
@@ -2485,12 +2485,15 @@ async def _send_unhandled_error_event(
     exc: BaseException,
     update: object = None,
 ) -> None:
+    summary = exception_summary(exc)
     trace = "".join(traceback.format_exception(type(exc), exc, exc.__traceback__))
     if len(trace) > 2200:
         trace = trace[-2200:]
 
     update_json = _serialize_update(update)
-    text = f"Error no handleado:\n{trace}\nUpdate JSON:\n{update_json}"
+    text = redact_secrets(
+        f"{summary}\n\nError no handleado:\n{trace}\nUpdate JSON:\n{update_json}"
+    )
     await _send_log_text_with_truncation(
         bot,
         log_chat_id,

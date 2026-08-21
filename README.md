@@ -334,6 +334,8 @@ Por ahora el canal de logging solo recibe:
 - Avisos cuando un mensaje no paginable supera el limite de Telegram y se envia truncado.
 - Reporte diario del gasto mensual de Google Cloud cuando Billing esta configurado.
 
+Los reportes de excepciones comienzan con `TipoDeExcepcion: detalle` para que la causa sea visible inmediatamente; debajo conservan el contexto, la update y el traceback completo para diagnostico.
+
 El canal de anuncios recibe mensajes enviados por devs con:
 
 ```powershell

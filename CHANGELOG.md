@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.31] - 2026-08-21
+
+- Correcciones y mejoras: los reportes de excepciones ahora muestran el tipo y el detalle del error al comienzo, antes del contexto y del traceback completo.
+
 ## [0.30] - 2026-08-21
 
 - Antes de publicar un nuevo Hisopo, el bot intenta eliminar en ese grupo las apariciones con más de 24 horas. Los fallos se registran y nunca impiden enviar la aparición nueva.

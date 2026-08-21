@@ -109,6 +109,7 @@ class DebugSerializationTests(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(len(bot.messages), 1)
         text = str(bot.messages[0]["text"])
+        self.assertTrue(text.startswith("RuntimeError: failure\n"))
         self.assertIn("Error no handleado", text)
         self.assertIn("Update JSON", text)
         self.assertIn('"update_id": 23', text)
