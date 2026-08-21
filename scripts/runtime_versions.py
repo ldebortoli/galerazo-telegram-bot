@@ -22,7 +22,7 @@ DIRECT_DEPENDENCIES = {
     "httpx",
     "pillow",
     "python-dotenv",
-    "python-telegram-bot[job-queue]",
+    "python-telegram-bot[job-queue,rate-limiter]",
     "tzdata",
 }
 

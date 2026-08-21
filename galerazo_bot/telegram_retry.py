@@ -3,18 +3,18 @@ from __future__ import annotations
 import asyncio
 import logging
 from collections.abc import Awaitable, Callable
-from datetime import timedelta
 from typing import Any, TypeVar
 
 from telegram import Message
-from telegram.error import RetryAfter, TimedOut
-from telegram.ext import ExtBot
+from telegram.error import TimedOut
+from telegram.ext import AIORateLimiter, ExtBot
 from telegram.request import HTTPXRequest
 
 
 logger = logging.getLogger(__name__)
 SEND_MESSAGE_MAX_ATTEMPTS = 3
 SEND_MESSAGE_RETRY_DELAYS_SECONDS = (1.0, 2.0)
+TELEGRAM_RATE_LIMIT_MAX_RETRIES = 2
 T = TypeVar("T")
 
 
@@ -48,32 +48,6 @@ async def retry_timed_out(
             )
             await asyncio.sleep(delay)
             attempt += 1
-        except RetryAfter as exc:
-            if attempt >= SEND_MESSAGE_MAX_ATTEMPTS:
-                logger.error(
-                    "%s siguio limitado por Telegram despues de %s intentos.",
-                    operation_name,
-                    SEND_MESSAGE_MAX_ATTEMPTS,
-                    exc_info=True,
-                )
-                raise
-
-            retry_after = exc.retry_after
-            delay = (
-                retry_after.total_seconds()
-                if isinstance(retry_after, timedelta)
-                else float(retry_after)
-            )
-            logger.warning(
-                "%s fue limitado por Telegram en el intento %s/%s; "
-                "reintentando en %.1f segundos.",
-                operation_name,
-                attempt,
-                SEND_MESSAGE_MAX_ATTEMPTS,
-                delay,
-            )
-            await asyncio.sleep(delay)
-            attempt += 1
 
 
 class RetryingExtBot(ExtBot):
@@ -94,4 +68,5 @@ def build_retrying_ext_bot(token: str, request_timeout_seconds: float) -> Retryi
             pool_timeout=request_timeout_seconds,
         ),
         get_updates_request=HTTPXRequest(connection_pool_size=1),
+        rate_limiter=AIORateLimiter(max_retries=TELEGRAM_RATE_LIMIT_MAX_RETRIES),
     )

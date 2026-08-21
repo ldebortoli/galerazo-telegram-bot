@@ -41,6 +41,12 @@ Todo comando requiere un prefijo de ejecucion: `/`, `!`, `.`, `>` o `$`. Por eje
 
 Los comandos que no existen se ignoran silenciosamente. Cada comando implementado se procesa una sola vez y no cae en un handler generico posterior.
 
+## Límites y reintentos de Telegram
+
+Todas las llamadas salientes pasan por el limitador global de `python-telegram-bot`. El bot regula preventivamente el tráfico total y el dirigido a cada grupo o canal. Si Telegram responde con `429 Retry After`, pausa los envíos, espera el plazo exacto indicado más el margen de seguridad de la biblioteca y realiza como máximo dos reintentos: tres intentos totales. Esto se aplica a textos, fotos, multimedia, ediciones, borrados, respuestas de callbacks y demás métodos del Bot API; `getUpdates` queda excluido por diseño de la biblioteca.
+
+Los reintentos por `TimedOut` permanecen separados y limitados a `send_message`: se espera 1 y 2 segundos entre tres intentos totales, aceptando el riesgo de duplicados cuando Telegram recibió el mensaje pero no confirmó la respuesta. Un `429` es un rechazo explícito y lo gestiona solamente el limitador global, evitando multiplicar accidentalmente ambos presupuestos.
+
 ## Estructura de comandos
 
 Los handlers reales de Telegram se registran en `galerazo_bot/telegram_bot.py` con `CommandHandler`, `PrefixHandler`, `MessageHandler`, `CallbackQueryHandler` y `ChatMemberHandler`.

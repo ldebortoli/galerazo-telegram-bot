@@ -5,7 +5,7 @@ pytest-asyncio
 google-cloud-bigquery
 httpx
 Pillow
-python-telegram-bot[job-queue]
+python-telegram-bot[job-queue,rate-limiter]
 python-dotenv
 gspread
 google-auth

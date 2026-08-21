@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.32] - 2026-08-21
+
+- Correcciones y mejoras: todos los envíos a Telegram ahora respetan preventivamente los límites generales y por chat. Si Telegram responde con control de frecuencia, el bot espera el plazo indicado y realiza hasta tres intentos totales también para fotos, multimedia, ediciones, borrados y demás operaciones.
+
 ## [0.31] - 2026-08-21
 
 - Correcciones y mejoras: los reportes de excepciones ahora muestran el tipo y el detalle del error al comienzo, antes del contexto y del traceback completo.
