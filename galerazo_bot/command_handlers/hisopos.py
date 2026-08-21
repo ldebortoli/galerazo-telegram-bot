@@ -165,6 +165,7 @@ def migrate_chat_data(conn: sqlite3.Connection, old_chat_id: str, new_chat_id: s
             initial_appearance_type, points, required_helpers, source,
             spawned_at, expires_at, status, winner_user_id, captured_at,
             bomb_success_slot, bomb_explosion_slot, bomb_revealed_mask,
+            race_last_refresh_at,
             message_cleanup_status,
             message_cleanup_attempts, message_cleanup_last_attempt_at,
             message_deleted_at, message_cleanup_error
@@ -173,6 +174,7 @@ def migrate_chat_data(conn: sqlite3.Connection, old_chat_id: str, new_chat_id: s
                initial_appearance_type, points, required_helpers, source,
                spawned_at, expires_at, status, winner_user_id, captured_at,
                bomb_success_slot, bomb_explosion_slot, bomb_revealed_mask,
+               race_last_refresh_at,
                message_cleanup_status,
                message_cleanup_attempts, message_cleanup_last_attempt_at,
                message_deleted_at, message_cleanup_error
@@ -203,6 +205,26 @@ def migrate_chat_data(conn: sqlite3.Connection, old_chat_id: str, new_chat_id: s
     )
     conn.execute(
         "DELETE FROM hisopo_giant_contributions WHERE chat_id = ?",
+        (old_chat_id,),
+    )
+    conn.execute(
+        """
+        INSERT OR IGNORE INTO hisopo_race_presses (
+            chat_id, message_id, callback_query_id,
+            user_id, pressed_at, counted
+        )
+        SELECT ?, press.message_id, press.callback_query_id,
+               press.user_id, press.pressed_at, press.counted
+        FROM hisopo_race_presses AS press
+        JOIN hisopo_spawns AS new_spawn
+          ON new_spawn.chat_id = ?
+         AND new_spawn.message_id = press.message_id
+        WHERE press.chat_id = ?
+        """,
+        (new_chat_id, new_chat_id, old_chat_id),
+    )
+    conn.execute(
+        "DELETE FROM hisopo_race_presses WHERE chat_id = ?",
         (old_chat_id,),
     )
     conn.execute("DELETE FROM hisopo_spawns WHERE chat_id = ?", (old_chat_id,))

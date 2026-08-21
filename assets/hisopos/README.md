@@ -44,3 +44,27 @@ Prompt final de edición para la versión desactivada, generado en modo `precise
 Prompt final de edición para la explosión, generado en modo `precise-object-edit` sobre la aparición activa:
 
 > Use case: precise-object-edit. Asset type: square Telegram game collectible artwork, bomb-exploded failure state. Primary request: Show this exact bomb swab at the instant just after it explodes. Changes: replace the central mechanism with a playful orange-red fireball and smoky burst; separate the swab into two recognizable diagonal halves with lightly charred broken edges; add sparks, embers and curling dark smoke while keeping both white cotton tips visible. The result should read instantly as an exploded game collectible, dramatic but not graphic. Constraints: preserve square framing, centered silhouette, dark navy backdrop and polished stylized 3D visual language; no gore, text, letters, numbers, buttons, people, logos or watermark.
+
+## Hisopo frenético
+
+Archivo: `hisopo-frenetico.png`
+
+Prompt final, generado con ImageGen integrado en modo `stylized-concept`:
+
+> Use case: stylized-concept. Asset type: square Telegram game collectible artwork. Create a beautiful “Hisopo Frenético” for a rapid 20-tap race. Show exactly one unmistakable double-ended cotton swab, centered diagonally and fully visible, with a sleek cyan shaft, bright white tactile cotton tips and restrained orange energy accents. Surround it with elegant electric cyan and orange speed trails, small sparks and subtle motion echoes that communicate frantic repeated tapping without showing hands, buttons, text or numbers. Use a deep navy cinematic background, polished whimsical 3D product-render quality, premium game collectible lighting, strong thumbnail silhouette and generous safe margins. Energetic and playful, not violent. No letters, interface elements, people, logos, watermark, packaging or extra swabs.
+
+## Hisopo agujero negro
+
+Archivo: `hisopo-agujero-negro.png`
+
+Prompt final, generado con ImageGen integrado en modo `stylized-concept`:
+
+> Use case: stylized-concept. Asset type: square Telegram game collectible artwork. Create a beautiful “Hisopo Agujero Negro” for a competitive 20-tap race that absorbs rivals’ points. Show exactly one recognizable double-ended cotton swab crossing the luminous edge of a compact black hole, centered diagonally and fully visible. Keep both cotton tips bright and tactile while the dark graphite shaft bends subtle violet-blue light around it. Add a restrained accretion ring, elegant cosmic particles and a deep navy-to-black space background. Polished whimsical 3D product render, premium collectible art, dramatic gravitational lighting, generous safe margins and a clear Telegram-thumbnail silhouette. Mysterious and powerful but not horror. No text, numbers, people, hands, buttons, logos, watermark, planets, weapons or extra swabs.
+
+## Hisopo vencido
+
+Archivo: `hisopo-vencido.png`
+
+Prompt final, generado con ImageGen integrado y refinado para eliminar marcas de reloj:
+
+> Use case: stylized-concept. Asset type: square Telegram game collectible artwork. Create a generic “Hisopo Vencido” result image. Show exactly one old, dried-out double-ended cotton swab, centered diagonally and fully visible, with slightly yellowed frayed cotton, a faded beige shaft and a restrained dusty amber halo. Use a sober dark blue-gray background, a few drifting dust motes, soft floor shadow and polished whimsical 3D product-render quality consistent with a premium game collectible set. It should read instantly as expired and missed, not rotten gore or medical waste. Preserve generous margins and a strong thumbnail silhouette. Do not include clocks, clock hands, clock faces, numerals, tick marks, text, letters, people, logos, watermark, packaging or extra swabs.

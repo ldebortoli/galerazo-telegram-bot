@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.36] - 2026-08-21
+
+- Nuevos Hisopos Frenético y Agujero negro, ambos con 4 % de aparición y carreras persistentes/atómicas a 20 pulsaciones. El Frenético entrega 3 puntos; el Agujero negro entrega 10 si se juega en soledad o transfiere hasta 10 puntos desde los rivales según sus pulsaciones.
+- Nuevo coleccionable Vencido: el primer toque tardío revela el tipo, no altera puntajes y cambia la foto; las apariciones no Misteriosas entregan Vencido, mientras que un Misterioso solo revela su tipo real.
+- La colección pasa a 16 categorías, las pulsaciones y sus callbacks sobreviven migraciones de grupo, y se agregan tres artes y variables de `file_id` independientes para Frenético, Agujero negro y Vencido.
+
 ## [0.35] - 2026-08-21
 
 - Nuevo Hisopo bomba (4 %): tablero persistente de 16 casillas con una desactivación por +10 puntos, una explosión por -10 y catorce intentos neutros. Los clics se resuelven atómicamente, sobreviven migraciones y cambian la foto al desenlace.

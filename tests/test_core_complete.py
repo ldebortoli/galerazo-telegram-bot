@@ -220,6 +220,9 @@ class ConfigurationAndEntrypointTests(unittest.TestCase):
             "TELEGRAM_HISOPO_BOMB_FILE_ID": "bomb",
             "TELEGRAM_HISOPO_BOMB_DEFUSED_FILE_ID": "bomb-defused",
             "TELEGRAM_HISOPO_BOMB_EXPLODED_FILE_ID": "bomb-exploded",
+            "TELEGRAM_HISOPO_FRENETIC_FILE_ID": "frenetic",
+            "TELEGRAM_HISOPO_BLACK_HOLE_FILE_ID": "black-hole",
+            "TELEGRAM_HISOPO_EXPIRED_FILE_ID": "expired",
             "TELEGRAM_HISOPO_FAKE_FILE_ID": "fake",
             "TELEGRAM_HISOPO_TWIN_FILE_ID": "twin",
             "TELEGRAM_HISOPO_GIANT_FILE_ID": "giant",
@@ -248,6 +251,9 @@ class ConfigurationAndEntrypointTests(unittest.TestCase):
         self.assertEqual(settings.telegram_hisopo_bomb_file_id, "bomb")
         self.assertEqual(settings.telegram_hisopo_bomb_defused_file_id, "bomb-defused")
         self.assertEqual(settings.telegram_hisopo_bomb_exploded_file_id, "bomb-exploded")
+        self.assertEqual(settings.telegram_hisopo_frenetic_file_id, "frenetic")
+        self.assertEqual(settings.telegram_hisopo_black_hole_file_id, "black-hole")
+        self.assertEqual(settings.telegram_hisopo_expired_file_id, "expired")
         self.assertEqual(settings.telegram_hisopo_fake_file_id, "fake")
         self.assertEqual(settings.telegram_hisopo_twin_file_id, "twin")
         self.assertEqual(settings.telegram_hisopo_giant_file_id, "giant")

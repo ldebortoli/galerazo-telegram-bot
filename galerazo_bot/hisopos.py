@@ -17,9 +17,13 @@ HISOPO_FLEETING_EXPIRATION = timedelta(minutes=1)
 HISOPO_CALLBACK_PREFIX = "hisopo"
 HISOPO_CAPTURE_CALLBACK = f"{HISOPO_CALLBACK_PREFIX}:capture"
 HISOPO_BOMB_CALLBACK_PREFIX = f"{HISOPO_CALLBACK_PREFIX}:bomb"
+HISOPO_RACE_CALLBACK = f"{HISOPO_CALLBACK_PREFIX}:race"
 HISOPO_BOMB_SLOT_COUNT = 16
 HISOPO_BOMB_DEFUSE_POINTS = 10
 HISOPO_BOMB_EXPLOSION_POINTS = -10
+HISOPO_RACE_REQUIRED_PRESSES = 20
+HISOPO_RACE_REFRESH_INTERVAL = timedelta(seconds=30)
+HISOPO_RACE_MIN_PRESS_INTERVAL = timedelta(milliseconds=100)
 HISOPO_TYPE_ROLL_MAX = 10_000
 HISOPO_GIANT_MAX_HELPERS = 15
 HISOPO_INTENSITIES = {
@@ -55,11 +59,14 @@ MYSTERY_HISOPO = HisopoKind("mystery", 0, hides_points=True)
 PUTRID_HISOPO = HisopoKind("putrid", -2)
 RADIOACTIVE_HISOPO = HisopoKind("radioactive", 0, hides_points=True)
 BOMB_HISOPO = HisopoKind("bomb", HISOPO_BOMB_DEFUSE_POINTS, hides_points=True)
+FRENETIC_HISOPO = HisopoKind("frenetic", 3)
+BLACK_HOLE_HISOPO = HisopoKind("black_hole", 10, hides_points=True)
 FAKE_HISOPO = HisopoKind("fake", 0, next_day_spawns=0)
 TWIN_HISOPO = HisopoKind("twin", 4, immediate_spawns=1)
 DIAMOND_HISOPO = HisopoKind("diamond", 10)
 GIANT_HISOPO = HisopoKind("giant", 4)
 MIRACLE_HISOPO = HisopoKind("miracle", 15, hides_points=True)
+EXPIRED_HISOPO = HisopoKind("expired", 0, next_day_spawns=0)
 
 HISOPO_KINDS = {
     kind.key: kind
@@ -72,23 +79,28 @@ HISOPO_KINDS = {
         PUTRID_HISOPO,
         RADIOACTIVE_HISOPO,
         BOMB_HISOPO,
+        FRENETIC_HISOPO,
+        BLACK_HOLE_HISOPO,
         FAKE_HISOPO,
         TWIN_HISOPO,
         DIAMOND_HISOPO,
         GIANT_HISOPO,
         MIRACLE_HISOPO,
+        EXPIRED_HISOPO,
     )
 }
 COLLECTIBLE_HISOPO_KEYS = tuple(HISOPO_KINDS)
 HISOPO_PROBABILITY_RANGES = {
-    "common": (1, 4265),
-    "silver": (4266, 5665),
-    "gold": (5666, 6665),
-    "fleeting": (6666, 7365),
-    "mystery": (7366, 8065),
-    "putrid": (8066, 8565),
-    "radioactive": (8566, 8965),
-    "bomb": (8966, 9365),
+    "common": (1, 3465),
+    "silver": (3466, 4865),
+    "gold": (4866, 5865),
+    "fleeting": (5866, 6565),
+    "mystery": (6566, 7265),
+    "putrid": (7266, 7765),
+    "radioactive": (7766, 8165),
+    "bomb": (8166, 8565),
+    "frenetic": (8566, 8965),
+    "black_hole": (8966, 9365),
     "fake": (9366, 9665),
     "twin": (9666, 9865),
     "diamond": (9866, 9965),

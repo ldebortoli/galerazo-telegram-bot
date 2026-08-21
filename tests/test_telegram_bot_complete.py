@@ -28,10 +28,12 @@ from galerazo_bot.database import (
     Expense,
     HisopoCaptureResult,
     HisopoBombResult,
+    HisopoExpirationResult,
     HisopoGiantContributionResult,
     HisopoMessageCleanup,
     HisopoSchedule,
     HisopoSpawn,
+    HisopoRaceResult,
     PaginatedMessageState,
     RestartConfirmation,
     Trigger,
@@ -1324,8 +1326,8 @@ class HisopoTelegramTests(unittest.IsolatedAsyncioTestCase):
             appearance_type="common",
             points=1,
             source="message",
-            spawned_at="2026-08-20T12:00:00+00:00",
-            expires_at="2026-08-20T12:20:00+00:00",
+            spawned_at="2099-08-20T12:00:00+00:00",
+            expires_at="2099-08-20T12:20:00+00:00",
             status="active",
             winner_user_id=None,
             captured_at=None,
@@ -1533,7 +1535,7 @@ class HisopoTelegramTests(unittest.IsolatedAsyncioTestCase):
             telegram_hisopo_common_file_id="common-id",
             telegram_hisopo_mystery_file_id="mystery-id",
         )
-        with patch.object(tb.secrets, "randbelow", side_effect=[7765, 0]):
+        with patch.object(tb.secrets, "randbelow", side_effect=[6565, 0]):
             mystery_spawn = await tb._spawn_hisopo(
                 mystery_app,
                 "-1",
@@ -1554,7 +1556,7 @@ class HisopoTelegramTests(unittest.IsolatedAsyncioTestCase):
             telegram_hisopo_mystery_file_id="mystery-id",
             telegram_hisopo_fleeting_file_id="fleeting-id",
         )
-        with patch.object(tb.secrets, "randbelow", side_effect=[7765, 7065]):
+        with patch.object(tb.secrets, "randbelow", side_effect=[6565, 5865]):
             mystery_fleeting = await tb._spawn_hisopo(
                 mystery_fleeting_app,
                 "-1",
@@ -1584,7 +1586,7 @@ class HisopoTelegramTests(unittest.IsolatedAsyncioTestCase):
             telegram_hisopo_diamond_file_id="diamond-id",
             telegram_hisopo_putrid_file_id="putrid-id",
         )
-        with patch.object(tb.secrets, "randbelow", side_effect=[8465, 99]):
+        with patch.object(tb.secrets, "randbelow", side_effect=[7265, 99]):
             putrid_spawn = await tb._spawn_hisopo(putrid_app, "-1", "message")
         self.assertEqual(putrid_spawn.hisopo_type, "putrid")
         self.assertEqual(putrid_spawn.appearance_type, "diamond")
@@ -1597,7 +1599,7 @@ class HisopoTelegramTests(unittest.IsolatedAsyncioTestCase):
             db,
             telegram_hisopo_radioactive_file_id="radioactive-id",
         )
-        with patch.object(tb.secrets, "randbelow", return_value=8565):
+        with patch.object(tb.secrets, "randbelow", return_value=7765):
             radioactive_spawn = await tb._spawn_hisopo(
                 radioactive_app,
                 "-1",
@@ -1615,7 +1617,7 @@ class HisopoTelegramTests(unittest.IsolatedAsyncioTestCase):
             telegram_hisopo_bomb_defused_file_id="bomb-defused-id",
             telegram_hisopo_bomb_exploded_file_id="bomb-exploded-id",
         )
-        with patch.object(tb.secrets, "randbelow", side_effect=[8965, 2, 6]):
+        with patch.object(tb.secrets, "randbelow", side_effect=[8165, 2, 6]):
             bomb_spawn = await tb._spawn_hisopo(bomb_app, "-1", "message")
         self.assertEqual(bomb_spawn.hisopo_type, "bomb")
         self.assertEqual(bomb_spawn.bomb_success_slot, 2)
@@ -1631,12 +1633,46 @@ class HisopoTelegramTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(bomb_keyboard[0][0].text, "❓")
         self.assertEqual(bomb_keyboard[3][3].callback_data, "hisopo:bomb:15")
 
+        frenetic_app, _, frenetic_bot, _ = self._application(
+            db,
+            telegram_hisopo_frenetic_file_id="frenetic-id",
+        )
+        with patch.object(tb.secrets, "randbelow", return_value=8565):
+            frenetic_spawn = await tb._spawn_hisopo(frenetic_app, "-1", "message")
+        self.assertEqual(frenetic_spawn.hisopo_type, "frenetic")
+        self.assertEqual(
+            frenetic_bot.send_photo.await_args.kwargs["caption"],
+            "¡Apareció un hisopo frenético!\n"
+            "La primera persona que llegue a 20 pulsaciones gana.",
+        )
+        race_button = frenetic_bot.send_photo.await_args.kwargs[
+            "reply_markup"
+        ].inline_keyboard[0][0]
+        self.assertEqual(race_button.text, "Pulsar · 0/20")
+        self.assertEqual(race_button.callback_data, "hisopo:race")
+
+        black_hole_app, _, black_hole_bot, _ = self._application(
+            db,
+            telegram_hisopo_black_hole_file_id="black-hole-id",
+        )
+        with patch.object(tb.secrets, "randbelow", return_value=8965):
+            black_hole_spawn = await tb._spawn_hisopo(
+                black_hole_app,
+                "-1",
+                "message",
+            )
+        self.assertEqual(black_hole_spawn.hisopo_type, "black_hole")
+        self.assertEqual(
+            black_hole_bot.send_photo.await_args.kwargs["photo"],
+            "black-hole-id",
+        )
+
         fleeting_app, _, _, _ = self._application(
             db,
             telegram_hisopo_common_file_id="common-id",
             telegram_hisopo_fleeting_file_id="fleeting-id",
         )
-        with patch.object(tb.secrets, "randbelow", return_value=7065):
+        with patch.object(tb.secrets, "randbelow", return_value=5865):
             fleeting_spawn = await tb._spawn_hisopo(
                 fleeting_app,
                 "-1",
@@ -1696,6 +1732,9 @@ class HisopoTelegramTests(unittest.IsolatedAsyncioTestCase):
             telegram_hisopo_bomb_file_id="b",
             telegram_hisopo_bomb_defused_file_id="bd",
             telegram_hisopo_bomb_exploded_file_id="be",
+            telegram_hisopo_frenetic_file_id="fr",
+            telegram_hisopo_black_hole_file_id="bh",
+            telegram_hisopo_expired_file_id="ex",
             telegram_hisopo_fake_file_id="f",
             telegram_hisopo_twin_file_id="t",
             telegram_hisopo_giant_file_id="gi",
@@ -1711,6 +1750,9 @@ class HisopoTelegramTests(unittest.IsolatedAsyncioTestCase):
             "putrid": "p",
             "radioactive": "r",
             "bomb": "b",
+            "frenetic": "fr",
+            "black_hole": "bh",
+            "expired": "ex",
             "fake": "f",
             "twin": "t",
             "giant": "gi",
@@ -1739,16 +1781,13 @@ class HisopoTelegramTests(unittest.IsolatedAsyncioTestCase):
             job=SimpleNamespace(data={"chat_id": "-1", "message_id": "100"}),
         )
         db.resolve_chat_id.return_value = "-1"
-        db.mark_hisopo_rotten.return_value = False
+        db.mark_hisopo_expired_waiting.return_value = False
         await tb._expire_hisopo_job(context)
         bot.edit_message_caption.assert_not_awaited()
-        db.mark_hisopo_rotten.return_value = True
-        db.get_hisopo_spawn.return_value = None
+        db.mark_hisopo_expired_waiting.return_value = True
         await tb._expire_hisopo_job(context)
-        db.get_hisopo_spawn.return_value = self._spawn()
-        db.get_chat_settings.return_value = SimpleNamespace(language="es")
-        await tb._expire_hisopo_job(context)
-        bot.edit_message_caption.assert_awaited_once()
+        self.assertEqual(db.mark_hisopo_expired_waiting.call_count, 2)
+        bot.edit_message_caption.assert_not_awaited()
 
         context.job.data = {"schedule_id": 1}
         db.claim_hisopo_schedule.return_value = None
@@ -2290,6 +2329,356 @@ class HisopoTelegramTests(unittest.IsolatedAsyncioTestCase):
                 "done",
             )
         fallback_bot.edit_message_caption.assert_awaited_once()
+
+    async def test_race_callbacks_refresh_finish_transfer_and_report_stale_states(self) -> None:
+        db = MagicMock()
+        db.get_chat_settings.return_value = SimpleNamespace(language="es")
+        app, _, bot, job_queue = self._application(
+            db,
+            telegram_hisopo_frenetic_file_id="frenetic-id",
+            telegram_hisopo_black_hole_file_id="black-hole-id",
+        )
+        callback = SimpleNamespace(id="callback-1", answer=AsyncMock())
+        context = SimpleNamespace(application=app, bot=bot)
+        user = SimpleNamespace(id=2, full_name="Winner", username="winner")
+        active = self._spawn(
+            hisopo_type="frenetic",
+            appearance_type="frenetic",
+            points=3,
+        )
+
+        db.press_hisopo_race.return_value = HisopoRaceResult(
+            "pressed",
+            active,
+            user_press_count=7,
+            leading_press_count=9,
+            participant_count=2,
+            refresh_due=True,
+        )
+        await tb._handle_hisopo_race_callback(
+            context, callback, user, active, "es", datetime.now(timezone.utc)
+        )
+        self.assertEqual(
+            bot.edit_message_caption.await_args.kwargs["caption"],
+            "¡Carrera por el hisopo frenético!\n"
+            "La marca más alta es 9/20 pulsaciones.",
+        )
+        self.assertEqual(
+            bot.edit_message_caption.await_args.kwargs[
+                "reply_markup"
+            ].inline_keyboard[0][0].text,
+            "Pulsar · 9/20",
+        )
+        callback.answer.assert_awaited_once_with("Tu pulsación contó: 7/20.")
+
+        bot.edit_message_caption.reset_mock()
+        callback.answer.reset_mock()
+        db.press_hisopo_race.return_value = HisopoRaceResult(
+            "pressed", active, user_press_count=8, leading_press_count=9
+        )
+        await tb._handle_hisopo_race_callback(
+            context, callback, user, active, "es", datetime.now(timezone.utc)
+        )
+        bot.edit_message_caption.assert_not_awaited()
+
+        callback.answer.reset_mock()
+        db.press_hisopo_race.return_value = HisopoRaceResult("too_fast", active)
+        await tb._handle_hisopo_race_callback(
+            context, callback, user, active, "es", datetime.now(timezone.utc)
+        )
+        callback.answer.assert_awaited_once_with(
+            "Esa pulsación fue demasiado rápida y no contó."
+        )
+
+        callback.answer.reset_mock()
+        db.press_hisopo_race.return_value = HisopoRaceResult("duplicate", active)
+        await tb._handle_hisopo_race_callback(
+            context, callback, user, active, "es", datetime.now(timezone.utc)
+        )
+        callback.answer.assert_awaited_once_with()
+
+        callback.answer.reset_mock()
+        schedule = HisopoSchedule(
+            1, "-1", "2099-08-21T10:00:00+00:00", "pending", "100"
+        )
+        won = replace(
+            active,
+            status="captured",
+            winner_user_id="2",
+            captured_at="2099-08-20T12:01:00+00:00",
+        )
+        db.press_hisopo_race.return_value = HisopoRaceResult(
+            "captured",
+            won,
+            user_press_count=20,
+            leading_press_count=20,
+            participant_count=2,
+            awarded_points=3,
+            schedule=schedule,
+        )
+        await tb._handle_hisopo_race_callback(
+            context, callback, user, active, "es", datetime.now(timezone.utc)
+        )
+        self.assertEqual(
+            bot.edit_message_caption.await_args.kwargs["caption"],
+            "Winner ganó la carrera por el hisopo frenético y sumó 3 pt.",
+        )
+        job_queue.run_once.assert_called_once()
+        callback.answer.assert_awaited_once_with(
+            "¡Ganaste la carrera! Sumaste 3 pt.", show_alert=True
+        )
+
+        black = replace(
+            active,
+            hisopo_type="black_hole",
+            appearance_type="black_hole",
+            points=10,
+        )
+        for participants, awarded, losses, expected_caption in (
+            (
+                1,
+                10,
+                (),
+                "Winner dominó en soledad el hisopo agujero negro y sumó 10 pt.",
+            ),
+            (
+                3,
+                5,
+                (("3", 3), ("4", 2)),
+                "Winner dominó el hisopo agujero negro: ganó 5 pt y absorbió "
+                "5 pt de 2 rival(es).",
+            ),
+        ):
+            bot.edit_message_caption.reset_mock()
+            callback.answer.reset_mock()
+            db.press_hisopo_race.return_value = HisopoRaceResult(
+                "captured",
+                replace(black, status="captured", points=awarded),
+                user_press_count=20,
+                leading_press_count=20,
+                participant_count=participants,
+                awarded_points=awarded,
+                lost_points_by_user=losses,
+            )
+            await tb._handle_hisopo_race_callback(
+                context, callback, user, black, "es", datetime.now(timezone.utc)
+            )
+            self.assertEqual(
+                bot.edit_message_caption.await_args.kwargs["caption"],
+                expected_caption,
+            )
+
+        for status, expected in (
+            ("taken", "Uh, qué mala suerte, se te adelantaron."),
+            ("missing", "Este hisopo ya no está disponible."),
+        ):
+            callback.answer.reset_mock()
+            db.press_hisopo_race.return_value = HisopoRaceResult(status, active)
+            await tb._handle_hisopo_race_callback(
+                context, callback, user, active, "es", datetime.now(timezone.utc)
+            )
+            callback.answer.assert_awaited_once_with(expected, show_alert=True)
+
+        callback.answer.reset_mock()
+        expired = replace(active, status="expired", appearance_type="expired")
+        db.press_hisopo_race.return_value = HisopoRaceResult("rotten", active)
+        db.claim_expired_hisopo.return_value = HisopoExpirationResult(
+            "expired", expired, True
+        )
+        with patch.object(tb, "_edit_expired_hisopo", AsyncMock()) as edit_expired:
+            await tb._handle_hisopo_race_callback(
+                context, callback, user, active, "es", datetime.now(timezone.utc)
+            )
+        edit_expired.assert_awaited_once()
+        callback.answer.assert_awaited_once_with(
+            "Llegaste tarde: no suma puntos, pero coleccionaste un hisopo vencido.",
+            show_alert=True,
+        )
+
+        callback.answer.reset_mock()
+        db.press_hisopo_race.return_value = HisopoRaceResult("rotten", active)
+        db.claim_expired_hisopo.return_value = HisopoExpirationResult(
+            "taken", active, False
+        )
+        with patch.object(tb, "_edit_expired_hisopo", AsyncMock()) as edit_expired:
+            await tb._handle_hisopo_race_callback(
+                context, callback, user, active, "es", datetime.now(timezone.utc)
+            )
+        edit_expired.assert_not_awaited()
+        callback.answer.assert_awaited_once_with(
+            "Llegaste tarde. El Misterioso reveló su tipo, pero no suma puntos ni "
+            "un hisopo vencido.",
+            show_alert=True,
+        )
+
+    async def test_expired_callback_changes_media_and_mystery_only_reveals(self) -> None:
+        db = MagicMock()
+        db.get_chat_settings.return_value = SimpleNamespace(language="es")
+        db.is_user_blocked.return_value = False
+        app, _, bot, _ = self._application(
+            db,
+            telegram_hisopo_expired_file_id="expired-id",
+            telegram_hisopo_gold_file_id="gold-id",
+        )
+        message = SimpleNamespace(chat=SimpleNamespace(id=-1, type="group"), message_id=100)
+        user = SimpleNamespace(id=2, full_name="Late", username="late")
+        callback = SimpleNamespace(
+            id="late-1",
+            message=message,
+            data="hisopo:capture",
+            answer=AsyncMock(),
+            from_user=user,
+        )
+        update = SimpleNamespace(callback_query=callback, effective_user=user)
+        context = SimpleNamespace(application=app, bot=bot)
+        past = self._spawn(
+            expires_at="2020-01-01T00:00:00+00:00",
+            status="expired_waiting",
+        )
+        db.get_hisopo_spawn.return_value = past
+        db.claim_expired_hisopo.return_value = HisopoExpirationResult(
+            "expired",
+            replace(past, status="expired", appearance_type="expired"),
+            True,
+        )
+        with patch.object(tb, "_is_user_restricted_in_callback_chat", return_value=False):
+            await tb._hisopo_callback_entrypoint(update, context)
+        self.assertEqual(bot.edit_message_media.await_args.kwargs["media"].media, "expired-id")
+        self.assertEqual(
+            bot.edit_message_media.await_args.kwargs["media"].caption,
+            "Era un hisopo común. ¡Te lo perdiste! No suma puntos, pero descubriste "
+            "un hisopo vencido.",
+        )
+        callback.answer.assert_awaited_once_with(
+            "Llegaste tarde: no suma puntos, pero coleccionaste un hisopo vencido.",
+            show_alert=True,
+        )
+
+        bot.edit_message_media.reset_mock()
+        callback.answer.reset_mock()
+        mystery = replace(
+            past,
+            hisopo_type="gold",
+            points=3,
+            appearance_type="mystery",
+            initial_appearance_type="mystery",
+        )
+        db.get_hisopo_spawn.return_value = mystery
+        db.claim_expired_hisopo.return_value = HisopoExpirationResult(
+            "expired",
+            replace(mystery, status="expired", appearance_type="gold"),
+            False,
+        )
+        with patch.object(tb, "_is_user_restricted_in_callback_chat", return_value=False):
+            await tb._hisopo_callback_entrypoint(update, context)
+        self.assertEqual(bot.edit_message_media.await_args.kwargs["media"].media, "gold-id")
+        self.assertIn(
+            "El Misterioso era un hisopo dorado. ¡Te lo perdiste!",
+            bot.edit_message_media.await_args.kwargs["media"].caption,
+        )
+        callback.answer.assert_awaited_once_with(
+            "Llegaste tarde. El Misterioso reveló su tipo, pero no suma puntos ni "
+            "un hisopo vencido.",
+            show_alert=True,
+        )
+
+        callback.answer.reset_mock()
+        db.claim_expired_hisopo.return_value = HisopoExpirationResult("taken", mystery)
+        with patch.object(tb, "_is_user_restricted_in_callback_chat", return_value=False):
+            await tb._hisopo_callback_entrypoint(update, context)
+        callback.answer.assert_awaited_once_with(
+            "Este hisopo ya no está disponible.", show_alert=True
+        )
+
+        callback.answer.reset_mock()
+        callback.data = "hisopo:race"
+        active_race = self._spawn(
+            hisopo_type="frenetic",
+            appearance_type="frenetic",
+        )
+        db.get_hisopo_spawn.return_value = active_race
+        with patch.object(
+            tb, "_is_user_restricted_in_callback_chat", return_value=False
+        ), patch.object(
+            tb, "_handle_hisopo_race_callback", AsyncMock()
+        ) as handle_race:
+            await tb._hisopo_callback_entrypoint(update, context)
+        handle_race.assert_awaited_once()
+
+        callback.data = "hisopo:bomb:0"
+        waiting_bomb = self._spawn(
+            hisopo_type="bomb",
+            appearance_type="bomb",
+            points=10,
+            status="expired_waiting",
+            bomb_success_slot=2,
+            bomb_explosion_slot=7,
+        )
+        db.get_hisopo_spawn.return_value = waiting_bomb
+        db.claim_expired_hisopo.return_value = HisopoExpirationResult(
+            "active", waiting_bomb
+        )
+        with patch.object(
+            tb, "_is_user_restricted_in_callback_chat", return_value=False
+        ), patch.object(
+            tb, "_handle_bomb_hisopo_slot", AsyncMock()
+        ) as handle_bomb:
+            await tb._hisopo_callback_entrypoint(update, context)
+        handle_bomb.assert_awaited_once()
+
+    async def test_race_and_expired_edit_fallbacks_are_non_fatal(self) -> None:
+        active = self._spawn(hisopo_type="frenetic", appearance_type="frenetic")
+        fallback_bot = SimpleNamespace(
+            edit_message_media=AsyncMock(side_effect=BadRequest("media")),
+            edit_message_caption=AsyncMock(),
+        )
+        configured = settings(
+            telegram_hisopo_frenetic_file_id="frenetic-id",
+            telegram_hisopo_expired_file_id="expired-id",
+        )
+        success_bot = SimpleNamespace(
+            edit_message_media=AsyncMock(),
+            edit_message_caption=AsyncMock(),
+        )
+        await tb._edit_hisopo_race_progress(
+            success_bot, configured, active, "es", 3, force_media=True
+        )
+        success_bot.edit_message_media.assert_awaited_once()
+        success_bot.edit_message_caption.assert_not_awaited()
+
+        with self.assertLogs(tb.logger, level="WARNING"):
+            await tb._edit_hisopo_race_progress(
+                fallback_bot, configured, active, "es", 4, force_media=True
+            )
+        fallback_bot.edit_message_caption.assert_awaited_once()
+
+        fallback_bot.edit_message_caption.reset_mock()
+        with self.assertLogs(tb.logger, level="WARNING"):
+            await tb._edit_hisopo_race_progress(
+                fallback_bot, settings(), active, "es", 5, force_media=True
+            )
+        fallback_bot.edit_message_caption.assert_awaited_once()
+
+        fallback_bot.edit_message_caption.reset_mock()
+        expired = replace(active, status="expired", appearance_type="expired")
+        with self.assertLogs(tb.logger, level="WARNING"):
+            await tb._edit_expired_hisopo(
+                fallback_bot, configured, expired, "es", True
+            )
+        fallback_bot.edit_message_caption.assert_awaited_once()
+
+        fallback_bot.edit_message_caption.reset_mock()
+        with self.assertLogs(tb.logger, level="WARNING"):
+            await tb._edit_expired_hisopo(
+                fallback_bot, settings(), expired, "es", True
+            )
+        fallback_bot.edit_message_caption.assert_awaited_once()
+
+        fallback_bot.edit_message_caption.side_effect = BadRequest("caption")
+        with self.assertLogs(tb.logger, level="WARNING"):
+            await tb._edit_hisopo_race_progress(
+                fallback_bot, settings(), active, "es", 6
+            )
 
     async def test_giant_callback_reveals_progress_prevents_duplicates_and_completes(self) -> None:
         db = MagicMock()

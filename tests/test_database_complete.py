@@ -237,6 +237,22 @@ class DatabaseCompleteTests(unittest.TestCase):
         self.assertEqual(state.list_type, "galeraza")
         with legacy._connect() as connection:
             self.assertFalse(_table_exists(connection, "galeraza_message_states"))
+            self.assertTrue(_table_exists(connection, "hisopo_race_presses"))
+            self.assertIn(
+                "race_last_refresh_at",
+                {
+                    row["name"]
+                    for row in connection.execute(
+                        "PRAGMA table_info(hisopo_spawns)"
+                    ).fetchall()
+                },
+            )
+            self.assertEqual(
+                connection.execute(
+                    "SELECT race_last_refresh_at FROM hisopo_spawns WHERE message_id = '20'"
+                ).fetchone()["race_last_refresh_at"],
+                "2026-08-20T12:00:00+00:00",
+            )
             self.assertEqual(
                 {
                     row["migration_id"]
@@ -252,6 +268,7 @@ class DatabaseCompleteTests(unittest.TestCase):
                     "20260821_track_initial_hisopo_appearance",
                     "20260821_add_hisopo_message_cleanup",
                     "20260821_add_bomb_hisopo",
+                    "20260821_add_hisopo_races",
                 },
             )
             columns = {row["name"] for row in connection.execute("PRAGMA table_info(paginated_message_states)")}

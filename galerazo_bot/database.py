@@ -5,7 +5,7 @@ import sqlite3
 from collections.abc import Iterable, Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
@@ -104,6 +104,7 @@ class HisopoSpawn:
     bomb_success_slot: int | None = None
     bomb_explosion_slot: int | None = None
     bomb_revealed_mask: int = 0
+    race_last_refresh_at: str | None = None
 
 
 @dataclass(frozen=True)
@@ -154,6 +155,27 @@ class HisopoBombResult:
     status: str
     spawn: HisopoSpawn | None
     schedule: HisopoSchedule | None = None
+
+
+@dataclass(frozen=True)
+class HisopoRaceResult:
+    status: str
+    spawn: HisopoSpawn | None
+    user_press_count: int = 0
+    leading_press_count: int = 0
+    participant_count: int = 0
+    awarded_points: int = 0
+    lost_points_by_user: tuple[tuple[str, int], ...] = ()
+    schedule: HisopoSchedule | None = None
+    revealed: bool = False
+    refresh_due: bool = False
+
+
+@dataclass(frozen=True)
+class HisopoExpirationResult:
+    status: str
+    spawn: HisopoSpawn | None
+    collected_expired: bool = False
 
 
 @dataclass(frozen=True)
@@ -427,6 +449,7 @@ class Database:
                     bomb_success_slot INTEGER,
                     bomb_explosion_slot INTEGER,
                     bomb_revealed_mask INTEGER NOT NULL DEFAULT 0,
+                    race_last_refresh_at TEXT,
                     message_cleanup_status TEXT NOT NULL DEFAULT 'pending',
                     message_cleanup_attempts INTEGER NOT NULL DEFAULT 0,
                     message_cleanup_last_attempt_at TEXT,
@@ -436,6 +459,28 @@ class Database:
                     FOREIGN KEY (chat_id) REFERENCES chats (chat_id),
                     FOREIGN KEY (winner_user_id) REFERENCES users (user_id)
                 )
+                """
+            )
+            conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS hisopo_race_presses (
+                    chat_id TEXT NOT NULL,
+                    message_id TEXT NOT NULL,
+                    callback_query_id TEXT NOT NULL,
+                    user_id TEXT NOT NULL,
+                    pressed_at TEXT NOT NULL,
+                    counted INTEGER NOT NULL DEFAULT 1,
+                    PRIMARY KEY (chat_id, callback_query_id),
+                    FOREIGN KEY (chat_id, message_id)
+                        REFERENCES hisopo_spawns (chat_id, message_id),
+                    FOREIGN KEY (user_id) REFERENCES users (user_id)
+                )
+                """
+            )
+            conn.execute(
+                """
+                CREATE INDEX IF NOT EXISTS idx_hisopo_race_presses_spawn
+                ON hisopo_race_presses (chat_id, message_id, counted, pressed_at)
                 """
             )
             conn.execute(
@@ -807,6 +852,43 @@ class Database:
                 "hisopo_spawns",
                 "bomb_revealed_mask",
                 "INTEGER NOT NULL DEFAULT 0",
+            )
+            conn.execute(
+                "INSERT INTO schema_migrations (migration_id) VALUES (?)",
+                (migration_id,),
+            )
+
+        migration_id = "20260821_add_hisopo_races"
+        applied = conn.execute(
+            "SELECT 1 FROM schema_migrations WHERE migration_id = ?", (migration_id,)
+        ).fetchone()
+        if applied is None:
+            _ensure_column(conn, "hisopo_spawns", "race_last_refresh_at", "TEXT")
+            conn.execute(
+                "UPDATE hisopo_spawns SET race_last_refresh_at = spawned_at "
+                "WHERE race_last_refresh_at IS NULL"
+            )
+            conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS hisopo_race_presses (
+                    chat_id TEXT NOT NULL,
+                    message_id TEXT NOT NULL,
+                    callback_query_id TEXT NOT NULL,
+                    user_id TEXT NOT NULL,
+                    pressed_at TEXT NOT NULL,
+                    counted INTEGER NOT NULL DEFAULT 1,
+                    PRIMARY KEY (chat_id, callback_query_id),
+                    FOREIGN KEY (chat_id, message_id)
+                        REFERENCES hisopo_spawns (chat_id, message_id),
+                    FOREIGN KEY (user_id) REFERENCES users (user_id)
+                )
+                """
+            )
+            conn.execute(
+                """
+                CREATE INDEX IF NOT EXISTS idx_hisopo_race_presses_spawn
+                ON hisopo_race_presses (chat_id, message_id, counted, pressed_at)
+                """
             )
             conn.execute(
                 "INSERT INTO schema_migrations (migration_id) VALUES (?)",
@@ -1480,9 +1562,9 @@ class Database:
                     chat_id, message_id, hisopo_type, appearance_type,
                     initial_appearance_type, points, required_helpers,
                     source, spawned_at, expires_at,
-                    bomb_success_slot, bomb_explosion_slot
+                    bomb_success_slot, bomb_explosion_slot, race_last_refresh_at
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     chat_id,
@@ -1497,6 +1579,7 @@ class Database:
                     expires_at,
                     bomb_success_slot,
                     bomb_explosion_slot,
+                    spawned_at,
                 ),
             )
             row = conn.execute(
@@ -1924,6 +2007,231 @@ class Database:
             )
             return HisopoBombResult(status, resolved_spawn, schedule)
 
+    def press_hisopo_race(
+        self,
+        chat_id: str,
+        message_id: str,
+        user_id: str,
+        callback_query_id: str,
+        now: datetime,
+        next_scheduled_for: datetime,
+        *,
+        required_presses: int,
+        min_press_interval: timedelta,
+        refresh_interval: timedelta,
+    ) -> HisopoRaceResult:
+        if required_presses < 1:
+            raise ValueError("La carrera debe requerir al menos una pulsacion.")
+        if min_press_interval < timedelta(0) or refresh_interval < timedelta(0):
+            raise ValueError("Los intervalos de la carrera no pueden ser negativos.")
+        chat_id = self.resolve_chat_id(chat_id)
+        self.get_or_create_user(user_id)
+        now_text = now.isoformat()
+        with self._connect() as conn:
+            conn.execute("BEGIN IMMEDIATE")
+            row = conn.execute(
+                "SELECT * FROM hisopo_spawns WHERE chat_id = ? AND message_id = ?",
+                (chat_id, message_id),
+            ).fetchone()
+            if row is None:
+                return HisopoRaceResult("missing", None)
+            spawn = _hisopo_spawn_from_row(row)
+            if spawn.status != "active":
+                status = "taken" if spawn.status == "captured" else "rotten"
+                return HisopoRaceResult(status, spawn)
+            if spawn.hisopo_type not in {"frenetic", "black_hole"}:
+                return HisopoRaceResult("invalid", spawn)
+            if now >= datetime.fromisoformat(spawn.expires_at):
+                conn.execute(
+                    "UPDATE hisopo_spawns SET status = 'expired_waiting' "
+                    "WHERE chat_id = ? AND message_id = ? AND status = 'active'",
+                    (chat_id, message_id),
+                )
+                return HisopoRaceResult(
+                    "rotten",
+                    _hisopo_spawn_from_row(row, status="expired_waiting"),
+                )
+
+            duplicate = conn.execute(
+                """
+                SELECT 1 FROM hisopo_race_presses
+                WHERE chat_id = ? AND callback_query_id = ?
+                """,
+                (chat_id, callback_query_id),
+            ).fetchone()
+            if duplicate is not None:
+                return HisopoRaceResult("duplicate", spawn)
+
+            last_press = conn.execute(
+                """
+                SELECT pressed_at FROM hisopo_race_presses
+                WHERE chat_id = ? AND message_id = ? AND user_id = ? AND counted = 1
+                ORDER BY pressed_at DESC LIMIT 1
+                """,
+                (chat_id, message_id, user_id),
+            ).fetchone()
+            if (
+                last_press is not None
+                and now - datetime.fromisoformat(last_press["pressed_at"])
+                < min_press_interval
+            ):
+                conn.execute(
+                    """
+                    INSERT INTO hisopo_race_presses (
+                        chat_id, message_id, callback_query_id,
+                        user_id, pressed_at, counted
+                    ) VALUES (?, ?, ?, ?, ?, 0)
+                    """,
+                    (chat_id, message_id, callback_query_id, user_id, now_text),
+                )
+                return HisopoRaceResult("too_fast", spawn)
+
+            revealed = spawn.appearance_type == "mystery"
+            if revealed:
+                conn.execute(
+                    "UPDATE hisopo_spawns SET appearance_type = ? "
+                    "WHERE chat_id = ? AND message_id = ? AND status = 'active'",
+                    (spawn.hisopo_type, chat_id, message_id),
+                )
+                _increment_hisopo_collection(
+                    conn,
+                    chat_id,
+                    user_id,
+                    "mystery",
+                    now_text,
+                )
+                spawn = _hisopo_spawn_from_row(row, appearance_type=spawn.hisopo_type)
+
+            conn.execute(
+                """
+                INSERT INTO hisopo_race_presses (
+                    chat_id, message_id, callback_query_id,
+                    user_id, pressed_at, counted
+                ) VALUES (?, ?, ?, ?, ?, 1)
+                """,
+                (chat_id, message_id, callback_query_id, user_id, now_text),
+            )
+            count_rows = conn.execute(
+                """
+                SELECT user_id, COUNT(*) AS presses
+                FROM hisopo_race_presses
+                WHERE chat_id = ? AND message_id = ? AND counted = 1
+                GROUP BY user_id
+                ORDER BY presses DESC, user_id
+                """,
+                (chat_id, message_id),
+            ).fetchall()
+            counts = {str(entry["user_id"]): int(entry["presses"]) for entry in count_rows}
+            user_press_count = counts[user_id]
+            leading_press_count = max(counts.values())
+            participant_count = len(counts)
+            last_refresh = datetime.fromisoformat(
+                spawn.race_last_refresh_at or spawn.spawned_at
+            )
+            refresh_due = now - last_refresh >= refresh_interval
+
+            if user_press_count < required_presses:
+                if refresh_due or revealed:
+                    conn.execute(
+                        "UPDATE hisopo_spawns SET race_last_refresh_at = ? "
+                        "WHERE chat_id = ? AND message_id = ?",
+                        (now_text, chat_id, message_id),
+                    )
+                    spawn = _hisopo_spawn_from_row(
+                        row,
+                        appearance_type=spawn.appearance_type,
+                        race_last_refresh_at=now_text,
+                    )
+                return HisopoRaceResult(
+                    "pressed",
+                    spawn,
+                    user_press_count=user_press_count,
+                    leading_press_count=leading_press_count,
+                    participant_count=participant_count,
+                    revealed=revealed,
+                    refresh_due=refresh_due or revealed,
+                )
+
+            lost_points_by_user: tuple[tuple[str, int], ...] = ()
+            if spawn.hisopo_type == "black_hole" and participant_count > 1:
+                lost_points_by_user = tuple(
+                    (participant_user_id, press_count)
+                    for participant_user_id, press_count in counts.items()
+                    if participant_user_id != user_id
+                )
+                awarded_points = min(
+                    spawn.points,
+                    sum(points for _participant_user_id, points in lost_points_by_user),
+                )
+            else:
+                awarded_points = spawn.points
+
+            conn.execute(
+                """
+                UPDATE hisopo_spawns
+                SET status = 'captured', winner_user_id = ?, captured_at = ?,
+                    points = ?, appearance_type = hisopo_type,
+                    race_last_refresh_at = ?
+                WHERE chat_id = ? AND message_id = ? AND status = 'active'
+                """,
+                (user_id, now_text, awarded_points, now_text, chat_id, message_id),
+            )
+            conn.execute(
+                """
+                INSERT INTO hisopo_scores (chat_id, user_id, points)
+                VALUES (?, ?, ?)
+                ON CONFLICT(chat_id, user_id) DO UPDATE SET
+                    points = hisopo_scores.points + excluded.points,
+                    updated_at = CURRENT_TIMESTAMP
+                """,
+                (chat_id, user_id, awarded_points),
+            )
+            for participant_user_id, lost_points in lost_points_by_user:
+                conn.execute(
+                    """
+                    INSERT INTO hisopo_scores (chat_id, user_id, points)
+                    VALUES (?, ?, ?)
+                    ON CONFLICT(chat_id, user_id) DO UPDATE SET
+                        points = hisopo_scores.points + excluded.points,
+                        updated_at = CURRENT_TIMESTAMP
+                    """,
+                    (chat_id, participant_user_id, -lost_points),
+                )
+            _increment_hisopo_collection(
+                conn,
+                chat_id,
+                user_id,
+                spawn.hisopo_type,
+                now_text,
+            )
+            schedule = _insert_hisopo_schedule_below_daily_cap(
+                conn,
+                chat_id,
+                next_scheduled_for,
+                message_id,
+            )
+            completed_spawn = _hisopo_spawn_from_row(
+                row,
+                status="captured",
+                winner_user_id=user_id,
+                captured_at=now_text,
+                points=awarded_points,
+                appearance_type=spawn.hisopo_type,
+                race_last_refresh_at=now_text,
+            )
+        return HisopoRaceResult(
+            "captured",
+            completed_spawn,
+            user_press_count=user_press_count,
+            leading_press_count=leading_press_count,
+            participant_count=participant_count,
+            awarded_points=awarded_points,
+            lost_points_by_user=lost_points_by_user,
+            schedule=schedule,
+            revealed=revealed,
+            refresh_due=True,
+        )
+
     def contribute_to_giant_hisopo(
         self,
         chat_id: str,
@@ -2108,6 +2416,94 @@ class Database:
                 (chat_id, message_id),
             )
         return True
+
+    def mark_hisopo_expired_waiting(
+        self,
+        chat_id: str,
+        message_id: str,
+        now: datetime,
+    ) -> bool:
+        """Stop scheduling an expired spawn while leaving its button claimable."""
+        chat_id = self.resolve_chat_id(chat_id)
+        with self._connect() as conn:
+            conn.execute("BEGIN IMMEDIATE")
+            row = conn.execute(
+                "SELECT status, expires_at FROM hisopo_spawns WHERE chat_id = ? AND message_id = ?",
+                (chat_id, message_id),
+            ).fetchone()
+            if (
+                row is None
+                or row["status"] != "active"
+                or now < datetime.fromisoformat(row["expires_at"])
+            ):
+                return False
+            conn.execute(
+                """
+                UPDATE hisopo_spawns
+                SET status = 'expired_waiting'
+                WHERE chat_id = ? AND message_id = ? AND status = 'active'
+                """,
+                (chat_id, message_id),
+            )
+        return True
+
+    def claim_expired_hisopo(
+        self,
+        chat_id: str,
+        message_id: str,
+        user_id: str,
+        now: datetime,
+    ) -> HisopoExpirationResult:
+        chat_id = self.resolve_chat_id(chat_id)
+        self.get_or_create_user(user_id)
+        now_text = now.isoformat()
+        with self._connect() as conn:
+            conn.execute("BEGIN IMMEDIATE")
+            row = conn.execute(
+                "SELECT * FROM hisopo_spawns WHERE chat_id = ? AND message_id = ?",
+                (chat_id, message_id),
+            ).fetchone()
+            if row is None:
+                return HisopoExpirationResult("missing", None)
+            spawn = _hisopo_spawn_from_row(row)
+            if spawn.status == "expired":
+                return HisopoExpirationResult("taken", spawn)
+            if spawn.status not in {"active", "expired_waiting"}:
+                return HisopoExpirationResult("taken", spawn)
+            if now < datetime.fromisoformat(spawn.expires_at):
+                return HisopoExpirationResult("active", spawn)
+
+            started_as_mystery = (
+                spawn.initial_appearance_type or spawn.appearance_type
+            ) == "mystery"
+            final_appearance = spawn.hisopo_type if started_as_mystery else "expired"
+            conn.execute(
+                """
+                UPDATE hisopo_spawns
+                SET status = 'expired', appearance_type = ?
+                WHERE chat_id = ? AND message_id = ?
+                  AND status IN ('active', 'expired_waiting')
+                """,
+                (final_appearance, chat_id, message_id),
+            )
+            if not started_as_mystery:
+                _increment_hisopo_collection(
+                    conn,
+                    chat_id,
+                    user_id,
+                    "expired",
+                    now_text,
+                )
+            expired_spawn = _hisopo_spawn_from_row(
+                row,
+                status="expired",
+                appearance_type=final_appearance,
+            )
+        return HisopoExpirationResult(
+            "expired",
+            expired_spawn,
+            collected_expired=not started_as_mystery,
+        )
 
     def get_hisopo_scores(self, chat_id: str) -> list[HisopoScore]:
         chat_id = self.resolve_chat_id(chat_id)
@@ -2831,6 +3227,7 @@ def _hisopo_spawn_from_row(
     points: int | None = None,
     appearance_type: str | None = None,
     bomb_revealed_mask: int | None = None,
+    race_last_refresh_at: str | None = None,
 ) -> HisopoSpawn:
     return HisopoSpawn(
         chat_id=row["chat_id"],
@@ -2882,6 +3279,15 @@ def _hisopo_spawn_from_row(
                 int(row["bomb_revealed_mask"] or 0)
                 if "bomb_revealed_mask" in row.keys()
                 else 0
+            )
+        ),
+        race_last_refresh_at=(
+            race_last_refresh_at
+            if race_last_refresh_at is not None
+            else (
+                row["race_last_refresh_at"]
+                if "race_last_refresh_at" in row.keys()
+                else row["spawned_at"]
             )
         ),
     )

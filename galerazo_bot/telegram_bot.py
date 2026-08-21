@@ -84,15 +84,22 @@ from .command_handlers.galerazas import (
 from .command_handlers.hisopos import send_hisopos as _send_hisopos
 from .handler_registration import register_handlers
 from .hisopos import (
+    BLACK_HOLE_HISOPO,
     BOMB_HISOPO,
     COMMON_HISOPO,
+    EXPIRED_HISOPO,
     FAKE_HISOPO,
+    FRENETIC_HISOPO,
     GIANT_HISOPO,
     HISOPO_CALLBACK_PREFIX,
     HISOPO_BOMB_CALLBACK_PREFIX,
     HISOPO_BOMB_SLOT_COUNT,
     HISOPO_CAPTURE_CALLBACK,
     HISOPO_GIANT_MAX_HELPERS,
+    HISOPO_RACE_CALLBACK,
+    HISOPO_RACE_MIN_PRESS_INTERVAL,
+    HISOPO_RACE_REFRESH_INTERVAL,
+    HISOPO_RACE_REQUIRED_PRESSES,
     HISOPO_TYPE_ROLL_MAX,
     giant_required_helpers,
     hisopo_kind_for_spawn,
@@ -605,6 +612,8 @@ async def _spawn_hisopo(
     type_label = t(language, f"hisopos.type.{appearance_kind.key}")
     if appearance_kind.key == BOMB_HISOPO.key:
         keyboard = _build_bomb_keyboard(0)
+    elif appearance_kind.key in {FRENETIC_HISOPO.key, BLACK_HOLE_HISOPO.key}:
+        keyboard = _build_hisopo_race_keyboard(language, 0)
     else:
         button_key = (
             "hisopos.giant_help_button"
@@ -638,6 +647,8 @@ async def _spawn_hisopo(
             caption_key = "hisopos.appeared_giant"
         elif appearance_kind.key == BOMB_HISOPO.key:
             caption_key = "hisopos.appeared_bomb"
+        elif appearance_kind.key in {FRENETIC_HISOPO.key, BLACK_HOLE_HISOPO.key}:
+            caption_key = "hisopos.appeared_race"
         elif appearance_kind.hides_points:
             caption_key = "hisopos.appeared_mystery"
         else:
@@ -652,6 +663,7 @@ async def _spawn_hisopo(
                 points=appearance_kind.points,
                 current=0,
                 required=required_helpers,
+                target=HISOPO_RACE_REQUIRED_PRESSES,
             ),
             reply_markup=keyboard,
         )
@@ -781,6 +793,9 @@ def _hisopo_file_id(settings: Settings, hisopo_type: str) -> str | None:
         "putrid": settings.telegram_hisopo_putrid_file_id,
         "radioactive": settings.telegram_hisopo_radioactive_file_id,
         "bomb": settings.telegram_hisopo_bomb_file_id,
+        "frenetic": settings.telegram_hisopo_frenetic_file_id,
+        "black_hole": settings.telegram_hisopo_black_hole_file_id,
+        "expired": settings.telegram_hisopo_expired_file_id,
         "fake": settings.telegram_hisopo_fake_file_id,
         "twin": settings.telegram_hisopo_twin_file_id,
         "giant": settings.telegram_hisopo_giant_file_id,
@@ -827,11 +842,11 @@ async def _expire_hisopo_job(context: ContextTypes.DEFAULT_TYPE) -> None:
     data = context.job.data
     chat_id = state.db.resolve_chat_id(str(data["chat_id"]))
     message_id = str(data["message_id"])
-    if not state.db.mark_hisopo_rotten(chat_id, message_id, datetime.now(timezone.utc)):
-        return
-    spawn = state.db.get_hisopo_spawn(chat_id, message_id)
-    if spawn is not None:
-        await _edit_rotten_hisopo(context.bot, state.db, spawn)
+    state.db.mark_hisopo_expired_waiting(
+        chat_id,
+        message_id,
+        datetime.now(timezone.utc),
+    )
 
 
 async def _scheduled_hisopo_job(context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -879,12 +894,49 @@ async def _hisopo_callback_entrypoint(
         await callback_query.answer()
         return
     bomb_slot = _parse_bomb_slot(callback_data)
-    if callback_data != HISOPO_CAPTURE_CALLBACK and bomb_slot is None:
+    if (
+        callback_data not in {HISOPO_CAPTURE_CALLBACK, HISOPO_RACE_CALLBACK}
+        and bomb_slot is None
+    ):
         await callback_query.answer(t(language, "hisopos.unavailable_alert"), show_alert=True)
         return
 
     now = datetime.now(timezone.utc)
     spawn = state.db.get_hisopo_spawn(str(message.chat.id), str(message.message_id))
+    if spawn is not None and (
+        spawn.status == "expired_waiting"
+        or now >= datetime.fromisoformat(spawn.expires_at)
+    ):
+        expiration = state.db.claim_expired_hisopo(
+            chat_id=spawn.chat_id,
+            message_id=spawn.message_id,
+            user_id=str(user.id),
+            now=now,
+        )
+        if expiration.status == "expired" and expiration.spawn is not None:
+            await _edit_expired_hisopo(
+                context.bot,
+                state.settings,
+                expiration.spawn,
+                language,
+                expiration.collected_expired,
+            )
+            await callback_query.answer(
+                t(
+                    language,
+                    "hisopos.expired_popup_collected"
+                    if expiration.collected_expired
+                    else "hisopos.expired_popup_mystery",
+                ),
+                show_alert=True,
+            )
+            return
+        if expiration.status != "active":
+            await callback_query.answer(
+                t(language, "hisopos.unavailable_alert"),
+                show_alert=True,
+            )
+            return
     if bomb_slot is not None:
         if spawn is None or spawn.hisopo_type != BOMB_HISOPO.key:
             await callback_query.answer()
@@ -915,6 +967,16 @@ async def _hisopo_callback_entrypoint(
             return
         if spawn.hisopo_type == GIANT_HISOPO.key:
             await _handle_giant_hisopo_callback(
+                context=context,
+                callback_query=callback_query,
+                user=user,
+                spawn=spawn,
+                language=language,
+                now=now,
+            )
+            return
+        if spawn.hisopo_type in {FRENETIC_HISOPO.key, BLACK_HOLE_HISOPO.key}:
+            await _handle_hisopo_race_callback(
                 context=context,
                 callback_query=callback_query,
                 user=user,
@@ -1035,6 +1097,133 @@ def _build_bomb_keyboard(revealed_mask: int) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         [buttons[index : index + 4] for index in range(0, HISOPO_BOMB_SLOT_COUNT, 4)]
     )
+
+
+def _build_hisopo_race_keyboard(language: str, leading_count: int) -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(
+        [[
+            InlineKeyboardButton(
+                t(
+                    language,
+                    "hisopos.race_button",
+                    current=leading_count,
+                    target=HISOPO_RACE_REQUIRED_PRESSES,
+                ),
+                callback_data=HISOPO_RACE_CALLBACK,
+            )
+        ]]
+    )
+
+
+async def _handle_hisopo_race_callback(
+    context: ContextTypes.DEFAULT_TYPE,
+    callback_query,
+    user: User,
+    spawn: HisopoSpawn,
+    language: str,
+    now: datetime,
+) -> None:
+    state = _state(context)
+    result = state.db.press_hisopo_race(
+        chat_id=spawn.chat_id,
+        message_id=spawn.message_id,
+        user_id=str(user.id),
+        callback_query_id=callback_query.id,
+        now=now,
+        next_scheduled_for=random_next_day_datetime(now),
+        required_presses=HISOPO_RACE_REQUIRED_PRESSES,
+        min_press_interval=HISOPO_RACE_MIN_PRESS_INTERVAL,
+        refresh_interval=HISOPO_RACE_REFRESH_INTERVAL,
+    )
+    if result.status == "pressed" and result.spawn is not None:
+        if result.refresh_due:
+            await _edit_hisopo_race_progress(
+                context.bot,
+                state.settings,
+                result.spawn,
+                language,
+                result.leading_press_count,
+                force_media=result.revealed,
+            )
+        await callback_query.answer(
+            t(
+                language,
+                "hisopos.race_press_popup",
+                current=result.user_press_count,
+                target=HISOPO_RACE_REQUIRED_PRESSES,
+            )
+        )
+        return
+    if result.status == "too_fast":
+        await callback_query.answer(t(language, "hisopos.race_too_fast_popup"))
+        return
+    if result.status == "duplicate":
+        await callback_query.answer()
+        return
+    if result.status == "captured" and result.spawn is not None:
+        type_label = t(language, f"hisopos.type.{result.spawn.hisopo_type}")
+        if result.spawn.hisopo_type == BLACK_HOLE_HISOPO.key:
+            if result.participant_count == 1:
+                caption_key = "hisopos.black_hole_won_solo_caption"
+            else:
+                caption_key = "hisopos.black_hole_won_caption"
+        else:
+            caption_key = "hisopos.race_won_caption"
+        await _edit_hisopo_result(
+            context.bot,
+            state.settings,
+            result.spawn,
+            t(
+                language,
+                caption_key,
+                user=_display_name(user),
+                type_label=type_label,
+                points=result.awarded_points,
+                rivals=max(result.participant_count - 1, 0),
+                lost_points=sum(points for _user_id, points in result.lost_points_by_user),
+            ),
+            force_media=result.revealed,
+        )
+        if result.schedule is not None:
+            _schedule_hisopo_appearance(context.application, result.schedule)
+        await callback_query.answer(
+            t(
+                language,
+                "hisopos.race_won_popup",
+                points=result.awarded_points,
+            ),
+            show_alert=True,
+        )
+        return
+    if result.status == "taken":
+        await callback_query.answer(t(language, "hisopos.taken_alert"), show_alert=True)
+        return
+    if result.status == "rotten":
+        expiration = state.db.claim_expired_hisopo(
+            spawn.chat_id,
+            spawn.message_id,
+            str(user.id),
+            now,
+        )
+        if expiration.status == "expired" and expiration.spawn is not None:
+            await _edit_expired_hisopo(
+                context.bot,
+                state.settings,
+                expiration.spawn,
+                language,
+                expiration.collected_expired,
+            )
+        await callback_query.answer(
+            t(
+                language,
+                "hisopos.expired_popup_collected"
+                if expiration.collected_expired
+                else "hisopos.expired_popup_mystery",
+            ),
+            show_alert=True,
+        )
+        return
+    await callback_query.answer(t(language, "hisopos.unavailable_alert"), show_alert=True)
 
 
 async def _handle_bomb_hisopo_reveal(
@@ -1301,6 +1490,111 @@ async def _edit_bomb_hisopo_terminal(
                 spawn.chat_id,
                 exc,
             )
+    await _edit_hisopo_caption(bot, spawn, caption)
+
+
+async def _edit_hisopo_race_progress(
+    bot: Bot,
+    settings: Settings,
+    spawn: HisopoSpawn,
+    language: str,
+    leading_count: int,
+    *,
+    force_media: bool = False,
+) -> None:
+    caption = t(
+        language,
+        "hisopos.race_progress_caption",
+        type_label=t(language, f"hisopos.type.{spawn.hisopo_type}"),
+        current=leading_count,
+        target=HISOPO_RACE_REQUIRED_PRESSES,
+    )
+    keyboard = _build_hisopo_race_keyboard(language, leading_count)
+    if force_media:
+        file_id = _hisopo_file_id(settings, spawn.hisopo_type)
+        if file_id:
+            try:
+                await bot.edit_message_media(
+                    chat_id=_parse_chat_id(spawn.chat_id),
+                    message_id=int(spawn.message_id),
+                    media=InputMediaPhoto(media=file_id, caption=caption),
+                    reply_markup=keyboard,
+                )
+                return
+            except TelegramError as exc:
+                logger.warning(
+                    "No pude revelar la carrera del Hisopo %s en el chat %s: %s",
+                    spawn.message_id,
+                    spawn.chat_id,
+                    exc,
+                )
+        else:
+            logger.warning(
+                "No pude revelar la carrera del Hisopo %s en el chat %s: "
+                "falta el file_id de %s.",
+                spawn.message_id,
+                spawn.chat_id,
+                spawn.hisopo_type,
+            )
+    try:
+        await bot.edit_message_caption(
+            chat_id=_parse_chat_id(spawn.chat_id),
+            message_id=int(spawn.message_id),
+            caption=caption,
+            reply_markup=keyboard,
+        )
+    except TelegramError as exc:
+        logger.warning(
+            "No pude actualizar el progreso del Hisopo %s en el chat %s: %s",
+            spawn.message_id,
+            spawn.chat_id,
+            exc,
+        )
+
+
+async def _edit_expired_hisopo(
+    bot: Bot,
+    settings: Settings,
+    spawn: HisopoSpawn,
+    language: str,
+    collected_expired: bool,
+) -> None:
+    type_label = t(language, f"hisopos.type.{spawn.hisopo_type}")
+    caption = t(
+        language,
+        (
+            "hisopos.expired_caption_collected"
+            if collected_expired
+            else "hisopos.expired_caption_mystery"
+        ),
+        type_label=type_label,
+    )
+    target_type = EXPIRED_HISOPO.key if collected_expired else spawn.hisopo_type
+    file_id = _hisopo_file_id(settings, target_type)
+    if file_id:
+        try:
+            await bot.edit_message_media(
+                chat_id=_parse_chat_id(spawn.chat_id),
+                message_id=int(spawn.message_id),
+                media=InputMediaPhoto(media=file_id, caption=caption),
+                reply_markup=None,
+            )
+            return
+        except TelegramError as exc:
+            logger.warning(
+                "No pude mostrar el resultado vencido del Hisopo %s en el chat %s: %s",
+                spawn.message_id,
+                spawn.chat_id,
+                exc,
+            )
+    else:
+        logger.warning(
+            "No pude mostrar el resultado vencido del Hisopo %s en el chat %s: "
+            "falta el file_id de %s.",
+            spawn.message_id,
+            spawn.chat_id,
+            target_type,
+        )
     await _edit_hisopo_caption(bot, spawn, caption)
 
 
