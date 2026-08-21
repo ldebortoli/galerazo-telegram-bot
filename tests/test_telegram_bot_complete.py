@@ -1904,9 +1904,29 @@ class HisopoTelegramTests(unittest.IsolatedAsyncioTestCase):
         )
         self.assertEqual(
             bot.edit_message_media.await_args.kwargs["media"].caption,
-            "Winner capturó un hisopo falso, pero no sumó ningún punto.",
+            "Winner iba a capturar un hisopo, ¡pero resultó ser falso! No suma ningún punto.",
         )
         self.assertEqual(bot.edit_message_media.await_args.kwargs["media"].media, "fake-id")
+        callback.answer.assert_awaited_once_with("Este hisopo no valía puntos.")
+
+        bot.edit_message_caption.reset_mock()
+        bot.edit_message_media.reset_mock()
+        callback.answer.reset_mock()
+        active_zero = self._spawn(points=0)
+        captured_zero = self._spawn(
+            points=0,
+            status="captured",
+            winner_user_id="2",
+            captured_at="now",
+        )
+        db.get_hisopo_spawn.return_value = active_zero
+        db.capture_hisopo.return_value = HisopoCaptureResult("captured", captured_zero)
+        with patch.object(tb, "_is_user_restricted_in_callback_chat", return_value=False):
+            await tb._hisopo_callback_entrypoint(update, context)
+        self.assertEqual(
+            bot.edit_message_caption.await_args.kwargs["caption"],
+            "Winner capturó un hisopo común, pero no sumó ningún punto.",
+        )
         callback.answer.assert_awaited_once_with("Este hisopo no valía puntos.")
 
         bot.edit_message_caption.reset_mock()

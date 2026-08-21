@@ -85,6 +85,7 @@ from .command_handlers.hisopos import send_hisopos as _send_hisopos
 from .handler_registration import register_handlers
 from .hisopos import (
     COMMON_HISOPO,
+    FAKE_HISOPO,
     GIANT_HISOPO,
     HISOPO_CALLBACK_PREFIX,
     HISOPO_CAPTURE_CALLBACK,
@@ -902,6 +903,9 @@ async def _hisopo_callback_entrypoint(
         if expired_mystery_fleeting:
             caption_key = "hisopos.expired_fleeting_caption"
             popup_key = "hisopos.expired_fleeting_popup"
+        elif result.spawn.hisopo_type == FAKE_HISOPO.key:
+            caption_key = "hisopos.captured_caption_fake"
+            popup_key = "hisopos.captured_popup_zero"
         elif result.spawn.points < 0:
             caption_key = "hisopos.captured_caption_negative"
             popup_key = "hisopos.captured_popup_negative"

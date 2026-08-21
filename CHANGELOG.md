@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.33] - 2026-08-21
+
+- Correcciones y mejoras: al revelar un Hisopo falso, el mensaje ahora cuenta que la captura resultó ser falsa y aclara que no suma ningún punto.
+
 ## [0.32] - 2026-08-21
 
 - Correcciones y mejoras: todos los envíos a Telegram ahora respetan preventivamente los límites generales y por chat. Si Telegram responde con control de frecuencia, el bot espera el plazo indicado y realiza hasta tres intentos totales también para fotos, multimedia, ediciones, borrados y demás operaciones.
