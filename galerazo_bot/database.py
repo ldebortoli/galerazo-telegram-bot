@@ -11,6 +11,7 @@ from zoneinfo import ZoneInfo
 
 
 MAX_HISOPO_SCHEDULES_PER_CHAT_DAY = 10
+MAX_HISOPO_MIRACLE_AWARD = 1_000
 _ARGENTINA_TIMEZONE = ZoneInfo("America/Argentina/Buenos_Aires")
 
 
@@ -1763,7 +1764,10 @@ class Database:
                     (chat_id,),
                 ).fetchone()
                 leader_points = int(leader_row["points"] or 0)
-                awarded_points = max(15, (leader_points + 1) // 2)
+                awarded_points = max(
+                    15,
+                    min((leader_points + 1) // 2, MAX_HISOPO_MIRACLE_AWARD),
+                )
             else:
                 awarded_points = (
                     spawn.points if points_at_capture is None else points_at_capture

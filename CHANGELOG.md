@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.37] - 2026-08-21
+
+- Correcciones y mejoras: el premio individual del Hisopo Milagroso mantiene un mínimo de 15 puntos y la mitad redondeada hacia arriba del puntaje líder, pero ahora queda limitado a un máximo de 1000 puntos para evitar su crecimiento exponencial indefinido.
+- El parche seguro de configuración remota ignora correctamente entradas vacías de la lista de variables a eliminar.
+
 ## [0.36] - 2026-08-21
 
 - Nuevos Hisopos Frenético y Agujero negro, ambos con 4 % de aparición y carreras persistentes/atómicas a 20 pulsaciones. El Frenético entrega 3 puntos; el Agujero negro entrega 10 si se juega en soledad o transfiere hasta 10 puntos desde los rivales según sus pulsaciones.

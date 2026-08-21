@@ -75,6 +75,7 @@ if ($null -ne $clearProperty -and $clearProperty.Value -isnot [System.Array]) {
 }
 [object[]]$updateKeys = @($updates.PSObject.Properties | ForEach-Object { $_.Name })
 [object[]]$clearKeys = if ($null -eq $clearProperty) { @() } else { @($clearProperty.Value) }
+$clearKeys = @($clearKeys | Where-Object { $null -ne $_ -and $_ -ne "" })
 if ($updateKeys.Count -eq 0 -and $clearKeys.Count -eq 0) {
     throw "El parche no contiene cambios."
 }

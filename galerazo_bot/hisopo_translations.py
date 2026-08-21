@@ -1355,109 +1355,109 @@ HISOPO_COOPERATIVE_RULE_UPDATES: dict[str, tuple[str, str, str]] = {
         "Común: 47 %",
         "Común: 46,65 %",
         "- Gigante cooperativo: 0,25 %, necesita hasta 15 participantes; en chats más pequeños necesita a todos los miembros disponibles. Cada persona ayuda una sola vez y, si lo completan dentro de 20 minutos, todos ganan +4 pt. Muestra el progreso; si estaba oculto por un Misterioso, la primera ayuda lo revela y cuenta.\n"
-        "- Milagroso: 0,10 %, al capturarlo suma el mayor valor entre 15 pt y la mitad del puntaje del líder actual, redondeada hacia arriba.",
+        "- Milagroso: 0,10 %, al capturarlo suma el mayor valor entre 15 pt y la mitad del puntaje del líder actual, redondeada hacia arriba, con un máximo de 1000 pt.",
     ),
     "en": (
         "Common: 47%",
         "Common: 46.65%",
         "- Cooperative Giant: 0.25%, requires up to 15 participants; smaller chats require every available member. Each person helps once and, if completed within 20 minutes, everyone earns +4 pt. Progress is shown; if hidden by a Mystery Swab, the first helper reveals it and counts.\n"
-        "- Miracle: 0.10%; when captured, it awards the greater of 15 pt or half the current leader's score, rounded up.",
+        "- Miracle: 0.10%; when captured, it awards the greater of 15 pt or half the current leader's score, rounded up, capped at 1000 pt.",
     ),
     "es_ES": (
         "Común: 47 %",
         "Común: 46,65 %",
         "- Gigante cooperativo: 0,25 %, necesita hasta 15 participantes; en chats más pequeños necesita a todos los miembros disponibles. Cada persona ayuda una sola vez y, si lo completan en 20 minutos, todos ganan +4 pt. Muestra el progreso; si estaba oculto por un Misterioso, la primera ayuda lo revela y cuenta.\n"
-        "- Milagroso: 0,10 %; al capturarlo suma el mayor valor entre 15 pt y la mitad de la puntuación del líder actual, redondeada hacia arriba.",
+        "- Milagroso: 0,10 %; al capturarlo suma el mayor valor entre 15 pt y la mitad de la puntuación del líder actual, redondeada hacia arriba, con un máximo de 1000 pt.",
     ),
     "ca": (
         "Comú: 47 %",
         "Comú: 46,65 %",
         "- Gegant cooperatiu: 0,25 %, necessita fins a 15 participants; als xats més petits necessita tots els membres disponibles. Cada persona ajuda una sola vegada i, si el completen en 20 minuts, tothom guanya +4 pt. Mostra el progrés; si l'amagava un Misteriós, la primera ajuda el revela i compta.\n"
-        "- Miraculós: 0,10 %; en capturar-lo dona el valor més alt entre 15 pt i la meitat de la puntuació del líder actual, arrodonida cap amunt.",
+        "- Miraculós: 0,10 %; en capturar-lo dona el valor més alt entre 15 pt i la meitat de la puntuació del líder actual, arrodonida cap amunt, amb un màxim de 1000 pt.",
     ),
     "de": (
         "Gewöhnlich: 47 %",
         "Gewöhnlich: 46,65 %",
         "- Kooperativ riesig: 0,25 %, benötigt bis zu 15 Teilnehmende; in kleineren Chats alle verfügbaren Mitglieder. Jede Person hilft einmal. Bei Abschluss innerhalb von 20 Minuten erhalten alle +4 Pkt. Der Fortschritt ist sichtbar; war es im Mysteriösen verborgen, enthüllt und zählt die erste Hilfe.\n"
-        "- Wunder: 0,10 %; beim Fangen gibt es den höheren Wert aus 15 Pkt. und der aufgerundeten Hälfte der aktuellen Führungspunktzahl.",
+        "- Wunder: 0,10 %; beim Fangen gibt es den höheren Wert aus 15 Pkt. und der aufgerundeten Hälfte der aktuellen Führungspunktzahl, höchstens 1000 Pkt.",
     ),
     "eu": (
         "Arrunta: % 47",
         "Arrunta: % 46,65",
         "- Erraldoi kooperatiboa: % 0,25, gehienez 15 parte-hartzaile behar ditu; txat txikiagoetan, kide erabilgarri guztiak. Pertsona bakoitzak behin laguntzen du eta 20 minutuan osatuz gero denek +4 puntu lortzen dituzte. Aurrerapena ikusgai dago; Misteriotsu batek ezkutatzen bazuen, lehen laguntzak agerian uzten du eta zenbatzen du.\n"
-        "- Miragarria: % 0,10; harrapatzean 15 puntu edo uneko liderraren puntuen erdia gorantz biribilduta ematen du, bietan handiena.",
+        "- Miragarria: % 0,10; harrapatzean 15 puntu edo uneko liderraren puntuen erdia gorantz biribilduta ematen du, bietan handiena, gehienez 1000 puntu.",
     ),
     "fr": (
         "Commun : 47 %",
         "Commun : 46,65 %",
         "- Géant coopératif : 0,25 %, demande jusqu'à 15 participants ; dans les petits groupes, tous les membres disponibles. Chaque personne aide une fois et, s'il est terminé en 20 minutes, tous gagnent +4 pt. La progression est affichée ; s'il était caché par un Mystérieux, la première aide le révèle et compte.\n"
-        "- Miraculeux : 0,10 % ; à la capture, rapporte le maximum entre 15 pt et la moitié arrondie au supérieur du score du leader actuel.",
+        "- Miraculeux : 0,10 % ; à la capture, rapporte le maximum entre 15 pt et la moitié arrondie au supérieur du score du leader actuel, dans la limite de 1000 pt.",
     ),
     "gn": (
         "Jepivegua: 47 %",
         "Jepivegua: 46,65 %",
         "- Tuichaitéva oñondive: 0,25 %, oikotevẽ 15 peve tapicha; aty michĩvape, opa tapicha oĩva. Peteĩteĩ oipytyvõ peteĩ jevy ha, ojapopa ramo 20 aravo'i ryepýpe, opavave ohupyty +4 kyta. Ojehechauka mba'éichapa oho; Ojekuaa'ỹva omokañýrõ, pe pytyvõ peteĩha ohechauka ha oñeipapa.\n"
-        "- Marangatu: 0,10 %; ojejapyhy jave ome'ẽ pe tuichavéva 15 kyta térã mburuvicha ag̃agua kytakuéra mbyte, ojere yvate gotyo.",
+        "- Marangatu: 0,10 %; ojejapyhy jave ome'ẽ pe tuichavéva 15 kyta térã mburuvicha ag̃agua kytakuéra mbyte, ojere yvate gotyo, ha 1000 kyta peve.",
     ),
     "it": (
         "Comune: 47 %",
         "Comune: 46,65 %",
         "- Gigante cooperativo: 0,25 %, richiede fino a 15 partecipanti; nelle chat più piccole servono tutti i membri disponibili. Ogni persona aiuta una volta e, se viene completato entro 20 minuti, tutti guadagnano +4 pt. Mostra i progressi; se era nascosto da un Misterioso, il primo aiuto lo rivela e conta.\n"
-        "- Miracoloso: 0,10 %; alla cattura assegna il maggiore tra 15 pt e metà, arrotondata per eccesso, del punteggio del leader attuale.",
+        "- Miracoloso: 0,10 %; alla cattura assegna il maggiore tra 15 pt e metà, arrotondata per eccesso, del punteggio del leader attuale, fino a un massimo di 1000 pt.",
     ),
     "ja": (
         "通常：47%",
         "通常：46.65%",
         "- 協力型巨大：0.25%。最大15人が必要で、より小さいチャットでは参加可能な全メンバーが必要です。各自1回だけ協力でき、20分以内に完成すると全員が+4点を獲得します。進捗を表示し、ミステリーに隠れていた場合は最初の協力で正体が明かされ、その1人も数えます。\n"
-        "- 奇跡：0.10%。捕獲時に15点と、現在の首位得点の半分を切り上げた値のうち、大きい方を獲得します。",
+        "- 奇跡：0.10%。捕獲時に15点と、現在の首位得点の半分を切り上げた値のうち、大きい方を獲得し、上限は1000点です。",
     ),
     "la": (
         "Commune: 47 %",
         "Commune: 46,65 %",
         "- Gigante cooperativum: 0,25 %, usque ad 15 participes requirit; in gregibus minoribus omnes sodales praesentes. Quisque semel adiuvat et, si intra 20 minuta completur, omnes +4 puncta accipiunt. Progressus ostenditur; si a Mysterioso celabatur, primum auxilium id revelat et numeratur.\n"
-        "- Miraculosum: 0,10 %; captum maius praemium dat inter 15 puncta et dimidiam partem, sursum rotundatam, punctorum ducis praesentis.",
+        "- Miraculosum: 0,10 %; captum maius praemium dat inter 15 puncta et dimidiam partem, sursum rotundatam, punctorum ducis praesentis, summo 1000 punctorum.",
     ),
     "nl": (
         "Gewoon: 47%",
         "Gewoon: 46,65%",
         "- Coöperatieve reus: 0,25%, vereist maximaal 15 deelnemers; in kleinere chats alle beschikbare leden. Iedereen helpt één keer en als hij binnen 20 minuten voltooid wordt, krijgt iedereen +4 pt. De voortgang is zichtbaar; zat hij in een Mysterieus wattenstaafje, dan onthult en telt de eerste hulp.\n"
-        "- Wonderbaarlijk: 0,10%; bij vangst geeft het de hoogste waarde van 15 pt of de naar boven afgeronde helft van de score van de huidige leider.",
+        "- Wonderbaarlijk: 0,10%; bij vangst geeft het de hoogste waarde van 15 pt of de naar boven afgeronde helft van de score van de huidige leider, tot maximaal 1000 pt.",
     ),
     "pt_BR": (
         "Comum: 47%",
         "Comum: 46,65%",
         "- Gigante cooperativo: 0,25%, exige até 15 participantes; em chats menores, todos os membros disponíveis. Cada pessoa ajuda uma vez e, se concluírem em 20 minutos, todos ganham +4 pt. O progresso aparece; se estava oculto por um Misterioso, a primeira ajuda o revela e conta.\n"
-        "- Milagroso: 0,10%; ao capturar, concede o maior valor entre 15 pt e metade, arredondada para cima, da pontuação do líder atual.",
+        "- Milagroso: 0,10%; ao capturar, concede o maior valor entre 15 pt e metade, arredondada para cima, da pontuação do líder atual, limitado a 1000 pt.",
     ),
     "pt_PT": (
         "Comum: 47 %",
         "Comum: 46,65 %",
         "- Gigante cooperativo: 0,25 %, exige até 15 participantes; em chats menores, todos os membros disponíveis. Cada pessoa ajuda uma vez e, se o concluírem em 20 minutos, todos ganham +4 pt. O progresso é mostrado; se estava oculto por um Misterioso, a primeira ajuda revela-o e conta.\n"
-        "- Milagroso: 0,10 %; ao capturar, concede o maior valor entre 15 pt e metade, arredondada para cima, da pontuação do líder atual.",
+        "- Milagroso: 0,10 %; ao capturar, concede o maior valor entre 15 pt e metade, arredondada para cima, da pontuação do líder atual, limitado a 1000 pt.",
     ),
     "quz": (
         "Sapsi: 47 %",
         "Sapsi: 46,65 %",
         "- Hatun yanapanakuy: 0,25 %, 15 kama runakunata munan; aswan uchuy huñunakuykunapi, llapan tarikuq runakunata. Sapa runa huk kutilla yanapan, 20 minutopi tukuchiptinku llapanku +4 puntu chaskinku. Ñawpaqman riyta rikuchin; Pakasqa ukhunpi kashaptin, ñawpaq yanapakuq rikurichin hinaspa yupakun.\n"
-        "- Milagroso: 0,10 %; hap'iptin 15 puntuwan kunan ñawpaq kaqpa puntunpa kuskanmanta wichayman muyuchisqawan tupachin, aswan hatunta qun.",
+        "- Milagroso: 0,10 %; hap'iptin 15 puntuwan kunan ñawpaq kaqpa puntunpa kuskanmanta wichayman muyuchisqawan tupachin, aswan hatunta qun, 1000 puntu kama.",
     ),
     "ru": (
         "Обычная: 47 %",
         "Обычная: 46,65 %",
         "- Кооперативная гигантская: 0,25 %, требует до 15 участников; в меньших чатах — всех доступных участников. Каждый помогает один раз. Если завершить за 20 минут, все получают +4 очка. Прогресс виден; если она скрыта в Таинственной, первая помощь раскрывает её и засчитывается.\n"
-        "- Чудесная: 0,10 %; при поимке даёт большее из 15 очков и половины текущего счёта лидера с округлением вверх.",
+        "- Чудесная: 0,10 %; при поимке даёт большее из 15 очков и половины текущего счёта лидера с округлением вверх, но не более 1000 очков.",
     ),
     "zh_Hans": (
         "普通：47%",
         "普通：46.65%",
         "- 合作巨型：0.25%，最多需要15人；较小的群组需要所有可参与成员。每人只能协助一次，若在20分钟内完成，所有人各得+4分。消息会显示进度；若藏在神秘棉签中，首次协助会揭晓并计入人数。\n"
-        "- 奇迹：0.10%，捕获时获得15分与当前领先者分数一半向上取整两者中的较大值。",
+        "- 奇迹：0.10%，捕获时获得15分与当前领先者分数一半向上取整两者中的较大值，上限为1000分。",
     ),
     "zh_Hant": (
         "普通：47%",
         "普通：46.65%",
         "- 合作巨型：0.25%，最多需要15人；較小的群組需要所有可參與成員。每人只能協助一次，若在20分鐘內完成，所有人各得+4分。訊息會顯示進度；若藏在神秘棉花棒中，首次協助會揭曉並計入人數。\n"
-        "- 奇蹟：0.10%，捕獲時獲得15分與目前領先者分數一半無條件進位兩者中的較大值。",
+        "- 奇蹟：0.10%，捕獲時獲得15分與目前領先者分數一半無條件進位兩者中的較大值，上限為1000分。",
     ),
 }
 

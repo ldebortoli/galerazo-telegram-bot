@@ -11,7 +11,9 @@ from telegram.error import TimedOut
 
 from galerazo_bot import hisopos as hisopo_rules
 from galerazo_bot.command_handlers import hisopos as hisopo_handlers
+from galerazo_bot.hisopo_translations import HISOPO_TRANSLATIONS
 from galerazo_bot.database import (
+    MAX_HISOPO_MIRACLE_AWARD,
     MAX_HISOPO_SCHEDULES_PER_CHAT_DAY,
     Database,
     HisopoCollectionEntry,
@@ -61,6 +63,12 @@ from galerazo_bot.roles import CommandContext, UserLevel
 
 
 class HisopoRulesTests(unittest.TestCase):
+    def test_all_localized_rules_document_the_miracle_cap(self) -> None:
+        for language, catalog in HISOPO_TRANSLATIONS.items():
+            with self.subTest(language=language):
+                self.assertIn("1000", catalog["hisopos.rules"])
+                self.assertLessEqual(len(catalog["hisopos.rules"]), 4096)
+
     def test_spawn_rolls_and_invalid_values(self) -> None:
         self.assertTrue(should_spawn_hisopo(1, 1))
         self.assertFalse(should_spawn_hisopo(1, 2))
@@ -1405,6 +1413,47 @@ class HisopoDatabaseTests(unittest.TestCase):
         self.assertEqual(result.spawn.points, 15)
         self.assertEqual(self.db.get_hisopo_scores("-1")[0].points, 15)
 
+    def test_miracle_award_is_capped_at_one_thousand_points(self) -> None:
+        self.db.save_hisopo_spawn(
+            "-1",
+            "miracle-cap-leader",
+            "common",
+            MAX_HISOPO_MIRACLE_AWARD * 3,
+            "message",
+            self.now.isoformat(),
+            (self.now + timedelta(minutes=20)).isoformat(),
+        )
+        self.db.capture_hisopo(
+            "-1",
+            "miracle-cap-leader",
+            "5",
+            self.now,
+            self.now + timedelta(days=1),
+        )
+        self.db.save_hisopo_spawn(
+            "-1",
+            "miracle-cap",
+            "miracle",
+            15,
+            "message",
+            self.now.isoformat(),
+            (self.now + timedelta(minutes=20)).isoformat(),
+        )
+
+        result = self.db.capture_hisopo(
+            "-1",
+            "miracle-cap",
+            "3",
+            self.now,
+            self.now + timedelta(days=1),
+        )
+
+        self.assertEqual(result.spawn.points, MAX_HISOPO_MIRACLE_AWARD)
+        self.assertEqual(
+            {score.user_id: score.points for score in self.db.get_hisopo_scores("-1")},
+            {"5": 3_000, "3": MAX_HISOPO_MIRACLE_AWARD},
+        )
+
     def test_incomplete_giant_expires_without_points_or_schedule(self) -> None:
         with self.assertRaisesRegex(ValueError, "participante"):
             self.db.save_hisopo_spawn(
@@ -1635,6 +1684,7 @@ class HisopoCommandTests(unittest.IsolatedAsyncioTestCase):
         self.assertIn("otros bots", response)
         self.assertIn("Milagroso: 0,10 %", response)
         self.assertIn("mitad del puntaje del líder", response)
+        self.assertIn("máximo de 1000", response)
         self.assertIn("Bomba: 4 %", response)
         self.assertIn("16 casillas", response)
         self.assertIn("Frenético: 4 %", response)
