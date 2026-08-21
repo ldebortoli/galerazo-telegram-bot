@@ -333,7 +333,6 @@ def render_hisopo_collection(
             else f"hisopos.type.{key}"
         )
         lines.append(f"{marker} {t(language, type_key)}: {count}")
-    lines.extend(("", t(language, "hisopos.collection.mystery_note")))
     return "\n".join(lines)
 
 

@@ -11,7 +11,10 @@ from telegram.error import TimedOut
 
 from galerazo_bot import hisopos as hisopo_rules
 from galerazo_bot.command_handlers import hisopos as hisopo_handlers
-from galerazo_bot.hisopo_translations import HISOPO_TRANSLATIONS
+from galerazo_bot.hisopo_translations import (
+    HISOPO_MYSTERY_GIANT_COLLECTION_NOTES,
+    HISOPO_TRANSLATIONS,
+)
 from galerazo_bot.database import (
     MAX_HISOPO_MIRACLE_AWARD,
     MAX_HISOPO_SCHEDULES_PER_CHAT_DAY,
@@ -63,6 +66,17 @@ from galerazo_bot.roles import CommandContext, UserLevel
 
 
 class HisopoRulesTests(unittest.TestCase):
+    def test_mystery_details_live_in_rules_not_collection_output(self) -> None:
+        for language, mystery_note in HISOPO_MYSTERY_GIANT_COLLECTION_NOTES.items():
+            with self.subTest(language=language):
+                self.assertIn(
+                    mystery_note,
+                    HISOPO_TRANSLATIONS[language]["hisopos.rules"],
+                )
+                collection = render_hisopo_collection([], "User", "2", language)
+                self.assertNotIn(mystery_note, collection)
+                self.assertEqual(len(collection.splitlines()), 19)
+
     def test_all_localized_rules_document_the_miracle_cap(self) -> None:
         for language, catalog in HISOPO_TRANSLATIONS.items():
             with self.subTest(language=language):
@@ -375,7 +389,9 @@ class HisopoRulesTests(unittest.TestCase):
         self.assertIn("❓ hisopo vencido: 0", rendered)
         self.assertIn("❓ hisopo gigante: 0", rendered)
         self.assertNotIn("hisopo gigante cooperativo: 0", rendered)
-        self.assertIn("cuenta como Misterioso y también como el tipo real", rendered)
+        self.assertNotIn("cuenta como Misterioso y también como el tipo real", rendered)
+        self.assertNotIn("solo quien lo revela suma Misterioso", rendered)
+        self.assertEqual(rendered.splitlines()[-1], "❓ hisopo vencido: 0")
 
 
 class HisopoDatabaseTests(unittest.TestCase):
@@ -1690,6 +1706,7 @@ class HisopoCommandTests(unittest.IsolatedAsyncioTestCase):
         self.assertIn("Frenético: 4 %", response)
         self.assertIn("Agujero negro: 4 %", response)
         self.assertIn("Vencido:", response)
+        self.assertIn("Misterioso cuenta como Misterioso y como el tipo revelado", response)
         self.assertIn("solo quien lo revela suma Misterioso", response)
         self.assertIn("no le quita puntos a nadie", response)
         self.assertIn("/coleccionhisopos", response)

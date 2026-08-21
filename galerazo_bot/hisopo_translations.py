@@ -1508,109 +1508,91 @@ HISOPO_COLLECTION_TRANSLATIONS: dict[str, dict[str, str]] = {
         "help.coleccionhisopos": "muestra tu colección histórica de Hisopos",
         "hisopos.collection.header": "Colección histórica de {user} ({user_id})",
         "hisopos.collection.progress": "Tipos descubiertos: {discovered}/{total} · Capturas: {captures}",
-        "hisopos.collection.mystery_note": "El Misterioso cuenta como Misterioso y también como el tipo real que revela.",
     },
     "en": {
         "help.coleccionhisopos": "shows your historical Swab collection",
         "hisopos.collection.header": "Historical collection of {user} ({user_id})",
         "hisopos.collection.progress": "Types discovered: {discovered}/{total} · Captures: {captures}",
-        "hisopos.collection.mystery_note": "A Mystery counts both as a Mystery and as the real type it reveals.",
     },
     "es_ES": {
         "help.coleccionhisopos": "muestra tu colección histórica de Hisopos",
         "hisopos.collection.header": "Colección histórica de {user} ({user_id})",
         "hisopos.collection.progress": "Tipos descubiertos: {discovered}/{total} · Capturas: {captures}",
-        "hisopos.collection.mystery_note": "El Misterioso cuenta como Misterioso y también como el tipo real que revela.",
     },
     "ca": {
         "help.coleccionhisopos": "mostra la teva col·lecció històrica de Bastonets",
         "hisopos.collection.header": "Col·lecció històrica de {user} ({user_id})",
         "hisopos.collection.progress": "Tipus descoberts: {discovered}/{total} · Captures: {captures}",
-        "hisopos.collection.mystery_note": "El Misteriós compta com a Misteriós i també com el tipus real que revela.",
     },
     "de": {
         "help.coleccionhisopos": "zeigt deine historische Wattestäbchen-Sammlung",
         "hisopos.collection.header": "Historische Sammlung von {user} ({user_id})",
         "hisopos.collection.progress": "Entdeckte Arten: {discovered}/{total} · Fänge: {captures}",
-        "hisopos.collection.mystery_note": "Das Mysteriöse zählt sowohl als Mysteriöses als auch als die echte Art, die es enthüllt.",
     },
     "eu": {
         "help.coleccionhisopos": "zure Kotoien bilduma historikoa erakusten du",
         "hisopos.collection.header": "{user} erabiltzailearen bilduma historikoa ({user_id})",
         "hisopos.collection.progress": "Aurkitutako motak: {discovered}/{total} · Harrapaketak: {captures}",
-        "hisopos.collection.mystery_note": "Misteriotsua Misteriotsu gisa eta agerian uzten duen benetako mota gisa zenbatzen da.",
     },
     "fr": {
         "help.coleccionhisopos": "affiche votre collection historique de Cotons-tiges",
         "hisopos.collection.header": "Collection historique de {user} ({user_id})",
         "hisopos.collection.progress": "Types découverts : {discovered}/{total} · Captures : {captures}",
-        "hisopos.collection.mystery_note": "Le Mystérieux compte à la fois comme Mystérieux et comme le type réel qu'il révèle.",
     },
     "gn": {
         "help.coleccionhisopos": "ohechauka nde Hisopo ñembyaty rembiasakue",
         "hisopos.collection.header": "{user} ñembyaty rembiasakue ({user_id})",
         "hisopos.collection.progress": "Peteĩchagua ojekuaáva: {discovered}/{total} · Ojejapyhýva: {captures}",
-        "hisopos.collection.mystery_note": "Ñemi ojepapa Ñemíramo ha avei ohechaukáva hisopo añeteguáicha.",
     },
     "it": {
         "help.coleccionhisopos": "mostra la tua collezione storica di Cotton Fioc",
         "hisopos.collection.header": "Collezione storica di {user} ({user_id})",
         "hisopos.collection.progress": "Tipi scoperti: {discovered}/{total} · Catture: {captures}",
-        "hisopos.collection.mystery_note": "Il Misterioso conta sia come Misterioso sia come il tipo reale che rivela.",
     },
     "ja": {
         "help.coleccionhisopos": "綿棒の歴代コレクションを表示します",
         "hisopos.collection.header": "{user}（{user_id}）の歴代コレクション",
         "hisopos.collection.progress": "発見した種類：{discovered}/{total}・捕獲数：{captures}",
-        "hisopos.collection.mystery_note": "ミステリーは、ミステリーと明らかになった本当の種類の両方として数えられます。",
     },
     "la": {
         "help.coleccionhisopos": "collectionem historicam Bacillorum tuam ostendit",
         "hisopos.collection.header": "Collectio historica {user} ({user_id})",
         "hisopos.collection.progress": "Genera inventa: {discovered}/{total} · Capta: {captures}",
-        "hisopos.collection.mystery_note": "Mysteriosum et ut mysteriosum et pro vero genere quod revelat numeratur.",
     },
     "nl": {
         "help.coleccionhisopos": "toont je historische Wattenstaafjescollectie",
         "hisopos.collection.header": "Historische collectie van {user} ({user_id})",
         "hisopos.collection.progress": "Ontdekte soorten: {discovered}/{total} · Gevangen: {captures}",
-        "hisopos.collection.mystery_note": "Het Mysterie telt zowel als Mysterie als als het echte type dat wordt onthuld.",
     },
     "pt_BR": {
         "help.coleccionhisopos": "mostra sua coleção histórica de Cotonetes",
         "hisopos.collection.header": "Coleção histórica de {user} ({user_id})",
         "hisopos.collection.progress": "Tipos descobertos: {discovered}/{total} · Capturas: {captures}",
-        "hisopos.collection.mystery_note": "O Misterioso conta tanto como Misterioso quanto como o tipo real que revela.",
     },
     "pt_PT": {
         "help.coleccionhisopos": "mostra a tua coleção histórica de Cotonetes",
         "hisopos.collection.header": "Coleção histórica de {user} ({user_id})",
         "hisopos.collection.progress": "Tipos descobertos: {discovered}/{total} · Capturas: {captures}",
-        "hisopos.collection.mystery_note": "O Misterioso conta como Misterioso e também como o tipo real que revela.",
     },
     "quz": {
         "help.coleccionhisopos": "hisopokunapa ñawpa huñusqaykita rikuchin",
         "hisopos.collection.header": "{user} runapa ñawpa huñusqan ({user_id})",
         "hisopos.collection.progress": "Riqsisqa laya: {discovered}/{total} · Hap'isqa: {captures}",
-        "hisopos.collection.mystery_note": "Paka hisopoqa Paka hisopo hina, sut'inchasqan chiqap laya hinapas yupakun.",
     },
     "ru": {
         "help.coleccionhisopos": "показывает вашу коллекцию палочек за всё время",
         "hisopos.collection.header": "Коллекция {user} за всё время ({user_id})",
         "hisopos.collection.progress": "Открыто видов: {discovered}/{total} · Поймано: {captures}",
-        "hisopos.collection.mystery_note": "Таинственная считается и Таинственной, и тем настоящим видом, который она раскрывает.",
     },
     "zh_Hans": {
         "help.coleccionhisopos": "显示你的历史棉签收藏",
         "hisopos.collection.header": "{user}（{user_id}）的历史收藏",
         "hisopos.collection.progress": "已发现种类：{discovered}/{total} · 捕获：{captures}",
-        "hisopos.collection.mystery_note": "神秘棉签既按神秘棉签计入，也按揭晓后的真实种类计入。",
     },
     "zh_Hant": {
         "help.coleccionhisopos": "顯示你的歷史棉花棒收藏",
         "hisopos.collection.header": "{user}（{user_id}）的歷史收藏",
         "hisopos.collection.progress": "已發現種類：{discovered}/{total} · 捕獲：{captures}",
-        "hisopos.collection.mystery_note": "神祕棉花棒既按神祕棉花棒計入，也按揭曉後的真實種類計入。",
     },
 }
 
@@ -2302,9 +2284,6 @@ for _language, _collection_rule in HISOPO_COLLECTION_RULES.items():
     _mystery_giant_note = HISOPO_MYSTERY_GIANT_COLLECTION_NOTES[_language]
     _collection_rule = f"{_collection_rule} {_mystery_giant_note}"
     HISOPO_COLLECTION_RULES[_language] = _collection_rule
-    HISOPO_TRANSLATIONS[_language]["hisopos.collection.mystery_note"] += (
-        f" {_mystery_giant_note}"
-    )
     HISOPO_TRANSLATIONS[_language]["hisopos.rules"] = HISOPO_TRANSLATIONS[_language][
         "hisopos.rules"
     ].replace(

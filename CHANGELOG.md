@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.38] - 2026-08-21
+
+- Correcciones y mejoras: `/coleccionhisopos` ya no agrega al final la explicación extensa sobre Misterioso, Gigante, carreras y vencimientos; esa información queda centralizada en `/reglashisopo`.
+
 ## [0.37] - 2026-08-21
 
 - Correcciones y mejoras: el premio individual del Hisopo Milagroso mantiene un mínimo de 15 puntos y la mitad redondeada hacia arriba del puntaje líder, pero ahora queda limitado a un máximo de 1000 puntos para evitar su crecimiento exponencial indefinido.
