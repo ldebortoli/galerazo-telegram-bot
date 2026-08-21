@@ -4,7 +4,10 @@ import re
 import unittest
 
 from galerazo_bot.i18n import TRANSLATIONS
-from galerazo_bot.hisopo_translations import HISOPO_GIANT_COUNT_RULES
+from galerazo_bot.hisopo_translations import (
+    HISOPO_GIANT_COUNT_RULES,
+    HISOPO_SCHEDULE_CAP_RULES,
+)
 
 
 class TranslationTests(unittest.TestCase):
@@ -60,6 +63,7 @@ class TranslationTests(unittest.TestCase):
 
     def test_hisopo_rules_fit_in_one_telegram_message(self) -> None:
         self.assertEqual(set(HISOPO_GIANT_COUNT_RULES), set(TRANSLATIONS))
+        self.assertEqual(set(HISOPO_SCHEDULE_CAP_RULES), set(TRANSLATIONS))
         for language, translations in TRANSLATIONS.items():
             with self.subTest(language=language):
                 self.assertLessEqual(len(translations["hisopos.rules"]), 4096)
@@ -67,6 +71,10 @@ class TranslationTests(unittest.TestCase):
                 self.assertIn("/hisopos", translations["hisopos.rules"])
                 self.assertIn(
                     HISOPO_GIANT_COUNT_RULES[language],
+                    translations["hisopos.rules"],
+                )
+                self.assertIn(
+                    HISOPO_SCHEDULE_CAP_RULES[language],
                     translations["hisopos.rules"],
                 )
 

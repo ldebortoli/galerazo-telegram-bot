@@ -1464,6 +1464,27 @@ HISOPO_GIANT_COUNT_RULES: dict[str, str] = {
     "zh_Hant": "- 巨型棉花棒目標人數：採用 Telegram 回報的成員總數減去 Galerazo，最多為15。此計數無法區分真人與其他機器人，因此小群組中的其他機器人也會計入。",
 }
 
+HISOPO_SCHEDULE_CAP_RULES: dict[str, str] = {
+    "es": "- Agenda diaria: cada grupo puede acumular como máximo 10 apariciones con horario aleatorio para el día siguiente. El límite no afecta las apariciones activadas por mensajes ni la aparición inmediata del Gemelo.",
+    "en": "- Daily schedule: each group can accumulate at most 10 random-time appearances for the next day. This limit does not affect message-triggered appearances or the Twin's immediate appearance.",
+    "es_ES": "- Agenda diaria: cada grupo puede acumular como máximo 10 apariciones con horario aleatorio para el día siguiente. El límite no afecta a las apariciones activadas por mensajes ni a la aparición inmediata del Gemelo.",
+    "ca": "- Agenda diària: cada grup pot acumular com a màxim 10 aparicions amb hora aleatòria per a l'endemà. El límit no afecta les aparicions activades per missatges ni l'aparició immediata del Bessó.",
+    "de": "- Tagesplanung: Jede Gruppe kann höchstens 10 Erscheinungen zu zufälligen Uhrzeiten für den nächsten Tag sammeln. Das Limit betrifft weder durch Nachrichten ausgelöste Erscheinungen noch die sofortige Erscheinung des Zwillings.",
+    "eu": "- Eguneko agenda: talde bakoitzak gehienez 10 agerpen meta ditzake hurrengo egunerako ausazko ordutegiarekin. Mugak ez die eragiten mezuek aktibatutako agerpenei, ezta Bikiaren berehalako agerpenari ere.",
+    "fr": "- Programmation quotidienne : chaque groupe peut cumuler au maximum 10 apparitions à une heure aléatoire pour le lendemain. Cette limite ne concerne ni les apparitions déclenchées par les messages ni l'apparition immédiate du Jumeau.",
+    "gn": "- Ára oúva ñemohenda: aty peteĩteĩ ikatu ombyaty 10 jehechauka peve aravo oñemoĩ rei hag̃ua ko'ẽrõ. Ko límite ndoikói ñe'ẽmondo omoñepyrũva jehechaukáre térã Kõi rehegua osẽ pya'évare.",
+    "it": "- Programmazione giornaliera: ogni gruppo può accumulare al massimo 10 apparizioni a orario casuale per il giorno successivo. Il limite non riguarda le apparizioni attivate dai messaggi né l'apparizione immediata del Gemello.",
+    "ja": "- 翌日の予約：各グループが翌日のランダムな時刻に予約できる出現は最大10回です。メッセージで発生する出現と、双子による即時出現はこの上限に含まれません。",
+    "la": "- Ordinatio cotidiana: quisque grex summum 10 apparitiones hora fortuita in diem posterum servare potest. Hic finis neque apparitiones nuntiis excitatas neque statim a Gemino factam complectitur.",
+    "nl": "- Dagplanning: elke groep kan maximaal 10 verschijningen op een willekeurig tijdstip voor de volgende dag verzamelen. De limiet geldt niet voor verschijningen door berichten of voor de onmiddellijke verschijning van de Tweeling.",
+    "pt_BR": "- Agenda diária: cada grupo pode acumular no máximo 10 aparições em horários aleatórios para o dia seguinte. O limite não afeta aparições ativadas por mensagens nem a aparição imediata do Gêmeo.",
+    "pt_PT": "- Agenda diária: cada grupo pode acumular no máximo 10 aparições em horários aleatórios para o dia seguinte. O limite não afeta as aparições ativadas por mensagens nem a aparição imediata do Gémeo.",
+    "quz": "- Sapa p'unchawpa wakichiynin: sapa huñuqa paqarinpaq munasqa pachapi 10 rikurimuykunallatam wakichiyta atin. Kay tupuqa willakuykunamanta rikurimuqkunata ni Iskaypa chaylla rikurimuyninta hark'anchu.",
+    "ru": "- Расписание на день: каждая группа может накопить не более 10 появлений в случайное время на следующий день. Лимит не относится к появлениям от сообщений и мгновенному появлению от Близнеца.",
+    "zh_Hans": "- 次日安排：每个群组最多可累计10次安排在次日随机时刻的出现。此上限不影响由消息触发的出现，也不影响双生棉签立即触发的出现。",
+    "zh_Hant": "- 次日安排：每個群組最多可累計10次安排在次日隨機時刻的出現。此上限不影響由訊息觸發的出現，也不影響雙生棉花棒立即觸發的出現。",
+}
+
 for _language, _translations in HISOPO_SPECIAL_TRANSLATIONS.items():
     HISOPO_TRANSLATIONS[_language].update(_translations)
 for _language, _translations in HISOPO_RULE_TRANSLATIONS.items():
@@ -1487,3 +1508,7 @@ for _language, _count_rule in HISOPO_GIANT_COUNT_RULES.items():
     HISOPO_TRANSLATIONS[_language]["hisopos.rules"] = HISOPO_TRANSLATIONS[_language][
         "hisopos.rules"
     ].replace("\n- /hisopos", f"\n{_count_rule}\n- /hisopos", 1)
+for _language, _schedule_rule in HISOPO_SCHEDULE_CAP_RULES.items():
+    HISOPO_TRANSLATIONS[_language]["hisopos.rules"] = HISOPO_TRANSLATIONS[_language][
+        "hisopos.rules"
+    ].replace("\n- /hisopos", f"\n{_schedule_rule}\n- /hisopos", 1)

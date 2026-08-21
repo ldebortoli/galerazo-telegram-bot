@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.28] - 2026-08-20
+
+- Cada grupo ahora puede acumular como máximo 10 apariciones de Hisopos con horario aleatorio para una misma fecha del día siguiente. Al llenar el cupo, las capturas conservan sus puntos y efectos; las apariciones activadas por mensajes y la aparición inmediata del Gemelo no consumen ese límite.
+
 ## [0.27] - 2026-08-20
 
 - Las reglas del Hisopo gigante ahora aclaran cómo se calcula su objetivo: el total de miembros informado por Telegram menos Galerazo, con un máximo de 15, incluyendo otros bots que formen parte de chats pequeños.

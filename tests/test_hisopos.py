@@ -11,7 +11,11 @@ from telegram.error import TimedOut
 
 from galerazo_bot import hisopos as hisopo_rules
 from galerazo_bot.command_handlers import hisopos as hisopo_handlers
-from galerazo_bot.database import Database, HisopoScore
+from galerazo_bot.database import (
+    MAX_HISOPO_SCHEDULES_PER_CHAT_DAY,
+    Database,
+    HisopoScore,
+)
 from galerazo_bot.hisopos import (
     COMMON_HISOPO,
     DIAMOND_HISOPO,
@@ -379,6 +383,102 @@ class HisopoDatabaseTests(unittest.TestCase):
             self.db.complete_hisopo_schedule(pending[0].schedule_id, "unknown")
         self.db.complete_hisopo_schedule(pending[0].schedule_id, "sent")
         self.assertEqual(self.db.list_pending_hisopo_schedules(), [])
+
+    def test_next_day_schedule_cap_is_per_chat_and_argentine_calendar_day(self) -> None:
+        target_times = tuple(
+            datetime(2026, 8, 21, 3, 30, tzinfo=timezone.utc)
+            + timedelta(hours=index * 2)
+            for index in range(MAX_HISOPO_SCHEDULES_PER_CHAT_DAY)
+        )
+        self._spawn("cap-batch", points=1)
+        batch = self.db.capture_hisopo(
+            "-1",
+            "cap-batch",
+            "2",
+            self.now,
+            target_times,
+        )
+        self.assertEqual(len(batch.schedules), MAX_HISOPO_SCHEDULES_PER_CHAT_DAY)
+
+        # This UTC instant falls on 2026-08-21 in Argentina, even though its UTC
+        # date is already 2026-08-22.
+        self._spawn("cap-overflow", points=1)
+        overflow = self.db.capture_hisopo(
+            "-1",
+            "cap-overflow",
+            "2",
+            self.now,
+            datetime(2026, 8, 22, 1, 30, tzinfo=timezone.utc),
+        )
+        self.assertEqual(overflow.status, "captured")
+        self.assertEqual(overflow.schedules, ())
+        self.assertEqual(self.db.get_hisopo_scores("-1")[0].points, 2)
+
+        self._spawn("next-date", points=1)
+        next_date = self.db.capture_hisopo(
+            "-1",
+            "next-date",
+            "2",
+            self.now,
+            datetime(2026, 8, 22, 3, 30, tzinfo=timezone.utc),
+        )
+        self.assertEqual(len(next_date.schedules), 1)
+
+        self.db.register_chat("-2", "group", "Other group", "1")
+        self.db.save_hisopo_spawn(
+            "-2",
+            "other-chat",
+            "common",
+            1,
+            "message",
+            self.now.isoformat(),
+            (self.now + timedelta(minutes=20)).isoformat(),
+        )
+        other_chat = self.db.capture_hisopo(
+            "-2",
+            "other-chat",
+            "2",
+            self.now,
+            datetime(2026, 8, 21, 12),
+        )
+        self.assertEqual(len(other_chat.schedules), 1)
+
+    def test_completed_giant_keeps_rewards_when_daily_schedule_cap_is_full(self) -> None:
+        self._spawn("cap-seed", points=1)
+        scheduled_for = datetime(2026, 8, 21, 12, tzinfo=timezone.utc)
+        seed = self.db.capture_hisopo(
+            "-1",
+            "cap-seed",
+            "2",
+            self.now,
+            (scheduled_for,) * MAX_HISOPO_SCHEDULES_PER_CHAT_DAY,
+        )
+        self.assertEqual(len(seed.schedules), MAX_HISOPO_SCHEDULES_PER_CHAT_DAY)
+        self.db.save_hisopo_spawn(
+            "-1",
+            "giant-at-cap",
+            "giant",
+            4,
+            "message",
+            self.now.isoformat(),
+            (self.now + timedelta(minutes=20)).isoformat(),
+            required_helpers=1,
+        )
+
+        result = self.db.contribute_to_giant_hisopo(
+            "-1",
+            "giant-at-cap",
+            "3",
+            self.now,
+            scheduled_for,
+        )
+
+        self.assertEqual(result.status, "completed")
+        self.assertIsNone(result.schedule)
+        self.assertEqual(
+            {score.user_id: score.points for score in self.db.get_hisopo_scores("-1")},
+            {"2": 1, "3": 4},
+        )
 
     def test_rotten_paths(self) -> None:
         self._spawn("200", points=1)

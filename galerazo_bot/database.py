@@ -5,8 +5,13 @@ import sqlite3
 from collections.abc import Iterable, Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import date, datetime, timezone
 from pathlib import Path
+from zoneinfo import ZoneInfo
+
+
+MAX_HISOPO_SCHEDULES_PER_CHAT_DAY = 10
+_ARGENTINA_TIMEZONE = ZoneInfo("America/Argentina/Buenos_Aires")
 
 
 @dataclass(frozen=True)
@@ -1375,24 +1380,14 @@ class Database:
             )
             schedules = []
             for scheduled_for in scheduled_datetimes:
-                cursor = conn.execute(
-                    """
-                    INSERT INTO hisopo_schedules (
-                        chat_id, scheduled_for, source_message_id
-                    )
-                    VALUES (?, ?, ?)
-                    """,
-                    (chat_id, scheduled_for.isoformat(), message_id),
+                schedule = _insert_hisopo_schedule_below_daily_cap(
+                    conn,
+                    chat_id,
+                    scheduled_for,
+                    message_id,
                 )
-                schedules.append(
-                    HisopoSchedule(
-                        schedule_id=int(cursor.lastrowid),
-                        chat_id=chat_id,
-                        scheduled_for=scheduled_for.isoformat(),
-                        status="pending",
-                        source_message_id=message_id,
-                    )
-                )
+                if schedule is not None:
+                    schedules.append(schedule)
             captured_spawn = _hisopo_spawn_from_row(
                 row,
                 status="captured",
@@ -1518,21 +1513,11 @@ class Database:
                     """,
                     (chat_id, participant_user_id, spawn.points),
                 )
-            cursor = conn.execute(
-                """
-                INSERT INTO hisopo_schedules (
-                    chat_id, scheduled_for, source_message_id
-                )
-                VALUES (?, ?, ?)
-                """,
-                (chat_id, next_scheduled_for.isoformat(), message_id),
-            )
-            schedule = HisopoSchedule(
-                schedule_id=int(cursor.lastrowid),
-                chat_id=chat_id,
-                scheduled_for=next_scheduled_for.isoformat(),
-                status="pending",
-                source_message_id=message_id,
+            schedule = _insert_hisopo_schedule_below_daily_cap(
+                conn,
+                chat_id,
+                next_scheduled_for,
+                message_id,
             )
             completed_spawn = _hisopo_spawn_from_row(
                 row,
@@ -2334,6 +2319,51 @@ def _hisopo_schedule_from_row(row: sqlite3.Row) -> HisopoSchedule:
         status=row["status"],
         source_message_id=row["source_message_id"],
     )
+
+
+def _insert_hisopo_schedule_below_daily_cap(
+    conn: sqlite3.Connection,
+    chat_id: str,
+    scheduled_for: datetime,
+    source_message_id: str,
+) -> HisopoSchedule | None:
+    """Insert a next-day spawn unless this chat already filled that Argentine day."""
+    target_day = _argentina_calendar_day(scheduled_for)
+    scheduled_rows = conn.execute(
+        "SELECT scheduled_for FROM hisopo_schedules WHERE chat_id = ?",
+        (chat_id,),
+    ).fetchall()
+    scheduled_count = sum(
+        _argentina_calendar_day(datetime.fromisoformat(row["scheduled_for"]))
+        == target_day
+        for row in scheduled_rows
+    )
+    if scheduled_count >= MAX_HISOPO_SCHEDULES_PER_CHAT_DAY:
+        return None
+
+    scheduled_text = scheduled_for.isoformat()
+    cursor = conn.execute(
+        """
+        INSERT INTO hisopo_schedules (
+            chat_id, scheduled_for, source_message_id
+        )
+        VALUES (?, ?, ?)
+        """,
+        (chat_id, scheduled_text, source_message_id),
+    )
+    return HisopoSchedule(
+        schedule_id=int(cursor.lastrowid),
+        chat_id=chat_id,
+        scheduled_for=scheduled_text,
+        status="pending",
+        source_message_id=source_message_id,
+    )
+
+
+def _argentina_calendar_day(value: datetime) -> date:
+    if value.tzinfo is None:
+        value = value.replace(tzinfo=timezone.utc)
+    return value.astimezone(_ARGENTINA_TIMEZONE).date()
 
 
 def _ensure_column(conn: sqlite3.Connection, table_name: str, column_name: str, definition: str) -> None:

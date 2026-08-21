@@ -1786,7 +1786,6 @@ class HisopoTelegramTests(unittest.IsolatedAsyncioTestCase):
         bot.edit_message_caption.reset_mock()
         bot.edit_message_media.reset_mock()
         callback.answer.reset_mock()
-        first_schedule = HisopoSchedule(1, "-1", "2026-08-21T01:00:00+00:00", "pending", "100")
         active_twin = self._spawn(hisopo_type="twin", points=4)
         captured_twin = self._spawn(
             hisopo_type="twin",
@@ -1799,7 +1798,6 @@ class HisopoTelegramTests(unittest.IsolatedAsyncioTestCase):
         db.capture_hisopo.return_value = HisopoCaptureResult(
             "captured",
             captured_twin,
-            first_schedule,
         )
         with patch.object(
             tb, "_is_user_restricted_in_callback_chat", return_value=False
@@ -1809,7 +1807,7 @@ class HisopoTelegramTests(unittest.IsolatedAsyncioTestCase):
             return_value=datetime(2026, 8, 21, 1, tzinfo=timezone.utc),
         ), patch.object(tb, "_spawn_hisopo", AsyncMock()) as immediate_spawn:
             await tb._hisopo_callback_entrypoint(update, context)
-        self.assertEqual(job_queue.run_once.call_count, 1)
+        self.assertEqual(job_queue.run_once.call_count, 0)
         immediate_spawn.assert_awaited_once_with(app, "-1", source="twin")
         callback.answer.assert_awaited_once_with("¡Hisopo capturado! Sumaste 4 pt.")
 
