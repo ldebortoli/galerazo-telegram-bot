@@ -105,7 +105,6 @@ class HisopoSpawn:
     bomb_success_slot: int | None = None
     bomb_explosion_slot: int | None = None
     bomb_revealed_mask: int = 0
-    race_last_refresh_at: str | None = None
 
 
 @dataclass(frozen=True)
@@ -163,13 +162,11 @@ class HisopoRaceResult:
     status: str
     spawn: HisopoSpawn | None
     user_press_count: int = 0
-    leading_press_count: int = 0
     participant_count: int = 0
     awarded_points: int = 0
     lost_points_by_user: tuple[tuple[str, int], ...] = ()
     schedule: HisopoSchedule | None = None
     revealed: bool = False
-    refresh_due: bool = False
 
 
 @dataclass(frozen=True)
@@ -1563,9 +1560,9 @@ class Database:
                     chat_id, message_id, hisopo_type, appearance_type,
                     initial_appearance_type, points, required_helpers,
                     source, spawned_at, expires_at,
-                    bomb_success_slot, bomb_explosion_slot, race_last_refresh_at
+                    bomb_success_slot, bomb_explosion_slot
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     chat_id,
@@ -1580,7 +1577,6 @@ class Database:
                     expires_at,
                     bomb_success_slot,
                     bomb_explosion_slot,
-                    spawned_at,
                 ),
             )
             row = conn.execute(
@@ -2022,12 +2018,11 @@ class Database:
         *,
         required_presses: int,
         min_press_interval: timedelta,
-        refresh_interval: timedelta,
     ) -> HisopoRaceResult:
         if required_presses < 1:
             raise ValueError("La carrera debe requerir al menos una pulsacion.")
-        if min_press_interval < timedelta(0) or refresh_interval < timedelta(0):
-            raise ValueError("Los intervalos de la carrera no pueden ser negativos.")
+        if min_press_interval < timedelta(0):
+            raise ValueError("El intervalo de la carrera no puede ser negativo.")
         chat_id = self.resolve_chat_id(chat_id)
         self.get_or_create_user(user_id)
         now_text = now.isoformat()
@@ -2127,33 +2122,15 @@ class Database:
             ).fetchall()
             counts = {str(entry["user_id"]): int(entry["presses"]) for entry in count_rows}
             user_press_count = counts[user_id]
-            leading_press_count = max(counts.values())
             participant_count = len(counts)
-            last_refresh = datetime.fromisoformat(
-                spawn.race_last_refresh_at or spawn.spawned_at
-            )
-            refresh_due = now - last_refresh >= refresh_interval
 
             if user_press_count < required_presses:
-                if refresh_due or revealed:
-                    conn.execute(
-                        "UPDATE hisopo_spawns SET race_last_refresh_at = ? "
-                        "WHERE chat_id = ? AND message_id = ?",
-                        (now_text, chat_id, message_id),
-                    )
-                    spawn = _hisopo_spawn_from_row(
-                        row,
-                        appearance_type=spawn.appearance_type,
-                        race_last_refresh_at=now_text,
-                    )
                 return HisopoRaceResult(
                     "pressed",
                     spawn,
                     user_press_count=user_press_count,
-                    leading_press_count=leading_press_count,
                     participant_count=participant_count,
                     revealed=revealed,
-                    refresh_due=refresh_due or revealed,
                 )
 
             lost_points_by_user: tuple[tuple[str, int], ...] = ()
@@ -2174,11 +2151,10 @@ class Database:
                 """
                 UPDATE hisopo_spawns
                 SET status = 'captured', winner_user_id = ?, captured_at = ?,
-                    points = ?, appearance_type = hisopo_type,
-                    race_last_refresh_at = ?
+                    points = ?, appearance_type = hisopo_type
                 WHERE chat_id = ? AND message_id = ? AND status = 'active'
                 """,
-                (user_id, now_text, awarded_points, now_text, chat_id, message_id),
+                (user_id, now_text, awarded_points, chat_id, message_id),
             )
             conn.execute(
                 """
@@ -2221,19 +2197,16 @@ class Database:
                 captured_at=now_text,
                 points=awarded_points,
                 appearance_type=spawn.hisopo_type,
-                race_last_refresh_at=now_text,
             )
         return HisopoRaceResult(
             "captured",
             completed_spawn,
             user_press_count=user_press_count,
-            leading_press_count=leading_press_count,
             participant_count=participant_count,
             awarded_points=awarded_points,
             lost_points_by_user=lost_points_by_user,
             schedule=schedule,
             revealed=revealed,
-            refresh_due=True,
         )
 
     def contribute_to_giant_hisopo(
@@ -3231,7 +3204,6 @@ def _hisopo_spawn_from_row(
     points: int | None = None,
     appearance_type: str | None = None,
     bomb_revealed_mask: int | None = None,
-    race_last_refresh_at: str | None = None,
 ) -> HisopoSpawn:
     return HisopoSpawn(
         chat_id=row["chat_id"],
@@ -3283,15 +3255,6 @@ def _hisopo_spawn_from_row(
                 int(row["bomb_revealed_mask"] or 0)
                 if "bomb_revealed_mask" in row.keys()
                 else 0
-            )
-        ),
-        race_last_refresh_at=(
-            race_last_refresh_at
-            if race_last_refresh_at is not None
-            else (
-                row["race_last_refresh_at"]
-                if "race_last_refresh_at" in row.keys()
-                else row["spawned_at"]
             )
         ),
     )

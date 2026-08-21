@@ -1672,7 +1672,7 @@ class HisopoTelegramTests(unittest.IsolatedAsyncioTestCase):
         race_button = frenetic_bot.send_photo.await_args.kwargs[
             "reply_markup"
         ].inline_keyboard[0][0]
-        self.assertEqual(race_button.text, "Pulsar · 0/20")
+        self.assertEqual(race_button.text, "Pulsar")
         self.assertEqual(race_button.callback_data, "hisopo:race")
 
         black_hole_app, _, black_hole_bot, _ = self._application(
@@ -2354,7 +2354,7 @@ class HisopoTelegramTests(unittest.IsolatedAsyncioTestCase):
             )
         fallback_bot.edit_message_caption.assert_awaited_once()
 
-    async def test_race_callbacks_refresh_finish_transfer_and_report_stale_states(self) -> None:
+    async def test_race_callbacks_keep_progress_private_finish_and_report_stale_states(self) -> None:
         db = MagicMock()
         db.get_chat_settings.return_value = SimpleNamespace(language="es")
         app, _, bot, job_queue = self._application(
@@ -2375,35 +2375,50 @@ class HisopoTelegramTests(unittest.IsolatedAsyncioTestCase):
             "pressed",
             active,
             user_press_count=7,
-            leading_press_count=9,
             participant_count=2,
-            refresh_due=True,
-        )
-        await tb._handle_hisopo_race_callback(
-            context, callback, user, active, "es", datetime.now(timezone.utc)
-        )
-        self.assertEqual(
-            bot.edit_message_caption.await_args.kwargs["caption"],
-            "¡Carrera por el hisopo frenético!\n"
-            "La marca más alta es 9/20 pulsaciones.",
-        )
-        self.assertEqual(
-            bot.edit_message_caption.await_args.kwargs[
-                "reply_markup"
-            ].inline_keyboard[0][0].text,
-            "Pulsar · 9/20",
-        )
-        callback.answer.assert_awaited_once_with("Tu pulsación contó: 7/20.")
-
-        bot.edit_message_caption.reset_mock()
-        callback.answer.reset_mock()
-        db.press_hisopo_race.return_value = HisopoRaceResult(
-            "pressed", active, user_press_count=8, leading_press_count=9
         )
         await tb._handle_hisopo_race_callback(
             context, callback, user, active, "es", datetime.now(timezone.utc)
         )
         bot.edit_message_caption.assert_not_awaited()
+        bot.edit_message_media.assert_not_awaited()
+        callback.answer.assert_awaited_once_with("Tu pulsación contó: 7/20.")
+
+        bot.edit_message_caption.reset_mock()
+        callback.answer.reset_mock()
+        db.press_hisopo_race.return_value = HisopoRaceResult(
+            "pressed", active, user_press_count=8
+        )
+        await tb._handle_hisopo_race_callback(
+            context, callback, user, active, "es", datetime.now(timezone.utc)
+        )
+        bot.edit_message_caption.assert_not_awaited()
+        callback.answer.assert_awaited_once_with("Tu pulsación contó: 8/20.")
+
+        callback.answer.reset_mock()
+        revealed_race = replace(active, appearance_type="frenetic")
+        db.press_hisopo_race.return_value = HisopoRaceResult(
+            "pressed",
+            revealed_race,
+            user_press_count=1,
+            participant_count=1,
+            revealed=True,
+        )
+        await tb._handle_hisopo_race_callback(
+            context, callback, user, active, "es", datetime.now(timezone.utc)
+        )
+        self.assertEqual(
+            bot.edit_message_media.await_args.kwargs["media"].caption,
+            "¡Apareció un hisopo frenético!\n"
+            "La primera persona que llegue a 20 pulsaciones gana.",
+        )
+        self.assertEqual(
+            bot.edit_message_media.await_args.kwargs[
+                "reply_markup"
+            ].inline_keyboard[0][0].text,
+            "Pulsar",
+        )
+        callback.answer.assert_awaited_once_with("Tu pulsación contó: 1/20.")
 
         callback.answer.reset_mock()
         db.press_hisopo_race.return_value = HisopoRaceResult("too_fast", active)
@@ -2435,7 +2450,6 @@ class HisopoTelegramTests(unittest.IsolatedAsyncioTestCase):
             "captured",
             won,
             user_press_count=20,
-            leading_press_count=20,
             participant_count=2,
             awarded_points=3,
             schedule=schedule,
@@ -2479,7 +2493,6 @@ class HisopoTelegramTests(unittest.IsolatedAsyncioTestCase):
                 "captured",
                 replace(black, status="captured", points=awarded),
                 user_press_count=20,
-                leading_press_count=20,
                 participant_count=participants,
                 awarded_points=awarded,
                 lost_points_by_user=losses,
@@ -2650,7 +2663,7 @@ class HisopoTelegramTests(unittest.IsolatedAsyncioTestCase):
             await tb._hisopo_callback_entrypoint(update, context)
         handle_bomb.assert_awaited_once()
 
-    async def test_race_and_expired_edit_fallbacks_are_non_fatal(self) -> None:
+    async def test_race_reveal_and_expired_edit_fallbacks_are_non_fatal(self) -> None:
         active = self._spawn(hisopo_type="frenetic", appearance_type="frenetic")
         fallback_bot = SimpleNamespace(
             edit_message_media=AsyncMock(side_effect=BadRequest("media")),
@@ -2664,23 +2677,17 @@ class HisopoTelegramTests(unittest.IsolatedAsyncioTestCase):
             edit_message_media=AsyncMock(),
             edit_message_caption=AsyncMock(),
         )
-        await tb._edit_hisopo_race_progress(
-            success_bot, configured, active, "es", 3, force_media=True
-        )
+        await tb._reveal_hisopo_race(success_bot, configured, active, "es")
         success_bot.edit_message_media.assert_awaited_once()
         success_bot.edit_message_caption.assert_not_awaited()
 
         with self.assertLogs(tb.logger, level="WARNING"):
-            await tb._edit_hisopo_race_progress(
-                fallback_bot, configured, active, "es", 4, force_media=True
-            )
+            await tb._reveal_hisopo_race(fallback_bot, configured, active, "es")
         fallback_bot.edit_message_caption.assert_awaited_once()
 
         fallback_bot.edit_message_caption.reset_mock()
         with self.assertLogs(tb.logger, level="WARNING"):
-            await tb._edit_hisopo_race_progress(
-                fallback_bot, settings(), active, "es", 5, force_media=True
-            )
+            await tb._reveal_hisopo_race(fallback_bot, settings(), active, "es")
         fallback_bot.edit_message_caption.assert_awaited_once()
 
         fallback_bot.edit_message_caption.reset_mock()
@@ -2700,9 +2707,7 @@ class HisopoTelegramTests(unittest.IsolatedAsyncioTestCase):
 
         fallback_bot.edit_message_caption.side_effect = BadRequest("caption")
         with self.assertLogs(tb.logger, level="WARNING"):
-            await tb._edit_hisopo_race_progress(
-                fallback_bot, settings(), active, "es", 6
-            )
+            await tb._reveal_hisopo_race(fallback_bot, settings(), active, "es")
 
     async def test_giant_callback_reveals_progress_prevents_duplicates_and_completes(self) -> None:
         db = MagicMock()

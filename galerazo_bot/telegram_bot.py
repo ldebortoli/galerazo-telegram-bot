@@ -98,7 +98,6 @@ from .hisopos import (
     HISOPO_GIANT_MAX_HELPERS,
     HISOPO_RACE_CALLBACK,
     HISOPO_RACE_MIN_PRESS_INTERVAL,
-    HISOPO_RACE_REFRESH_INTERVAL,
     HISOPO_RACE_REQUIRED_PRESSES,
     HISOPO_TYPE_ROLL_MAX,
     giant_required_helpers,
@@ -613,7 +612,7 @@ async def _spawn_hisopo(
     if appearance_kind.key == BOMB_HISOPO.key:
         keyboard = _build_bomb_keyboard(0)
     elif appearance_kind.key in {FRENETIC_HISOPO.key, BLACK_HOLE_HISOPO.key}:
-        keyboard = _build_hisopo_race_keyboard(language, 0)
+        keyboard = _build_hisopo_race_keyboard(language)
     else:
         button_key = (
             "hisopos.giant_help_button"
@@ -1099,15 +1098,13 @@ def _build_bomb_keyboard(revealed_mask: int) -> InlineKeyboardMarkup:
     )
 
 
-def _build_hisopo_race_keyboard(language: str, leading_count: int) -> InlineKeyboardMarkup:
+def _build_hisopo_race_keyboard(language: str) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         [[
             InlineKeyboardButton(
                 t(
                     language,
                     "hisopos.race_button",
-                    current=leading_count,
-                    target=HISOPO_RACE_REQUIRED_PRESSES,
                 ),
                 callback_data=HISOPO_RACE_CALLBACK,
             )
@@ -1133,17 +1130,14 @@ async def _handle_hisopo_race_callback(
         next_scheduled_for=random_next_day_datetime(now),
         required_presses=HISOPO_RACE_REQUIRED_PRESSES,
         min_press_interval=HISOPO_RACE_MIN_PRESS_INTERVAL,
-        refresh_interval=HISOPO_RACE_REFRESH_INTERVAL,
     )
     if result.status == "pressed" and result.spawn is not None:
-        if result.refresh_due:
-            await _edit_hisopo_race_progress(
+        if result.revealed:
+            await _reveal_hisopo_race(
                 context.bot,
                 state.settings,
                 result.spawn,
                 language,
-                result.leading_press_count,
-                force_media=result.revealed,
             )
         await callback_query.answer(
             t(
@@ -1493,49 +1487,44 @@ async def _edit_bomb_hisopo_terminal(
     await _edit_hisopo_caption(bot, spawn, caption)
 
 
-async def _edit_hisopo_race_progress(
+async def _reveal_hisopo_race(
     bot: Bot,
     settings: Settings,
     spawn: HisopoSpawn,
     language: str,
-    leading_count: int,
-    *,
-    force_media: bool = False,
 ) -> None:
     caption = t(
         language,
-        "hisopos.race_progress_caption",
+        "hisopos.appeared_race",
         type_label=t(language, f"hisopos.type.{spawn.hisopo_type}"),
-        current=leading_count,
         target=HISOPO_RACE_REQUIRED_PRESSES,
     )
-    keyboard = _build_hisopo_race_keyboard(language, leading_count)
-    if force_media:
-        file_id = _hisopo_file_id(settings, spawn.hisopo_type)
-        if file_id:
-            try:
-                await bot.edit_message_media(
-                    chat_id=_parse_chat_id(spawn.chat_id),
-                    message_id=int(spawn.message_id),
-                    media=InputMediaPhoto(media=file_id, caption=caption),
-                    reply_markup=keyboard,
-                )
-                return
-            except TelegramError as exc:
-                logger.warning(
-                    "No pude revelar la carrera del Hisopo %s en el chat %s: %s",
-                    spawn.message_id,
-                    spawn.chat_id,
-                    exc,
-                )
-        else:
+    keyboard = _build_hisopo_race_keyboard(language)
+    file_id = _hisopo_file_id(settings, spawn.hisopo_type)
+    if file_id:
+        try:
+            await bot.edit_message_media(
+                chat_id=_parse_chat_id(spawn.chat_id),
+                message_id=int(spawn.message_id),
+                media=InputMediaPhoto(media=file_id, caption=caption),
+                reply_markup=keyboard,
+            )
+            return
+        except TelegramError as exc:
             logger.warning(
-                "No pude revelar la carrera del Hisopo %s en el chat %s: "
-                "falta el file_id de %s.",
+                "No pude revelar la carrera del Hisopo %s en el chat %s: %s",
                 spawn.message_id,
                 spawn.chat_id,
-                spawn.hisopo_type,
+                exc,
             )
+    else:
+        logger.warning(
+            "No pude revelar la carrera del Hisopo %s en el chat %s: "
+            "falta el file_id de %s.",
+            spawn.message_id,
+            spawn.chat_id,
+            spawn.hisopo_type,
+        )
     try:
         await bot.edit_message_caption(
             chat_id=_parse_chat_id(spawn.chat_id),
@@ -1545,7 +1534,7 @@ async def _edit_hisopo_race_progress(
         )
     except TelegramError as exc:
         logger.warning(
-            "No pude actualizar el progreso del Hisopo %s en el chat %s: %s",
+            "No pude terminar de revelar la carrera del Hisopo %s en el chat %s: %s",
             spawn.message_id,
             spawn.chat_id,
             exc,

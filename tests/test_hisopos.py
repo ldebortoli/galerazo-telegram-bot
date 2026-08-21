@@ -122,6 +122,16 @@ class HisopoRulesTests(unittest.TestCase):
                 self.assertEqual(rules.count("<b>"), rules.count("</b>"))
                 self.assertEqual(rules.count("<code>"), rules.count("</code>"))
 
+    def test_all_localized_races_keep_progress_private(self) -> None:
+        for language, catalog in HISOPO_TRANSLATIONS.items():
+            with self.subTest(language=language):
+                self.assertNotIn("hisopos.race_progress_caption", catalog)
+                self.assertNotIn("{current}", catalog["hisopos.race_button"])
+                self.assertNotIn("{target}", catalog["hisopos.race_button"])
+        spanish_rules = unescape(HISOPO_TRANSLATIONS["es"]["hisopos.rules"])
+        self.assertIn("contador propio a 20", spanish_rules)
+        self.assertIn("carrera individual a 20", spanish_rules)
+
     def test_spawn_rolls_and_invalid_values(self) -> None:
         self.assertTrue(should_spawn_hisopo(1, 1))
         self.assertFalse(should_spawn_hisopo(1, 2))
@@ -1139,11 +1149,9 @@ class HisopoDatabaseTests(unittest.TestCase):
             scheduled_for,
             required_presses=20,
             min_press_interval=timedelta(milliseconds=100),
-            refresh_interval=timedelta(seconds=30),
         )
         self.assertEqual(first.status, "pressed")
         self.assertTrue(first.revealed)
-        self.assertTrue(first.refresh_due)
         self.assertEqual(first.user_press_count, 1)
         self.assertEqual(first.spawn.appearance_type, "frenetic")
         self.assertEqual(
@@ -1155,7 +1163,6 @@ class HisopoDatabaseTests(unittest.TestCase):
             self.now + timedelta(milliseconds=200), scheduled_for,
             required_presses=20,
             min_press_interval=timedelta(milliseconds=100),
-            refresh_interval=timedelta(seconds=30),
         )
         self.assertEqual(duplicate.status, "duplicate")
         too_fast = self.db.press_hisopo_race(
@@ -1163,7 +1170,6 @@ class HisopoDatabaseTests(unittest.TestCase):
             self.now + timedelta(milliseconds=50), scheduled_for,
             required_presses=20,
             min_press_interval=timedelta(milliseconds=100),
-            refresh_interval=timedelta(seconds=30),
         )
         self.assertEqual(too_fast.status, "too_fast")
 
@@ -1174,7 +1180,6 @@ class HisopoDatabaseTests(unittest.TestCase):
                 self.now + timedelta(milliseconds=press_number * 200), scheduled_for,
                 required_presses=20,
                 min_press_interval=timedelta(milliseconds=100),
-                refresh_interval=timedelta(seconds=30),
             )
         self.assertEqual(result.status, "captured")
         self.assertEqual(result.awarded_points, 3)
@@ -1191,7 +1196,6 @@ class HisopoDatabaseTests(unittest.TestCase):
                 "-1", "race-frenetic", "3", "late", self.now, scheduled_for,
                 required_presses=20,
                 min_press_interval=timedelta(milliseconds=100),
-                refresh_interval=timedelta(seconds=30),
             ).status,
             "taken",
         )
@@ -1209,7 +1213,6 @@ class HisopoDatabaseTests(unittest.TestCase):
                 "-1", "race-black", user_id, callback_id, moment, scheduled_for,
                 required_presses=20,
                 min_press_interval=timedelta(milliseconds=100),
-                refresh_interval=timedelta(seconds=30),
             )
 
         for index in range(3):
@@ -1217,7 +1220,16 @@ class HisopoDatabaseTests(unittest.TestCase):
         for index in range(2):
             press("4", f"loser-b-{index}", self.now + timedelta(seconds=index + 1, milliseconds=500))
         result = None
-        for index in range(20):
+        for index in range(15):
+            result = press(
+                "2",
+                f"winner-{index}",
+                self.now + timedelta(seconds=10, milliseconds=index * 200),
+            )
+        self.assertEqual(result.status, "pressed")
+        self.assertEqual(result.user_press_count, 15)
+        self.assertEqual(result.participant_count, 3)
+        for index in range(15, 20):
             result = press(
                 "2",
                 f"winner-{index}",
@@ -1243,7 +1255,6 @@ class HisopoDatabaseTests(unittest.TestCase):
                 self.now + timedelta(milliseconds=index * 200), scheduled_for,
                 required_presses=20,
                 min_press_interval=timedelta(milliseconds=100),
-                refresh_interval=timedelta(seconds=30),
             )
         self.assertEqual(solo.status, "captured")
         self.assertEqual(solo.awarded_points, 10)
@@ -1295,7 +1306,7 @@ class HisopoDatabaseTests(unittest.TestCase):
             "missing",
         )
 
-    def test_race_callbacks_and_refresh_state_migrate_to_supergroup(self) -> None:
+    def test_race_callbacks_migrate_to_supergroup(self) -> None:
         self.db.register_chat("-2", "supergroup", "Migrated")
         self.db.save_hisopo_spawn(
             "-1", "race-migrate", "frenetic", 3, "message",
@@ -1305,9 +1316,8 @@ class HisopoDatabaseTests(unittest.TestCase):
             "-1", "race-migrate", "2", "before-migration", self.now,
             self.now + timedelta(days=1), required_presses=20,
             min_press_interval=timedelta(milliseconds=100),
-            refresh_interval=timedelta(0),
         )
-        self.assertTrue(first.refresh_due)
+        self.assertEqual(first.user_press_count, 1)
 
         self.db.migrate_chat_id("-1", "-2")
 
@@ -1319,14 +1329,11 @@ class HisopoDatabaseTests(unittest.TestCase):
             [(row["chat_id"], row["callback_query_id"]) for row in rows],
             [("-2", "before-migration")],
         )
-        migrated = self.db.get_hisopo_spawn("-2", "race-migrate")
-        self.assertEqual(migrated.race_last_refresh_at, self.now.isoformat())
         second = self.db.press_hisopo_race(
             "-2", "race-migrate", "2", "after-migration",
             self.now + timedelta(seconds=1), self.now + timedelta(days=1),
             required_presses=20,
             min_press_interval=timedelta(milliseconds=100),
-            refresh_interval=timedelta(seconds=30),
         )
         self.assertEqual(second.user_press_count, 2)
 
@@ -1340,17 +1347,12 @@ class HisopoDatabaseTests(unittest.TestCase):
             next_scheduled_for=self.now + timedelta(days=1),
             required_presses=20,
             min_press_interval=timedelta(milliseconds=100),
-            refresh_interval=timedelta(seconds=30),
         )
         with self.assertRaisesRegex(ValueError, "al menos una"):
             self.db.press_hisopo_race(**{**base_kwargs, "required_presses": 0})
-        with self.assertRaisesRegex(ValueError, "negativos"):
+        with self.assertRaisesRegex(ValueError, "negativo"):
             self.db.press_hisopo_race(
                 **{**base_kwargs, "min_press_interval": timedelta(milliseconds=-1)}
-            )
-        with self.assertRaisesRegex(ValueError, "negativos"):
-            self.db.press_hisopo_race(
-                **{**base_kwargs, "refresh_interval": timedelta(milliseconds=-1)}
             )
         self.assertEqual(self.db.press_hisopo_race(**base_kwargs).status, "missing")
 
