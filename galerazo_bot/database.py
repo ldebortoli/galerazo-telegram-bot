@@ -100,6 +100,7 @@ class HisopoSpawn:
     winner_user_id: str | None
     captured_at: str | None
     required_helpers: int = 1
+    initial_appearance_type: str | None = None
 
 
 @dataclass(frozen=True)
@@ -404,6 +405,7 @@ class Database:
                     message_id TEXT NOT NULL,
                     hisopo_type TEXT NOT NULL,
                     appearance_type TEXT NOT NULL,
+                    initial_appearance_type TEXT NOT NULL,
                     points INTEGER NOT NULL,
                     required_helpers INTEGER NOT NULL DEFAULT 1,
                     source TEXT NOT NULL,
@@ -654,6 +656,21 @@ class Database:
                 "WHERE appearance_type IS NULL"
             )
             conn.execute("INSERT INTO schema_migrations (migration_id) VALUES (?)", (migration_id,))
+
+        migration_id = "20260821_track_initial_hisopo_appearance"
+        applied = conn.execute(
+            "SELECT 1 FROM schema_migrations WHERE migration_id = ?", (migration_id,)
+        ).fetchone()
+        if applied is None:
+            _ensure_column(conn, "hisopo_spawns", "initial_appearance_type", "TEXT")
+            conn.execute(
+                "UPDATE hisopo_spawns SET initial_appearance_type = appearance_type "
+                "WHERE initial_appearance_type IS NULL"
+            )
+            conn.execute(
+                "INSERT INTO schema_migrations (migration_id) VALUES (?)",
+                (migration_id,),
+            )
 
         migration_id = "20260820_add_hisopo_collections"
         applied = conn.execute(
@@ -1411,15 +1428,17 @@ class Database:
             conn.execute(
                 """
                 INSERT INTO hisopo_spawns (
-                    chat_id, message_id, hisopo_type, appearance_type, points,
-                    required_helpers, source, spawned_at, expires_at
+                    chat_id, message_id, hisopo_type, appearance_type,
+                    initial_appearance_type, points, required_helpers,
+                    source, spawned_at, expires_at
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     chat_id,
                     message_id,
                     hisopo_type,
+                    appearance_type or hisopo_type,
                     appearance_type or hisopo_type,
                     points,
                     required_helpers,
@@ -1645,6 +1664,17 @@ class Database:
                     spawn.hisopo_type,
                     now_text,
                 )
+            if (
+                (spawn.initial_appearance_type or spawn.appearance_type) == "mystery"
+                and spawn.hisopo_type != "mystery"
+            ):
+                _increment_hisopo_collection(
+                    conn,
+                    chat_id,
+                    user_id,
+                    "mystery",
+                    now_text,
+                )
             scheduled_datetimes = (
                 (next_scheduled_for,)
                 if isinstance(next_scheduled_for, datetime)
@@ -1792,6 +1822,17 @@ class Database:
                     spawn.hisopo_type,
                     now_text,
                 )
+                if (
+                    (spawn.initial_appearance_type or spawn.appearance_type)
+                    == "mystery"
+                ):
+                    _increment_hisopo_collection(
+                        conn,
+                        chat_id,
+                        participant_user_id,
+                        "mystery",
+                        now_text,
+                    )
             schedule = _insert_hisopo_schedule_below_daily_cap(
                 conn,
                 chat_id,
@@ -2583,6 +2624,17 @@ def _hisopo_spawn_from_row(
             row["appearance_type"]
             if "appearance_type" in row.keys() and row["appearance_type"] is not None
             else row["hisopo_type"]
+        ),
+        initial_appearance_type=(
+            row["initial_appearance_type"]
+            if "initial_appearance_type" in row.keys()
+            and row["initial_appearance_type"] is not None
+            else (
+                row["appearance_type"]
+                if "appearance_type" in row.keys()
+                and row["appearance_type"] is not None
+                else row["hisopo_type"]
+            )
         ),
         points=points if points is not None else row["points"],
         required_helpers=(

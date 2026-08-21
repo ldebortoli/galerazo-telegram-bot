@@ -73,9 +73,7 @@ HISOPO_KINDS = {
         MIRACLE_HISOPO,
     )
 }
-COLLECTIBLE_HISOPO_KEYS = tuple(
-    key for key in HISOPO_KINDS if key != MYSTERY_HISOPO.key
-)
+COLLECTIBLE_HISOPO_KEYS = tuple(HISOPO_KINDS)
 HISOPO_PROBABILITY_RANGES = {
     "common": (1, 4665),
     "silver": (4666, 6065),
@@ -299,7 +297,7 @@ def render_hisopo_collection(
     ]
     for key in COLLECTIBLE_HISOPO_KEYS:
         count = counts.get(key, 0)
-        marker = "✅" if count else "⬜"
+        marker = "✅" if count else "❓"
         lines.append(f"{marker} {t(language, f'hisopos.type.{key}')}: {count}")
     lines.extend(("", t(language, "hisopos.collection.mystery_note")))
     return "\n".join(lines)

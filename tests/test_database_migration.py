@@ -103,6 +103,10 @@ class DatabaseMigrationTests(unittest.TestCase):
                 db.get_hisopo_spawn("-1001", "301").appearance_type,
                 "mystery",
             )
+            self.assertEqual(
+                db.get_hisopo_spawn("-1001", "301").initial_appearance_type,
+                "mystery",
+            )
             with db._connect() as conn:
                 cleanup = conn.execute(
                     """

@@ -444,7 +444,7 @@ La fecha se calcula exclusivamente desde `message.date` de Telegram, convertido 
 
 El Recolector de Hisopos es un juego para grupos y supergrupos y viene habilitado por defecto. Un admin o dev puede desactivarlo desde `/config`, en `Comandos -> Recolector de Hisopos`, y elegir una de cinco intensidades:
 
-`/reglashisopo` resume dentro de Telegram las probabilidades, vencimientos, premios y penalizaciones de todos los tipos. `/hisopos` muestra la tabla de puntajes del grupo. `/coleccionhisopos` muestra la colección histórica del usuario que lo ejecuta; si se usa respondiendo a otra persona, muestra la colección de esa persona.
+`/reglashisopo` resume dentro de Telegram las probabilidades, vencimientos, premios y penalizaciones de todos los tipos. `/hisopos` muestra la tabla de puntajes del grupo, incluidos los jugadores que todavía tienen cero puntos. `/coleccionhisopos` muestra la colección histórica del usuario que lo ejecuta; si se usa respondiendo a otra persona, muestra la colección de esa persona.
 
 - muy poca: 1 % por mensaje válido;
 - poca: 5 %;
@@ -485,7 +485,7 @@ El Milagroso dura 20 minutos y calcula su premio al capturarlo: entrega el máxi
 
 La primera callback procesada para ese chat reclama el premio dentro de una transacción inmediata de SQLite; las siguientes muestran un alerta de Telegram sin sumar. Al capturar un Falso, Putrefacto o Misterioso, el mismo mensaje reemplaza la foto por la del tipo real, informa el resultado y elimina la botonera. Salvo el Fugaz directo, a los 20 minutos el Hisopo se pudre, deja de valer y el mensaje pierde la botonera. Tocar un Fugaz después de su minuto no suma ni agenda nada: solamente informa que ya se pudrió. Si una rareza todavía no tiene todos los `file_id` que necesita para aparecer y revelarse, esa tirada usa el Hisopo común para no perder el evento.
 
-La colección persiste por usuario y grupo sin temporadas ni reinicios. Guarda cuántos ejemplares se capturaron de cada una de las 11 variedades reales y reconstruye el historial existente desde las capturas almacenadas al migrar la base. El Misterioso cuenta como el tipo que revela; un Fugaz oculto reclamado después de su minuto no se incorpora. Cuando se completa un Gigante, todos los participantes lo agregan a su colección. La colección se migra y combina si Telegram convierte el grupo en supergrupo.
+La colección persiste por usuario y grupo sin temporadas ni reinicios. Guarda cuántos ejemplares se capturaron de cada uno de los 12 tipos. Desde la versión 0.34, cada Misterioso nuevo suma una unidad de Misterioso y otra del tipo que revela; si ocultaba un Fugaz reclamado después de su minuto, solo suma el Misterioso. Los Misteriosos anteriores no se reconstruyen retroactivamente. Cuando se completa un Gigante, todos los participantes agregan el Gigante y, si apareció oculto como Misterioso, también el Misterioso. Los tipos todavía no descubiertos se muestran con `❓` y los descubiertos con `✅`. La colección se migra y combina si Telegram convierte el grupo en supergrupo.
 
 Un fallo al enviar la foto de una aparición no queda absorbido silenciosamente: conserva el contexto de chat, origen, tipo real y apariencia, se eleva al manejador de errores y se informa en el canal de logging configurado. Las apariciones programadas fallidas quedan marcadas como `failed` en vez de permanecer en procesamiento.
 

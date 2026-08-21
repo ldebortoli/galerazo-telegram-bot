@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.34] - 2026-08-21
+
+- La colección ahora incluye Misterioso: cada captura nueva suma uno al Misterioso y uno al tipo revelado. Si contenía un Fugaz vencido, suma solamente el Misterioso. Los tipos no descubiertos se muestran con `❓` en vez de un cuadro blanco.
+- El ranking conserva y muestra con cero puntos a quien obtiene un Falso como primera captura.
+
 ## [0.33] - 2026-08-21
 
 - Correcciones y mejoras: al revelar un Hisopo falso, el mensaje ahora cuenta que la captura resultó ser falsa y aclara que no suma ningún punto.

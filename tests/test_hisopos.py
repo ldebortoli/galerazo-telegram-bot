@@ -318,24 +318,25 @@ class HisopoRulesTests(unittest.TestCase):
         self.assertIn("1. bea", pages[1])
         self.assertEqual(render_hisopo_page([], 99).page, 1)
 
-    def test_collection_renders_real_types_counts_and_progress(self) -> None:
+    def test_collection_renders_mystery_and_real_types_with_progress(self) -> None:
         entries = [
             HisopoCollectionEntry("common", 3, "2026-08-20T12:00:00+00:00", "2026-08-20T13:00:00+00:00"),
             HisopoCollectionEntry("diamond", 1, "2026-08-20T14:00:00+00:00", "2026-08-20T14:00:00+00:00"),
-            HisopoCollectionEntry("mystery", 9, "2026-08-20T15:00:00+00:00", "2026-08-20T15:00:00+00:00"),
+            HisopoCollectionEntry("mystery", 1, "2026-08-20T15:00:00+00:00", "2026-08-20T15:00:00+00:00"),
         ]
 
         rendered = render_hisopo_collection(entries, "Ana", "2")
 
-        self.assertEqual(len(COLLECTIBLE_HISOPO_KEYS), 11)
-        self.assertNotIn("mystery", COLLECTIBLE_HISOPO_KEYS)
+        self.assertEqual(len(COLLECTIBLE_HISOPO_KEYS), 12)
+        self.assertIn("mystery", COLLECTIBLE_HISOPO_KEYS)
         self.assertIn("Colección histórica de Ana (2)", rendered)
-        self.assertIn("Tipos descubiertos: 2/11 · Capturas: 4", rendered)
+        self.assertIn("Tipos descubiertos: 3/12 · Capturas: 5", rendered)
         self.assertIn("✅ hisopo común: 3", rendered)
-        self.assertIn("⬜ hisopo plateado: 0", rendered)
+        self.assertIn("❓ hisopo plateado: 0", rendered)
+        self.assertNotIn("⬜", rendered)
         self.assertIn("✅ hisopo diamante: 1", rendered)
-        self.assertNotIn("hisopo misterioso:", rendered)
-        self.assertIn("cuenta como el tipo real", rendered)
+        self.assertIn("✅ hisopo misterioso: 1", rendered)
+        self.assertIn("cuenta como Misterioso y también como el tipo real", rendered)
 
 
 class HisopoDatabaseTests(unittest.TestCase):
@@ -630,6 +631,14 @@ class HisopoDatabaseTests(unittest.TestCase):
         fake = self.db.capture_hisopo("-1", "301", "2", self.now, ())
         self.assertIsNone(fake.schedule)
         self.assertEqual(fake.schedules, ())
+        self.assertEqual(
+            {score.user_id: score.points for score in self.db.get_hisopo_scores("-1")},
+            {"2": 0, "3": -2},
+        )
+        self.assertIn(
+            "1. Winner (2) => 0",
+            build_hisopo_lines(self.db.get_hisopo_scores("-1")),
+        )
 
         self.db.save_hisopo_spawn(
             "-1",
@@ -737,7 +746,7 @@ class HisopoDatabaseTests(unittest.TestCase):
         for user_id in ("2", "3", "4"):
             self.assertEqual(
                 [(entry.hisopo_type, entry.capture_count) for entry in self.db.get_hisopo_collection("-1", user_id)],
-                [("giant", 1)],
+                [("giant", 1), ("mystery", 1)],
             )
         self.assertEqual(
             self.db.contribute_to_giant_hisopo(
@@ -888,7 +897,36 @@ class HisopoDatabaseTests(unittest.TestCase):
             "rotten",
         )
 
-    def test_expired_hidden_fleeting_does_not_enter_collection(self) -> None:
+    def test_mystery_counts_wrapper_and_revealed_type(self) -> None:
+        self.db.save_hisopo_spawn(
+            "-1",
+            "silver-mystery",
+            "silver",
+            2,
+            "message",
+            self.now.isoformat(),
+            (self.now + timedelta(minutes=20)).isoformat(),
+            appearance_type="mystery",
+        )
+
+        result = self.db.capture_hisopo(
+            "-1",
+            "silver-mystery",
+            "2",
+            self.now,
+            (),
+        )
+
+        self.assertEqual(result.status, "captured")
+        self.assertEqual(
+            {
+                entry.hisopo_type: entry.capture_count
+                for entry in self.db.get_hisopo_collection("-1", "2")
+            },
+            {"mystery": 1, "silver": 1},
+        )
+
+    def test_expired_hidden_fleeting_counts_only_mystery(self) -> None:
         self.db.save_hisopo_spawn(
             "-1",
             "fleeting-mystery",
@@ -911,7 +949,13 @@ class HisopoDatabaseTests(unittest.TestCase):
 
         self.assertEqual(result.status, "captured")
         self.assertEqual(result.spawn.points, 0)
-        self.assertEqual(self.db.get_hisopo_collection("-1", "2"), [])
+        self.assertEqual(
+            [
+                (entry.hisopo_type, entry.capture_count)
+                for entry in self.db.get_hisopo_collection("-1", "2")
+            ],
+            [("mystery", 1)],
+        )
 
     def test_collection_migration_backfills_existing_normal_and_giant_captures(self) -> None:
         self._spawn("historic-common", points=1)
