@@ -251,13 +251,15 @@ class DatabaseCompleteTests(unittest.TestCase):
                     "20260820_add_hisopo_collections",
                     "20260821_track_initial_hisopo_appearance",
                     "20260821_add_hisopo_message_cleanup",
+                    "20260821_add_bomb_hisopo",
                 },
             )
             columns = {row["name"] for row in connection.execute("PRAGMA table_info(paginated_message_states)")}
             hisopo = connection.execute(
                 """SELECT hisopo_type, appearance_type, initial_appearance_type,
                           required_helpers,
-                          message_cleanup_status, message_cleanup_attempts
+                          message_cleanup_status, message_cleanup_attempts,
+                          bomb_success_slot, bomb_explosion_slot, bomb_revealed_mask
                    """
                 "FROM hisopo_spawns WHERE message_id = '20'"
             ).fetchone()
@@ -268,6 +270,9 @@ class DatabaseCompleteTests(unittest.TestCase):
         self.assertEqual(hisopo["required_helpers"], 1)
         self.assertEqual(hisopo["message_cleanup_status"], "pending")
         self.assertEqual(hisopo["message_cleanup_attempts"], 0)
+        self.assertIsNone(hisopo["bomb_success_slot"])
+        self.assertIsNone(hisopo["bomb_explosion_slot"])
+        self.assertEqual(hisopo["bomb_revealed_mask"], 0)
 
 
 if __name__ == "__main__":

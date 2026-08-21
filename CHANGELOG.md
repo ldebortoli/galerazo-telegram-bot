@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.35] - 2026-08-21
+
+- Nuevo Hisopo bomba (4 %): tablero persistente de 16 casillas con una desactivación por +10 puntos, una explosión por -10 y catorce intentos neutros. Los clics se resuelven atómicamente, sobreviven migraciones y cambian la foto al desenlace.
+- La colección incorpora el Bomba como decimotercer tipo, muestra `hisopo gigante` sin el calificativo cooperativo y, si un Misterioso ocultaba un Bomba o un Gigante, entrega el Misterioso solamente a quien revela el tipo real.
+- Se agregaron los tres artes del Bomba y variables separadas para la aparición, la desactivación y la explosión.
+
 ## [0.34] - 2026-08-21
 
 - La colección ahora incluye Misterioso: cada captura nueva suma uno al Misterioso y uno al tipo revelado. Si contenía un Fugaz vencido, suma solamente el Misterioso. Los tipos no descubiertos se muestran con `❓` en vez de un cuadro blanco.

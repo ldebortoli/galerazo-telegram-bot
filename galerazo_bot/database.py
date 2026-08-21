@@ -101,6 +101,9 @@ class HisopoSpawn:
     captured_at: str | None
     required_helpers: int = 1
     initial_appearance_type: str | None = None
+    bomb_success_slot: int | None = None
+    bomb_explosion_slot: int | None = None
+    bomb_revealed_mask: int = 0
 
 
 @dataclass(frozen=True)
@@ -144,6 +147,13 @@ class HisopoGiantContributionResult:
     required_helpers: int = 0
     schedule: HisopoSchedule | None = None
     revealed: bool = False
+
+
+@dataclass(frozen=True)
+class HisopoBombResult:
+    status: str
+    spawn: HisopoSpawn | None
+    schedule: HisopoSchedule | None = None
 
 
 @dataclass(frozen=True)
@@ -414,6 +424,9 @@ class Database:
                     status TEXT NOT NULL DEFAULT 'active',
                     winner_user_id TEXT,
                     captured_at TEXT,
+                    bomb_success_slot INTEGER,
+                    bomb_explosion_slot INTEGER,
+                    bomb_revealed_mask INTEGER NOT NULL DEFAULT 0,
                     message_cleanup_status TEXT NOT NULL DEFAULT 'pending',
                     message_cleanup_attempts INTEGER NOT NULL DEFAULT 0,
                     message_cleanup_last_attempt_at TEXT,
@@ -776,6 +789,24 @@ class Database:
                 CREATE INDEX IF NOT EXISTS idx_hisopo_spawns_message_cleanup
                 ON hisopo_spawns (chat_id, message_cleanup_status, spawned_at)
                 """
+            )
+            conn.execute(
+                "INSERT INTO schema_migrations (migration_id) VALUES (?)",
+                (migration_id,),
+            )
+
+        migration_id = "20260821_add_bomb_hisopo"
+        applied = conn.execute(
+            "SELECT 1 FROM schema_migrations WHERE migration_id = ?", (migration_id,)
+        ).fetchone()
+        if applied is None:
+            _ensure_column(conn, "hisopo_spawns", "bomb_success_slot", "INTEGER")
+            _ensure_column(conn, "hisopo_spawns", "bomb_explosion_slot", "INTEGER")
+            _ensure_column(
+                conn,
+                "hisopo_spawns",
+                "bomb_revealed_mask",
+                "INTEGER NOT NULL DEFAULT 0",
             )
             conn.execute(
                 "INSERT INTO schema_migrations (migration_id) VALUES (?)",
@@ -1420,9 +1451,27 @@ class Database:
         expires_at: str,
         appearance_type: str | None = None,
         required_helpers: int = 1,
+        bomb_success_slot: int | None = None,
+        bomb_explosion_slot: int | None = None,
     ) -> HisopoSpawn:
         if required_helpers < 1:
             raise ValueError("El Hisopo debe requerir al menos un participante.")
+        if hisopo_type == "bomb" and bomb_success_slot is None:
+            raise ValueError("El Hisopo bomba debe definir sus dos casillas especiales.")
+        if hisopo_type != "bomb" and bomb_success_slot is not None:
+            raise ValueError("Solo el Hisopo bomba puede definir casillas especiales.")
+        if (bomb_success_slot is None) != (bomb_explosion_slot is None):
+            raise ValueError("El Hisopo bomba debe definir sus dos casillas especiales.")
+        if (
+            bomb_success_slot is not None
+            and bomb_explosion_slot is not None
+            and (
+                not 0 <= bomb_success_slot < 16
+                or not 0 <= bomb_explosion_slot < 16
+                or bomb_success_slot == bomb_explosion_slot
+            )
+        ):
+            raise ValueError("Las casillas especiales del Hisopo bomba son invalidas.")
         chat_id = self.resolve_chat_id(chat_id)
         with self._connect() as conn:
             conn.execute(
@@ -1430,9 +1479,10 @@ class Database:
                 INSERT INTO hisopo_spawns (
                     chat_id, message_id, hisopo_type, appearance_type,
                     initial_appearance_type, points, required_helpers,
-                    source, spawned_at, expires_at
+                    source, spawned_at, expires_at,
+                    bomb_success_slot, bomb_explosion_slot
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     chat_id,
@@ -1445,6 +1495,8 @@ class Database:
                     source,
                     spawned_at,
                     expires_at,
+                    bomb_success_slot,
+                    bomb_explosion_slot,
                 ),
             )
             row = conn.execute(
@@ -1704,6 +1756,174 @@ class Database:
             tuple(schedules[1:]),
         )
 
+    def reveal_bomb_hisopo(
+        self,
+        chat_id: str,
+        message_id: str,
+        user_id: str,
+        now: datetime,
+    ) -> HisopoBombResult:
+        chat_id = self.resolve_chat_id(chat_id)
+        self.get_or_create_user(user_id)
+        now_text = now.isoformat()
+        with self._connect() as conn:
+            conn.execute("BEGIN IMMEDIATE")
+            row = conn.execute(
+                "SELECT * FROM hisopo_spawns WHERE chat_id = ? AND message_id = ?",
+                (chat_id, message_id),
+            ).fetchone()
+            if row is None:
+                return HisopoBombResult("missing", None)
+            spawn = _hisopo_spawn_from_row(row)
+            if spawn.status != "active":
+                return HisopoBombResult(
+                    "taken" if spawn.status in {"captured", "exploded"} else "rotten",
+                    spawn,
+                )
+            if spawn.hisopo_type != "bomb":
+                return HisopoBombResult("invalid", spawn)
+            if now >= datetime.fromisoformat(spawn.expires_at):
+                conn.execute(
+                    "UPDATE hisopo_spawns SET status = 'rotten' "
+                    "WHERE chat_id = ? AND message_id = ? AND status = 'active'",
+                    (chat_id, message_id),
+                )
+                return HisopoBombResult(
+                    "rotten",
+                    _hisopo_spawn_from_row(row, status="rotten"),
+                )
+            if spawn.appearance_type == "bomb":
+                return HisopoBombResult("already_revealed", spawn)
+            if spawn.appearance_type != "mystery":
+                return HisopoBombResult("invalid", spawn)
+            conn.execute(
+                "UPDATE hisopo_spawns SET appearance_type = 'bomb' "
+                "WHERE chat_id = ? AND message_id = ? AND status = 'active'",
+                (chat_id, message_id),
+            )
+            _increment_hisopo_collection(
+                conn,
+                chat_id,
+                user_id,
+                "mystery",
+                now_text,
+            )
+            return HisopoBombResult(
+                "revealed",
+                _hisopo_spawn_from_row(row, appearance_type="bomb"),
+            )
+
+    def resolve_bomb_hisopo_slot(
+        self,
+        chat_id: str,
+        message_id: str,
+        user_id: str,
+        slot: int,
+        now: datetime,
+        next_scheduled_for: datetime,
+    ) -> HisopoBombResult:
+        if not 0 <= slot < 16:
+            raise ValueError("La casilla del Hisopo bomba debe estar entre 0 y 15.")
+        chat_id = self.resolve_chat_id(chat_id)
+        self.get_or_create_user(user_id)
+        now_text = now.isoformat()
+        with self._connect() as conn:
+            conn.execute("BEGIN IMMEDIATE")
+            row = conn.execute(
+                "SELECT * FROM hisopo_spawns WHERE chat_id = ? AND message_id = ?",
+                (chat_id, message_id),
+            ).fetchone()
+            if row is None:
+                return HisopoBombResult("missing", None)
+            spawn = _hisopo_spawn_from_row(row)
+            if spawn.status != "active":
+                return HisopoBombResult(
+                    "taken" if spawn.status in {"captured", "exploded"} else "rotten",
+                    spawn,
+                )
+            if spawn.hisopo_type != "bomb" or spawn.appearance_type != "bomb":
+                return HisopoBombResult("invalid", spawn)
+            if now >= datetime.fromisoformat(spawn.expires_at):
+                conn.execute(
+                    "UPDATE hisopo_spawns SET status = 'rotten' "
+                    "WHERE chat_id = ? AND message_id = ? AND status = 'active'",
+                    (chat_id, message_id),
+                )
+                return HisopoBombResult(
+                    "rotten",
+                    _hisopo_spawn_from_row(row, status="rotten"),
+                )
+            slot_mask = 1 << slot
+            if spawn.bomb_revealed_mask & slot_mask:
+                return HisopoBombResult("already_revealed", spawn)
+            revealed_mask = spawn.bomb_revealed_mask | slot_mask
+            if slot not in {spawn.bomb_success_slot, spawn.bomb_explosion_slot}:
+                conn.execute(
+                    "UPDATE hisopo_spawns SET bomb_revealed_mask = ? "
+                    "WHERE chat_id = ? AND message_id = ? AND status = 'active'",
+                    (revealed_mask, chat_id, message_id),
+                )
+                return HisopoBombResult(
+                    "miss",
+                    _hisopo_spawn_from_row(row, bomb_revealed_mask=revealed_mask),
+                )
+
+            defused = slot == spawn.bomb_success_slot
+            status = "captured" if defused else "exploded"
+            awarded_points = 10 if defused else -10
+            conn.execute(
+                """
+                UPDATE hisopo_spawns
+                SET status = ?, winner_user_id = ?, captured_at = ?, points = ?,
+                    bomb_revealed_mask = ?
+                WHERE chat_id = ? AND message_id = ? AND status = 'active'
+                """,
+                (
+                    status,
+                    user_id,
+                    now_text,
+                    awarded_points,
+                    revealed_mask,
+                    chat_id,
+                    message_id,
+                ),
+            )
+            conn.execute(
+                """
+                INSERT INTO hisopo_scores (chat_id, user_id, points)
+                VALUES (?, ?, ?)
+                ON CONFLICT(chat_id, user_id) DO UPDATE SET
+                    points = hisopo_scores.points + excluded.points,
+                    updated_at = CURRENT_TIMESTAMP
+                """,
+                (chat_id, user_id, awarded_points),
+            )
+            schedule = None
+            if defused:
+                _increment_hisopo_collection(
+                    conn,
+                    chat_id,
+                    user_id,
+                    "bomb",
+                    now_text,
+                )
+                schedule = _insert_hisopo_schedule_below_daily_cap(
+                    conn,
+                    chat_id,
+                    next_scheduled_for,
+                    message_id,
+                )
+            resolved_spawn = _hisopo_spawn_from_row(
+                row,
+                status=status,
+                winner_user_id=user_id,
+                captured_at=now_text,
+                points=awarded_points,
+                appearance_type="bomb",
+                bomb_revealed_mask=revealed_mask,
+            )
+            return HisopoBombResult(status, resolved_spawn, schedule)
+
     def contribute_to_giant_hisopo(
         self,
         chat_id: str,
@@ -1771,7 +1991,7 @@ class Database:
                 """,
                 (chat_id, message_id, user_id, now_text),
             )
-            revealed = spawn.appearance_type != "giant"
+            revealed = spawn.appearance_type == "mystery"
             if revealed:
                 conn.execute(
                     """
@@ -1780,6 +2000,13 @@ class Database:
                     WHERE chat_id = ? AND message_id = ?
                     """,
                     (chat_id, message_id),
+                )
+                _increment_hisopo_collection(
+                    conn,
+                    chat_id,
+                    user_id,
+                    "mystery",
+                    now_text,
                 )
                 spawn = _hisopo_spawn_from_row(row, appearance_type="giant")
 
@@ -1822,17 +2049,6 @@ class Database:
                     spawn.hisopo_type,
                     now_text,
                 )
-                if (
-                    (spawn.initial_appearance_type or spawn.appearance_type)
-                    == "mystery"
-                ):
-                    _increment_hisopo_collection(
-                        conn,
-                        chat_id,
-                        participant_user_id,
-                        "mystery",
-                        now_text,
-                    )
             schedule = _insert_hisopo_schedule_below_daily_cap(
                 conn,
                 chat_id,
@@ -2614,6 +2830,7 @@ def _hisopo_spawn_from_row(
     captured_at: str | None = None,
     points: int | None = None,
     appearance_type: str | None = None,
+    bomb_revealed_mask: int | None = None,
 ) -> HisopoSpawn:
     return HisopoSpawn(
         chat_id=row["chat_id"],
@@ -2648,6 +2865,25 @@ def _hisopo_spawn_from_row(
         status=status or row["status"],
         winner_user_id=winner_user_id if winner_user_id is not None else row["winner_user_id"],
         captured_at=captured_at if captured_at is not None else row["captured_at"],
+        bomb_success_slot=(
+            row["bomb_success_slot"]
+            if "bomb_success_slot" in row.keys()
+            else None
+        ),
+        bomb_explosion_slot=(
+            row["bomb_explosion_slot"]
+            if "bomb_explosion_slot" in row.keys()
+            else None
+        ),
+        bomb_revealed_mask=(
+            bomb_revealed_mask
+            if bomb_revealed_mask is not None
+            else (
+                int(row["bomb_revealed_mask"] or 0)
+                if "bomb_revealed_mask" in row.keys()
+                else 0
+            )
+        ),
     )
 
 

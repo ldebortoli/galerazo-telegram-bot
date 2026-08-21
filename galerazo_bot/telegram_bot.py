@@ -84,10 +84,13 @@ from .command_handlers.galerazas import (
 from .command_handlers.hisopos import send_hisopos as _send_hisopos
 from .handler_registration import register_handlers
 from .hisopos import (
+    BOMB_HISOPO,
     COMMON_HISOPO,
     FAKE_HISOPO,
     GIANT_HISOPO,
     HISOPO_CALLBACK_PREFIX,
+    HISOPO_BOMB_CALLBACK_PREFIX,
+    HISOPO_BOMB_SLOT_COUNT,
     HISOPO_CAPTURE_CALLBACK,
     HISOPO_GIANT_MAX_HELPERS,
     HISOPO_TYPE_ROLL_MAX,
@@ -96,6 +99,7 @@ from .hisopos import (
     is_fleeting_window_expired,
     radioactive_points_at,
     random_next_day_datetime,
+    select_bomb_slots,
     select_hisopo_spawn,
     should_spawn_hisopo,
 )
@@ -555,6 +559,14 @@ async def _spawn_hisopo(
         for hisopo_type in required_types
         if not _hisopo_file_id(state.settings, hisopo_type)
     )
+    if actual_kind.key == BOMB_HISOPO.key:
+        bomb_state_ids = {
+            "bomb_defused": state.settings.telegram_hisopo_bomb_defused_file_id,
+            "bomb_exploded": state.settings.telegram_hisopo_bomb_exploded_file_id,
+        }
+        missing_types.extend(
+            key for key, file_id in bomb_state_ids.items() if not file_id
+        )
     if missing_types:
         logger.info(
             "El Hisopo %s aun no tiene todos sus file_id (%s); "
@@ -591,24 +603,27 @@ async def _spawn_hisopo(
 
     language = _chat_language(state.db, chat_id)
     type_label = t(language, f"hisopos.type.{appearance_kind.key}")
-    button_key = (
-        "hisopos.giant_help_button"
-        if appearance_kind.key == GIANT_HISOPO.key
-        else "hisopos.capture_button"
-    )
-    keyboard = InlineKeyboardMarkup(
-        [[
-            InlineKeyboardButton(
-                t(
-                    language,
-                    button_key,
-                    current=0,
-                    required=required_helpers,
-                ),
-                callback_data=HISOPO_CAPTURE_CALLBACK,
-            )
-        ]]
-    )
+    if appearance_kind.key == BOMB_HISOPO.key:
+        keyboard = _build_bomb_keyboard(0)
+    else:
+        button_key = (
+            "hisopos.giant_help_button"
+            if appearance_kind.key == GIANT_HISOPO.key
+            else "hisopos.capture_button"
+        )
+        keyboard = InlineKeyboardMarkup(
+            [[
+                InlineKeyboardButton(
+                    t(
+                        language,
+                        button_key,
+                        current=0,
+                        required=required_helpers,
+                    ),
+                    callback_data=HISOPO_CAPTURE_CALLBACK,
+                )
+            ]]
+        )
     try:
         await _cleanup_old_hisopo_messages(application, chat_id, spawned_at)
     except Exception as exc:
@@ -621,6 +636,8 @@ async def _spawn_hisopo(
     try:
         if appearance_kind.key == GIANT_HISOPO.key:
             caption_key = "hisopos.appeared_giant"
+        elif appearance_kind.key == BOMB_HISOPO.key:
+            caption_key = "hisopos.appeared_bomb"
         elif appearance_kind.hides_points:
             caption_key = "hisopos.appeared_mystery"
         else:
@@ -645,6 +662,10 @@ async def _spawn_hisopo(
             f"hisopo_type={actual_kind.key}, appearance_type={appearance_kind.key}): {exc}"
         ) from exc
 
+    bomb_success_slot = None
+    bomb_explosion_slot = None
+    if actual_kind.key == BOMB_HISOPO.key:
+        bomb_success_slot, bomb_explosion_slot = select_bomb_slots(secrets.randbelow)
     spawn = state.db.save_hisopo_spawn(
         chat_id=chat_id,
         message_id=str(message.message_id),
@@ -655,6 +676,8 @@ async def _spawn_hisopo(
         spawned_at=spawned_at.isoformat(),
         expires_at=(spawned_at + appearance_kind.expiration).isoformat(),
         required_helpers=required_helpers,
+        bomb_success_slot=bomb_success_slot,
+        bomb_explosion_slot=bomb_explosion_slot,
     )
     _schedule_hisopo_expiration(application, spawn)
     return spawn
@@ -757,6 +780,7 @@ def _hisopo_file_id(settings: Settings, hisopo_type: str) -> str | None:
         "mystery": settings.telegram_hisopo_mystery_file_id,
         "putrid": settings.telegram_hisopo_putrid_file_id,
         "radioactive": settings.telegram_hisopo_radioactive_file_id,
+        "bomb": settings.telegram_hisopo_bomb_file_id,
         "fake": settings.telegram_hisopo_fake_file_id,
         "twin": settings.telegram_hisopo_twin_file_id,
         "giant": settings.telegram_hisopo_giant_file_id,
@@ -850,16 +874,45 @@ async def _hisopo_callback_entrypoint(
     ):
         await callback_query.answer()
         return
-    if callback_query.data != HISOPO_CAPTURE_CALLBACK:
+    callback_data = callback_query.data or ""
+    if callback_data == f"{HISOPO_BOMB_CALLBACK_PREFIX}:used":
+        await callback_query.answer()
+        return
+    bomb_slot = _parse_bomb_slot(callback_data)
+    if callback_data != HISOPO_CAPTURE_CALLBACK and bomb_slot is None:
         await callback_query.answer(t(language, "hisopos.unavailable_alert"), show_alert=True)
         return
 
     now = datetime.now(timezone.utc)
     spawn = state.db.get_hisopo_spawn(str(message.chat.id), str(message.message_id))
+    if bomb_slot is not None:
+        if spawn is None or spawn.hisopo_type != BOMB_HISOPO.key:
+            await callback_query.answer()
+            return
+        await _handle_bomb_hisopo_slot(
+            context=context,
+            callback_query=callback_query,
+            user=user,
+            spawn=spawn,
+            slot=bomb_slot,
+            language=language,
+            now=now,
+        )
+        return
     next_scheduled_for = ()
     points_at_capture = None
     expired_mystery_fleeting = False
     if spawn is not None:
+        if spawn.hisopo_type == BOMB_HISOPO.key:
+            await _handle_bomb_hisopo_reveal(
+                context=context,
+                callback_query=callback_query,
+                user=user,
+                spawn=spawn,
+                language=language,
+                now=now,
+            )
+            return
         if spawn.hisopo_type == GIANT_HISOPO.key:
             await _handle_giant_hisopo_callback(
                 context=context,
@@ -954,6 +1007,154 @@ async def _hisopo_callback_entrypoint(
     await callback_query.answer(t(language, "hisopos.unavailable_alert"), show_alert=True)
 
 
+def _parse_bomb_slot(callback_data: str) -> int | None:
+    prefix = f"{HISOPO_BOMB_CALLBACK_PREFIX}:"
+    if not callback_data.startswith(prefix):
+        return None
+    raw_slot = callback_data[len(prefix) :]
+    if not raw_slot.isdigit():
+        return None
+    slot = int(raw_slot)
+    return slot if 0 <= slot < HISOPO_BOMB_SLOT_COUNT else None
+
+
+def _build_bomb_keyboard(revealed_mask: int) -> InlineKeyboardMarkup:
+    buttons = []
+    for slot in range(HISOPO_BOMB_SLOT_COUNT):
+        revealed = bool(revealed_mask & (1 << slot))
+        buttons.append(
+            InlineKeyboardButton(
+                "➖" if revealed else "❓",
+                callback_data=(
+                    f"{HISOPO_BOMB_CALLBACK_PREFIX}:used"
+                    if revealed
+                    else f"{HISOPO_BOMB_CALLBACK_PREFIX}:{slot}"
+                ),
+            )
+        )
+    return InlineKeyboardMarkup(
+        [buttons[index : index + 4] for index in range(0, HISOPO_BOMB_SLOT_COUNT, 4)]
+    )
+
+
+async def _handle_bomb_hisopo_reveal(
+    context: ContextTypes.DEFAULT_TYPE,
+    callback_query,
+    user: User,
+    spawn: HisopoSpawn,
+    language: str,
+    now: datetime,
+) -> None:
+    state = _state(context)
+    result = state.db.reveal_bomb_hisopo(
+        chat_id=spawn.chat_id,
+        message_id=spawn.message_id,
+        user_id=str(user.id),
+        now=now,
+    )
+    if result.status == "revealed" and result.spawn is not None:
+        await _edit_bomb_hisopo_board(
+            context.bot,
+            state.settings,
+            result.spawn,
+            t(language, "hisopos.bomb_revealed_caption"),
+            force_media=True,
+        )
+        await callback_query.answer(
+            t(language, "hisopos.bomb_revealed_popup"),
+            show_alert=True,
+        )
+        return
+    if result.status in {"already_revealed", "taken"}:
+        await callback_query.answer()
+        return
+    if result.status == "rotten":
+        if result.spawn is not None:
+            await _edit_rotten_hisopo(context.bot, state.db, result.spawn)
+        await callback_query.answer(t(language, "hisopos.rotten_alert"), show_alert=True)
+        return
+    await callback_query.answer(t(language, "hisopos.unavailable_alert"), show_alert=True)
+
+
+async def _handle_bomb_hisopo_slot(
+    context: ContextTypes.DEFAULT_TYPE,
+    callback_query,
+    user: User,
+    spawn: HisopoSpawn,
+    slot: int,
+    language: str,
+    now: datetime,
+) -> None:
+    state = _state(context)
+    result = state.db.resolve_bomb_hisopo_slot(
+        chat_id=spawn.chat_id,
+        message_id=spawn.message_id,
+        user_id=str(user.id),
+        slot=slot,
+        now=now,
+        next_scheduled_for=random_next_day_datetime(now),
+    )
+    if result.status == "miss" and result.spawn is not None:
+        await _edit_bomb_hisopo_board(
+            context.bot,
+            state.settings,
+            result.spawn,
+            t(language, "hisopos.appeared_bomb"),
+        )
+        await callback_query.answer(
+            t(language, "hisopos.bomb_miss_popup"),
+            show_alert=True,
+        )
+        return
+    if result.status == "captured" and result.spawn is not None:
+        await _edit_bomb_hisopo_terminal(
+            context.bot,
+            state.settings,
+            result.spawn,
+            state.settings.telegram_hisopo_bomb_defused_file_id,
+            t(
+                language,
+                "hisopos.bomb_defused_caption",
+                user=_display_name(user),
+                points=result.spawn.points,
+            ),
+        )
+        if result.schedule is not None:
+            _schedule_hisopo_appearance(context.application, result.schedule)
+        await callback_query.answer(
+            t(language, "hisopos.bomb_defused_popup", points=result.spawn.points),
+            show_alert=True,
+        )
+        return
+    if result.status == "exploded" and result.spawn is not None:
+        await _edit_bomb_hisopo_terminal(
+            context.bot,
+            state.settings,
+            result.spawn,
+            state.settings.telegram_hisopo_bomb_exploded_file_id,
+            t(
+                language,
+                "hisopos.bomb_exploded_caption",
+                user=_display_name(user),
+                points=abs(result.spawn.points),
+            ),
+        )
+        await callback_query.answer(
+            t(language, "hisopos.bomb_exploded_popup", points=abs(result.spawn.points)),
+            show_alert=True,
+        )
+        return
+    if result.status in {"already_revealed", "taken"}:
+        await callback_query.answer()
+        return
+    if result.status == "rotten":
+        if result.spawn is not None:
+            await _edit_rotten_hisopo(context.bot, state.db, result.spawn)
+        await callback_query.answer(t(language, "hisopos.rotten_alert"), show_alert=True)
+        return
+    await callback_query.answer(t(language, "hisopos.unavailable_alert"), show_alert=True)
+
+
 async def _handle_giant_hisopo_callback(
     context: ContextTypes.DEFAULT_TYPE,
     callback_query,
@@ -1032,6 +1233,75 @@ async def _handle_giant_hisopo_callback(
         await callback_query.answer(t(language, "hisopos.rotten_alert"), show_alert=True)
         return
     await callback_query.answer(t(language, "hisopos.unavailable_alert"), show_alert=True)
+
+
+async def _edit_bomb_hisopo_board(
+    bot: Bot,
+    settings: Settings,
+    spawn: HisopoSpawn,
+    caption: str,
+    *,
+    force_media: bool = False,
+) -> None:
+    keyboard = _build_bomb_keyboard(spawn.bomb_revealed_mask)
+    if force_media:
+        file_id = settings.telegram_hisopo_bomb_file_id
+        if file_id:
+            try:
+                await bot.edit_message_media(
+                    chat_id=_parse_chat_id(spawn.chat_id),
+                    message_id=int(spawn.message_id),
+                    media=InputMediaPhoto(media=file_id, caption=caption),
+                    reply_markup=keyboard,
+                )
+                return
+            except TelegramError as exc:
+                logger.warning(
+                    "No pude revelar el tablero del Hisopo bomba %s en el chat %s: %s",
+                    spawn.message_id,
+                    spawn.chat_id,
+                    exc,
+                )
+    try:
+        await bot.edit_message_caption(
+            chat_id=_parse_chat_id(spawn.chat_id),
+            message_id=int(spawn.message_id),
+            caption=caption,
+            reply_markup=keyboard,
+        )
+    except TelegramError as exc:
+        logger.warning(
+            "No pude actualizar el tablero del Hisopo bomba %s en el chat %s: %s",
+            spawn.message_id,
+            spawn.chat_id,
+            exc,
+        )
+
+
+async def _edit_bomb_hisopo_terminal(
+    bot: Bot,
+    settings: Settings,
+    spawn: HisopoSpawn,
+    file_id: str | None,
+    caption: str,
+) -> None:
+    if file_id:
+        try:
+            await bot.edit_message_media(
+                chat_id=_parse_chat_id(spawn.chat_id),
+                message_id=int(spawn.message_id),
+                media=InputMediaPhoto(media=file_id, caption=caption),
+                reply_markup=None,
+            )
+            return
+        except TelegramError as exc:
+            logger.warning(
+                "No pude mostrar el resultado visual del Hisopo bomba %s en el chat %s: %s",
+                spawn.message_id,
+                spawn.chat_id,
+                exc,
+            )
+    await _edit_hisopo_caption(bot, spawn, caption)
 
 
 async def _edit_giant_hisopo_progress(

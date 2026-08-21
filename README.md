@@ -251,6 +251,9 @@ TELEGRAM_HISOPO_FLEETING_FILE_ID=file-id-del-hisopo-fugaz
 TELEGRAM_HISOPO_MYSTERY_FILE_ID=file-id-del-hisopo-misterioso
 TELEGRAM_HISOPO_PUTRID_FILE_ID=file-id-del-hisopo-putrefacto
 TELEGRAM_HISOPO_RADIOACTIVE_FILE_ID=file-id-del-hisopo-radiactivo
+TELEGRAM_HISOPO_BOMB_FILE_ID=file-id-del-hisopo-bomba
+TELEGRAM_HISOPO_BOMB_DEFUSED_FILE_ID=file-id-del-hisopo-bomba-desactivado
+TELEGRAM_HISOPO_BOMB_EXPLODED_FILE_ID=file-id-del-hisopo-bomba-explotado
 TELEGRAM_HISOPO_FAKE_FILE_ID=file-id-del-hisopo-falso
 TELEGRAM_HISOPO_TWIN_FILE_ID=file-id-del-hisopo-gemelo
 TELEGRAM_HISOPO_GIANT_FILE_ID=file-id-del-hisopo-gigante
@@ -452,7 +455,7 @@ El Recolector de Hisopos es un juego para grupos y supergrupos y viene habilitad
 - alta: 15 %;
 - muy alta: 20 %.
 
-Cada mensaje original de un usuario humano que podría competir por La Galeraza genera una tirada de 1 a 100. Si la tirada entra en el porcentaje configurado, aparece un hisopo con foto y el botón `Capturar hisopo`. Las ediciones y los mensajes de bots no generan tiradas.
+Cada mensaje original de un usuario humano que podría competir por La Galeraza genera una tirada de 1 a 100. Si la tirada entra en el porcentaje configurado, aparece un hisopo con foto y el botón `Capturar hisopo`; el Bomba usa en cambio un tablero de 16 botones. Las ediciones y los mensajes de bots no generan tiradas.
 
 Antes de publicar una nueva aparición, el bot intenta borrar en ese mismo grupo los mensajes de Hisopos con más de 24 horas para no acumularlos indefinidamente en Multimedia. Los `message_id` y el estado de la limpieza se conservan en SQLite y migran junto con el grupo. Un fallo de Telegram queda registrado y nunca impide enviar el Hisopo nuevo; se reintenta hasta tres veces con al menos 10 minutos entre intentos. Telegram solo permite borrar mensajes de menos de 48 horas: los que ya superaron esa ventana se descartan de la cola interna y quedan visibles, sin nuevos intentos ni afectar su registro histórico.
 
@@ -460,13 +463,14 @@ Una segunda y única tirada de `1` a `10.000` define la rareza, pero se hace sol
 
 | Tirada | Aparición | Tipo sorteado | Qué muestra al aparecer | Efecto al capturarlo |
 | --- | ---: | --- | --- | --- |
-| 1-4665 | 46,65 % | común | imagen y valor del común | suma 1 punto |
-| 4666-6065 | 14 % | plateado | imagen y valor del plateado | suma 2 puntos |
-| 6066-7065 | 10 % | dorado | imagen y valor del dorado | suma 3 puntos |
-| 7066-7765 | 7 % | fugaz | imagen y valor del fugaz | suma 5 puntos; se pudre en 1 minuto |
-| 7766-8465 | 7 % | misterioso | imagen de misterioso y valor oculto | contiene uno de los otros once tipos y aplica su efecto |
-| 8466-8965 | 5 % | putrefacto | se disfraza de común, plateado, dorado o diamante | revela el putrefacto, resta 2 puntos y puede dejar puntaje negativo |
-| 8966-9365 | 4 % | radiactivo | imagen de radiactivo y valor oculto | calcula al capturarlo `-3`, `-1`, `2`, `4` o `6` según el tiempo transcurrido |
+| 1-4265 | 42,65 % | común | imagen y valor del común | suma 1 punto |
+| 4266-5665 | 14 % | plateado | imagen y valor del plateado | suma 2 puntos |
+| 5666-6665 | 10 % | dorado | imagen y valor del dorado | suma 3 puntos |
+| 6666-7365 | 7 % | fugaz | imagen y valor del fugaz | suma 5 puntos; se pudre en 1 minuto |
+| 7366-8065 | 7 % | misterioso | imagen de misterioso y valor oculto | contiene uno de los otros doce tipos y aplica su efecto |
+| 8066-8565 | 5 % | putrefacto | se disfraza de común, plateado, dorado o diamante | revela el putrefacto, resta 2 puntos y puede dejar puntaje negativo |
+| 8566-8965 | 4 % | radiactivo | imagen de radiactivo y valor oculto | calcula al capturarlo `-3`, `-1`, `2`, `4` o `6` según el tiempo transcurrido |
+| 8966-9365 | 4 % | bomba | imagen de bomba y tablero 4x4 | una casilla da +10, otra resta 10 y catorce son neutras |
 | 9366-9665 | 3 % | falso | se disfraza de común, plateado, dorado o diamante | revela el falso, vale 0 y no agenda para el día siguiente |
 | 9666-9865 | 2 % | gemelo | imagen y valor del gemelo | suma 4 puntos, lanza otro hisopo en el momento y agenda uno para el día siguiente |
 | 9866-9965 | 1 % | diamante | imagen y valor del diamante | suma 10 puntos |
@@ -477,15 +481,17 @@ Falso y Putrefacto eligen una segunda apariencia: común 75 %, plateado 14 %, do
 
 El Radiactivo dura 20 minutos y calcula su puntaje recién dentro de la captura atómica: `-3` desde 0:00 hasta 4:59, `-1` desde 5:00 hasta 9:59, `+2` desde 10:00 hasta 14:59, `+4` desde 15:00 hasta 17:59 y `+6` desde 18:00 hasta 19:59. Así permanece negativo durante exactamente la primera mitad y los niveles positivos más altos ocupan intervalos cada vez más cortos cerca del vencimiento. Su mensaje inicial oculta el valor; la edición posterior informa cuántos puntos ganó o perdió el capturador.
 
-El Misterioso contiene uno de los otros once tipos, sin otro Misterioso adentro. La selección interna conserva sus pesos relativos: común 50,16 %, plateado 15,05 %, dorado 10,75 %, fugaz 7,53 %, putrefacto 5,38 %, radiactivo 4,30 %, falso 3,23 %, gemelo 2,15 %, diamante 1,08 %, gigante 0,27 % y milagroso 0,11 %. Su contenido y su valor permanecen ocultos hasta la captura. La envoltura Misteriosa siempre dura 20 minutos, incluso si contiene un Fugaz; en ese caso, los 5 puntos solo están disponibles durante el primer minuto. Desde el minuto 1 todavía puede reclamarse y revela el Fugaz, pero entrega 0 puntos y no agenda otra aparición. Si contiene un Gigante, la primera ayuda lo revela, cuenta como la primera participación y el grupo continúa viendo el progreso. Si la envoltura se pudre a los 20 minutos sin ninguna ayuda, no revela el contenido.
+El Misterioso contiene uno de los otros doce tipos, sin otro Misterioso adentro. La selección interna conserva sus pesos relativos: común 45,86 %, plateado 15,05 %, dorado 10,75 %, fugaz 7,53 %, putrefacto 5,38 %, radiactivo 4,30 %, bomba 4,30 %, falso 3,23 %, gemelo 2,15 %, diamante 1,08 %, gigante 0,27 % y milagroso 0,11 %. Su contenido y su valor permanecen ocultos hasta la captura. La envoltura Misteriosa siempre dura 20 minutos, incluso si contiene un Fugaz; en ese caso, los 5 puntos solo están disponibles durante el primer minuto. Desde el minuto 1 todavía puede reclamarse y revela el Fugaz, pero entrega 0 puntos y no agenda otra aparición. Si contiene un Gigante, la primera ayuda lo revela, cuenta como la primera participación y el grupo continúa viendo el progreso. Solo esa primera persona colecciona el Misterioso; al completar el Gigante, todos los participantes coleccionan el Gigante. Si contiene un Bomba, el primer clic revela el tablero y colecciona el Misterioso, pero todavía no elige ninguna casilla. Si la envoltura se pudre a los 20 minutos sin ninguna ayuda, no revela el contenido.
+
+El Bomba dura 20 minutos y muestra una cuadrícula 4x4 con 16 signos de pregunta. Al crearlo se sortean y persisten exactamente una casilla que lo desactiva, una que lo hace explotar y catorce neutras. Una casilla neutra pasa a `➖`, muestra una alerta y ya no puede jugarse de nuevo. Desactivarlo cierra el tablero, reemplaza la foto por la versión segura, suma 10 puntos, agrega el Bomba a la colección y programa una aparición para el día siguiente. Si explota, reemplaza la foto por la explosión, resta 10 puntos, no entra en la colección y no programa nada. La transición de cada casilla se resuelve con `BEGIN IMMEDIATE`, por lo que un éxito o explosión descarta todos los callbacks posteriores incluso si llegan casi juntos.
 
 El Gigante cooperativo dura 20 minutos y requiere `min(15, miembros del chat - Galerazo)` participaciones únicas. En un chat con al menos 16 miembros pide 15 ayudas; en uno más pequeño usa el total que informa Telegram menos el propio Galerazo. Esa consulta entrega una cantidad, no una lista filtrada de personas, por lo que otros bots también pueden quedar incluidos en la meta de los chats pequeños. Cada usuario puede ayudar una sola vez, la foto y el botón muestran el progreso y nadie recibe puntos parcialmente. Si alcanza el objetivo, cada participante gana 4 puntos y se programa una sola aparición total para el día siguiente; si se pudre incompleto, nadie gana ni pierde puntos y no se programa nada.
 
 El Milagroso dura 20 minutos y calcula su premio al capturarlo: entrega el máximo entre 15 puntos y la mitad del puntaje del líder actual del grupo, redondeada hacia arriba. Por ejemplo, con un líder de 31 puntos entrega 16; con un líder de 20, cero o negativo entrega 15. El cálculo y la captura se realizan en la misma transacción, su valor inicial permanece oculto y programa una aparición para el día siguiente como una captura normal.
 
-La primera callback procesada para ese chat reclama el premio dentro de una transacción inmediata de SQLite; las siguientes muestran un alerta de Telegram sin sumar. Al capturar un Falso, Putrefacto o Misterioso, el mismo mensaje reemplaza la foto por la del tipo real, informa el resultado y elimina la botonera. Salvo el Fugaz directo, a los 20 minutos el Hisopo se pudre, deja de valer y el mensaje pierde la botonera. Tocar un Fugaz después de su minuto no suma ni agenda nada: solamente informa que ya se pudrió. Si una rareza todavía no tiene todos los `file_id` que necesita para aparecer y revelarse, esa tirada usa el Hisopo común para no perder el evento.
+Para los tipos de captura directa, la primera callback procesada para ese chat reclama el premio dentro de una transacción inmediata de SQLite; las siguientes muestran un alerta de Telegram sin sumar. El Bomba aplica la misma exclusión atómica por casilla y al desenlace final. Al capturar un Falso, Putrefacto o Misterioso, el mismo mensaje reemplaza la foto por la del tipo real, informa el resultado y elimina la botonera. Salvo el Fugaz directo, a los 20 minutos el Hisopo se pudre, deja de valer y el mensaje pierde la botonera. Tocar un Fugaz después de su minuto no suma ni agenda nada: solamente informa que ya se pudrió. Si una rareza todavía no tiene todos los `file_id` que necesita para aparecer y revelarse, esa tirada usa el Hisopo común para no perder el evento.
 
-La colección persiste por usuario y grupo sin temporadas ni reinicios. Guarda cuántos ejemplares se capturaron de cada uno de los 12 tipos. Desde la versión 0.34, cada Misterioso nuevo suma una unidad de Misterioso y otra del tipo que revela; si ocultaba un Fugaz reclamado después de su minuto, solo suma el Misterioso. Los Misteriosos anteriores no se reconstruyen retroactivamente. Cuando se completa un Gigante, todos los participantes agregan el Gigante y, si apareció oculto como Misterioso, también el Misterioso. Los tipos todavía no descubiertos se muestran con `❓` y los descubiertos con `✅`. La colección se migra y combina si Telegram convierte el grupo en supergrupo.
+La colección persiste por usuario y grupo sin temporadas ni reinicios. Guarda cuántos ejemplares se capturaron de cada uno de los 13 tipos. Desde la versión 0.34, cada Misterioso nuevo suma una unidad de Misterioso y otra del tipo que revela; si ocultaba un Fugaz reclamado después de su minuto, solo suma el Misterioso. Los Misteriosos anteriores no se reconstruyen retroactivamente. Cuando se completa un Gigante, todos los participantes agregan el Gigante; si apareció oculto como Misterioso, solo quien lo reveló agrega además el Misterioso. En la colección se muestra simplemente `hisopo gigante`, sin el calificativo cooperativo. Un Bomba entra en la colección únicamente si se desactiva. Los tipos todavía no descubiertos se muestran con `❓` y los descubiertos con `✅`. La colección se migra y combina si Telegram convierte el grupo en supergrupo.
 
 Un fallo al enviar la foto de una aparición no queda absorbido silenciosamente: conserva el contexto de chat, origen, tipo real y apariencia, se eleva al manejador de errores y se informa en el canal de logging configurado. Las apariciones programadas fallidas quedan marcadas como `failed` en vez de permanecer en procesamiento.
 
@@ -502,6 +508,9 @@ TELEGRAM_HISOPO_FLEETING_FILE_ID=
 TELEGRAM_HISOPO_MYSTERY_FILE_ID=
 TELEGRAM_HISOPO_PUTRID_FILE_ID=
 TELEGRAM_HISOPO_RADIOACTIVE_FILE_ID=
+TELEGRAM_HISOPO_BOMB_FILE_ID=
+TELEGRAM_HISOPO_BOMB_DEFUSED_FILE_ID=
+TELEGRAM_HISOPO_BOMB_EXPLODED_FILE_ID=
 TELEGRAM_HISOPO_FAKE_FILE_ID=
 TELEGRAM_HISOPO_TWIN_FILE_ID=
 TELEGRAM_HISOPO_GIANT_FILE_ID=

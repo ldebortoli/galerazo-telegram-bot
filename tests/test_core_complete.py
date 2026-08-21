@@ -217,6 +217,9 @@ class ConfigurationAndEntrypointTests(unittest.TestCase):
             "TELEGRAM_HISOPO_MYSTERY_FILE_ID": "mystery",
             "TELEGRAM_HISOPO_PUTRID_FILE_ID": "putrid",
             "TELEGRAM_HISOPO_RADIOACTIVE_FILE_ID": "radioactive",
+            "TELEGRAM_HISOPO_BOMB_FILE_ID": "bomb",
+            "TELEGRAM_HISOPO_BOMB_DEFUSED_FILE_ID": "bomb-defused",
+            "TELEGRAM_HISOPO_BOMB_EXPLODED_FILE_ID": "bomb-exploded",
             "TELEGRAM_HISOPO_FAKE_FILE_ID": "fake",
             "TELEGRAM_HISOPO_TWIN_FILE_ID": "twin",
             "TELEGRAM_HISOPO_GIANT_FILE_ID": "giant",
@@ -242,6 +245,9 @@ class ConfigurationAndEntrypointTests(unittest.TestCase):
         self.assertEqual(settings.telegram_hisopo_mystery_file_id, "mystery")
         self.assertEqual(settings.telegram_hisopo_putrid_file_id, "putrid")
         self.assertEqual(settings.telegram_hisopo_radioactive_file_id, "radioactive")
+        self.assertEqual(settings.telegram_hisopo_bomb_file_id, "bomb")
+        self.assertEqual(settings.telegram_hisopo_bomb_defused_file_id, "bomb-defused")
+        self.assertEqual(settings.telegram_hisopo_bomb_exploded_file_id, "bomb-exploded")
         self.assertEqual(settings.telegram_hisopo_fake_file_id, "fake")
         self.assertEqual(settings.telegram_hisopo_twin_file_id, "twin")
         self.assertEqual(settings.telegram_hisopo_giant_file_id, "giant")

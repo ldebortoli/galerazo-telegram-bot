@@ -27,6 +27,7 @@ from galerazo_bot.database import (
     Database,
     Expense,
     HisopoCaptureResult,
+    HisopoBombResult,
     HisopoGiantContributionResult,
     HisopoMessageCleanup,
     HisopoSchedule,
@@ -1512,6 +1513,8 @@ class HisopoTelegramTests(unittest.IsolatedAsyncioTestCase):
                     "spawned_at",
                     "expires_at",
                     "required_helpers",
+                    "bomb_success_slot",
+                    "bomb_explosion_slot",
                 }
             }
         )
@@ -1594,7 +1597,7 @@ class HisopoTelegramTests(unittest.IsolatedAsyncioTestCase):
             db,
             telegram_hisopo_radioactive_file_id="radioactive-id",
         )
-        with patch.object(tb.secrets, "randbelow", return_value=8965):
+        with patch.object(tb.secrets, "randbelow", return_value=8565):
             radioactive_spawn = await tb._spawn_hisopo(
                 radioactive_app,
                 "-1",
@@ -1605,6 +1608,28 @@ class HisopoTelegramTests(unittest.IsolatedAsyncioTestCase):
             radioactive_bot.send_photo.await_args.kwargs["caption"],
             "¡Apareció un nuevo hisopo!\nhisopo radiactivo · valor oculto",
         )
+
+        bomb_app, _, bomb_bot, _ = self._application(
+            db,
+            telegram_hisopo_bomb_file_id="bomb-id",
+            telegram_hisopo_bomb_defused_file_id="bomb-defused-id",
+            telegram_hisopo_bomb_exploded_file_id="bomb-exploded-id",
+        )
+        with patch.object(tb.secrets, "randbelow", side_effect=[8965, 2, 6]):
+            bomb_spawn = await tb._spawn_hisopo(bomb_app, "-1", "message")
+        self.assertEqual(bomb_spawn.hisopo_type, "bomb")
+        self.assertEqual(bomb_spawn.bomb_success_slot, 2)
+        self.assertEqual(bomb_spawn.bomb_explosion_slot, 7)
+        self.assertEqual(
+            bomb_bot.send_photo.await_args.kwargs["caption"],
+            "¡Apareció un Hisopo bomba!\nElegí una casilla: una lo desactiva, "
+            "otra lo hace explotar y las demás no hacen nada.",
+        )
+        bomb_keyboard = bomb_bot.send_photo.await_args.kwargs["reply_markup"].inline_keyboard
+        self.assertEqual(len(bomb_keyboard), 4)
+        self.assertTrue(all(len(row) == 4 for row in bomb_keyboard))
+        self.assertEqual(bomb_keyboard[0][0].text, "❓")
+        self.assertEqual(bomb_keyboard[3][3].callback_data, "hisopo:bomb:15")
 
         fleeting_app, _, _, _ = self._application(
             db,
@@ -1668,6 +1693,9 @@ class HisopoTelegramTests(unittest.IsolatedAsyncioTestCase):
             telegram_hisopo_mystery_file_id="m",
             telegram_hisopo_putrid_file_id="p",
             telegram_hisopo_radioactive_file_id="r",
+            telegram_hisopo_bomb_file_id="b",
+            telegram_hisopo_bomb_defused_file_id="bd",
+            telegram_hisopo_bomb_exploded_file_id="be",
             telegram_hisopo_fake_file_id="f",
             telegram_hisopo_twin_file_id="t",
             telegram_hisopo_giant_file_id="gi",
@@ -1682,6 +1710,7 @@ class HisopoTelegramTests(unittest.IsolatedAsyncioTestCase):
             "mystery": "m",
             "putrid": "p",
             "radioactive": "r",
+            "bomb": "b",
             "fake": "f",
             "twin": "t",
             "giant": "gi",
@@ -1956,6 +1985,311 @@ class HisopoTelegramTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(job_queue.run_once.call_count, 0)
         immediate_spawn.assert_awaited_once_with(app, "-1", source="twin")
         callback.answer.assert_awaited_once_with("¡Hisopo capturado! Sumaste 4 pt.")
+
+    async def test_bomb_callbacks_reveal_persist_and_close_atomically(self) -> None:
+        db = MagicMock()
+        db.get_chat_settings.return_value = SimpleNamespace(language="es")
+        db.is_user_blocked.return_value = False
+        app, _, bot, job_queue = self._application(
+            db,
+            telegram_hisopo_bomb_file_id="bomb-id",
+            telegram_hisopo_bomb_defused_file_id="bomb-defused-id",
+            telegram_hisopo_bomb_exploded_file_id="bomb-exploded-id",
+        )
+        message = SimpleNamespace(chat=SimpleNamespace(id=-1, type="group"), message_id=100)
+        user = SimpleNamespace(id=2, full_name="Winner", username="winner")
+        callback = SimpleNamespace(
+            message=message,
+            data="hisopo:capture",
+            answer=AsyncMock(),
+            from_user=user,
+        )
+        update = SimpleNamespace(callback_query=callback, effective_user=user)
+        context = SimpleNamespace(application=app, bot=bot)
+        mystery = self._spawn(
+            hisopo_type="bomb",
+            appearance_type="mystery",
+            initial_appearance_type="mystery",
+            points=10,
+            bomb_success_slot=2,
+            bomb_explosion_slot=7,
+        )
+        revealed = replace(mystery, appearance_type="bomb")
+        db.get_hisopo_spawn.return_value = mystery
+        db.reveal_bomb_hisopo.return_value = HisopoBombResult("revealed", revealed)
+        with patch.object(tb, "_is_user_restricted_in_callback_chat", return_value=False):
+            await tb._hisopo_callback_entrypoint(update, context)
+        self.assertEqual(bot.edit_message_media.await_args.kwargs["media"].media, "bomb-id")
+        self.assertEqual(len(bot.edit_message_media.await_args.kwargs["reply_markup"].inline_keyboard), 4)
+        callback.answer.assert_awaited_once_with(
+            "¡Era un Hisopo bomba! Ahora elegí una casilla.",
+            show_alert=True,
+        )
+
+        callback.answer.reset_mock()
+        bot.edit_message_media.reset_mock()
+        callback.data = "hisopo:bomb:0"
+        active = replace(revealed, bomb_revealed_mask=0)
+        missed = replace(revealed, bomb_revealed_mask=1)
+        db.get_hisopo_spawn.return_value = active
+        db.resolve_bomb_hisopo_slot.return_value = HisopoBombResult("miss", missed)
+        with patch.object(tb, "_is_user_restricted_in_callback_chat", return_value=False), patch.object(
+            tb,
+            "random_next_day_datetime",
+            return_value=datetime(2026, 8, 21, 10, tzinfo=timezone.utc),
+        ):
+            await tb._hisopo_callback_entrypoint(update, context)
+        keyboard = bot.edit_message_caption.await_args.kwargs["reply_markup"].inline_keyboard
+        self.assertEqual(keyboard[0][0].text, "➖")
+        self.assertEqual(keyboard[0][0].callback_data, "hisopo:bomb:used")
+        callback.answer.assert_awaited_once_with("No desactivaste la bomba.", show_alert=True)
+
+        callback.answer.reset_mock()
+        callback.data = "hisopo:bomb:used"
+        with patch.object(tb, "_is_user_restricted_in_callback_chat", return_value=False):
+            await tb._hisopo_callback_entrypoint(update, context)
+        callback.answer.assert_awaited_once_with()
+
+        callback.answer.reset_mock()
+        callback.data = "hisopo:bomb:2"
+        schedule = HisopoSchedule(1, "-1", "2026-08-21T10:00:00+00:00", "pending", "100")
+        defused = replace(
+            active,
+            status="captured",
+            points=10,
+            winner_user_id="2",
+            captured_at="2026-08-20T12:00:00+00:00",
+        )
+        db.resolve_bomb_hisopo_slot.return_value = HisopoBombResult(
+            "captured", defused, schedule
+        )
+        with patch.object(tb, "_is_user_restricted_in_callback_chat", return_value=False), patch.object(
+            tb,
+            "random_next_day_datetime",
+            return_value=datetime(2026, 8, 21, 10, tzinfo=timezone.utc),
+        ):
+            await tb._hisopo_callback_entrypoint(update, context)
+        self.assertEqual(
+            bot.edit_message_media.await_args.kwargs["media"].media,
+            "bomb-defused-id",
+        )
+        self.assertEqual(
+            bot.edit_message_media.await_args.kwargs["media"].caption,
+            "Winner desactivó el Hisopo bomba y ganó 10 pt.",
+        )
+        self.assertIsNone(bot.edit_message_media.await_args.kwargs["reply_markup"])
+        callback.answer.assert_awaited_once_with(
+            "¡Desactivaste la bomba! Ganaste 10 pt.", show_alert=True
+        )
+        job_queue.run_once.assert_called_once()
+
+        callback.answer.reset_mock()
+        callback.data = "hisopo:bomb:7"
+        exploded = replace(
+            active,
+            status="exploded",
+            points=-10,
+            winner_user_id="2",
+            captured_at="2026-08-20T12:00:00+00:00",
+        )
+        db.resolve_bomb_hisopo_slot.return_value = HisopoBombResult(
+            "exploded", exploded
+        )
+        with patch.object(tb, "_is_user_restricted_in_callback_chat", return_value=False):
+            await tb._hisopo_callback_entrypoint(update, context)
+        self.assertEqual(
+            bot.edit_message_media.await_args.kwargs["media"].media,
+            "bomb-exploded-id",
+        )
+        self.assertEqual(
+            bot.edit_message_media.await_args.kwargs["media"].caption,
+            "¡El Hisopo bomba le explotó a Winner! Perdió 10 pt.",
+        )
+        callback.answer.assert_awaited_once_with(
+            "¡Explotó la bomba! Perdiste 10 pt.", show_alert=True
+        )
+
+        for status in ("already_revealed", "taken"):
+            callback.answer.reset_mock()
+            db.resolve_bomb_hisopo_slot.return_value = HisopoBombResult(status, active)
+            with patch.object(tb, "_is_user_restricted_in_callback_chat", return_value=False):
+                await tb._hisopo_callback_entrypoint(update, context)
+            callback.answer.assert_awaited_once_with()
+
+        self.assertIsNone(tb._parse_bomb_slot("hisopo:bomb:used"))
+        self.assertIsNone(tb._parse_bomb_slot("hisopo:bomb:16"))
+        self.assertEqual(tb._parse_bomb_slot("hisopo:bomb:15"), 15)
+
+    async def test_bomb_stale_rotten_and_edit_failure_paths(self) -> None:
+        db = MagicMock()
+        db.get_chat_settings.return_value = SimpleNamespace(language="es")
+        db.is_user_blocked.return_value = False
+        app, bot_state, bot, _ = self._application(
+            db,
+            telegram_hisopo_bomb_file_id="bomb-id",
+            telegram_hisopo_bomb_defused_file_id="bomb-defused-id",
+            telegram_hisopo_bomb_exploded_file_id="bomb-exploded-id",
+        )
+        user = SimpleNamespace(id=2, full_name="Winner", username="winner")
+        message = SimpleNamespace(chat=SimpleNamespace(id=-1, type="group"), message_id=100)
+        callback = SimpleNamespace(
+            message=message,
+            data="hisopo:bomb:0",
+            answer=AsyncMock(),
+            from_user=user,
+        )
+        context = SimpleNamespace(application=app, bot=bot)
+        update = SimpleNamespace(callback_query=callback, effective_user=user)
+        db.get_hisopo_spawn.return_value = None
+        with patch.object(tb, "_is_user_restricted_in_callback_chat", return_value=False):
+            await tb._hisopo_callback_entrypoint(update, context)
+        callback.answer.assert_awaited_once_with()
+        callback.answer.reset_mock()
+        db.get_hisopo_spawn.return_value = self._spawn()
+        with patch.object(tb, "_is_user_restricted_in_callback_chat", return_value=False):
+            await tb._hisopo_callback_entrypoint(update, context)
+        callback.answer.assert_awaited_once_with()
+
+        active = self._spawn(
+            hisopo_type="bomb",
+            appearance_type="bomb",
+            points=10,
+            bomb_success_slot=2,
+            bomb_explosion_slot=7,
+        )
+        mystery = replace(active, appearance_type="mystery")
+        rotten = replace(active, status="rotten")
+        callback.answer.reset_mock()
+        for status in ("already_revealed", "taken"):
+            db.reveal_bomb_hisopo.return_value = HisopoBombResult(status, active)
+            await tb._handle_bomb_hisopo_reveal(
+                context,
+                callback,
+                user,
+                mystery,
+                "es",
+                datetime(2026, 8, 20, 12, tzinfo=timezone.utc),
+            )
+        self.assertEqual(callback.answer.await_count, 2)
+
+        callback.answer.reset_mock()
+        db.reveal_bomb_hisopo.return_value = HisopoBombResult("rotten", rotten)
+        await tb._handle_bomb_hisopo_reveal(
+            context, callback, user, mystery, "es", datetime.now(timezone.utc)
+        )
+        callback.answer.assert_awaited_once_with(
+            "Uh, se pudrió el hisopo. Ya no suma puntos.", show_alert=True
+        )
+        callback.answer.reset_mock()
+        db.reveal_bomb_hisopo.return_value = HisopoBombResult("rotten", None)
+        await tb._handle_bomb_hisopo_reveal(
+            context, callback, user, mystery, "es", datetime.now(timezone.utc)
+        )
+        callback.answer.assert_awaited_once_with(
+            "Uh, se pudrió el hisopo. Ya no suma puntos.", show_alert=True
+        )
+        callback.answer.reset_mock()
+        db.reveal_bomb_hisopo.return_value = HisopoBombResult("invalid", active)
+        await tb._handle_bomb_hisopo_reveal(
+            context, callback, user, mystery, "es", datetime.now(timezone.utc)
+        )
+        callback.answer.assert_awaited_once_with(
+            "Este hisopo ya no está disponible.", show_alert=True
+        )
+
+        callback.answer.reset_mock()
+        db.resolve_bomb_hisopo_slot.return_value = HisopoBombResult("rotten", rotten)
+        await tb._handle_bomb_hisopo_slot(
+            context, callback, user, active, 0, "es", datetime.now(timezone.utc)
+        )
+        callback.answer.assert_awaited_once_with(
+            "Uh, se pudrió el hisopo. Ya no suma puntos.", show_alert=True
+        )
+        callback.answer.reset_mock()
+        db.resolve_bomb_hisopo_slot.return_value = HisopoBombResult("rotten", None)
+        await tb._handle_bomb_hisopo_slot(
+            context, callback, user, active, 0, "es", datetime.now(timezone.utc)
+        )
+        callback.answer.assert_awaited_once_with(
+            "Uh, se pudrió el hisopo. Ya no suma puntos.", show_alert=True
+        )
+        callback.answer.reset_mock()
+        db.resolve_bomb_hisopo_slot.return_value = HisopoBombResult("invalid", active)
+        await tb._handle_bomb_hisopo_slot(
+            context, callback, user, active, 0, "es", datetime.now(timezone.utc)
+        )
+        callback.answer.assert_awaited_once_with(
+            "Este hisopo ya no está disponible.", show_alert=True
+        )
+
+        callback.answer.reset_mock()
+        defused = replace(active, status="captured", winner_user_id="2", captured_at="now")
+        db.resolve_bomb_hisopo_slot.return_value = HisopoBombResult("captured", defused)
+        await tb._handle_bomb_hisopo_slot(
+            context, callback, user, active, 2, "es", datetime.now(timezone.utc)
+        )
+        callback.answer.assert_awaited_once()
+
+        fallback_settings = settings()
+        fallback_bot = SimpleNamespace(
+            edit_message_media=AsyncMock(),
+            edit_message_caption=AsyncMock(),
+        )
+        await tb._edit_bomb_hisopo_board(
+            fallback_bot,
+            fallback_settings,
+            active,
+            "board",
+            force_media=True,
+        )
+        fallback_bot.edit_message_media.assert_not_awaited()
+        fallback_bot.edit_message_caption.assert_awaited_once()
+
+        fallback_bot.edit_message_caption.reset_mock()
+        fallback_bot.edit_message_media.side_effect = BadRequest("media")
+        with self.assertLogs(tb.logger, level="WARNING"):
+            await tb._edit_bomb_hisopo_board(
+                fallback_bot,
+                bot_state.settings,
+                active,
+                "board",
+                force_media=True,
+            )
+        fallback_bot.edit_message_caption.assert_awaited_once()
+
+        fallback_bot.edit_message_media.side_effect = None
+        fallback_bot.edit_message_caption.reset_mock(side_effect=True)
+        fallback_bot.edit_message_caption.side_effect = BadRequest("caption")
+        with self.assertLogs(tb.logger, level="WARNING"):
+            await tb._edit_bomb_hisopo_board(
+                fallback_bot,
+                fallback_settings,
+                active,
+                "board",
+            )
+
+        fallback_bot.edit_message_caption.side_effect = None
+        fallback_bot.edit_message_caption.reset_mock()
+        await tb._edit_bomb_hisopo_terminal(
+            fallback_bot,
+            fallback_settings,
+            defused,
+            None,
+            "done",
+        )
+        fallback_bot.edit_message_caption.assert_awaited_once()
+
+        fallback_bot.edit_message_caption.reset_mock()
+        fallback_bot.edit_message_media.side_effect = BadRequest("media")
+        with self.assertLogs(tb.logger, level="WARNING"):
+            await tb._edit_bomb_hisopo_terminal(
+                fallback_bot,
+                bot_state.settings,
+                defused,
+                "bomb-defused-id",
+                "done",
+            )
+        fallback_bot.edit_message_caption.assert_awaited_once()
 
     async def test_giant_callback_reveals_progress_prevents_duplicates_and_completes(self) -> None:
         db = MagicMock()

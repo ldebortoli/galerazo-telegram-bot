@@ -16,6 +16,10 @@ HISOPO_EXPIRATION = timedelta(minutes=20)
 HISOPO_FLEETING_EXPIRATION = timedelta(minutes=1)
 HISOPO_CALLBACK_PREFIX = "hisopo"
 HISOPO_CAPTURE_CALLBACK = f"{HISOPO_CALLBACK_PREFIX}:capture"
+HISOPO_BOMB_CALLBACK_PREFIX = f"{HISOPO_CALLBACK_PREFIX}:bomb"
+HISOPO_BOMB_SLOT_COUNT = 16
+HISOPO_BOMB_DEFUSE_POINTS = 10
+HISOPO_BOMB_EXPLOSION_POINTS = -10
 HISOPO_TYPE_ROLL_MAX = 10_000
 HISOPO_GIANT_MAX_HELPERS = 15
 HISOPO_INTENSITIES = {
@@ -50,6 +54,7 @@ FLEETING_HISOPO = HisopoKind("fleeting", 5, expiration=HISOPO_FLEETING_EXPIRATIO
 MYSTERY_HISOPO = HisopoKind("mystery", 0, hides_points=True)
 PUTRID_HISOPO = HisopoKind("putrid", -2)
 RADIOACTIVE_HISOPO = HisopoKind("radioactive", 0, hides_points=True)
+BOMB_HISOPO = HisopoKind("bomb", HISOPO_BOMB_DEFUSE_POINTS, hides_points=True)
 FAKE_HISOPO = HisopoKind("fake", 0, next_day_spawns=0)
 TWIN_HISOPO = HisopoKind("twin", 4, immediate_spawns=1)
 DIAMOND_HISOPO = HisopoKind("diamond", 10)
@@ -66,6 +71,7 @@ HISOPO_KINDS = {
         MYSTERY_HISOPO,
         PUTRID_HISOPO,
         RADIOACTIVE_HISOPO,
+        BOMB_HISOPO,
         FAKE_HISOPO,
         TWIN_HISOPO,
         DIAMOND_HISOPO,
@@ -75,13 +81,14 @@ HISOPO_KINDS = {
 }
 COLLECTIBLE_HISOPO_KEYS = tuple(HISOPO_KINDS)
 HISOPO_PROBABILITY_RANGES = {
-    "common": (1, 4665),
-    "silver": (4666, 6065),
-    "gold": (6066, 7065),
-    "fleeting": (7066, 7765),
-    "mystery": (7766, 8465),
-    "putrid": (8466, 8965),
-    "radioactive": (8966, 9365),
+    "common": (1, 4265),
+    "silver": (4266, 5665),
+    "gold": (5666, 6665),
+    "fleeting": (6666, 7365),
+    "mystery": (7366, 8065),
+    "putrid": (8066, 8565),
+    "radioactive": (8566, 8965),
+    "bomb": (8966, 9365),
     "fake": (9366, 9665),
     "twin": (9666, 9865),
     "diamond": (9866, 9965),
@@ -144,6 +151,16 @@ def select_hisopo_disguise(
         for key, (lower, upper) in HISOPO_DISGUISE_PROBABILITY_RANGES.items()
         if lower <= roll <= upper
     )
+
+
+def select_bomb_slots(
+    randbelow: Callable[[int], int] = secrets.randbelow,
+) -> tuple[int, int]:
+    success_slot = randbelow(HISOPO_BOMB_SLOT_COUNT)
+    explosion_slot = randbelow(HISOPO_BOMB_SLOT_COUNT - 1)
+    if explosion_slot >= success_slot:
+        explosion_slot += 1
+    return success_slot, explosion_slot
 
 
 def _select_weighted_non_mystery_kind(
@@ -298,7 +315,12 @@ def render_hisopo_collection(
     for key in COLLECTIBLE_HISOPO_KEYS:
         count = counts.get(key, 0)
         marker = "✅" if count else "❓"
-        lines.append(f"{marker} {t(language, f'hisopos.type.{key}')}: {count}")
+        type_key = (
+            "hisopos.collection.type.giant"
+            if key == "giant"
+            else f"hisopos.type.{key}"
+        )
+        lines.append(f"{marker} {t(language, type_key)}: {count}")
     lines.extend(("", t(language, "hisopos.collection.mystery_note")))
     return "\n".join(lines)
 

@@ -19,6 +19,7 @@ from galerazo_bot.database import (
     HisopoScore,
 )
 from galerazo_bot.hisopos import (
+    BOMB_HISOPO,
     COLLECTIBLE_HISOPO_KEYS,
     COMMON_HISOPO,
     DIAMOND_HISOPO,
@@ -51,6 +52,7 @@ from galerazo_bot.hisopos import (
     select_hisopo_disguise,
     select_hisopo_kind,
     select_hisopo_spawn,
+    select_bomb_slots,
     should_spawn_hisopo,
 )
 from galerazo_bot.roles import CommandContext, UserLevel
@@ -71,19 +73,21 @@ class HisopoRulesTests(unittest.TestCase):
     def test_type_boundaries_and_invalid_values(self) -> None:
         expected = {
             1: COMMON_HISOPO,
-            4665: COMMON_HISOPO,
-            4666: SILVER_HISOPO,
-            6065: SILVER_HISOPO,
-            6066: GOLD_HISOPO,
-            7065: GOLD_HISOPO,
-            7066: FLEETING_HISOPO,
-            7765: FLEETING_HISOPO,
-            7766: MYSTERY_HISOPO,
-            8465: MYSTERY_HISOPO,
-            8466: PUTRID_HISOPO,
-            8965: PUTRID_HISOPO,
-            8966: RADIOACTIVE_HISOPO,
-            9365: RADIOACTIVE_HISOPO,
+            4265: COMMON_HISOPO,
+            4266: SILVER_HISOPO,
+            5665: SILVER_HISOPO,
+            5666: GOLD_HISOPO,
+            6665: GOLD_HISOPO,
+            6666: FLEETING_HISOPO,
+            7365: FLEETING_HISOPO,
+            7366: MYSTERY_HISOPO,
+            8065: MYSTERY_HISOPO,
+            8066: PUTRID_HISOPO,
+            8565: PUTRID_HISOPO,
+            8566: RADIOACTIVE_HISOPO,
+            8965: RADIOACTIVE_HISOPO,
+            8966: BOMB_HISOPO,
+            9365: BOMB_HISOPO,
             9366: FAKE_HISOPO,
             9665: FAKE_HISOPO,
             9666: TWIN_HISOPO,
@@ -99,12 +103,13 @@ class HisopoRulesTests(unittest.TestCase):
             with self.subTest(roll=roll):
                 self.assertEqual(select_hisopo_kind(roll), kind)
 
-        mystery = select_hisopo_kind(7766, randbelow=lambda _limit: 0)
-        radioactive = select_hisopo_kind(8966, randbelow=lambda limit: limit - 1)
+        mystery = select_hisopo_kind(7366, randbelow=lambda _limit: 0)
+        radioactive = select_hisopo_kind(8566, randbelow=lambda limit: limit - 1)
         self.assertEqual(mystery, MYSTERY_HISOPO)
         self.assertTrue(mystery.hides_points)
         self.assertEqual(radioactive, RADIOACTIVE_HISOPO)
         self.assertTrue(radioactive.hides_points)
+        self.assertTrue(BOMB_HISOPO.hides_points)
         self.assertEqual(FLEETING_HISOPO.expiration, HISOPO_FLEETING_EXPIRATION)
         self.assertEqual(FAKE_HISOPO.next_day_spawns, 0)
         self.assertEqual(TWIN_HISOPO.next_day_spawns, 1)
@@ -124,13 +129,14 @@ class HisopoRulesTests(unittest.TestCase):
         self.assertEqual(
             probabilities,
             {
-                "common": 4665,
+                "common": 4265,
                 "silver": 1400,
                 "gold": 1000,
                 "fleeting": 700,
                 "mystery": 700,
                 "putrid": 500,
                 "radioactive": 400,
+                "bomb": 400,
                 "fake": 300,
                 "twin": 200,
                 "diamond": 100,
@@ -153,37 +159,39 @@ class HisopoRulesTests(unittest.TestCase):
         self.assertEqual(fake.actual, FAKE_HISOPO)
         self.assertEqual(fake.appearance, COMMON_HISOPO)
 
-        putrid = select_hisopo_spawn(8466, randbelow=lambda _limit: 99)
+        putrid = select_hisopo_spawn(8066, randbelow=lambda _limit: 99)
         self.assertEqual(putrid.actual, PUTRID_HISOPO)
         self.assertEqual(putrid.appearance, DIAMOND_HISOPO)
 
-        mystery_common = select_hisopo_spawn(7766, randbelow=lambda _limit: 0)
+        mystery_common = select_hisopo_spawn(7366, randbelow=lambda _limit: 0)
         self.assertEqual(mystery_common.actual, COMMON_HISOPO)
         self.assertEqual(mystery_common.appearance, MYSTERY_HISOPO)
         self.assertEqual(mystery_common.appearance.expiration, HISOPO_EXPIRATION)
 
-        mystery_fake = select_hisopo_spawn(7766, randbelow=lambda _limit: 8665)
+        mystery_fake = select_hisopo_spawn(7366, randbelow=lambda _limit: 8665)
         self.assertEqual(mystery_fake.actual, FAKE_HISOPO)
         self.assertEqual(mystery_fake.appearance, MYSTERY_HISOPO)
 
-        rolls = iter((8265,))
-        mystery_radioactive = select_hisopo_spawn(7766, randbelow=lambda _limit: next(rolls))
+        rolls = iter((7865,))
+        mystery_radioactive = select_hisopo_spawn(7366, randbelow=lambda _limit: next(rolls))
         self.assertEqual(mystery_radioactive.actual.key, "radioactive")
         self.assertEqual(mystery_radioactive.actual.points, 0)
 
         expected_actuals = {
             0: "common",
-            4664: "common",
-            4665: "silver",
-            6064: "silver",
-            6065: "gold",
-            7064: "gold",
-            7065: "fleeting",
-            7764: "fleeting",
-            7765: "putrid",
-            8264: "putrid",
-            8265: "radioactive",
-            8664: "radioactive",
+            4264: "common",
+            4265: "silver",
+            5664: "silver",
+            5665: "gold",
+            6664: "gold",
+            6665: "fleeting",
+            7364: "fleeting",
+            7365: "putrid",
+            7864: "putrid",
+            7865: "radioactive",
+            8264: "radioactive",
+            8265: "bomb",
+            8664: "bomb",
             8665: "fake",
             8964: "fake",
             8965: "twin",
@@ -198,12 +206,17 @@ class HisopoRulesTests(unittest.TestCase):
         for weighted_roll, expected_key in expected_actuals.items():
             with self.subTest(weighted_roll=weighted_roll):
                 selected = select_hisopo_spawn(
-                    7766,
+                    7366,
                     randbelow=lambda _limit, value=weighted_roll: value,
                 )
                 self.assertEqual(selected.actual.key, expected_key)
         with self.assertRaisesRegex(RuntimeError, "seleccionar"):
             hisopo_rules._select_weighted_non_mystery_kind(lambda limit: limit)
+
+    def test_bomb_slots_are_distinct_and_cover_all_positions(self) -> None:
+        self.assertEqual(select_bomb_slots(lambda _limit: 0), (0, 1))
+        rolls = iter((15, 14))
+        self.assertEqual(select_bomb_slots(lambda _limit: next(rolls)), (15, 14))
 
     def test_giant_helper_threshold_uses_every_small_chat_member_and_caps_at_fifteen(self) -> None:
         self.assertEqual(giant_required_helpers(1), 1)
@@ -327,15 +340,18 @@ class HisopoRulesTests(unittest.TestCase):
 
         rendered = render_hisopo_collection(entries, "Ana", "2")
 
-        self.assertEqual(len(COLLECTIBLE_HISOPO_KEYS), 12)
+        self.assertEqual(len(COLLECTIBLE_HISOPO_KEYS), 13)
         self.assertIn("mystery", COLLECTIBLE_HISOPO_KEYS)
         self.assertIn("Colección histórica de Ana (2)", rendered)
-        self.assertIn("Tipos descubiertos: 3/12 · Capturas: 5", rendered)
+        self.assertIn("Tipos descubiertos: 3/13 · Capturas: 5", rendered)
         self.assertIn("✅ hisopo común: 3", rendered)
         self.assertIn("❓ hisopo plateado: 0", rendered)
         self.assertNotIn("⬜", rendered)
         self.assertIn("✅ hisopo diamante: 1", rendered)
         self.assertIn("✅ hisopo misterioso: 1", rendered)
+        self.assertIn("❓ hisopo bomba: 0", rendered)
+        self.assertIn("❓ hisopo gigante: 0", rendered)
+        self.assertNotIn("hisopo gigante cooperativo: 0", rendered)
         self.assertIn("cuenta como Misterioso y también como el tipo real", rendered)
 
 
@@ -743,16 +759,285 @@ class HisopoDatabaseTests(unittest.TestCase):
             {score.user_id: score.points for score in self.db.get_hisopo_scores("-1")},
             {"2": 4, "3": 4, "4": 4},
         )
-        for user_id in ("2", "3", "4"):
+        self.assertEqual(
+            {
+                entry.hisopo_type: entry.capture_count
+                for entry in self.db.get_hisopo_collection("-1", "2")
+            },
+            {"mystery": 1, "giant": 1},
+        )
+        for user_id in ("3", "4"):
             self.assertEqual(
-                [(entry.hisopo_type, entry.capture_count) for entry in self.db.get_hisopo_collection("-1", user_id)],
-                [("giant", 1), ("mystery", 1)],
+                {
+                    entry.hisopo_type: entry.capture_count
+                    for entry in self.db.get_hisopo_collection("-1", user_id)
+                },
+                {"giant": 1},
             )
         self.assertEqual(
             self.db.contribute_to_giant_hisopo(
                 "-1", "400", "1", self.now + timedelta(seconds=3), scheduled_for
             ).status,
             "taken",
+        )
+
+    def test_bomb_board_is_atomic_persistent_and_scores_terminal_slots(self) -> None:
+        with self.assertRaisesRegex(ValueError, "dos casillas"):
+            self.db.save_hisopo_spawn(
+                "-1",
+                "bomb-invalid",
+                "bomb",
+                10,
+                "message",
+                self.now.isoformat(),
+                (self.now + timedelta(minutes=20)).isoformat(),
+            )
+        with self.assertRaisesRegex(ValueError, "invalidas"):
+            self.db.save_hisopo_spawn(
+                "-1",
+                "bomb-invalid-slots",
+                "bomb",
+                10,
+                "message",
+                self.now.isoformat(),
+                (self.now + timedelta(minutes=20)).isoformat(),
+                bomb_success_slot=2,
+                bomb_explosion_slot=2,
+            )
+        with self.assertRaisesRegex(ValueError, "Solo el Hisopo bomba"):
+            self.db.save_hisopo_spawn(
+                "-1",
+                "normal-with-bomb-slots",
+                "common",
+                1,
+                "message",
+                self.now.isoformat(),
+                (self.now + timedelta(minutes=20)).isoformat(),
+                bomb_success_slot=2,
+                bomb_explosion_slot=7,
+            )
+        with self.assertRaisesRegex(ValueError, "dos casillas"):
+            self.db.save_hisopo_spawn(
+                "-1",
+                "bomb-one-slot",
+                "bomb",
+                10,
+                "message",
+                self.now.isoformat(),
+                (self.now + timedelta(minutes=20)).isoformat(),
+                bomb_success_slot=2,
+            )
+        with self.assertRaisesRegex(ValueError, "invalidas"):
+            self.db.save_hisopo_spawn(
+                "-1",
+                "bomb-out-of-range",
+                "bomb",
+                10,
+                "message",
+                self.now.isoformat(),
+                (self.now + timedelta(minutes=20)).isoformat(),
+                bomb_success_slot=-1,
+                bomb_explosion_slot=7,
+            )
+
+        mystery = self.db.save_hisopo_spawn(
+            "-1",
+            "bomb-mystery",
+            "bomb",
+            10,
+            "message",
+            self.now.isoformat(),
+            (self.now + timedelta(minutes=20)).isoformat(),
+            appearance_type="mystery",
+            bomb_success_slot=2,
+            bomb_explosion_slot=7,
+        )
+        self.assertEqual(mystery.bomb_success_slot, 2)
+        self.assertEqual(mystery.bomb_explosion_slot, 7)
+        revealed = self.db.reveal_bomb_hisopo(
+            "-1", "bomb-mystery", "2", self.now
+        )
+        self.assertEqual(revealed.status, "revealed")
+        self.assertEqual(revealed.spawn.appearance_type, "bomb")
+        self.assertEqual(
+            {entry.hisopo_type: entry.capture_count for entry in self.db.get_hisopo_collection("-1", "2")},
+            {"mystery": 1},
+        )
+        self.assertEqual(
+            self.db.reveal_bomb_hisopo("-1", "bomb-mystery", "3", self.now).status,
+            "already_revealed",
+        )
+
+        miss = self.db.resolve_bomb_hisopo_slot(
+            "-1",
+            "bomb-mystery",
+            "3",
+            0,
+            self.now,
+            self.now + timedelta(days=1),
+        )
+        self.assertEqual(miss.status, "miss")
+        self.assertEqual(miss.spawn.bomb_revealed_mask, 1)
+        self.assertEqual(
+            self.db.resolve_bomb_hisopo_slot(
+                "-1", "bomb-mystery", "2", 0, self.now, self.now + timedelta(days=1)
+            ).status,
+            "already_revealed",
+        )
+        exploded = self.db.resolve_bomb_hisopo_slot(
+            "-1",
+            "bomb-mystery",
+            "3",
+            7,
+            self.now,
+            self.now + timedelta(days=1),
+        )
+        self.assertEqual(exploded.status, "exploded")
+        self.assertEqual(exploded.spawn.points, -10)
+        self.assertIsNone(exploded.schedule)
+        self.assertEqual(
+            {score.user_id: score.points for score in self.db.get_hisopo_scores("-1")},
+            {"3": -10},
+        )
+        self.assertEqual(self.db.get_hisopo_collection("-1", "3"), [])
+        self.assertEqual(
+            self.db.resolve_bomb_hisopo_slot(
+                "-1", "bomb-mystery", "2", 2, self.now, self.now + timedelta(days=1)
+            ).status,
+            "taken",
+        )
+
+        self.db.save_hisopo_spawn(
+            "-1",
+            "bomb-direct",
+            "bomb",
+            10,
+            "message",
+            self.now.isoformat(),
+            (self.now + timedelta(minutes=20)).isoformat(),
+            bomb_success_slot=2,
+            bomb_explosion_slot=7,
+        )
+        defused = self.db.resolve_bomb_hisopo_slot(
+            "-1",
+            "bomb-direct",
+            "2",
+            2,
+            self.now,
+            self.now + timedelta(days=1),
+        )
+        self.assertEqual(defused.status, "captured")
+        self.assertEqual(defused.spawn.points, 10)
+        self.assertIsNotNone(defused.schedule)
+        self.assertEqual(
+            {entry.hisopo_type: entry.capture_count for entry in self.db.get_hisopo_collection("-1", "2")},
+            {"mystery": 1, "bomb": 1},
+        )
+
+        self.assertEqual(
+            self.db.reveal_bomb_hisopo("-1", "missing-bomb", "2", self.now).status,
+            "missing",
+        )
+        self.assertEqual(
+            self.db.reveal_bomb_hisopo("-1", "bomb-direct", "2", self.now).status,
+            "taken",
+        )
+        normal = self._spawn("normal-for-bomb")
+        self.assertEqual(
+            self.db.reveal_bomb_hisopo("-1", normal.message_id, "2", self.now).status,
+            "invalid",
+        )
+        self.db.save_hisopo_spawn(
+            "-1",
+            "bomb-invalid-appearance",
+            "bomb",
+            10,
+            "message",
+            self.now.isoformat(),
+            (self.now + timedelta(minutes=20)).isoformat(),
+            appearance_type="common",
+            bomb_success_slot=2,
+            bomb_explosion_slot=7,
+        )
+        self.assertEqual(
+            self.db.reveal_bomb_hisopo(
+                "-1", "bomb-invalid-appearance", "2", self.now
+            ).status,
+            "invalid",
+        )
+        self.db.save_hisopo_spawn(
+            "-1",
+            "bomb-expired-mystery",
+            "bomb",
+            10,
+            "message",
+            self.now.isoformat(),
+            self.now.isoformat(),
+            appearance_type="mystery",
+            bomb_success_slot=2,
+            bomb_explosion_slot=7,
+        )
+        self.assertEqual(
+            self.db.reveal_bomb_hisopo(
+                "-1", "bomb-expired-mystery", "2", self.now
+            ).status,
+            "rotten",
+        )
+        self.assertEqual(
+            self.db.reveal_bomb_hisopo(
+                "-1", "bomb-expired-mystery", "2", self.now
+            ).status,
+            "rotten",
+        )
+
+        with self.assertRaisesRegex(ValueError, "0 y 15"):
+            self.db.resolve_bomb_hisopo_slot(
+                "-1", "bomb-direct", "2", 16, self.now, self.now + timedelta(days=1)
+            )
+        self.assertEqual(
+            self.db.resolve_bomb_hisopo_slot(
+                "-1", "missing-bomb", "2", 0, self.now, self.now + timedelta(days=1)
+            ).status,
+            "missing",
+        )
+        self.assertEqual(
+            self.db.resolve_bomb_hisopo_slot(
+                "-1", normal.message_id, "2", 0, self.now, self.now + timedelta(days=1)
+            ).status,
+            "invalid",
+        )
+        self.db.save_hisopo_spawn(
+            "-1",
+            "bomb-expired-direct",
+            "bomb",
+            10,
+            "message",
+            self.now.isoformat(),
+            self.now.isoformat(),
+            bomb_success_slot=2,
+            bomb_explosion_slot=7,
+        )
+        self.assertEqual(
+            self.db.resolve_bomb_hisopo_slot(
+                "-1",
+                "bomb-expired-direct",
+                "2",
+                0,
+                self.now,
+                self.now + timedelta(days=1),
+            ).status,
+            "rotten",
+        )
+        self.assertEqual(
+            self.db.resolve_bomb_hisopo_slot(
+                "-1",
+                "bomb-expired-direct",
+                "2",
+                0,
+                self.now,
+                self.now + timedelta(days=1),
+            ).status,
+            "rotten",
         )
 
     def test_miracle_adds_at_least_fifteen_or_half_the_leader_rounded_up(self) -> None:
@@ -1049,13 +1334,16 @@ class HisopoCommandTests(unittest.IsolatedAsyncioTestCase):
         response = hisopo_handlers.handle_rules(self._context(), MagicMock())
 
         self.assertIn("Reglas del Recolector de Hisopos", response)
-        self.assertIn("Común: 46,65 %", response)
+        self.assertIn("Común: 42,65 %", response)
         self.assertIn("Diamante: 1 %", response)
         self.assertIn("Gigante cooperativo: 0,25 %", response)
         self.assertIn("total de miembros que informa Telegram menos Galerazo", response)
         self.assertIn("otros bots", response)
         self.assertIn("Milagroso: 0,10 %", response)
         self.assertIn("mitad del puntaje del líder", response)
+        self.assertIn("Bomba: 4 %", response)
+        self.assertIn("16 casillas", response)
+        self.assertIn("solo quien lo revela suma Misterioso", response)
         self.assertIn("no le quita puntos a nadie", response)
         self.assertIn("/coleccionhisopos", response)
         self.assertIn("/hisopos", response)

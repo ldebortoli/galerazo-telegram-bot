@@ -1635,6 +1635,267 @@ HISOPO_COLLECTION_RULES: dict[str, str] = {
     "zh_Hant": "- 歷史收藏：/coleccionhisopos 顯示你的12種類型及數量。每根神祕棉花棒既按神祕棉花棒計入，也按揭曉的類型計入；若其中是已過期的迅捷棉花棒，則只計神祕棉花棒。完成巨型棉花棒時每位參與者都會收藏它。",
 }
 
+HISOPO_BOMB_TRANSLATIONS: dict[str, dict[str, str]] = {
+    "es": {
+        "hisopos.type.bomb": "hisopo bomba",
+        "hisopos.collection.type.giant": "hisopo gigante",
+        "hisopos.appeared_bomb": "¡Apareció un Hisopo bomba!\nElegí una casilla: una lo desactiva, otra lo hace explotar y las demás no hacen nada.",
+        "hisopos.bomb_revealed_caption": "¡El Misterioso escondía un Hisopo bomba!\nElegí una casilla: una lo desactiva, otra lo hace explotar y las demás no hacen nada.",
+        "hisopos.bomb_revealed_popup": "¡Era un Hisopo bomba! Ahora elegí una casilla.",
+        "hisopos.bomb_miss_popup": "No desactivaste la bomba.",
+        "hisopos.bomb_defused_caption": "{user} desactivó el Hisopo bomba y ganó {points} pt.",
+        "hisopos.bomb_defused_popup": "¡Desactivaste la bomba! Ganaste {points} pt.",
+        "hisopos.bomb_exploded_caption": "¡El Hisopo bomba le explotó a {user}! Perdió {points} pt.",
+        "hisopos.bomb_exploded_popup": "¡Explotó la bomba! Perdiste {points} pt.",
+    },
+    "en": {
+        "hisopos.type.bomb": "bomb swab",
+        "hisopos.collection.type.giant": "giant swab",
+        "hisopos.appeared_bomb": "A Bomb Swab appeared!\nPick a square: one defuses it, one detonates it, and the rest do nothing.",
+        "hisopos.bomb_revealed_caption": "The Mystery hid a Bomb Swab!\nPick a square: one defuses it, one detonates it, and the rest do nothing.",
+        "hisopos.bomb_revealed_popup": "It was a Bomb Swab! Now pick a square.",
+        "hisopos.bomb_miss_popup": "You did not defuse the bomb.",
+        "hisopos.bomb_defused_caption": "{user} defused the Bomb Swab and earned {points} pt.",
+        "hisopos.bomb_defused_popup": "You defused the bomb! You earned {points} pt.",
+        "hisopos.bomb_exploded_caption": "The Bomb Swab exploded on {user}! They lost {points} pt.",
+        "hisopos.bomb_exploded_popup": "The bomb exploded! You lost {points} pt.",
+    },
+    "es_ES": {
+        "hisopos.type.bomb": "hisopo bomba",
+        "hisopos.collection.type.giant": "hisopo gigante",
+        "hisopos.appeared_bomb": "¡Ha aparecido un Hisopo bomba!\nElige una casilla: una lo desactiva, otra lo hace explotar y las demás no hacen nada.",
+        "hisopos.bomb_revealed_caption": "¡El Misterioso escondía un Hisopo bomba!\nElige una casilla: una lo desactiva, otra lo hace explotar y las demás no hacen nada.",
+        "hisopos.bomb_revealed_popup": "¡Era un Hisopo bomba! Ahora elige una casilla.",
+        "hisopos.bomb_miss_popup": "No has desactivado la bomba.",
+        "hisopos.bomb_defused_caption": "{user} ha desactivado el Hisopo bomba y ha ganado {points} pt.",
+        "hisopos.bomb_defused_popup": "¡Has desactivado la bomba! Has ganado {points} pt.",
+        "hisopos.bomb_exploded_caption": "¡El Hisopo bomba le ha explotado a {user}! Ha perdido {points} pt.",
+        "hisopos.bomb_exploded_popup": "¡La bomba ha explotado! Has perdido {points} pt.",
+    },
+    "ca": {
+        "hisopos.type.bomb": "bastonet bomba",
+        "hisopos.collection.type.giant": "bastonet gegant",
+        "hisopos.appeared_bomb": "Ha aparegut un Bastonet bomba!\nTria una casella: una el desactiva, una el fa explotar i les altres no fan res.",
+        "hisopos.bomb_revealed_caption": "El Misteriós amagava un Bastonet bomba!\nTria una casella: una el desactiva, una el fa explotar i les altres no fan res.",
+        "hisopos.bomb_revealed_popup": "Era un Bastonet bomba! Ara tria una casella.",
+        "hisopos.bomb_miss_popup": "No has desactivat la bomba.",
+        "hisopos.bomb_defused_caption": "{user} ha desactivat el Bastonet bomba i ha guanyat {points} pt.",
+        "hisopos.bomb_defused_popup": "Has desactivat la bomba! Has guanyat {points} pt.",
+        "hisopos.bomb_exploded_caption": "El Bastonet bomba ha explotat a {user}! Ha perdut {points} pt.",
+        "hisopos.bomb_exploded_popup": "La bomba ha explotat! Has perdut {points} pt.",
+    },
+    "de": {
+        "hisopos.type.bomb": "Bomben-Wattestäbchen",
+        "hisopos.collection.type.giant": "Riesen-Wattestäbchen",
+        "hisopos.appeared_bomb": "Ein Bomben-Wattestäbchen ist erschienen!\nWähle ein Feld: Eines entschärft es, eines lässt es explodieren, die übrigen tun nichts.",
+        "hisopos.bomb_revealed_caption": "Im Mysteriösen steckte ein Bomben-Wattestäbchen!\nWähle ein Feld: Eines entschärft es, eines lässt es explodieren, die übrigen tun nichts.",
+        "hisopos.bomb_revealed_popup": "Es war ein Bomben-Wattestäbchen! Wähle jetzt ein Feld.",
+        "hisopos.bomb_miss_popup": "Du hast die Bombe nicht entschärft.",
+        "hisopos.bomb_defused_caption": "{user} hat das Bomben-Wattestäbchen entschärft und {points} Pkt. gewonnen.",
+        "hisopos.bomb_defused_popup": "Bombe entschärft! Du erhältst {points} Pkt.",
+        "hisopos.bomb_exploded_caption": "Das Bomben-Wattestäbchen ist bei {user} explodiert! {points} Pkt. verloren.",
+        "hisopos.bomb_exploded_popup": "Die Bombe ist explodiert! Du verlierst {points} Pkt.",
+    },
+    "eu": {
+        "hisopos.type.bomb": "bonba kotoi-zotza",
+        "hisopos.collection.type.giant": "kotoi-zotz erraldoia",
+        "hisopos.appeared_bomb": "Bonba kotoi-zotz bat agertu da!\nAukeratu laukia: batek indargabetzen du, batek leherrarazten du eta gainerakoek ez dute ezer egiten.",
+        "hisopos.bomb_revealed_caption": "Misteriotsuak Bonba kotoi-zotz bat ezkutatzen zuen!\nAukeratu laukia: batek indargabetzen du, batek leherrarazten du eta gainerakoek ez dute ezer egiten.",
+        "hisopos.bomb_revealed_popup": "Bonba kotoi-zotza zen! Aukeratu laukia.",
+        "hisopos.bomb_miss_popup": "Ez duzu bonba indargabetu.",
+        "hisopos.bomb_defused_caption": "{user} erabiltzaileak Bonba kotoi-zotza indargabetu eta {points} puntu irabazi ditu.",
+        "hisopos.bomb_defused_popup": "Bonba indargabetu duzu! {points} puntu irabazi dituzu.",
+        "hisopos.bomb_exploded_caption": "Bonba kotoi-zotza {user} erabiltzaileari lehertu zaio! {points} puntu galdu ditu.",
+        "hisopos.bomb_exploded_popup": "Bonba lehertu da! {points} puntu galdu dituzu.",
+    },
+    "fr": {
+        "hisopos.type.bomb": "coton-tige bombe",
+        "hisopos.collection.type.giant": "coton-tige géant",
+        "hisopos.appeared_bomb": "Un Coton-tige bombe est apparu !\nChoisissez une case : l'une le désamorce, l'une le fait exploser et les autres ne font rien.",
+        "hisopos.bomb_revealed_caption": "Le Mystérieux cachait un Coton-tige bombe !\nChoisissez une case : l'une le désamorce, l'une le fait exploser et les autres ne font rien.",
+        "hisopos.bomb_revealed_popup": "C'était un Coton-tige bombe ! Choisissez une case.",
+        "hisopos.bomb_miss_popup": "Vous n'avez pas désamorcé la bombe.",
+        "hisopos.bomb_defused_caption": "{user} a désamorcé le Coton-tige bombe et gagné {points} pt.",
+        "hisopos.bomb_defused_popup": "Bombe désamorcée ! Vous gagnez {points} pt.",
+        "hisopos.bomb_exploded_caption": "Le Coton-tige bombe a explosé sur {user} ! {points} pt perdus.",
+        "hisopos.bomb_exploded_popup": "La bombe a explosé ! Vous perdez {points} pt.",
+    },
+    "gn": {
+        "hisopos.type.bomb": "hisopo mbokapu",
+        "hisopos.collection.type.giant": "hisopo tuicha",
+        "hisopos.appeared_bomb": "Ojekuaa peteĩ Hisopo mbokapu!\nEiporavo peteĩ renda: peteĩ ombogue, ambue ombokapu ha umi ambuéva ndojapói mba'eve.",
+        "hisopos.bomb_revealed_caption": "Ñemi omokañy peteĩ Hisopo mbokapu!\nEiporavo peteĩ renda: peteĩ ombogue, ambue ombokapu ha umi ambuéva ndojapói mba'eve.",
+        "hisopos.bomb_revealed_popup": "Hisopo mbokapu ra'e! Eiporavo peteĩ renda.",
+        "hisopos.bomb_miss_popup": "Neremboguéi pe mbokapu.",
+        "hisopos.bomb_defused_caption": "{user} ombogue pe Hisopo mbokapu ha ohupyty {points} kyta.",
+        "hisopos.bomb_defused_popup": "Rembogue pe mbokapu! Rehupyty {points} kyta.",
+        "hisopos.bomb_exploded_caption": "Pe Hisopo mbokapu okapu {user} rehe! Oho chugui {points} kyta.",
+        "hisopos.bomb_exploded_popup": "Pe mbokapu okapu! Oho ndehegui {points} kyta.",
+    },
+    "it": {
+        "hisopos.type.bomb": "cotton fioc bomba",
+        "hisopos.collection.type.giant": "cotton fioc gigante",
+        "hisopos.appeared_bomb": "È apparso un Cotton fioc bomba!\nScegli una casella: una lo disinnesca, una lo fa esplodere e le altre non fanno nulla.",
+        "hisopos.bomb_revealed_caption": "Il Misterioso nascondeva un Cotton fioc bomba!\nScegli una casella: una lo disinnesca, una lo fa esplodere e le altre non fanno nulla.",
+        "hisopos.bomb_revealed_popup": "Era un Cotton fioc bomba! Ora scegli una casella.",
+        "hisopos.bomb_miss_popup": "Non hai disinnescato la bomba.",
+        "hisopos.bomb_defused_caption": "{user} ha disinnescato il Cotton fioc bomba e vinto {points} pt.",
+        "hisopos.bomb_defused_popup": "Hai disinnescato la bomba! Hai vinto {points} pt.",
+        "hisopos.bomb_exploded_caption": "Il Cotton fioc bomba è esploso a {user}! Ha perso {points} pt.",
+        "hisopos.bomb_exploded_popup": "La bomba è esplosa! Hai perso {points} pt.",
+    },
+    "ja": {
+        "hisopos.type.bomb": "爆弾綿棒",
+        "hisopos.collection.type.giant": "巨大綿棒",
+        "hisopos.appeared_bomb": "爆弾綿棒が現れた！\nマスを選んでください。1つは解除、1つは爆発、残りは何も起きません。",
+        "hisopos.bomb_revealed_caption": "ミステリーの中身は爆弾綿棒だった！\nマスを選んでください。1つは解除、1つは爆発、残りは何も起きません。",
+        "hisopos.bomb_revealed_popup": "爆弾綿棒でした！マスを選んでください。",
+        "hisopos.bomb_miss_popup": "爆弾を解除できませんでした。",
+        "hisopos.bomb_defused_caption": "{user}が爆弾綿棒を解除し、{points}点を獲得しました。",
+        "hisopos.bomb_defused_popup": "爆弾解除成功！{points}点獲得しました。",
+        "hisopos.bomb_exploded_caption": "爆弾綿棒が{user}のところで爆発！{points}点失いました。",
+        "hisopos.bomb_exploded_popup": "爆弾が爆発！{points}点失いました。",
+    },
+    "la": {
+        "hisopos.type.bomb": "bacillum pyrobolicum",
+        "hisopos.collection.type.giant": "bacillum giganteum",
+        "hisopos.appeared_bomb": "Bacillum pyrobolicum apparuit!\nLocum elige: unus id exarmat, unus displodit, ceteri nihil faciunt.",
+        "hisopos.bomb_revealed_caption": "Mysteriosum Bacillum pyrobolicum celabat!\nLocum elige: unus id exarmat, unus displodit, ceteri nihil faciunt.",
+        "hisopos.bomb_revealed_popup": "Bacillum pyrobolicum erat! Nunc locum elige.",
+        "hisopos.bomb_miss_popup": "Pyrobolum non exarmavisti.",
+        "hisopos.bomb_defused_caption": "{user} Bacillum pyrobolicum exarmavit et {points} puncta accepit.",
+        "hisopos.bomb_defused_popup": "Pyrobolum exarmavisti! {points} puncta accepisti.",
+        "hisopos.bomb_exploded_caption": "Bacillum pyrobolicum apud {user} displosit! {points} puncta amisit.",
+        "hisopos.bomb_exploded_popup": "Pyrobolum displosit! {points} puncta amisisti.",
+    },
+    "nl": {
+        "hisopos.type.bomb": "bomwattenstaafje",
+        "hisopos.collection.type.giant": "reuzenwattenstaafje",
+        "hisopos.appeared_bomb": "Er verscheen een Bomwattenstaafje!\nKies een vak: één ontmantelt het, één laat het ontploffen en de rest doet niets.",
+        "hisopos.bomb_revealed_caption": "Het Mysterie verborg een Bomwattenstaafje!\nKies een vak: één ontmantelt het, één laat het ontploffen en de rest doet niets.",
+        "hisopos.bomb_revealed_popup": "Het was een Bomwattenstaafje! Kies nu een vak.",
+        "hisopos.bomb_miss_popup": "Je hebt de bom niet ontmanteld.",
+        "hisopos.bomb_defused_caption": "{user} ontmantelde het Bomwattenstaafje en verdiende {points} pt.",
+        "hisopos.bomb_defused_popup": "Bom ontmanteld! Je verdient {points} pt.",
+        "hisopos.bomb_exploded_caption": "Het Bomwattenstaafje ontplofte bij {user}! {points} pt verloren.",
+        "hisopos.bomb_exploded_popup": "De bom ontplofte! Je verliest {points} pt.",
+    },
+    "pt_BR": {
+        "hisopos.type.bomb": "cotonete bomba",
+        "hisopos.collection.type.giant": "cotonete gigante",
+        "hisopos.appeared_bomb": "Apareceu um Cotonete bomba!\nEscolha uma casa: uma desarma, uma explode e as demais não fazem nada.",
+        "hisopos.bomb_revealed_caption": "O Misterioso escondia um Cotonete bomba!\nEscolha uma casa: uma desarma, uma explode e as demais não fazem nada.",
+        "hisopos.bomb_revealed_popup": "Era um Cotonete bomba! Agora escolha uma casa.",
+        "hisopos.bomb_miss_popup": "Você não desarmou a bomba.",
+        "hisopos.bomb_defused_caption": "{user} desarmou o Cotonete bomba e ganhou {points} pt.",
+        "hisopos.bomb_defused_popup": "Você desarmou a bomba! Ganhou {points} pt.",
+        "hisopos.bomb_exploded_caption": "O Cotonete bomba explodiu com {user}! Perdeu {points} pt.",
+        "hisopos.bomb_exploded_popup": "A bomba explodiu! Você perdeu {points} pt.",
+    },
+    "pt_PT": {
+        "hisopos.type.bomb": "cotonete bomba",
+        "hisopos.collection.type.giant": "cotonete gigante",
+        "hisopos.appeared_bomb": "Apareceu um Cotonete bomba!\nEscolhe uma casa: uma desarma-o, uma fá-lo explodir e as restantes não fazem nada.",
+        "hisopos.bomb_revealed_caption": "O Misterioso escondia um Cotonete bomba!\nEscolhe uma casa: uma desarma-o, uma fá-lo explodir e as restantes não fazem nada.",
+        "hisopos.bomb_revealed_popup": "Era um Cotonete bomba! Agora escolhe uma casa.",
+        "hisopos.bomb_miss_popup": "Não desarmaste a bomba.",
+        "hisopos.bomb_defused_caption": "{user} desarmou o Cotonete bomba e ganhou {points} pt.",
+        "hisopos.bomb_defused_popup": "Desarmaste a bomba! Ganhaste {points} pt.",
+        "hisopos.bomb_exploded_caption": "O Cotonete bomba explodiu com {user}! Perdeu {points} pt.",
+        "hisopos.bomb_exploded_popup": "A bomba explodiu! Perdeste {points} pt.",
+    },
+    "quz": {
+        "hisopos.type.bomb": "bomba hisopo",
+        "hisopos.collection.type.giant": "hatun hisopo",
+        "hisopos.appeared_bomb": "Bomba hisopo rikurimun!\nHuk tawkuta akllay: huknin wañuchin, huknin tuqyan, wakinkunaqa mana imatapas ruranchu.",
+        "hisopos.bomb_revealed_caption": "Paka hisopoqa Bomba hisopota pakarqan!\nHuk tawkuta akllay: huknin wañuchin, huknin tuqyan, wakinkunaqa mana imatapas ruranchu.",
+        "hisopos.bomb_revealed_popup": "Bomba hisopo karqan! Kunan huk tawkuta akllay.",
+        "hisopos.bomb_miss_popup": "Bombata mana wañuchirqankichu.",
+        "hisopos.bomb_defused_caption": "{user} Bomba hisopota wañuchispa {points} puntuta hap'irqan.",
+        "hisopos.bomb_defused_popup": "Bombata wañuchirqanki! {points} puntuta hap'irqanki.",
+        "hisopos.bomb_exploded_caption": "Bomba hisopo {user} runapa makimpi tuqyarqan! {points} puntuta chinkachirqan.",
+        "hisopos.bomb_exploded_popup": "Bomba tuqyarqan! {points} puntuta chinkachirqanki.",
+    },
+    "ru": {
+        "hisopos.type.bomb": "палочка-бомба",
+        "hisopos.collection.type.giant": "гигантская палочка",
+        "hisopos.appeared_bomb": "Появилась Палочка-бомба!\nВыберите ячейку: одна обезвредит её, одна взорвёт, остальные ничего не сделают.",
+        "hisopos.bomb_revealed_caption": "В Таинственной скрывалась Палочка-бомба!\nВыберите ячейку: одна обезвредит её, одна взорвёт, остальные ничего не сделают.",
+        "hisopos.bomb_revealed_popup": "Это была Палочка-бомба! Теперь выберите ячейку.",
+        "hisopos.bomb_miss_popup": "Вы не обезвредили бомбу.",
+        "hisopos.bomb_defused_caption": "{user} обезвредил Палочку-бомбу и получил {points} очков.",
+        "hisopos.bomb_defused_popup": "Бомба обезврежена! Вы получили {points} очков.",
+        "hisopos.bomb_exploded_caption": "Палочка-бомба взорвалась у {user}! Потеряно {points} очков.",
+        "hisopos.bomb_exploded_popup": "Бомба взорвалась! Вы потеряли {points} очков.",
+    },
+    "zh_Hans": {
+        "hisopos.type.bomb": "炸弹棉签",
+        "hisopos.collection.type.giant": "巨型棉签",
+        "hisopos.appeared_bomb": "炸弹棉签出现了！\n请选择一格：一格可拆弹，一格会爆炸，其余不会发生任何事。",
+        "hisopos.bomb_revealed_caption": "神秘棉签里藏着炸弹棉签！\n请选择一格：一格可拆弹，一格会爆炸，其余不会发生任何事。",
+        "hisopos.bomb_revealed_popup": "原来是炸弹棉签！现在请选择一格。",
+        "hisopos.bomb_miss_popup": "你没有拆除炸弹。",
+        "hisopos.bomb_defused_caption": "{user}拆除了炸弹棉签，获得{points}分。",
+        "hisopos.bomb_defused_popup": "拆弹成功！你获得{points}分。",
+        "hisopos.bomb_exploded_caption": "炸弹棉签在{user}手中爆炸！失去{points}分。",
+        "hisopos.bomb_exploded_popup": "炸弹爆炸了！你失去{points}分。",
+    },
+    "zh_Hant": {
+        "hisopos.type.bomb": "炸彈棉花棒",
+        "hisopos.collection.type.giant": "巨型棉花棒",
+        "hisopos.appeared_bomb": "炸彈棉花棒出現了！\n請選一格：一格可拆彈，一格會爆炸，其餘不會發生任何事。",
+        "hisopos.bomb_revealed_caption": "神祕棉花棒裡藏著炸彈棉花棒！\n請選一格：一格可拆彈，一格會爆炸，其餘不會發生任何事。",
+        "hisopos.bomb_revealed_popup": "原來是炸彈棉花棒！現在請選一格。",
+        "hisopos.bomb_miss_popup": "你沒有拆除炸彈。",
+        "hisopos.bomb_defused_caption": "{user}拆除了炸彈棉花棒，獲得{points}分。",
+        "hisopos.bomb_defused_popup": "拆彈成功！你獲得{points}分。",
+        "hisopos.bomb_exploded_caption": "炸彈棉花棒在{user}手中爆炸！失去{points}分。",
+        "hisopos.bomb_exploded_popup": "炸彈爆炸了！你失去{points}分。",
+    },
+}
+
+HISOPO_BOMB_RULE_UPDATES: dict[str, tuple[str, str, str]] = {
+    "es": ("Común: 46,65 %", "Común: 42,65 %", "- Bomba: 4 %, muestra 16 casillas. Hay una que la desactiva por +10 pt, una que explota por -10 pt y 14 neutras. Cada casilla se usa una vez; desactivar o explotar cierra el tablero. Solo una desactivación suma el Bomba a la colección y programa el día siguiente."),
+    "en": ("Common: 46.65%", "Common: 42.65%", "- Bomb: 4%, shows 16 squares. One defuses it for +10 pt, one explodes for -10 pt, and 14 are neutral. Each square is used once; defusing or exploding closes the board. Only a defusal adds the Bomb to the collection and schedules the next day."),
+    "es_ES": ("Común: 46,65 %", "Común: 42,65 %", "- Bomba: 4 %, muestra 16 casillas. Una la desactiva por +10 pt, una explota por -10 pt y 14 son neutras. Cada casilla se usa una vez; desactivar o explotar cierra el tablero. Solo una desactivación añade el Bomba a la colección y programa el día siguiente."),
+    "ca": ("Comú: 46,65 %", "Comú: 42,65 %", "- Bomba: 4 %, mostra 16 caselles. Una la desactiva per +10 pt, una explota per -10 pt i 14 són neutres. Cada casella s'usa una vegada; desactivar o explotar tanca el tauler. Només desactivar-la afegeix la Bomba a la col·lecció i programa l'endemà."),
+    "de": ("Gewöhnlich: 46,65 %", "Gewöhnlich: 42,65 %", "- Bombe: 4 %, zeigt 16 Felder. Eines entschärft für +10 Pkt., eines explodiert für -10 Pkt., 14 sind neutral. Jedes Feld gilt einmal; Entschärfung oder Explosion beendet das Brett. Nur die Entschärfung sammelt die Bombe und plant den nächsten Tag."),
+    "eu": ("Arrunta: % 46,65", "Arrunta: % 42,65", "- Bonba: % 4, 16 lauki erakusten ditu. Batek +10 puntu emanez indargabetzen du, batek -10 punturekin lehertzen du eta 14 neutroak dira. Lauki bakoitza behin erabiltzen da; indargabetzeak edo leherketak taula ixten du. Indargabetzeak bakarrik gehitzen du bildumara eta biharamuna programatzen du."),
+    "fr": ("Commun : 46,65 %", "Commun : 42,65 %", "- Bombe : 4 %, affiche 16 cases. Une la désamorce pour +10 pt, une explose pour -10 pt et 14 sont neutres. Chaque case ne sert qu'une fois ; désamorçage ou explosion ferme la grille. Seul le désamorçage l'ajoute à la collection et programme le lendemain."),
+    "gn": ("Jepivegua: 46,65 %", "Jepivegua: 42,65 %", "- Mbokapu: 4 %, ohechauka 16 renda. Peteĩ ombogue ha ome'ẽ +10 kyta, peteĩ okapu ha oipe'a 10 kyta, ha 14 ndojapói mba'eve. Peteĩteĩ ojepuru peteĩ jevy; oñembogue térã okapúrõ oñemboty. Oñembogue ramo añoite oike ñembyatýpe ha oñemohenda ko'ẽrõ."),
+    "it": ("Comune: 46,65 %", "Comune: 42,65 %", "- Bomba: 4 %, mostra 16 caselle. Una la disinnesca per +10 pt, una esplode per -10 pt e 14 sono neutre. Ogni casella vale una volta; disinnesco o esplosione chiudono il tabellone. Solo il disinnesco la aggiunge alla collezione e programma il giorno dopo."),
+    "ja": ("通常：46.65%", "通常：42.65%", "- 爆弾：4%。16マスのうち1つは解除で+10点、1つは爆発で-10点、14個は何も起きません。各マスは1回限りで、解除か爆発で終了します。解除時のみコレクションに加わり、翌日を予約します。"),
+    "la": ("Commune: 46,65 %", "Commune: 42,65 %", "- Pyrobolicum: 4 %, sedecim loca ostendit. Unum +10 punctis exarmat, unum -10 punctis displodit, quattuordecim neutra sunt. Quisque locus semel valet; exarmatio vel displosio tabulam claudit. Sola exarmatio collectioni addit et diem posterum ordinat."),
+    "nl": ("Gewoon: 46,65%", "Gewoon: 42,65%", "- Bom: 4%, toont 16 vakken. Eén ontmantelt voor +10 pt, één ontploft voor -10 pt en 14 zijn neutraal. Elk vak geldt één keer; ontmanteling of explosie sluit het bord. Alleen ontmantelen voegt de Bom toe aan de collectie en plant de volgende dag."),
+    "pt_BR": ("Comum: 46,65%", "Comum: 42,65%", "- Bomba: 4%, mostra 16 casas. Uma desarma por +10 pt, uma explode por -10 pt e 14 são neutras. Cada casa vale uma vez; desarmar ou explodir fecha o tabuleiro. Só desarmar adiciona a Bomba à coleção e agenda o dia seguinte."),
+    "pt_PT": ("Comum: 46,65 %", "Comum: 42,65 %", "- Bomba: 4 %, mostra 16 casas. Uma desarma por +10 pt, uma explode por -10 pt e 14 são neutras. Cada casa vale uma vez; desarmar ou explodir fecha o tabuleiro. Só desarmar adiciona a Bomba à coleção e agenda o dia seguinte."),
+    "quz": ("Sapsi: 46,65 %", "Sapsi: 42,65 %", "- Bomba: 4 %, 16 tawkuta rikuchin. Huknin wañuchispa +10 puntuta qun, huknin tuqyaspa -10 puntuta qun, 14 mana imatapas ruranchu. Sapa tawku huk kutilla; wañuchiy utaq tuqyay tabla wichq'an. Wañuchisqallam huñuyman yapakun hinaspa paqarinpaq wakichin."),
+    "ru": ("Обычная: 46,65 %", "Обычная: 42,65 %", "- Бомба: 4 %, показывает 16 ячеек. Одна обезвреживает за +10 очков, одна взрывается за -10, а 14 нейтральны. Каждая ячейка используется один раз; обезвреживание или взрыв закрывают поле. Только обезвреживание добавляет Бомбу в коллекцию и планирует следующий день."),
+    "zh_Hans": ("普通：46.65%", "普通：42.65%", "- 炸弹：4%，显示16格。一格拆弹得+10分，一格爆炸扣10分，其余14格无事发生。每格只能使用一次；拆弹或爆炸后棋盘关闭。只有拆弹成功才计入收藏并安排次日出现。"),
+    "zh_Hant": ("普通：46.65%", "普通：42.65%", "- 炸彈：4%，顯示16格。一格拆彈得+10分，一格爆炸扣10分，其餘14格無事發生。每格只能使用一次；拆彈或爆炸後棋盤關閉。只有拆彈成功才計入收藏並安排次日出現。"),
+}
+
+HISOPO_MYSTERY_GIANT_COLLECTION_NOTES: dict[str, str] = {
+    "es": "Si oculta un Gigante, solo quien lo revela suma Misterioso; al completarlo, todos los participantes suman Gigante.",
+    "en": "If it hides a Giant, only its revealer collects the Mystery; once completed, every participant collects the Giant.",
+    "es_ES": "Si oculta un Gigante, solo quien lo revela suma Misterioso; al completarlo, todos los participantes suman Gigante.",
+    "ca": "Si amaga un Gegant, només qui el revela suma Misteriós; en completar-lo, tots els participants sumen Gegant.",
+    "de": "Verbirgt es einen Riesen, sammelt nur die enthüllende Person das Mysteriöse; nach Abschluss sammeln alle Beteiligten den Riesen.",
+    "eu": "Erraldoi bat ezkutatzen badu, agerian uzten duenak bakarrik biltzen du Misteriotsua; osatzean, parte-hartzaile guztiek Erraldoia biltzen dute.",
+    "fr": "S'il cache un Géant, seule la personne qui le révèle collectionne le Mystérieux ; une fois terminé, tous les participants collectionnent le Géant.",
+    "gn": "Ñemi omokañýrõ Tuichaitéva, ohechaukáva añoite ombyaty Ñemi; oñemohu'ãvo, mayma oipytyvõva ombyaty Tuichaitéva.",
+    "it": "Se nasconde un Gigante, solo chi lo rivela colleziona il Misterioso; al completamento, tutti i partecipanti collezionano il Gigante.",
+    "ja": "巨大を隠していた場合、ミステリーを獲得するのは最初に正体を明かした人だけです。完成時は参加者全員が巨大を獲得します。",
+    "la": "Si Gigantem celat, solus qui revelat Mysteriosum colligit; perfecto, omnes participes Gigantem colligunt.",
+    "nl": "Verbergt het een Reus, dan verzamelt alleen de onthuller het Mysterie; na voltooiing verzamelt iedere deelnemer de Reus.",
+    "pt_BR": "Se esconder um Gigante, só quem o revela coleciona o Misterioso; ao concluir, todos os participantes colecionam o Gigante.",
+    "pt_PT": "Se esconder um Gigante, só quem o revela coleciona o Misterioso; ao concluir, todos os participantes colecionam o Gigante.",
+    "quz": "Hatun hisopota pakaptinqa, rikurichiq sapallan Paka hisopota huñun; tukuchiptinku llapan yanapaqkuna Hatun hisopota huñunku.",
+    "ru": "Если внутри Гигантская, Таинственную получает только тот, кто её раскрыл; после завершения Гигантскую получают все участники.",
+    "zh_Hans": "若其中是巨型棉签，只有揭晓者获得神秘棉签；完成后所有参与者都获得巨型棉签。",
+    "zh_Hant": "若其中是巨型棉花棒，只有揭曉者獲得神祕棉花棒；完成後所有參與者都獲得巨型棉花棒。",
+}
+
 for _language, _translations in HISOPO_SPECIAL_TRANSLATIONS.items():
     HISOPO_TRANSLATIONS[_language].update(_translations)
 for _language, _translations in HISOPO_RULE_TRANSLATIONS.items():
@@ -1642,6 +1903,8 @@ for _language, _translations in HISOPO_RULE_TRANSLATIONS.items():
 for _language, _translations in HISOPO_COOPERATIVE_TRANSLATIONS.items():
     HISOPO_TRANSLATIONS[_language].update(_translations)
 for _language, _translations in HISOPO_COLLECTION_TRANSLATIONS.items():
+    HISOPO_TRANSLATIONS[_language].update(_translations)
+for _language, _translations in HISOPO_BOMB_TRANSLATIONS.items():
     HISOPO_TRANSLATIONS[_language].update(_translations)
 for _language, (_old_common, _new_common, _extra_rules) in HISOPO_COOPERATIVE_RULE_UPDATES.items():
     _rules = HISOPO_TRANSLATIONS[_language]["hisopos.rules"]
@@ -1656,6 +1919,15 @@ for _language, (_old_common, _new_common, _extra_rules) in HISOPO_COOPERATIVE_RU
         f"\n{_extra_rules}\n- /hisopos",
         1,
     )
+for _language, (_old_common, _new_common, _bomb_rule) in HISOPO_BOMB_RULE_UPDATES.items():
+    _rules = HISOPO_TRANSLATIONS[_language]["hisopos.rules"]
+    if _old_common not in _rules or "\n- /hisopos" not in _rules:  # pragma: no cover
+        raise RuntimeError(f"No pude agregar las reglas del Hisopo bomba para {_language}.")
+    HISOPO_TRANSLATIONS[_language]["hisopos.rules"] = _rules.replace(
+        _old_common,
+        _new_common,
+        1,
+    ).replace("\n- /hisopos", f"\n{_bomb_rule}\n- /hisopos", 1)
 for _language, _count_rule in HISOPO_GIANT_COUNT_RULES.items():
     HISOPO_TRANSLATIONS[_language]["hisopos.rules"] = HISOPO_TRANSLATIONS[_language][
         "hisopos.rules"
@@ -1665,6 +1937,19 @@ for _language, _schedule_rule in HISOPO_SCHEDULE_CAP_RULES.items():
         "hisopos.rules"
     ].replace("\n- /hisopos", f"\n{_schedule_rule}\n- /hisopos", 1)
 for _language, _collection_rule in HISOPO_COLLECTION_RULES.items():
+    _collection_rule = _collection_rule.replace("12", "13", 1).replace(
+        "duodecim", "tredecim", 1
+    )
+    _mystery_giant_note = HISOPO_MYSTERY_GIANT_COLLECTION_NOTES[_language]
+    _collection_rule = f"{_collection_rule} {_mystery_giant_note}"
+    HISOPO_COLLECTION_RULES[_language] = _collection_rule
+    HISOPO_TRANSLATIONS[_language]["hisopos.collection.mystery_note"] += (
+        f" {_mystery_giant_note}"
+    )
     HISOPO_TRANSLATIONS[_language]["hisopos.rules"] = HISOPO_TRANSLATIONS[_language][
         "hisopos.rules"
-    ].replace("\n- /hisopos", f"\n{_collection_rule}\n- /hisopos", 1)
+    ].replace(
+        "\n- /hisopos",
+        f"\n{_collection_rule}\n- /hisopos",
+        1,
+    )

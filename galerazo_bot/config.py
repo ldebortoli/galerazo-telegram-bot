@@ -29,6 +29,9 @@ class Settings:
     telegram_hisopo_mystery_file_id: str | None = None
     telegram_hisopo_putrid_file_id: str | None = None
     telegram_hisopo_radioactive_file_id: str | None = None
+    telegram_hisopo_bomb_file_id: str | None = None
+    telegram_hisopo_bomb_defused_file_id: str | None = None
+    telegram_hisopo_bomb_exploded_file_id: str | None = None
     telegram_hisopo_fake_file_id: str | None = None
     telegram_hisopo_twin_file_id: str | None = None
     telegram_hisopo_giant_file_id: str | None = None
@@ -61,6 +64,15 @@ def load_settings() -> Settings:
         telegram_hisopo_mystery_file_id=os.getenv("TELEGRAM_HISOPO_MYSTERY_FILE_ID") or None,
         telegram_hisopo_putrid_file_id=os.getenv("TELEGRAM_HISOPO_PUTRID_FILE_ID") or None,
         telegram_hisopo_radioactive_file_id=os.getenv("TELEGRAM_HISOPO_RADIOACTIVE_FILE_ID") or None,
+        telegram_hisopo_bomb_file_id=os.getenv("TELEGRAM_HISOPO_BOMB_FILE_ID") or None,
+        telegram_hisopo_bomb_defused_file_id=os.getenv(
+            "TELEGRAM_HISOPO_BOMB_DEFUSED_FILE_ID"
+        )
+        or None,
+        telegram_hisopo_bomb_exploded_file_id=os.getenv(
+            "TELEGRAM_HISOPO_BOMB_EXPLODED_FILE_ID"
+        )
+        or None,
         telegram_hisopo_fake_file_id=os.getenv("TELEGRAM_HISOPO_FAKE_FILE_ID") or None,
         telegram_hisopo_twin_file_id=os.getenv("TELEGRAM_HISOPO_TWIN_FILE_ID") or None,
         telegram_hisopo_giant_file_id=os.getenv("TELEGRAM_HISOPO_GIANT_FILE_ID") or None,
