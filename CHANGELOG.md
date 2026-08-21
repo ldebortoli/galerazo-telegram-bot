@@ -3,6 +3,7 @@
 ## [0.28] - 2026-08-20
 
 - Cada grupo ahora puede acumular como máximo 10 apariciones de Hisopos con horario aleatorio para una misma fecha del día siguiente. Al llenar el cupo, las capturas conservan sus puntos y efectos; las apariciones activadas por mensajes y la aparición inmediata del Gemelo no consumen ese límite.
+- Los envíos de mensajes que Telegram frena temporalmente por control de frecuencia ahora respetan la espera indicada y reintentan hasta el mismo máximo de tres intentos, en vez de terminar como error no manejado.
 
 ## [0.27] - 2026-08-20
 

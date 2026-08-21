@@ -3,10 +3,11 @@ from __future__ import annotations
 import asyncio
 import logging
 from collections.abc import Awaitable, Callable
+from datetime import timedelta
 from typing import Any, TypeVar
 
 from telegram import Message
-from telegram.error import TimedOut
+from telegram.error import RetryAfter, TimedOut
 from telegram.ext import ExtBot
 from telegram.request import HTTPXRequest
 
@@ -40,6 +41,32 @@ async def retry_timed_out(
             delay = SEND_MESSAGE_RETRY_DELAYS_SECONDS[attempt - 1]
             logger.warning(
                 "%s agoto el timeout en el intento %s/%s; reintentando en %.1f segundos.",
+                operation_name,
+                attempt,
+                SEND_MESSAGE_MAX_ATTEMPTS,
+                delay,
+            )
+            await asyncio.sleep(delay)
+            attempt += 1
+        except RetryAfter as exc:
+            if attempt >= SEND_MESSAGE_MAX_ATTEMPTS:
+                logger.error(
+                    "%s siguio limitado por Telegram despues de %s intentos.",
+                    operation_name,
+                    SEND_MESSAGE_MAX_ATTEMPTS,
+                    exc_info=True,
+                )
+                raise
+
+            retry_after = exc.retry_after
+            delay = (
+                retry_after.total_seconds()
+                if isinstance(retry_after, timedelta)
+                else float(retry_after)
+            )
+            logger.warning(
+                "%s fue limitado por Telegram en el intento %s/%s; "
+                "reintentando en %.1f segundos.",
                 operation_name,
                 attempt,
                 SEND_MESSAGE_MAX_ATTEMPTS,

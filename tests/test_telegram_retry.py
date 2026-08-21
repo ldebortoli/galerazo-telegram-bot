@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 import unittest
+from datetime import timedelta
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, patch
 
-from telegram.error import TimedOut
+from telegram.error import RetryAfter, TimedOut
 from telegram.ext import ExtBot
 
 from galerazo_bot.telegram_retry import (
@@ -52,6 +53,47 @@ class TelegramRetryTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(sleep.await_count, 2)
         self.assertIn("despues de 3 intentos", "\n".join(captured.output))
         self.assertIn("puede haberse duplicado", "\n".join(captured.output))
+
+    async def test_retries_rate_limit_after_telegram_delay(self) -> None:
+        for retry_after in (3, timedelta(seconds=4)):
+            with self.subTest(retry_after=retry_after):
+                operation = AsyncMock(side_effect=[RetryAfter(retry_after), "sent"])
+
+                with patch(
+                    "galerazo_bot.telegram_retry.asyncio.sleep",
+                    new=AsyncMock(),
+                ) as sleep, self.assertLogs(
+                    "galerazo_bot.telegram_retry",
+                    level="WARNING",
+                ) as captured:
+                    result = await retry_timed_out(operation, "send_message")
+
+                self.assertEqual(result, "sent")
+                self.assertEqual(operation.await_count, 2)
+                sleep.assert_awaited_once_with(
+                    float(
+                        retry_after.total_seconds()
+                        if isinstance(retry_after, timedelta)
+                        else retry_after
+                    )
+                )
+                self.assertIn("limitado por Telegram", "\n".join(captured.output))
+
+    async def test_raises_third_consecutive_rate_limit(self) -> None:
+        operation = AsyncMock(side_effect=RetryAfter(1))
+
+        with patch(
+            "galerazo_bot.telegram_retry.asyncio.sleep",
+            new=AsyncMock(),
+        ) as sleep, self.assertLogs(
+            "galerazo_bot.telegram_retry",
+            level="ERROR",
+        ) as captured, self.assertRaises(RetryAfter):
+            await retry_timed_out(operation, "send_message")
+
+        self.assertEqual(operation.await_count, 3)
+        self.assertEqual(sleep.await_count, 2)
+        self.assertIn("despues de 3 intentos", "\n".join(captured.output))
 
     async def test_retrying_bot_routes_send_message_through_policy(self) -> None:
         bot = RetryingExtBot("123456:TEST_TOKEN")
