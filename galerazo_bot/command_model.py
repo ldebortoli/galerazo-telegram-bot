@@ -26,6 +26,7 @@ class Command:
     configurable_group: str | None = None
     command_key: str | None = None
     list_response: bool = False
+    response_parse_mode: str | None = None
 
     def __post_init__(self) -> None:
         if self.command_key is None:

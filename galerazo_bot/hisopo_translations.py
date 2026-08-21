@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+from html import escape
+import re
+
 
 HISOPO_TRANSLATIONS: dict[str, dict[str, str]] = {
     "es": {
@@ -2290,4 +2293,93 @@ for _language, _collection_rule in HISOPO_COLLECTION_RULES.items():
         "\n- /hisopos",
         f"\n{_collection_rule}\n- /hisopos",
         1,
+    )
+
+
+_HISOPO_RULE_HEADINGS: dict[str, tuple[str, str, str, str, str]] = {
+    "es": ("Cómo jugar", "Tipos y probabilidades", "Juegos especiales", "Importante", "Comandos"),
+    "en": ("How to play", "Types and probabilities", "Special games", "Important", "Commands"),
+    "es_ES": ("Cómo jugar", "Tipos y probabilidades", "Juegos especiales", "Importante", "Comandos"),
+    "ca": ("Com es juga", "Tipus i probabilitats", "Jocs especials", "Important", "Ordres"),
+    "de": ("So wird gespielt", "Typen und Wahrscheinlichkeiten", "Spezialspiele", "Wichtig", "Befehle"),
+    "eu": ("Nola jokatu", "Motak eta probabilitateak", "Joko bereziak", "Garrantzitsua", "Komandoak"),
+    "fr": ("Comment jouer", "Types et probabilités", "Jeux spéciaux", "Important", "Commandes"),
+    "gn": ("Mba'éichapa oñeñembosarái", "Mba'eichagua ha ikatuha", "Ñembosarái ambuéva", "Iñimportánteva", "Ñe'ẽmondo"),
+    "it": ("Come si gioca", "Tipi e probabilità", "Giochi speciali", "Importante", "Comandi"),
+    "ja": ("遊び方", "種類と確率", "特別ゲーム", "重要", "コマンド"),
+    "la": ("Quomodo ludatur", "Genera et probabilitates", "Ludi speciales", "Notandum", "Praecepta"),
+    "nl": ("Zo speel je", "Typen en kansen", "Speciale spellen", "Belangrijk", "Opdrachten"),
+    "pt_BR": ("Como jogar", "Tipos e probabilidades", "Jogos especiais", "Importante", "Comandos"),
+    "pt_PT": ("Como jogar", "Tipos e probabilidades", "Jogos especiais", "Importante", "Comandos"),
+    "quz": ("Imayna pukllana", "Layakuna hinallataq rikurimunankuna", "Sapaq pukllaykuna", "Yuyarinapaq", "Kamachikuna"),
+    "ru": ("Как играть", "Виды и вероятности", "Особые игры", "Важно", "Команды"),
+    "zh_Hans": ("玩法", "类型与概率", "特殊玩法", "重要", "命令"),
+    "zh_Hant": ("玩法", "類型與機率", "特殊玩法", "重要", "指令"),
+}
+_RULE_SENTENCE_BOUNDARY = re.compile(r"(?<=[。！？])|(?<=[.!?])\s+")
+_RULE_COMMANDS = ("/coleccionhisopos", "/reglashisopo", "/hisopos", "/config")
+
+
+def _rule_text_html(text: str) -> str:
+    rendered = escape(text)
+    for command in _RULE_COMMANDS:
+        rendered = rendered.replace(command, f"<code>{command}</code>")
+    return rendered
+
+
+def _first_rule_sentences(line: str, count: int) -> str:
+    text = line.removeprefix("- ")
+    sentences = [part for part in _RULE_SENTENCE_BOUNDARY.split(text) if part]
+    return " ".join(sentences[:count])
+
+
+def _rule_bullet_html(text: str, *, bold_label: bool = False) -> str:
+    text = text.removeprefix("- ")
+    if bold_label:
+        for separator in (":", "："):
+            label, found, detail = text.partition(separator)
+            if found:
+                return f"• <b>{escape(label + separator)}</b>{_rule_text_html(detail)}"
+    return f"• {_rule_text_html(text)}"
+
+
+def _compact_hisopo_rules(rules: str, headings: tuple[str, str, str, str, str]) -> str:
+    lines = rules.splitlines()
+    if len(lines) != 26:  # pragma: no cover - guards the localized rules template
+        raise RuntimeError("El formato base de las reglas de Hisopos cambió.")
+    how_to_play, types, special_games, important, commands = headings
+    rendered = [
+        f"<b>🧪 {escape(lines[0])}</b>",
+        "",
+        f"<b>🎮 {escape(how_to_play)}</b>",
+        _rule_bullet_html(lines[2]),
+        _rule_bullet_html(_first_rule_sentences(lines[3], 1)),
+        "",
+        f"<b>🎲 {escape(types)}</b>",
+        *(_rule_bullet_html(line, bold_label=True) for line in lines[4:14]),
+        "",
+        f"<b>✨ {escape(special_games)}</b>",
+        _rule_bullet_html(lines[16], bold_label=True),
+        _rule_bullet_html(lines[17], bold_label=True),
+        _rule_bullet_html(_first_rule_sentences(lines[18], 2), bold_label=True),
+        _rule_bullet_html(_first_rule_sentences(lines[19], 2), bold_label=True),
+        _rule_bullet_html(lines[20], bold_label=True),
+        "",
+        f"<b>ℹ️ {escape(important)}</b>",
+        _rule_bullet_html(lines[14]),
+        _rule_bullet_html(lines[21], bold_label=True),
+        _rule_bullet_html(lines[22]),
+        _rule_bullet_html(lines[23], bold_label=True),
+        _rule_bullet_html(lines[24], bold_label=True),
+        "",
+        f"<b>⌨️ {escape(commands)}</b>",
+        "• <code>/hisopos</code> · <code>/coleccionhisopos</code> · <code>/config</code>",
+    ]
+    return "\n".join(rendered)
+
+
+for _language, _headings in _HISOPO_RULE_HEADINGS.items():
+    HISOPO_TRANSLATIONS[_language]["hisopos.rules"] = _compact_hisopo_rules(
+        HISOPO_TRANSLATIONS[_language]["hisopos.rules"],
+        _headings,
     )

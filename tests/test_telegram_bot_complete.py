@@ -540,7 +540,11 @@ class CommandAndCallbackEntrypointTests(unittest.IsolatedAsyncioTestCase):
         reply = message_stub(from_user=reply_user)
         message = message_stub(text="/hola", reply_to_message=reply)
         update = SimpleNamespace(effective_message=message, effective_user=user, effective_chat=chat)
-        command = SimpleNamespace(configurable_group=None, list_response=True)
+        command = SimpleNamespace(
+            configurable_group=None,
+            list_response=True,
+            response_parse_mode="HTML",
+        )
         with patch.object(tb, "_is_user_restricted_in_message_chat", return_value=False), patch.object(
             tb, "get_command", return_value=command
         ), patch.object(tb, "_resolve_user_level", AsyncMock(return_value=UserLevel.DEV)), patch.object(
@@ -551,6 +555,7 @@ class CommandAndCallbackEntrypointTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(kwargs["reply_to_user_id"], "2")
         self.assertTrue(callable(kwargs["send_debug_update"]))
         send.assert_awaited_once()
+        self.assertEqual(send.await_args.kwargs["response_parse_mode"], "HTML")
 
         message.reply_to_message = None
         with patch.object(tb, "_is_user_restricted_in_message_chat", return_value=False), patch.object(
@@ -903,6 +908,25 @@ class GalerazaExpenseAndConfigTests(unittest.IsolatedAsyncioTestCase):
         message.reply_text.return_value = SimpleNamespace(message_id=3, edit_text=AsyncMock())
         await tb._send_text_response(db, message, "Triggers:\n\n- uno", "1", "triggers", True, bot, "-10")
         self.assertEqual(message.reply_text.await_args.kwargs["entities"][0].type, "bold")
+
+        result = SimpleNamespace(message_id=4, edit_text=AsyncMock())
+        message.reply_text.return_value = result
+        html_list = "<b>Reglas</b>\n" + "\n".join(
+            f"detalle {index} " + ("x" * 100) for index in range(100)
+        )
+        await tb._send_text_response(
+            db,
+            message,
+            html_list,
+            "1",
+            "command",
+            True,
+            bot,
+            "-10",
+            "HTML",
+        )
+        self.assertEqual(message.reply_text.await_args.kwargs["parse_mode"], "HTML")
+        self.assertEqual(result.edit_text.await_args.kwargs["parse_mode"], "HTML")
 
     async def test_report_submit_status_and_sync_expenses(self) -> None:
         db = MagicMock()

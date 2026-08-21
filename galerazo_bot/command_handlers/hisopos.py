@@ -245,6 +245,7 @@ COMMANDS = {
         "reglashisopo",
         "muestra las reglas del Recolector de Hisopos",
         handle_rules,
+        response_parse_mode="HTML",
     ),
     "hisopos": Command(
         "hisopos",

@@ -1965,6 +1965,9 @@ async def _handle_command_update(update: Update, context: ContextTypes.DEFAULT_T
             paginate=command.list_response if command is not None else False,
             bot=context.bot,
             log_chat_id=state.settings.telegram_log_chat_id,
+            response_parse_mode=(
+                getattr(command, "response_parse_mode", None) if command is not None else None
+            ),
         )
     except TelegramError as exc:
         if _is_bot_removed_error(exc):
@@ -2329,9 +2332,18 @@ async def _send_text_response(
     paginate: bool,
     bot: Bot,
     log_chat_id: str | None,
+    response_parse_mode: str | None = None,
 ) -> None:
+    response_format: dict[str, object] = {}
+    if response_parse_mode is not None:
+        response_format["parse_mode"] = response_parse_mode
+
     if len(text) > TELEGRAM_MESSAGE_LIMIT_CHARS and not paginate:
-        await message.reply_text(text[:TELEGRAM_MESSAGE_LIMIT_CHARS], do_quote=True)
+        await message.reply_text(
+            text[:TELEGRAM_MESSAGE_LIMIT_CHARS],
+            do_quote=True,
+            **response_format,
+        )
         await _send_log_event(
             bot,
             log_chat_id,
@@ -2348,7 +2360,12 @@ async def _send_text_response(
     page = render_page(header, body_lines, page=1)
 
     entities = _bold_first_line_entities(page.text) if list_type == "triggers" else None
-    result = await message.reply_text(page.text, do_quote=True, entities=entities)
+    result = await message.reply_text(
+        page.text,
+        do_quote=True,
+        entities=entities,
+        **response_format,
+    )
     message_id = str(result.message_id)
     if page.total_pages <= 1 or not message_id:
         return
@@ -2367,6 +2384,7 @@ async def _send_text_response(
         text=page.text,
         reply_markup=build_keyboard(message_id, page.page, page.total_pages, unlocked=False),
         entities=entities,
+        **response_format,
     )
 
 

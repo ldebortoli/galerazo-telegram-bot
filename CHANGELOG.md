@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.40] - 2026-08-21
+
+- Correcciones y mejoras: `/reglashisopo` ahora presenta una versión resumida y más legible, organizada en bloques con títulos, negritas, comandos monoespaciados y mayor separación visual mediante HTML seguro de Telegram. Conserva probabilidades, premios, vencimientos y excepciones esenciales en los 18 idiomas.
+
 ## [0.39] - 2026-08-21
 
 - Correcciones y mejoras: `/reglashisopo` ahora dice correctamente que una aparición no capturada se vence, no que se pudre. La terminología se alineó en los 18 idiomas sin cambiar la rareza Putrefacto.

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import re
 import unittest
+from html import unescape
 
 from galerazo_bot.i18n import TRANSLATIONS
 from galerazo_bot.hisopo_translations import (
@@ -68,20 +69,22 @@ class TranslationTests(unittest.TestCase):
         self.assertEqual(set(HISOPO_COLLECTION_RULES), set(TRANSLATIONS))
         for language, translations in TRANSLATIONS.items():
             with self.subTest(language=language):
-                self.assertLessEqual(len(translations["hisopos.rules"]), 4096)
-                self.assertIn("/config", translations["hisopos.rules"])
-                self.assertIn("/hisopos", translations["hisopos.rules"])
+                rules = translations["hisopos.rules"]
+                plain_rules = re.sub(r"<[^>]+>", "", unescape(rules)).replace("• ", "- ")
+                self.assertLessEqual(len(rules), 4096)
+                self.assertIn("/config", rules)
+                self.assertIn("/hisopos", rules)
                 self.assertIn(
                     HISOPO_GIANT_COUNT_RULES[language],
-                    translations["hisopos.rules"],
+                    plain_rules,
                 )
                 self.assertIn(
                     HISOPO_SCHEDULE_CAP_RULES[language],
-                    translations["hisopos.rules"],
+                    plain_rules,
                 )
                 self.assertIn(
                     HISOPO_COLLECTION_RULES[language],
-                    translations["hisopos.rules"],
+                    plain_rules,
                 )
 
     def test_southern_quechua_preserves_named_game_and_message_lines(self) -> None:

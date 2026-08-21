@@ -3,6 +3,7 @@ from __future__ import annotations
 import tempfile
 import unittest
 from datetime import datetime, timedelta, timezone
+from html import unescape
 from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -10,6 +11,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 from telegram.error import TimedOut
 
 from galerazo_bot import hisopos as hisopo_rules
+from galerazo_bot import hisopo_translations as hisopo_rules_translations
 from galerazo_bot.command_handlers import hisopos as hisopo_handlers
 from galerazo_bot.hisopo_translations import (
     HISOPO_MYSTERY_GIANT_COLLECTION_NOTES,
@@ -66,6 +68,12 @@ from galerazo_bot.roles import CommandContext, UserLevel
 
 
 class HisopoRulesTests(unittest.TestCase):
+    def test_html_rule_bullet_falls_back_when_there_is_no_label(self) -> None:
+        self.assertEqual(
+            hisopo_rules_translations._rule_bullet_html("sin etiqueta", bold_label=True),
+            "• sin etiqueta",
+        )
+
     def test_all_localized_rules_describe_uncaptured_swabs_as_expired(self) -> None:
         expiration_markers = {
             "es": "Si nadie captura un Hisopo, se vence",
@@ -90,14 +98,14 @@ class HisopoRulesTests(unittest.TestCase):
         self.assertEqual(set(expiration_markers), set(HISOPO_TRANSLATIONS))
         for language, marker in expiration_markers.items():
             with self.subTest(language=language):
-                self.assertIn(marker, HISOPO_TRANSLATIONS[language]["hisopos.rules"])
+                self.assertIn(marker, unescape(HISOPO_TRANSLATIONS[language]["hisopos.rules"]))
 
     def test_mystery_details_live_in_rules_not_collection_output(self) -> None:
         for language, mystery_note in HISOPO_MYSTERY_GIANT_COLLECTION_NOTES.items():
             with self.subTest(language=language):
                 self.assertIn(
                     mystery_note,
-                    HISOPO_TRANSLATIONS[language]["hisopos.rules"],
+                    unescape(HISOPO_TRANSLATIONS[language]["hisopos.rules"]),
                 )
                 collection = render_hisopo_collection([], "User", "2", language)
                 self.assertNotIn(mystery_note, collection)
@@ -106,8 +114,13 @@ class HisopoRulesTests(unittest.TestCase):
     def test_all_localized_rules_document_the_miracle_cap(self) -> None:
         for language, catalog in HISOPO_TRANSLATIONS.items():
             with self.subTest(language=language):
-                self.assertIn("1000", catalog["hisopos.rules"])
-                self.assertLessEqual(len(catalog["hisopos.rules"]), 4096)
+                rules = catalog["hisopos.rules"]
+                self.assertIn("1000", rules)
+                self.assertLessEqual(len(rules), 4096)
+                self.assertTrue(rules.startswith("<b>🧪 "))
+                self.assertIn("<code>/hisopos</code>", rules)
+                self.assertEqual(rules.count("<b>"), rules.count("</b>"))
+                self.assertEqual(rules.count("<code>"), rules.count("</code>"))
 
     def test_spawn_rolls_and_invalid_values(self) -> None:
         self.assertTrue(should_spawn_hisopo(1, 1))
@@ -1718,27 +1731,31 @@ class HisopoCommandTests(unittest.IsolatedAsyncioTestCase):
     async def test_rules_are_available_even_when_the_game_is_disabled(self) -> None:
         response = hisopo_handlers.handle_rules(self._context(), MagicMock())
 
+        self.assertEqual(hisopo_handlers.COMMANDS["reglashisopo"].response_parse_mode, "HTML")
         self.assertIn("Reglas del Recolector de Hisopos", response)
-        self.assertIn("Común: 34,65 %", response)
-        self.assertIn("Diamante: 1 %", response)
-        self.assertIn("Gigante cooperativo: 0,25 %", response)
+        self.assertIn("<b>🎮 Cómo jugar</b>", response)
+        self.assertIn("<b>Común:</b> 34,65 %", response)
+        self.assertIn("<b>Diamante:</b> 1 %", response)
+        self.assertIn("<b>Gigante cooperativo:</b> 0,25 %", response)
         self.assertIn("total de miembros que informa Telegram menos Galerazo", response)
         self.assertIn("otros bots", response)
-        self.assertIn("Milagroso: 0,10 %", response)
+        self.assertIn("<b>Milagroso:</b> 0,10 %", response)
         self.assertIn("mitad del puntaje del líder", response)
         self.assertIn("máximo de 1000", response)
-        self.assertIn("Bomba: 4 %", response)
+        self.assertIn("<b>Bomba:</b> 4 %", response)
         self.assertIn("16 casillas", response)
-        self.assertIn("Frenético: 4 %", response)
-        self.assertIn("Agujero negro: 4 %", response)
-        self.assertIn("Vencido:", response)
+        self.assertIn("<b>Frenético:</b> 4 %", response)
+        self.assertIn("<b>Agujero negro:</b> 4 %", response)
+        self.assertIn("<b>Vencido:</b>", response)
         self.assertIn("Misterioso cuenta como Misterioso y como el tipo revelado", response)
         self.assertIn("solo quien lo revela suma Misterioso", response)
         self.assertIn("no le quita puntos a nadie", response)
         self.assertIn("se vence y no le quita puntos a nadie", response)
         self.assertNotIn("se pudre y no le quita puntos a nadie", response)
-        self.assertIn("/coleccionhisopos", response)
-        self.assertIn("/hisopos", response)
+        self.assertIn("<code>/coleccionhisopos</code>", response)
+        self.assertIn("<code>/hisopos</code>", response)
+        self.assertNotIn("Cada callback se cuenta", response)
+        self.assertLess(len(response), 3500)
         self.assertLessEqual(len(response), 4096)
 
     async def test_collection_handler_uses_self_or_replied_user(self) -> None:
