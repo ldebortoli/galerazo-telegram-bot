@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.39] - 2026-08-21
+
+- Correcciones y mejoras: `/reglashisopo` ahora dice correctamente que una aparición no capturada se vence, no que se pudre. La terminología se alineó en los 18 idiomas sin cambiar la rareza Putrefacto.
+
 ## [0.38] - 2026-08-21
 
 - Correcciones y mejoras: `/coleccionhisopos` ya no agrega al final la explicación extensa sobre Misterioso, Gigante, carreras y vencimientos; esa información queda centralizada en `/reglashisopo`.

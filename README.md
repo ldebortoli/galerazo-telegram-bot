@@ -469,7 +469,7 @@ Una segunda y única tirada de `1` a `10.000` define la rareza, pero se hace sol
 | 1-3465 | 34,65 % | común | imagen y valor del común | suma 1 punto |
 | 3466-4865 | 14 % | plateado | imagen y valor del plateado | suma 2 puntos |
 | 4866-5865 | 10 % | dorado | imagen y valor del dorado | suma 3 puntos |
-| 5866-6565 | 7 % | fugaz | imagen y valor del fugaz | suma 5 puntos; se pudre en 1 minuto |
+| 5866-6565 | 7 % | fugaz | imagen y valor del fugaz | suma 5 puntos; se vence en 1 minuto |
 | 6566-7265 | 7 % | misterioso | imagen de misterioso y valor oculto | contiene uno de los otros catorce tipos sorteables y aplica su efecto |
 | 7266-7765 | 5 % | putrefacto | se disfraza de común, plateado, dorado o diamante | revela el putrefacto, resta 2 puntos y puede dejar puntaje negativo |
 | 7766-8165 | 4 % | radiactivo | imagen de radiactivo y valor oculto | calcula al capturarlo `-3`, `-1`, `2`, `4` o `6` según el tiempo transcurrido |
@@ -494,7 +494,7 @@ El Frenético dura 20 minutos. Cada callback nuevo incrementa en uno el contador
 
 El Agujero negro usa la misma carrera a 20. Si la persona ganadora fue la única participante, suma 10 puntos. Si hubo rivales, cada perdedor pierde tantos puntos como pulsaciones válidas hizo y el ganador recibe el menor valor entre 10 y la suma transferida; por ejemplo, rivales con 3 y 2 pulsaciones pierden 3 y 2, y el ganador suma 5. Todo el cierre se realiza en una sola transacción y admite puntajes negativos.
 
-El Gigante cooperativo dura 20 minutos y requiere `min(15, miembros del chat - Galerazo)` participaciones únicas. En un chat con al menos 16 miembros pide 15 ayudas; en uno más pequeño usa el total que informa Telegram menos el propio Galerazo. Esa consulta entrega una cantidad, no una lista filtrada de personas, por lo que otros bots también pueden quedar incluidos en la meta de los chats pequeños. Cada usuario puede ayudar una sola vez, la foto y el botón muestran el progreso y nadie recibe puntos parcialmente. Si alcanza el objetivo, cada participante gana 4 puntos y se programa una sola aparición total para el día siguiente; si se pudre incompleto, nadie gana ni pierde puntos y no se programa nada.
+El Gigante cooperativo dura 20 minutos y requiere `min(15, miembros del chat - Galerazo)` participaciones únicas. En un chat con al menos 16 miembros pide 15 ayudas; en uno más pequeño usa el total que informa Telegram menos el propio Galerazo. Esa consulta entrega una cantidad, no una lista filtrada de personas, por lo que otros bots también pueden quedar incluidos en la meta de los chats pequeños. Cada usuario puede ayudar una sola vez, la foto y el botón muestran el progreso y nadie recibe puntos parcialmente. Si alcanza el objetivo, cada participante gana 4 puntos y se programa una sola aparición total para el día siguiente; si se vence incompleto, nadie gana ni pierde puntos y no se programa nada.
 
 El Milagroso dura 20 minutos y calcula su premio al capturarlo: entrega `max(15, min(mitad del líder redondeada hacia arriba, 1000))`. Por ejemplo, con un líder de 31 puntos entrega 16; con un líder de 20, cero o negativo entrega 15; y aunque el líder supere 2000 puntos nunca entrega más de 1000. El cálculo y la captura se realizan en la misma transacción, su valor inicial permanece oculto y programa una aparición para el día siguiente como una captura normal.
 

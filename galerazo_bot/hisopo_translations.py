@@ -799,7 +799,7 @@ HISOPO_RULE_TRANSLATIONS: dict[str, dict[str, str]] = {
             "- Falso: 3 %, aparece disfrazado, vale 0 y no programa otra aparición.\n"
             "- Gemelo: 2 %, +4 pt, lanza otro Hisopo en el momento y programa uno para el día siguiente.\n"
             "- Diamante: 1 %, +10 pt.\n"
-            "- Si nadie captura un Hisopo, se pudre y no le quita puntos a nadie. Los normales vencen a los 20 minutos y el Fugaz directo al minuto. Los puntajes pueden quedar negativos.\n"
+            "- Si nadie captura un Hisopo, se vence y no le quita puntos a nadie. Los normales vencen a los 20 minutos y el Fugaz directo al minuto. Los puntajes pueden quedar negativos.\n"
             "- Cada captura válida programa una aparición para el día siguiente, salvo el Falso y el Fugaz oculto cuyo minuto venció.\n"
             "- /hisopos muestra la tabla del grupo."
         ),
@@ -820,7 +820,7 @@ HISOPO_RULE_TRANSLATIONS: dict[str, dict[str, str]] = {
             "- Fake: 3%, appears disguised, is worth 0, and schedules no extra appearance.\n"
             "- Twin: 2%, +4 pt, spawns another Swab immediately and schedules one for the next day.\n"
             "- Diamond: 1%, +10 pt.\n"
-            "- If nobody captures a Swab, it rots without taking points from anyone. Regular ones expire after 20 minutes and a direct Fleeting one after a minute. Scores may be negative.\n"
+            "- If nobody captures a Swab, it expires without taking points from anyone. Regular ones expire after 20 minutes and a direct Fleeting one after a minute. Scores may be negative.\n"
             "- Every valid capture schedules an appearance for the next day, except a Fake and a hidden Fleeting whose minute expired.\n"
             "- /hisopos shows the group leaderboard."
         ),
@@ -839,7 +839,7 @@ HISOPO_RULE_TRANSLATIONS: dict[str, dict[str, str]] = {
             "- Falso: 3 %, aparece disfrazado, vale 0 y no programa otra aparición.\n"
             "- Gemelo: 2 %, +4 pt, hace aparecer otro hisopo al instante y programa uno para el día siguiente.\n"
             "- Diamante: 1 %, +10 pt.\n"
-            "- Si nadie captura un hisopo, se pudre sin quitar puntos a nadie. Los normales caducan a los 20 minutos y el Fugaz directo al minuto. La puntuación puede ser negativa.\n"
+            "- Si nadie captura un hisopo, caduca sin quitar puntos a nadie. Los normales caducan a los 20 minutos y el Fugaz directo al minuto. La puntuación puede ser negativa.\n"
             "- Cada captura válida programa una aparición para el día siguiente, salvo el Falso y el Fugaz oculto cuyo minuto caducó.\n"
             "- /hisopos muestra la tabla del grupo."
         ),
@@ -858,7 +858,7 @@ HISOPO_RULE_TRANSLATIONS: dict[str, dict[str, str]] = {
             "- Fals: 3 %, apareix disfressat, val 0 i no programa cap altra aparició.\n"
             "- Bessó: 2 %, +4 pt, fa aparèixer un altre bastonet al moment i en programa un per a l'endemà.\n"
             "- Diamant: 1 %, +10 pt.\n"
-            "- Si ningú captura un bastonet, es podreix sense restar punts a ningú. Els normals caduquen als 20 minuts i el Fugaç directe al minut. La puntuació pot ser negativa.\n"
+            "- Si ningú captura un bastonet, caduca sense restar punts a ningú. Els normals caduquen als 20 minuts i el Fugaç directe al minut. La puntuació pot ser negativa.\n"
             "- Cada captura vàlida programa una aparició per a l'endemà, tret del Fals i del Fugaç ocult amb el minut vençut.\n"
             "- /hisopos mostra la classificació del grup."
         ),
@@ -877,7 +877,7 @@ HISOPO_RULE_TRANSLATIONS: dict[str, dict[str, str]] = {
             "- Falsch: 3 %, erscheint getarnt, ist 0 wert und plant kein weiteres Erscheinen.\n"
             "- Zwilling: 2 %, +4 Pkt., erzeugt sofort ein weiteres und plant eines für den nächsten Tag.\n"
             "- Diamant: 1 %, +10 Pkt.\n"
-            "- Wird keines gefangen, verrottet es ohne Punktabzug. Normale verfallen nach 20 Minuten, direkte Flüchtige nach einer Minute. Punktestände dürfen negativ sein.\n"
+            "- Wird keines gefangen, verfällt es ohne Punktabzug. Normale verfallen nach 20 Minuten, direkte Flüchtige nach einer Minute. Punktestände dürfen negativ sein.\n"
             "- Jeder gültige Fang plant eines für den nächsten Tag, außer Falsch und einem versteckten Flüchtigen nach Ablauf seiner Minute.\n"
             "- /hisopos zeigt die Gruppenrangliste."
         ),
@@ -896,7 +896,7 @@ HISOPO_RULE_TRANSLATIONS: dict[str, dict[str, str]] = {
             "- Faltsua: % 3, mozorrotuta agertzen da, 0 balio du eta ez du beste agerpenik programatzen.\n"
             "- Bikia: % 2, +4, berehala beste bat sortzen du eta biharamunerako bat programatzen du.\n"
             "- Diamantea: % 1, +10.\n"
-            "- Inork harrapatzen ez badu, usteldu egiten da inori punturik kendu gabe. Arruntak 20 minutuan eta Iheskor zuzena minutu batean iraungitzen dira. Puntuazioa negatiboa izan daiteke.\n"
+            "- Inork harrapatzen ez badu, iraungitzen da inori punturik kendu gabe. Arruntak 20 minutuan eta Iheskor zuzena minutu batean iraungitzen dira. Puntuazioa negatiboa izan daiteke.\n"
             "- Baliozko harrapaketa bakoitzak biharamunerako agerpen bat programatzen du, Faltsuak eta iraungitako Iheskor ezkutuak izan ezik.\n"
             "- /hisopos taldeko sailkapena da."
         ),
@@ -915,7 +915,7 @@ HISOPO_RULE_TRANSLATIONS: dict[str, dict[str, str]] = {
             "- Faux : 3 %, apparaît déguisé, vaut 0 et ne programme aucune autre apparition.\n"
             "- Jumeau : 2 %, +4 pt, fait apparaître immédiatement un autre coton-tige et en programme un pour le lendemain.\n"
             "- Diamant : 1 %, +10 pt.\n"
-            "- Si personne ne le capture, il pourrit sans retirer de points. Les normaux expirent après 20 minutes et le Fugace direct après une minute. Les scores peuvent être négatifs.\n"
+            "- Si personne ne le capture, il expire sans retirer de points. Les normaux expirent après 20 minutes et le Fugace direct après une minute. Les scores peuvent être négatifs.\n"
             "- Chaque capture valide programme une apparition le lendemain, sauf le Faux et le Fugace caché dont la minute a expiré.\n"
             "- /hisopos affiche le classement du groupe."
         ),
@@ -934,7 +934,7 @@ HISOPO_RULE_TRANSLATIONS: dict[str, dict[str, str]] = {
             "- Gua'u: 3 %, ojekuaa ñemiháme, 0 kyta ha nomoĩri ambue jehechauka.\n"
             "- Kõi: 2 %, +4, omoheñói ambue hisopo upepete ha omoĩ peteĩ ko'ẽrõ g̃uarã.\n"
             "- Diamante: 1 %, +10.\n"
-            "- Avave ndojapyhýiramo, oñembyai oipe'a'ỹre kyta avavégui. Jepivegua opa 20 minútope ha Pya'e tee peteĩ minútope. Ikatu oĩ kyta vai.\n"
+            "- Avave ndojapyhýiramo, opa hi'ára oipe'a'ỹre kyta avavégui. Jepivegua opa 20 minútope ha Pya'e tee peteĩ minútope. Ikatu oĩ kyta vai.\n"
             "- Ojejapyhy porãvo oñemoĩ peteĩ jehechauka ko'ẽrõ g̃uarã, Gua'u ha Pya'e ñemi iminúto opámava'ỹre.\n"
             "- /hisopos ohechauka aty rechaukaha."
         ),
@@ -953,7 +953,7 @@ HISOPO_RULE_TRANSLATIONS: dict[str, dict[str, str]] = {
             "- Falso: 3 %, appare travestito, vale 0 e non programma altre apparizioni.\n"
             "- Gemello: 2 %, +4 pt, genera subito un altro cotton fioc e ne programma uno per il giorno seguente.\n"
             "- Diamante: 1 %, +10 pt.\n"
-            "- Se nessuno lo cattura, marcisce senza sottrarre punti. I normali scadono dopo 20 minuti e il Fugace diretto dopo un minuto. I punteggi possono essere negativi.\n"
+            "- Se nessuno lo cattura, scade senza sottrarre punti. I normali scadono dopo 20 minuti e il Fugace diretto dopo un minuto. I punteggi possono essere negativi.\n"
             "- Ogni cattura valida programma un'apparizione per il giorno seguente, salvo il Falso e il Fugace nascosto il cui minuto è scaduto.\n"
             "- /hisopos mostra la classifica del gruppo."
         ),
@@ -972,7 +972,7 @@ HISOPO_RULE_TRANSLATIONS: dict[str, dict[str, str]] = {
             "- 偽物：3%、変装して現れ、0点で、次の出現を予約しません。\n"
             "- 双子：2%、+4点、直ちにもう1本出現させ、翌日分も1本予約します。\n"
             "- ダイヤ：1%、+10点。\n"
-            "- 誰も捕獲しなければ誰の点も減らさず腐ります。通常は20分、直接出た一瞬は1分で期限切れです。得点は負になることがあります。\n"
+            "- 誰も捕獲しなければ誰の点も減らさず期限切れになります。通常は20分、直接出た一瞬は1分で期限切れです。得点は負になることがあります。\n"
             "- 有効な捕獲は翌日の出現を予約しますが、偽物と1分を過ぎた隠れ一瞬は例外です。\n"
             "- /hisopos でグループ順位を表示します。"
         ),
@@ -991,7 +991,7 @@ HISOPO_RULE_TRANSLATIONS: dict[str, dict[str, str]] = {
             "- Falsum: 3 %, simulatum apparet, 0 valet neque alium adventum ordinat.\n"
             "- Geminum: 2 %, +4, statim aliud gignit et unum in posterum diem ordinat.\n"
             "- Adamantinum: 1 %, +10.\n"
-            "- Si nemo capit, putrescit nec cuiquam puncta aufert. Communia post 20 minuta, Fugax directum post minutum pereunt. Puncta negativa esse possunt.\n"
+            "- Si nemo capit, exspirat nec cuiquam puncta aufert. Communia post 20 minuta, Fugax directum post minutum exspirant. Puncta negativa esse possunt.\n"
             "- Quaeque captura valida adventum in posterum diem ordinat, praeter Falsum et Fugax occultum cuius minutum periit.\n"
             "- /hisopos tabulam gregis ostendit."
         ),
@@ -1010,7 +1010,7 @@ HISOPO_RULE_TRANSLATIONS: dict[str, dict[str, str]] = {
             "- Nep: 3%, verschijnt vermomd, is 0 waard en plant geen nieuwe verschijning.\n"
             "- Tweeling: 2%, +4 pt, laat meteen nog één verschijnen en plant er één voor de volgende dag.\n"
             "- Diamant: 1%, +10 pt.\n"
-            "- Als niemand het vangt, rot het zonder punten af te trekken. Gewone verlopen na 20 minuten en directe Vluchtige na één minuut. Scores mogen negatief zijn.\n"
+            "- Als niemand het vangt, verloopt het zonder punten af te trekken. Gewone verlopen na 20 minuten en directe Vluchtige na één minuut. Scores mogen negatief zijn.\n"
             "- Elke geldige vangst plant er één voor de volgende dag, behalve Nep en een verborgen Vluchtig waarvan de minuut verstreek.\n"
             "- /hisopos toont het groepsklassement."
         ),
@@ -1029,7 +1029,7 @@ HISOPO_RULE_TRANSLATIONS: dict[str, dict[str, str]] = {
             "- Falso: 3%, aparece disfarçado, vale 0 e não agenda outra aparição.\n"
             "- Gêmeo: 2%, +4 pt, faz outro aparecer na hora e agenda um para o dia seguinte.\n"
             "- Diamante: 1%, +10 pt.\n"
-            "- Se ninguém capturar, ele apodrece sem tirar pontos de ninguém. Os normais expiram em 20 minutos e o Fugaz direto em um minuto. A pontuação pode ficar negativa.\n"
+            "- Se ninguém capturar, ele expira sem tirar pontos de ninguém. Os normais expiram em 20 minutos e o Fugaz direto em um minuto. A pontuação pode ficar negativa.\n"
             "- Cada captura válida agenda uma aparição para o dia seguinte, exceto o Falso e o Fugaz escondido cujo minuto expirou.\n"
             "- /hisopos mostra o ranking do grupo."
         ),
@@ -1048,7 +1048,7 @@ HISOPO_RULE_TRANSLATIONS: dict[str, dict[str, str]] = {
             "- Falso: 3 %, aparece disfarçado, vale 0 e não agenda outra aparição.\n"
             "- Gémeo: 2 %, +4 pt, faz aparecer outro no momento e agenda um para o dia seguinte.\n"
             "- Diamante: 1 %, +10 pt.\n"
-            "- Se ninguém o capturar, apodrece sem retirar pontos. Os normais expiram em 20 minutos e o Fugaz direto num minuto. A pontuação pode ser negativa.\n"
+            "- Se ninguém o capturar, expira sem retirar pontos. Os normais expiram em 20 minutos e o Fugaz direto num minuto. A pontuação pode ser negativa.\n"
             "- Cada captura válida agenda uma aparição para o dia seguinte, exceto o Falso e o Fugaz oculto cujo minuto expirou.\n"
             "- /hisopos mostra a classificação do grupo."
         ),
@@ -1067,7 +1067,7 @@ HISOPO_RULE_TRANSLATIONS: dict[str, dict[str, str]] = {
             "- Llulla: 3 %, huk hina rikuchikun, 0 puntu, manataq huk rikuriyta wakichinchu.\n"
             "- Iskay: 2 %, +4, huk hisopota chaylla rikurichin, huktaq paqarinpaq wakichin.\n"
             "- Diamante: 1 %, +10.\n"
-            "- Mana pipas hap'iptinqa ismukun, manataq pipas puntuta chinkachinchu. Sapsikuna 20 minutupi, Utqay chiqaptaq huk minutupi tukukun. Yupayqa mana allinmanpas chayayta atin.\n"
+            "- Mana pipas hap'iptinqa pachan tukukun, manataq pipas puntuta chinkachinchu. Sapsikuna 20 minutupi, Utqay chiqaptaq huk minutupi tukukun. Yupayqa mana allinmanpas chayayta atin.\n"
             "- Sapa allin hap'iy paqarinpaq huk rikuriyta wakichin, Llullatawan pakasqa Utqaypa minutun tukusqata mana.\n"
             "- /hisopos huñunakuypa yupayninta rikuchin."
         ),
@@ -1086,7 +1086,7 @@ HISOPO_RULE_TRANSLATIONS: dict[str, dict[str, str]] = {
             "- Поддельная: 3 %, появляется замаскированной, стоит 0 и не планирует новое появление.\n"
             "- Близнец: 2 %, +4, сразу создаёт ещё одну палочку и планирует одну на следующий день.\n"
             "- Алмазная: 1 %, +10.\n"
-            "- Если никто не поймал палочку, она сгниёт, никого не штрафуя. Обычные живут 20 минут, прямая Мимолётная — минуту. Счёт может быть отрицательным.\n"
+            "- Если никто не поймал палочку, срок её действия истечёт без штрафа. Обычные живут 20 минут, прямая Мимолётная — минуту. Счёт может быть отрицательным.\n"
             "- Каждая удачная поимка планирует появление на следующий день, кроме Поддельной и скрытой Мимолётной с истёкшей минутой.\n"
             "- /hisopos показывает таблицу группы."
         ),
@@ -1105,7 +1105,7 @@ HISOPO_RULE_TRANSLATIONS: dict[str, dict[str, str]] = {
             "- 假：3%，伪装出现，价值0分，不安排下一次出现。\n"
             "- 双生：2%，+4分，立刻再生成一根，并安排次日一根。\n"
             "- 钻石：1%，+10分。\n"
-            "- 若无人捕获，棉签会腐烂，不扣任何人的分。普通棉签20分钟失效，直接出现的瞬逝棉签一分钟失效。分数可以为负。\n"
+            "- 若无人捕获，棉签会失效，不扣任何人的分。普通棉签20分钟失效，直接出现的瞬逝棉签一分钟失效。分数可以为负。\n"
             "- 每次有效捕获都会安排次日出现，但假棉签和超过一分钟的隐藏瞬逝棉签除外。\n"
             "- /hisopos 显示本群排行榜。"
         ),
@@ -1124,7 +1124,7 @@ HISOPO_RULE_TRANSLATIONS: dict[str, dict[str, str]] = {
             "- 假：3%，偽裝出現，價值0分，不安排下一次出現。\n"
             "- 雙生：2%，+4分，立刻再生成一根，並安排次日一根。\n"
             "- 鑽石：1%，+10分。\n"
-            "- 若無人捕獲，棉花棒會腐爛，不扣任何人的分。普通棉花棒20分鐘失效，直接出現的瞬逝棉花棒一分鐘失效。分數可以為負。\n"
+            "- 若無人捕獲，棉花棒會失效，不扣任何人的分。普通棉花棒20分鐘失效，直接出現的瞬逝棉花棒一分鐘失效。分數可以為負。\n"
             "- 每次有效捕獲都會安排次日出現，但假棉花棒和超過一分鐘的隱藏瞬逝棉花棒除外。\n"
             "- /hisopos 顯示本群排行榜。"
         ),

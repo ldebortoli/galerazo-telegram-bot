@@ -66,6 +66,32 @@ from galerazo_bot.roles import CommandContext, UserLevel
 
 
 class HisopoRulesTests(unittest.TestCase):
+    def test_all_localized_rules_describe_uncaptured_swabs_as_expired(self) -> None:
+        expiration_markers = {
+            "es": "Si nadie captura un Hisopo, se vence",
+            "en": "If nobody captures a Swab, it expires",
+            "es_ES": "Si nadie captura un hisopo, caduca",
+            "ca": "Si ningú captura un bastonet, caduca",
+            "de": "Wird keines gefangen, verfällt es",
+            "eu": "Inork harrapatzen ez badu, iraungitzen da",
+            "fr": "Si personne ne le capture, il expire",
+            "gn": "Avave ndojapyhýiramo, opa hi'ára",
+            "it": "Se nessuno lo cattura, scade",
+            "ja": "誰も捕獲しなければ誰の点も減らさず期限切れになります",
+            "la": "Si nemo capit, exspirat",
+            "nl": "Als niemand het vangt, verloopt het",
+            "pt_BR": "Se ninguém capturar, ele expira",
+            "pt_PT": "Se ninguém o capturar, expira",
+            "quz": "Mana pipas hap'iptinqa pachan tukukun",
+            "ru": "Если никто не поймал палочку, срок её действия истечёт",
+            "zh_Hans": "若无人捕获，棉签会失效",
+            "zh_Hant": "若無人捕獲，棉花棒會失效",
+        }
+        self.assertEqual(set(expiration_markers), set(HISOPO_TRANSLATIONS))
+        for language, marker in expiration_markers.items():
+            with self.subTest(language=language):
+                self.assertIn(marker, HISOPO_TRANSLATIONS[language]["hisopos.rules"])
+
     def test_mystery_details_live_in_rules_not_collection_output(self) -> None:
         for language, mystery_note in HISOPO_MYSTERY_GIANT_COLLECTION_NOTES.items():
             with self.subTest(language=language):
@@ -1709,6 +1735,8 @@ class HisopoCommandTests(unittest.IsolatedAsyncioTestCase):
         self.assertIn("Misterioso cuenta como Misterioso y como el tipo revelado", response)
         self.assertIn("solo quien lo revela suma Misterioso", response)
         self.assertIn("no le quita puntos a nadie", response)
+        self.assertIn("se vence y no le quita puntos a nadie", response)
+        self.assertNotIn("se pudre y no le quita puntos a nadie", response)
         self.assertIn("/coleccionhisopos", response)
         self.assertIn("/hisopos", response)
         self.assertLessEqual(len(response), 4096)

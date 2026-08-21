@@ -4,7 +4,7 @@ from pathlib import Path
 import re
 
 
-CURRENT_VERSION = "0.38"
+CURRENT_VERSION = "0.39"
 CHANGELOG_PATH = Path(__file__).resolve().parent.parent / "CHANGELOG.md"
 INLINE_CODE_PATTERN = re.compile(r"`([^`]+)`")
 VERSION_HEADER_PATTERN = re.compile(r"^## \[([^]]+)\]")
