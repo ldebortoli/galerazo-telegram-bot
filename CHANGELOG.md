@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.30] - 2026-08-21
+
+- Antes de publicar un nuevo Hisopo, el bot intenta eliminar en ese grupo las apariciones con más de 24 horas. Los fallos se registran y nunca impiden enviar la aparición nueva.
+
 ## [0.29] - 2026-08-20
 
 - Nuevo comando `/coleccionhisopos`: muestra la colección histórica por usuario y grupo, con cantidades y progreso sobre los 11 tipos reales. Recupera capturas anteriores, combina datos al migrar a supergrupo y no usa temporadas.

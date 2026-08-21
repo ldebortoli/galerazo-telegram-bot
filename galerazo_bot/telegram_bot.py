@@ -66,7 +66,7 @@ from .commands import (
     is_command_invocation,
 )
 from .config import Settings, load_settings
-from .database import Database, HisopoSchedule, HisopoSpawn, Trigger
+from .database import Database, HisopoMessageCleanup, HisopoSchedule, HisopoSpawn, Trigger
 from .expenses import (
     ExpenseSheetStatus,
     ExpenseSubmissionResult,
@@ -127,6 +127,11 @@ TELEGRAM_DOCUMENT_TIMEOUT_SECONDS = 30
 TELEGRAM_REQUEST_TIMEOUT_SECONDS = 30
 PAGINATED_METADATA_TTL = timedelta(days=14)
 RESTART_CONFIRMATION_TTL = timedelta(minutes=5)
+HISOPO_MESSAGE_RETENTION = timedelta(hours=24)
+HISOPO_MESSAGE_DELETE_WINDOW = timedelta(hours=48)
+HISOPO_MESSAGE_CLEANUP_RETRY_DELAY = timedelta(minutes=10)
+HISOPO_MESSAGE_CLEANUP_MAX_ATTEMPTS = 3
+HISOPO_MESSAGE_DELETE_BATCH_SIZE = 100
 RESTART_CALLBACK_PREFIX = "restart"
 SHUTDOWN_CALLBACK_PREFIX = "shutdown"
 UPDATE_DRAIN_TIMEOUT_SECONDS = 60
@@ -532,6 +537,11 @@ async def _spawn_hisopo(
     now: datetime | None = None,
 ) -> HisopoSpawn | None:
     state = application.bot_data["state"]
+    spawned_at = now or datetime.now(timezone.utc)
+    if spawned_at.tzinfo is None:
+        spawned_at = spawned_at.replace(tzinfo=timezone.utc)
+    else:
+        spawned_at = spawned_at.astimezone(timezone.utc)
     selection = select_hisopo_spawn(
         secrets.randbelow(HISOPO_TYPE_ROLL_MAX) + 1,
         randbelow=secrets.randbelow,
@@ -599,6 +609,15 @@ async def _spawn_hisopo(
         ]]
     )
     try:
+        await _cleanup_old_hisopo_messages(application, chat_id, spawned_at)
+    except Exception as exc:
+        logger.warning(
+            "No pude completar la limpieza previa de Hisopos en el chat %s; "
+            "envio igualmente la nueva aparicion: %s",
+            chat_id,
+            exc,
+        )
+    try:
         if appearance_kind.key == GIANT_HISOPO.key:
             caption_key = "hisopos.appeared_giant"
         elif appearance_kind.hides_points:
@@ -625,9 +644,6 @@ async def _spawn_hisopo(
             f"hisopo_type={actual_kind.key}, appearance_type={appearance_kind.key}): {exc}"
         ) from exc
 
-    spawned_at = now or datetime.now(timezone.utc)
-    if spawned_at.tzinfo is None:
-        spawned_at = spawned_at.replace(tzinfo=timezone.utc)
     spawn = state.db.save_hisopo_spawn(
         chat_id=chat_id,
         message_id=str(message.message_id),
@@ -641,6 +657,93 @@ async def _spawn_hisopo(
     )
     _schedule_hisopo_expiration(application, spawn)
     return spawn
+
+
+async def _cleanup_old_hisopo_messages(
+    application: Application,
+    chat_id: str,
+    now: datetime,
+) -> None:
+    state = application.bot_data["state"]
+    pending = state.db.list_pending_hisopo_message_cleanups(chat_id)
+    deletable: list[HisopoMessageCleanup] = []
+    expired: list[HisopoMessageCleanup] = []
+
+    for cleanup in pending:
+        spawned_at = datetime.fromisoformat(cleanup.spawned_at)
+        if spawned_at.tzinfo is None:
+            spawned_at = spawned_at.replace(tzinfo=timezone.utc)
+        else:
+            spawned_at = spawned_at.astimezone(timezone.utc)
+        age = now - spawned_at
+        if age < HISOPO_MESSAGE_RETENTION:
+            continue
+        if age >= HISOPO_MESSAGE_DELETE_WINDOW:
+            expired.append(cleanup)
+            continue
+        if cleanup.last_attempt_at is not None:
+            last_attempt_at = datetime.fromisoformat(cleanup.last_attempt_at)
+            if last_attempt_at.tzinfo is None:
+                last_attempt_at = last_attempt_at.replace(tzinfo=timezone.utc)
+            else:
+                last_attempt_at = last_attempt_at.astimezone(timezone.utc)
+            if now - last_attempt_at < HISOPO_MESSAGE_CLEANUP_RETRY_DELAY:
+                continue
+        deletable.append(cleanup)
+
+    if expired:
+        expired_ids = [cleanup.message_id for cleanup in expired]
+        error = "Telegram no permite borrar mensajes enviados hace 48 horas o mas."
+        state.db.mark_hisopo_messages_cleanup_expired(chat_id, expired_ids, now, error)
+        logger.info(
+            "Descarte de la cola interna %s mensaje(s) viejo(s) de Hisopos del chat %s "
+            "porque superaron el limite de 48 horas de Telegram y quedaran visibles: "
+            "message_ids=%s",
+            len(expired_ids),
+            chat_id,
+            ",".join(expired_ids),
+        )
+
+    for start in range(0, len(deletable), HISOPO_MESSAGE_DELETE_BATCH_SIZE):
+        batch = deletable[start : start + HISOPO_MESSAGE_DELETE_BATCH_SIZE]
+        message_ids = [cleanup.message_id for cleanup in batch]
+        try:
+            deleted = await application.bot.delete_messages(
+                chat_id=_parse_chat_id(chat_id),
+                message_ids=[int(message_id) for message_id in message_ids],
+                read_timeout=5,
+                write_timeout=5,
+                connect_timeout=5,
+                pool_timeout=5,
+            )
+            if not deleted:
+                raise TelegramError("Telegram no confirmo la eliminacion del lote.")
+        except TelegramError as exc:
+            state.db.record_hisopo_message_cleanup_failure(
+                chat_id,
+                message_ids,
+                now,
+                str(exc),
+                HISOPO_MESSAGE_CLEANUP_MAX_ATTEMPTS,
+            )
+            logger.warning(
+                "No pude borrar %s mensaje(s) viejo(s) de Hisopos del chat %s; "
+                "la nueva aparicion se enviara igualmente: message_ids=%s error=%s",
+                len(message_ids),
+                chat_id,
+                ",".join(message_ids),
+                exc,
+            )
+            continue
+
+        state.db.mark_hisopo_messages_deleted(chat_id, message_ids, now)
+        logger.info(
+            "Borre %s mensaje(s) de Hisopos con mas de 24 horas del chat %s: "
+            "message_ids=%s",
+            len(message_ids),
+            chat_id,
+            ",".join(message_ids),
+        )
 
 
 def _hisopo_file_id(settings: Settings, hisopo_type: str) -> str | None:

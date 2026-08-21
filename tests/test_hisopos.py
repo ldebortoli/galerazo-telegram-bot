@@ -15,6 +15,7 @@ from galerazo_bot.database import (
     MAX_HISOPO_SCHEDULES_PER_CHAT_DAY,
     Database,
     HisopoCollectionEntry,
+    HisopoMessageCleanup,
     HisopoScore,
 )
 from galerazo_bot.hisopos import (
@@ -405,6 +406,85 @@ class HisopoDatabaseTests(unittest.TestCase):
             self.db.complete_hisopo_schedule(pending[0].schedule_id, "unknown")
         self.db.complete_hisopo_schedule(pending[0].schedule_id, "sent")
         self.assertEqual(self.db.list_pending_hisopo_schedules(), [])
+
+    def test_message_cleanup_state_tracks_deleted_expired_and_failed_attempts(self) -> None:
+        for message_id, age in (("recent", 23), ("deleted", 25), ("expired", 49), ("failed", 26)):
+            spawned_at = self.now - timedelta(hours=age)
+            self.db.save_hisopo_spawn(
+                "-1",
+                message_id,
+                "common",
+                1,
+                "message",
+                spawned_at.isoformat(),
+                (spawned_at + timedelta(minutes=20)).isoformat(),
+            )
+
+        self.assertEqual(
+            [cleanup.message_id for cleanup in self.db.list_pending_hisopo_message_cleanups("-1")],
+            ["expired", "failed", "deleted", "recent"],
+        )
+        self.db.mark_hisopo_messages_deleted("-1", ["deleted"], self.now)
+        self.db.mark_hisopo_messages_cleanup_expired(
+            "-1",
+            ["expired"],
+            self.now,
+            "Fuera de ventana",
+        )
+        self.db.record_hisopo_message_cleanup_failure(
+            "-1",
+            ["failed"],
+            self.now,
+            "Timeout",
+            3,
+        )
+        cleanup = {
+            item.message_id: item
+            for item in self.db.list_pending_hisopo_message_cleanups("-1")
+        }
+        self.assertEqual(cleanup["failed"].attempts, 1)
+        self.assertEqual(cleanup["failed"].last_attempt_at, self.now.isoformat())
+        self.assertIn("recent", cleanup)
+        self.assertNotIn("deleted", cleanup)
+        self.assertNotIn("expired", cleanup)
+
+        self.db.record_hisopo_message_cleanup_failure(
+            "-1", ["failed"], self.now + timedelta(minutes=10), "Timeout 2", 3
+        )
+        self.db.record_hisopo_message_cleanup_failure(
+            "-1", ["failed"], self.now + timedelta(minutes=20), "Timeout 3", 3
+        )
+        self.assertNotIn(
+            "failed",
+            {
+                item.message_id
+                for item in self.db.list_pending_hisopo_message_cleanups("-1")
+            },
+        )
+        with self.db._connect() as conn:
+            rows = {
+                row["message_id"]: row
+                for row in conn.execute(
+                    """
+                    SELECT message_id, message_cleanup_status, message_cleanup_attempts,
+                           message_deleted_at, message_cleanup_error
+                    FROM hisopo_spawns
+                    WHERE chat_id = '-1'
+                    """
+                ).fetchall()
+            }
+        self.assertEqual(rows["deleted"]["message_cleanup_status"], "deleted")
+        self.assertEqual(rows["deleted"]["message_deleted_at"], self.now.isoformat())
+        self.assertIsNone(rows["deleted"]["message_cleanup_error"])
+        self.assertEqual(rows["expired"]["message_cleanup_status"], "expired")
+        self.assertEqual(rows["expired"]["message_cleanup_error"], "Fuera de ventana")
+        self.assertEqual(rows["failed"]["message_cleanup_status"], "failed")
+        self.assertEqual(rows["failed"]["message_cleanup_attempts"], 3)
+        self.assertEqual(rows["failed"]["message_cleanup_error"], "Timeout 3")
+        with self.assertRaisesRegex(ValueError, "al menos un intento"):
+            self.db.record_hisopo_message_cleanup_failure(
+                "-1", ["recent"], self.now, "bad", 0
+            )
 
     def test_next_day_schedule_cap_is_per_chat_and_argentine_calendar_day(self) -> None:
         target_times = tuple(

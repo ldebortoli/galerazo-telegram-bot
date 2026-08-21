@@ -163,11 +163,15 @@ def migrate_chat_data(conn: sqlite3.Connection, old_chat_id: str, new_chat_id: s
         INSERT OR IGNORE INTO hisopo_spawns (
             chat_id, message_id, hisopo_type, appearance_type, points,
             required_helpers, source, spawned_at, expires_at, status,
-            winner_user_id, captured_at
+            winner_user_id, captured_at, message_cleanup_status,
+            message_cleanup_attempts, message_cleanup_last_attempt_at,
+            message_deleted_at, message_cleanup_error
         )
         SELECT ?, message_id, hisopo_type, appearance_type, points,
                required_helpers, source, spawned_at, expires_at, status,
-               winner_user_id, captured_at
+               winner_user_id, captured_at, message_cleanup_status,
+               message_cleanup_attempts, message_cleanup_last_attempt_at,
+               message_deleted_at, message_cleanup_error
         FROM hisopo_spawns
         WHERE chat_id = ?
         """,

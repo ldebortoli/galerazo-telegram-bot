@@ -446,6 +446,8 @@ El Recolector de Hisopos es un juego para grupos y supergrupos y viene habilitad
 
 Cada mensaje original de un usuario humano que podría competir por La Galeraza genera una tirada de 1 a 100. Si la tirada entra en el porcentaje configurado, aparece un hisopo con foto y el botón `Capturar hisopo`. Las ediciones y los mensajes de bots no generan tiradas.
 
+Antes de publicar una nueva aparición, el bot intenta borrar en ese mismo grupo los mensajes de Hisopos con más de 24 horas para no acumularlos indefinidamente en Multimedia. Los `message_id` y el estado de la limpieza se conservan en SQLite y migran junto con el grupo. Un fallo de Telegram queda registrado y nunca impide enviar el Hisopo nuevo; se reintenta hasta tres veces con al menos 10 minutos entre intentos. Telegram solo permite borrar mensajes de menos de 48 horas: los que ya superaron esa ventana se descartan de la cola interna y quedan visibles, sin nuevos intentos ni afectar su registro histórico.
+
 Una segunda y única tirada de `1` a `10.000` define la rareza, pero se hace solamente después de que la intensidad decidió que habrá una aparición. No existen tiradas previas independientes para los especiales. Los rangos no se superponen y suman el 100 %:
 
 | Tirada | Aparición | Tipo sorteado | Qué muestra al aparecer | Efecto al capturarlo |

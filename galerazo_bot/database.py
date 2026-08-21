@@ -103,6 +103,15 @@ class HisopoSpawn:
 
 
 @dataclass(frozen=True)
+class HisopoMessageCleanup:
+    chat_id: str
+    message_id: str
+    spawned_at: str
+    attempts: int
+    last_attempt_at: str | None
+
+
+@dataclass(frozen=True)
 class HisopoSchedule:
     schedule_id: int
     chat_id: str
@@ -403,6 +412,11 @@ class Database:
                     status TEXT NOT NULL DEFAULT 'active',
                     winner_user_id TEXT,
                     captured_at TEXT,
+                    message_cleanup_status TEXT NOT NULL DEFAULT 'pending',
+                    message_cleanup_attempts INTEGER NOT NULL DEFAULT 0,
+                    message_cleanup_last_attempt_at TEXT,
+                    message_deleted_at TEXT,
+                    message_cleanup_error TEXT,
                     PRIMARY KEY (chat_id, message_id),
                     FOREIGN KEY (chat_id) REFERENCES chats (chat_id),
                     FOREIGN KEY (winner_user_id) REFERENCES users (user_id)
@@ -708,6 +722,42 @@ class Database:
                   AND spawn.hisopo_type = 'giant'
                   AND spawn.captured_at IS NOT NULL
                 GROUP BY contribution.chat_id, contribution.user_id
+                """
+            )
+            conn.execute(
+                "INSERT INTO schema_migrations (migration_id) VALUES (?)",
+                (migration_id,),
+            )
+
+        migration_id = "20260821_add_hisopo_message_cleanup"
+        applied = conn.execute(
+            "SELECT 1 FROM schema_migrations WHERE migration_id = ?", (migration_id,)
+        ).fetchone()
+        if applied is None:
+            _ensure_column(
+                conn,
+                "hisopo_spawns",
+                "message_cleanup_status",
+                "TEXT NOT NULL DEFAULT 'pending'",
+            )
+            _ensure_column(
+                conn,
+                "hisopo_spawns",
+                "message_cleanup_attempts",
+                "INTEGER NOT NULL DEFAULT 0",
+            )
+            _ensure_column(
+                conn,
+                "hisopo_spawns",
+                "message_cleanup_last_attempt_at",
+                "TEXT",
+            )
+            _ensure_column(conn, "hisopo_spawns", "message_deleted_at", "TEXT")
+            _ensure_column(conn, "hisopo_spawns", "message_cleanup_error", "TEXT")
+            conn.execute(
+                """
+                CREATE INDEX IF NOT EXISTS idx_hisopo_spawns_message_cleanup
+                ON hisopo_spawns (chat_id, message_cleanup_status, spawned_at)
                 """
             )
             conn.execute(
@@ -1399,6 +1449,119 @@ class Database:
                 "SELECT * FROM hisopo_spawns WHERE status = 'active' ORDER BY expires_at"
             ).fetchall()
         return [_hisopo_spawn_from_row(row) for row in rows]
+
+    def list_pending_hisopo_message_cleanups(
+        self,
+        chat_id: str,
+    ) -> list[HisopoMessageCleanup]:
+        chat_id = self.resolve_chat_id(chat_id)
+        with self._connect() as conn:
+            rows = conn.execute(
+                """
+                SELECT
+                    chat_id,
+                    message_id,
+                    spawned_at,
+                    message_cleanup_attempts,
+                    message_cleanup_last_attempt_at
+                FROM hisopo_spawns
+                WHERE chat_id = ? AND message_cleanup_status = 'pending'
+                ORDER BY spawned_at, message_id
+                """,
+                (chat_id,),
+            ).fetchall()
+        return [
+            HisopoMessageCleanup(
+                chat_id=row["chat_id"],
+                message_id=row["message_id"],
+                spawned_at=row["spawned_at"],
+                attempts=row["message_cleanup_attempts"],
+                last_attempt_at=row["message_cleanup_last_attempt_at"],
+            )
+            for row in rows
+        ]
+
+    def mark_hisopo_messages_deleted(
+        self,
+        chat_id: str,
+        message_ids: Iterable[str],
+        now: datetime,
+    ) -> None:
+        chat_id = self.resolve_chat_id(chat_id)
+        now_text = now.isoformat()
+        with self._connect() as conn:
+            conn.executemany(
+                """
+                UPDATE hisopo_spawns
+                SET
+                    message_cleanup_status = 'deleted',
+                    message_cleanup_last_attempt_at = ?,
+                    message_deleted_at = ?,
+                    message_cleanup_error = NULL
+                WHERE chat_id = ? AND message_id = ?
+                """,
+                (
+                    (now_text, now_text, chat_id, str(message_id))
+                    for message_id in message_ids
+                ),
+            )
+
+    def mark_hisopo_messages_cleanup_expired(
+        self,
+        chat_id: str,
+        message_ids: Iterable[str],
+        now: datetime,
+        error: str,
+    ) -> None:
+        chat_id = self.resolve_chat_id(chat_id)
+        now_text = now.isoformat()
+        with self._connect() as conn:
+            conn.executemany(
+                """
+                UPDATE hisopo_spawns
+                SET
+                    message_cleanup_status = 'expired',
+                    message_cleanup_last_attempt_at = ?,
+                    message_cleanup_error = ?
+                WHERE chat_id = ? AND message_id = ?
+                """,
+                (
+                    (now_text, error, chat_id, str(message_id))
+                    for message_id in message_ids
+                ),
+            )
+
+    def record_hisopo_message_cleanup_failure(
+        self,
+        chat_id: str,
+        message_ids: Iterable[str],
+        now: datetime,
+        error: str,
+        max_attempts: int,
+    ) -> None:
+        if max_attempts < 1:
+            raise ValueError("La limpieza de Hisopos debe admitir al menos un intento.")
+        chat_id = self.resolve_chat_id(chat_id)
+        now_text = now.isoformat()
+        with self._connect() as conn:
+            conn.executemany(
+                """
+                UPDATE hisopo_spawns
+                SET
+                    message_cleanup_attempts = message_cleanup_attempts + 1,
+                    message_cleanup_status = CASE
+                        WHEN message_cleanup_attempts + 1 >= ? THEN 'failed'
+                        ELSE 'pending'
+                    END,
+                    message_cleanup_last_attempt_at = ?,
+                    message_cleanup_error = ?
+                WHERE chat_id = ? AND message_id = ?
+                """,
+                (
+                    (max_attempts, now_text, error, chat_id, str(message_id))
+                    for message_id in message_ids
+                ),
+            )
 
     def capture_hisopo(
         self,

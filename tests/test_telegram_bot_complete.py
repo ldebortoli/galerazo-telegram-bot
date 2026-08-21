@@ -28,6 +28,7 @@ from galerazo_bot.database import (
     Expense,
     HisopoCaptureResult,
     HisopoGiantContributionResult,
+    HisopoMessageCleanup,
     HisopoSchedule,
     HisopoSpawn,
     PaginatedMessageState,
@@ -1332,6 +1333,7 @@ class HisopoTelegramTests(unittest.IsolatedAsyncioTestCase):
         bot_state = state(db or MagicMock(), **setting_overrides)
         bot = SimpleNamespace(
             send_photo=AsyncMock(return_value=SimpleNamespace(message_id=100)),
+            delete_messages=AsyncMock(return_value=True),
             edit_message_caption=AsyncMock(),
             edit_message_media=AsyncMock(),
             get_chat_member_count=AsyncMock(return_value=16),
@@ -1344,6 +1346,90 @@ class HisopoTelegramTests(unittest.IsolatedAsyncioTestCase):
             process_error=AsyncMock(return_value=False),
         )
         return application, bot_state, bot, job_queue
+
+    async def test_old_hisopo_cleanup_filters_batches_and_records_outcomes(self) -> None:
+        now = datetime(2026, 8, 20, 12, tzinfo=timezone.utc)
+        db = MagicMock()
+        db.list_pending_hisopo_message_cleanups.return_value = [
+            HisopoMessageCleanup("-1", "1", "2026-08-19T13:00:00", 0, None),
+            HisopoMessageCleanup("-1", "2", "2026-08-19T11:00:00+00:00", 0, None),
+            HisopoMessageCleanup(
+                "-1", "3", "2026-08-19T10:00:00+00:00", 1,
+                "2026-08-20T11:55:00+00:00",
+            ),
+            HisopoMessageCleanup(
+                "-1", "4", "2026-08-19T09:00:00+00:00", 1,
+                "2026-08-20T11:49:00",
+            ),
+            HisopoMessageCleanup("-1", "5", "2026-08-18T11:00:00+00:00", 0, None),
+        ]
+        application, _, bot, _ = self._application(db)
+
+        with self.assertLogs(tb.logger, level="INFO") as logs:
+            await tb._cleanup_old_hisopo_messages(application, "-1", now)
+
+        bot.delete_messages.assert_awaited_once_with(
+            chat_id=-1,
+            message_ids=[2, 4],
+            read_timeout=5,
+            write_timeout=5,
+            connect_timeout=5,
+            pool_timeout=5,
+        )
+        db.mark_hisopo_messages_deleted.assert_called_once_with(
+            "-1", ["2", "4"], now
+        )
+        db.mark_hisopo_messages_cleanup_expired.assert_called_once_with(
+            "-1",
+            ["5"],
+            now,
+            "Telegram no permite borrar mensajes enviados hace 48 horas o mas.",
+        )
+        self.assertTrue(any("Descarte de la cola interna" in line for line in logs.output))
+        self.assertTrue(any("Borre 2 mensaje" in line for line in logs.output))
+
+    async def test_cleanup_failure_is_logged_retried_and_never_blocks_spawn(self) -> None:
+        now = datetime(2026, 8, 20, 12, tzinfo=timezone.utc)
+        cleanup = HisopoMessageCleanup(
+            "-1", "90", "2026-08-19T11:00:00+00:00", 0, None
+        )
+        db = MagicMock()
+        db.list_pending_hisopo_message_cleanups.return_value = [cleanup]
+        db.get_chat_settings.return_value = SimpleNamespace(language="es")
+        db.save_hisopo_spawn.return_value = self._spawn()
+        application, _, bot, _ = self._application(
+            db,
+            telegram_hisopo_common_file_id="common-id",
+        )
+        bot.delete_messages.side_effect = TimedOut()
+
+        with self.assertLogs(tb.logger, level="WARNING") as logs, patch.object(
+            tb.secrets, "randbelow", return_value=0
+        ):
+            result = await tb._spawn_hisopo(application, "-1", "message", now=now)
+
+        self.assertEqual(result, self._spawn())
+        bot.send_photo.assert_awaited_once()
+        db.record_hisopo_message_cleanup_failure.assert_called_once_with(
+            "-1", ["90"], now, "Timed out", 3
+        )
+        self.assertTrue(any("se enviara igualmente" in line for line in logs.output))
+
+        bot.delete_messages.side_effect = None
+        bot.delete_messages.return_value = False
+        db.record_hisopo_message_cleanup_failure.reset_mock()
+        with self.assertLogs(tb.logger, level="WARNING"):
+            await tb._cleanup_old_hisopo_messages(application, "-1", now)
+        db.record_hisopo_message_cleanup_failure.assert_called_once()
+
+        db.list_pending_hisopo_message_cleanups.side_effect = RuntimeError("db unavailable")
+        bot.send_photo.reset_mock()
+        with self.assertLogs(tb.logger, level="WARNING") as unexpected_logs, patch.object(
+            tb.secrets, "randbelow", return_value=0
+        ):
+            await tb._spawn_hisopo(application, "-1", "message", now=now)
+        bot.send_photo.assert_awaited_once()
+        self.assertTrue(any("envio igualmente" in line for line in unexpected_logs.output))
 
     async def test_message_spawn_gates_and_spawn_delivery(self) -> None:
         db = MagicMock()

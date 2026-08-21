@@ -32,6 +32,7 @@ class DatabaseMigrationTests(unittest.TestCase):
                 (now + timedelta(minutes=20)).isoformat(),
                 appearance_type="mystery",
             )
+            db.mark_hisopo_messages_deleted("-1", ["301"], now)
             db.save_hisopo_spawn(
                 "-1", "303", "giant", 4, "message", now.isoformat(),
                 (now + timedelta(minutes=20)).isoformat(),
@@ -102,6 +103,16 @@ class DatabaseMigrationTests(unittest.TestCase):
                 db.get_hisopo_spawn("-1001", "301").appearance_type,
                 "mystery",
             )
+            with db._connect() as conn:
+                cleanup = conn.execute(
+                    """
+                    SELECT message_cleanup_status, message_deleted_at
+                    FROM hisopo_spawns
+                    WHERE chat_id = '-1001' AND message_id = '301'
+                    """
+                ).fetchone()
+            self.assertEqual(cleanup["message_cleanup_status"], "deleted")
+            self.assertEqual(cleanup["message_deleted_at"], now.isoformat())
             self.assertEqual(db.get_hisopo_spawn("-1001", "303").required_helpers, 2)
             self.assertEqual(db.get_giant_contribution_count("-1001", "303"), 1)
             self.assertTrue(
