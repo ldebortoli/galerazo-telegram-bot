@@ -9,7 +9,7 @@ from telegram.error import TelegramError
 
 from ..command_model import Command
 from ..database import Database
-from ..hisopos import build_hisopo_pages, render_hisopo_page
+from ..hisopos import build_hisopo_pages, render_hisopo_collection, render_hisopo_page
 from ..pagination import bold_first_line_entities, build_keyboard
 from ..roles import CommandContext
 
@@ -29,6 +29,26 @@ async def handle(context: CommandContext, _db: Database) -> str | None:
     if not await context.send_hisopos():
         return context.t("hisopos.send_failed")
     return None
+
+
+def handle_collection(context: CommandContext, db: Database) -> str:
+    if context.chat_type not in {"group", "supergroup"} or context.chat_id is None:
+        return context.t("hisopos.group_only")
+    target_user_id = context.reply_to_user_id or context.sender_id
+    target_name = (
+        context.reply_to_display_name
+        or context.reply_to_username
+        or context.sender_display_name
+        or context.sender_username
+        or context.t("user.unknown")
+    )
+    entries = db.get_hisopo_collection(context.chat_id, target_user_id)
+    return render_hisopo_collection(
+        entries,
+        user_name=target_name,
+        user_id=target_user_id,
+        language=context.language,
+    )
 
 
 async def send_hisopos(
@@ -99,6 +119,45 @@ def migrate_chat_data(conn: sqlite3.Connection, old_chat_id: str, new_chat_id: s
         )
     conn.execute("DELETE FROM hisopo_scores WHERE chat_id = ?", (old_chat_id,))
 
+    collection = conn.execute(
+        """
+        SELECT user_id, hisopo_type, capture_count,
+               first_captured_at, last_captured_at
+        FROM hisopo_collections
+        WHERE chat_id = ?
+        """,
+        (old_chat_id,),
+    ).fetchall()
+    for entry in collection:
+        conn.execute(
+            """
+            INSERT INTO hisopo_collections (
+                chat_id, user_id, hisopo_type, capture_count,
+                first_captured_at, last_captured_at
+            )
+            VALUES (?, ?, ?, ?, ?, ?)
+            ON CONFLICT(chat_id, user_id, hisopo_type) DO UPDATE SET
+                capture_count = hisopo_collections.capture_count + excluded.capture_count,
+                first_captured_at = MIN(
+                    hisopo_collections.first_captured_at,
+                    excluded.first_captured_at
+                ),
+                last_captured_at = MAX(
+                    hisopo_collections.last_captured_at,
+                    excluded.last_captured_at
+                )
+            """,
+            (
+                new_chat_id,
+                entry["user_id"],
+                entry["hisopo_type"],
+                entry["capture_count"],
+                entry["first_captured_at"],
+                entry["last_captured_at"],
+            ),
+        )
+    conn.execute("DELETE FROM hisopo_collections WHERE chat_id = ?", (old_chat_id,))
+
     conn.execute(
         """
         INSERT OR IGNORE INTO hisopo_spawns (
@@ -146,6 +205,12 @@ def migrate_chat_data(conn: sqlite3.Connection, old_chat_id: str, new_chat_id: s
 
 
 COMMANDS = {
+    "coleccionhisopos": Command(
+        "coleccionhisopos",
+        "muestra tu colección histórica de Hisopos",
+        handle_collection,
+        configurable_group="hisopos",
+    ),
     "reglashisopo": Command(
         "reglashisopo",
         "muestra las reglas del Recolector de Hisopos",

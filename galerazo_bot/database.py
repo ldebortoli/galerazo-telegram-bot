@@ -79,6 +79,14 @@ class HisopoScore:
 
 
 @dataclass(frozen=True)
+class HisopoCollectionEntry:
+    hisopo_type: str
+    capture_count: int
+    first_captured_at: str
+    last_captured_at: str
+
+
+@dataclass(frozen=True)
 class HisopoSpawn:
     chat_id: str
     message_id: str
@@ -416,6 +424,21 @@ class Database:
             )
             conn.execute(
                 """
+                CREATE TABLE IF NOT EXISTS hisopo_collections (
+                    chat_id TEXT NOT NULL,
+                    user_id TEXT NOT NULL,
+                    hisopo_type TEXT NOT NULL,
+                    capture_count INTEGER NOT NULL DEFAULT 0,
+                    first_captured_at TEXT NOT NULL,
+                    last_captured_at TEXT NOT NULL,
+                    PRIMARY KEY (chat_id, user_id, hisopo_type),
+                    FOREIGN KEY (chat_id) REFERENCES chats (chat_id),
+                    FOREIGN KEY (user_id) REFERENCES users (user_id)
+                )
+                """
+            )
+            conn.execute(
+                """
                 CREATE TABLE IF NOT EXISTS hisopo_schedules (
                     schedule_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     chat_id TEXT NOT NULL,
@@ -617,6 +640,80 @@ class Database:
                 "WHERE appearance_type IS NULL"
             )
             conn.execute("INSERT INTO schema_migrations (migration_id) VALUES (?)", (migration_id,))
+
+        migration_id = "20260820_add_hisopo_collections"
+        applied = conn.execute(
+            "SELECT 1 FROM schema_migrations WHERE migration_id = ?", (migration_id,)
+        ).fetchone()
+        if applied is None:
+            conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS hisopo_collections (
+                    chat_id TEXT NOT NULL,
+                    user_id TEXT NOT NULL,
+                    hisopo_type TEXT NOT NULL,
+                    capture_count INTEGER NOT NULL DEFAULT 0,
+                    first_captured_at TEXT NOT NULL,
+                    last_captured_at TEXT NOT NULL,
+                    PRIMARY KEY (chat_id, user_id, hisopo_type),
+                    FOREIGN KEY (chat_id) REFERENCES chats (chat_id),
+                    FOREIGN KEY (user_id) REFERENCES users (user_id)
+                )
+                """
+            )
+            conn.execute(
+                """
+                INSERT INTO hisopo_collections (
+                    chat_id, user_id, hisopo_type, capture_count,
+                    first_captured_at, last_captured_at
+                )
+                SELECT
+                    chat_id,
+                    winner_user_id,
+                    hisopo_type,
+                    COUNT(*),
+                    MIN(captured_at),
+                    MAX(captured_at)
+                FROM hisopo_spawns
+                WHERE status = 'captured'
+                  AND winner_user_id IS NOT NULL
+                  AND captured_at IS NOT NULL
+                  AND hisopo_type != 'giant'
+                  AND NOT (
+                      hisopo_type = 'fleeting'
+                      AND appearance_type = 'mystery'
+                      AND points = 0
+                  )
+                GROUP BY chat_id, winner_user_id, hisopo_type
+                """
+            )
+            conn.execute(
+                """
+                INSERT INTO hisopo_collections (
+                    chat_id, user_id, hisopo_type, capture_count,
+                    first_captured_at, last_captured_at
+                )
+                SELECT
+                    contribution.chat_id,
+                    contribution.user_id,
+                    'giant',
+                    COUNT(*),
+                    MIN(spawn.captured_at),
+                    MAX(spawn.captured_at)
+                FROM hisopo_giant_contributions AS contribution
+                JOIN hisopo_spawns AS spawn
+                  ON spawn.chat_id = contribution.chat_id
+                 AND spawn.message_id = contribution.message_id
+                WHERE spawn.status = 'captured'
+                  AND spawn.hisopo_type = 'giant'
+                  AND spawn.captured_at IS NOT NULL
+                GROUP BY contribution.chat_id, contribution.user_id
+                """
+            )
+            conn.execute(
+                "INSERT INTO schema_migrations (migration_id) VALUES (?)",
+                (migration_id,),
+            )
 
     def get_announced_release_version(self) -> str | None:
         with self._connect() as conn:
@@ -1373,6 +1470,18 @@ class Database:
                 """,
                 (chat_id, user_id, awarded_points),
             )
+            if not (
+                spawn.hisopo_type == "fleeting"
+                and spawn.appearance_type == "mystery"
+                and awarded_points == 0
+            ):
+                _increment_hisopo_collection(
+                    conn,
+                    chat_id,
+                    user_id,
+                    spawn.hisopo_type,
+                    now_text,
+                )
             scheduled_datetimes = (
                 (next_scheduled_for,)
                 if isinstance(next_scheduled_for, datetime)
@@ -1513,6 +1622,13 @@ class Database:
                     """,
                     (chat_id, participant_user_id, spawn.points),
                 )
+                _increment_hisopo_collection(
+                    conn,
+                    chat_id,
+                    participant_user_id,
+                    spawn.hisopo_type,
+                    now_text,
+                )
             schedule = _insert_hisopo_schedule_below_daily_cap(
                 conn,
                 chat_id,
@@ -1597,6 +1713,32 @@ class Database:
                 username=row["username"],
                 display_name=row["display_name"],
                 points=row["points"],
+            )
+            for row in rows
+        ]
+
+    def get_hisopo_collection(
+        self,
+        chat_id: str,
+        user_id: str,
+    ) -> list[HisopoCollectionEntry]:
+        chat_id = self.resolve_chat_id(chat_id)
+        with self._connect() as conn:
+            rows = conn.execute(
+                """
+                SELECT hisopo_type, capture_count, first_captured_at, last_captured_at
+                FROM hisopo_collections
+                WHERE chat_id = ? AND user_id = ?
+                ORDER BY first_captured_at, hisopo_type
+                """,
+                (chat_id, user_id),
+            ).fetchall()
+        return [
+            HisopoCollectionEntry(
+                hisopo_type=row["hisopo_type"],
+                capture_count=row["capture_count"],
+                first_captured_at=row["first_captured_at"],
+                last_captured_at=row["last_captured_at"],
             )
             for row in rows
         ]
@@ -2309,6 +2451,29 @@ def _giant_participant_ids(
         (chat_id, message_id),
     ).fetchall()
     return tuple(str(row["user_id"]) for row in rows)
+
+
+def _increment_hisopo_collection(
+    conn: sqlite3.Connection,
+    chat_id: str,
+    user_id: str,
+    hisopo_type: str,
+    captured_at: str,
+) -> None:
+    conn.execute(
+        """
+        INSERT INTO hisopo_collections (
+            chat_id, user_id, hisopo_type, capture_count,
+            first_captured_at, last_captured_at
+        )
+        VALUES (?, ?, ?, 1, ?, ?)
+        ON CONFLICT(chat_id, user_id, hisopo_type) DO UPDATE SET
+            capture_count = hisopo_collections.capture_count + 1,
+            first_captured_at = MIN(hisopo_collections.first_captured_at, excluded.first_captured_at),
+            last_captured_at = MAX(hisopo_collections.last_captured_at, excluded.last_captured_at)
+        """,
+        (chat_id, user_id, hisopo_type, captured_at, captured_at),
+    )
 
 
 def _hisopo_schedule_from_row(row: sqlite3.Row) -> HisopoSchedule:

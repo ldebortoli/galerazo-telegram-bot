@@ -5,6 +5,7 @@ import unittest
 
 from galerazo_bot.i18n import TRANSLATIONS
 from galerazo_bot.hisopo_translations import (
+    HISOPO_COLLECTION_RULES,
     HISOPO_GIANT_COUNT_RULES,
     HISOPO_SCHEDULE_CAP_RULES,
 )
@@ -20,7 +21,7 @@ class TranslationTests(unittest.TestCase):
         placeholder_pattern = re.compile(r"\{[^{}]+\}")
         command_pattern = re.compile(
             r"/(?:agregartrigger|anuncio|apagar|backup|bloquear|borrartrigger|bloqueados|chats|config|debug|"
-            r"desbloquear|desloquear|donar|gasto|galeraza|galerazas|habilitar|hola|listanegra|nivel|novedad|"
+            r"coleccionhisopos|desbloquear|desloquear|donar|gasto|galeraza|galerazas|habilitar|hola|listanegra|nivel|novedad|"
             r"hisopos|reiniciarbot|reportar|restringir|salir|start|triggers|version)"
         )
         url_pattern = re.compile(r"https?://[^\s]+")
@@ -64,6 +65,7 @@ class TranslationTests(unittest.TestCase):
     def test_hisopo_rules_fit_in_one_telegram_message(self) -> None:
         self.assertEqual(set(HISOPO_GIANT_COUNT_RULES), set(TRANSLATIONS))
         self.assertEqual(set(HISOPO_SCHEDULE_CAP_RULES), set(TRANSLATIONS))
+        self.assertEqual(set(HISOPO_COLLECTION_RULES), set(TRANSLATIONS))
         for language, translations in TRANSLATIONS.items():
             with self.subTest(language=language):
                 self.assertLessEqual(len(translations["hisopos.rules"]), 4096)
@@ -75,6 +77,10 @@ class TranslationTests(unittest.TestCase):
                 )
                 self.assertIn(
                     HISOPO_SCHEDULE_CAP_RULES[language],
+                    translations["hisopos.rules"],
+                )
+                self.assertIn(
+                    HISOPO_COLLECTION_RULES[language],
                     translations["hisopos.rules"],
                 )
 

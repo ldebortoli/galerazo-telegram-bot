@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.29] - 2026-08-20
+
+- Nuevo comando `/coleccionhisopos`: muestra la colección histórica por usuario y grupo, con cantidades y progreso sobre los 11 tipos reales. Recupera capturas anteriores, combina datos al migrar a supergrupo y no usa temporadas.
+- Los fallos al enviar la foto de una aparición de Hisopo ahora llegan al manejador y al canal de errores con el contexto de la aparición; las agendas fallidas quedan cerradas como fallidas.
+
 ## [0.28] - 2026-08-20
 
 - Cada grupo ahora puede acumular como máximo 10 apariciones de Hisopos con horario aleatorio para una misma fecha del día siguiente. Al llenar el cupo, las capturas conservan sus puntos y efectos; las apariciones activadas por mensajes y la aparición inmediata del Gemelo no consumen ese límite.

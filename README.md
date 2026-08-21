@@ -29,6 +29,7 @@ Base para un bot de Telegram con una version estable y reproducible de Python, `
 - `config`: abre el tablero de configuracion del grupo. Solo admines del chat, quien agrego el bot o devs.
 - `galerazas`: muestra el ranking de La Galeraza en grupos/supergrupos.
 - `hisopos`: muestra la tabla del Recolector de Hisopos en grupos/supergrupos, si el juego está habilitado.
+- `coleccionhisopos`: muestra la colección histórica propia; al responder a otra persona, muestra la de ese usuario.
 - `reglashisopo`: muestra las reglas completas del Recolector de Hisopos, incluso si el juego está deshabilitado.
 - `agregartrigger` / `agrtrigger`: agrega un trigger respondiendo a un mensaje en grupos/supergrupos.
 - `borrartrigger` / `eliminartrigger` / `eltrigger`: borra un trigger por nombre en grupos/supergrupos.
@@ -435,7 +436,7 @@ La fecha se calcula exclusivamente desde `message.date` de Telegram, convertido 
 
 El Recolector de Hisopos es un juego para grupos y supergrupos y viene habilitado por defecto. Un admin o dev puede desactivarlo desde `/config`, en `Comandos -> Recolector de Hisopos`, y elegir una de cinco intensidades:
 
-`/reglashisopo` resume dentro de Telegram las probabilidades, vencimientos, premios y penalizaciones de todos los tipos. `/hisopos` muestra la tabla de puntajes del grupo.
+`/reglashisopo` resume dentro de Telegram las probabilidades, vencimientos, premios y penalizaciones de todos los tipos. `/hisopos` muestra la tabla de puntajes del grupo. `/coleccionhisopos` muestra la colección histórica del usuario que lo ejecuta; si se usa respondiendo a otra persona, muestra la colección de esa persona.
 
 - muy poca: 1 % por mensaje válido;
 - poca: 5 %;
@@ -473,6 +474,10 @@ El Gigante cooperativo dura 20 minutos y requiere `min(15, miembros del chat - G
 El Milagroso dura 20 minutos y calcula su premio al capturarlo: entrega el máximo entre 15 puntos y la mitad del puntaje del líder actual del grupo, redondeada hacia arriba. Por ejemplo, con un líder de 31 puntos entrega 16; con un líder de 20, cero o negativo entrega 15. El cálculo y la captura se realizan en la misma transacción, su valor inicial permanece oculto y programa una aparición para el día siguiente como una captura normal.
 
 La primera callback procesada para ese chat reclama el premio dentro de una transacción inmediata de SQLite; las siguientes muestran un alerta de Telegram sin sumar. Al capturar un Falso, Putrefacto o Misterioso, el mismo mensaje reemplaza la foto por la del tipo real, informa el resultado y elimina la botonera. Salvo el Fugaz directo, a los 20 minutos el Hisopo se pudre, deja de valer y el mensaje pierde la botonera. Tocar un Fugaz después de su minuto no suma ni agenda nada: solamente informa que ya se pudrió. Si una rareza todavía no tiene todos los `file_id` que necesita para aparecer y revelarse, esa tirada usa el Hisopo común para no perder el evento.
+
+La colección persiste por usuario y grupo sin temporadas ni reinicios. Guarda cuántos ejemplares se capturaron de cada una de las 11 variedades reales y reconstruye el historial existente desde las capturas almacenadas al migrar la base. El Misterioso cuenta como el tipo que revela; un Fugaz oculto reclamado después de su minuto no se incorpora. Cuando se completa un Gigante, todos los participantes lo agregan a su colección. La colección se migra y combina si Telegram convierte el grupo en supergrupo.
+
+Un fallo al enviar la foto de una aparición no queda absorbido silenciosamente: conserva el contexto de chat, origen, tipo real y apariencia, se eleva al manejador de errores y se informa en el canal de logging configurado. Las apariciones programadas fallidas quedan marcadas como `failed` en vez de permanecer en procesamiento.
 
 Cada captura programa una aparición adicional en un segundo aleatorio del día calendario siguiente de Argentina; el Falso no programa ninguna y el Gemelo, además de esa agenda normal, lanza una aparición nueva inmediatamente. Cada grupo puede acumular como máximo 10 apariciones con horario aleatorio para una misma fecha argentina: al completar el cupo, las capturas posteriores conservan sus puntos y efectos pero no agregan otra programación para ese día. El límite no se aplica a las apariciones activadas por mensajes ni a la aparición inmediata del Gemelo. La programación se guarda en SQLite y se reconstruye al iniciar el bot, por lo que sobrevive reinicios. Si el juego está deshabilitado cuando llega el horario, la aparición programada se cancela. Los Hisopos podridos no programan apariciones.
 
@@ -517,7 +522,7 @@ Los conjuntos configurables son `Galeraza`, `Recolector de Hisopos`, `Triggers` 
 [ Sí ] - No
 ```
 
-`Galeraza`, `Triggers` y `Recolector de Hisopos` vienen habilitados por defecto. `Ruleta rusa` permanece deshabilitada hasta que un admin o dev del chat la habilite. El Recolector también permite elegir la intensidad de apariciones. Una desactivación explícita del juego se conserva. La configuración, puntajes, hisopos activos y apariciones programadas se guardan en SQLite y se migran si Telegram convierte un grupo en supergrupo.
+`Galeraza`, `Triggers` y `Recolector de Hisopos` vienen habilitados por defecto. `Ruleta rusa` permanece deshabilitada hasta que un admin o dev del chat la habilite. El Recolector también permite elegir la intensidad de apariciones. Una desactivación explícita del juego se conserva. La configuración, puntajes, colección histórica, hisopos activos y apariciones programadas se guardan en SQLite y se migran si Telegram convierte un grupo en supergrupo.
 
 `/help` muestra todos los comandos correspondientes al nivel del usuario, incluidos los conjuntos configurables que estén apagados. Que aparezcan en la ayuda no evita que el bot respete la configuración del chat al intentar ejecutarlos.
 

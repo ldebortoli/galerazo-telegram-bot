@@ -159,6 +159,10 @@ class BotState:
     media_moderator: OpenAIMediaModerator
 
 
+class HisopoSpawnError(RuntimeError):
+    """A Hisopo appearance could not be sent and must be reported visibly."""
+
+
 def main() -> None:
     ensure_python_version()
     configure_logging()
@@ -485,6 +489,7 @@ async def _preprocess_message(update: Update, context: ContextTypes.DEFAULT_TYPE
         await _maybe_spawn_hisopo_for_message(
             application=context.application,
             message=message,
+            update=update,
         )
 
     text = message.text or message.caption
@@ -502,6 +507,7 @@ async def _preprocess_message(update: Update, context: ContextTypes.DEFAULT_TYPE
 async def _maybe_spawn_hisopo_for_message(
     application: Application,
     message: Message,
+    update: Update | None = None,
 ) -> HisopoSpawn | None:
     state = application.bot_data["state"]
     chat_id = str(message.chat.id)
@@ -512,7 +518,11 @@ async def _maybe_spawn_hisopo_for_message(
     intensity_percent = state.db.get_hisopo_intensity_percent(chat_id)
     if not should_spawn_hisopo(intensity_percent, secrets.randbelow(100) + 1):
         return None
-    return await _spawn_hisopo(application, chat_id, source="message")
+    try:
+        return await _spawn_hisopo(application, chat_id, source="message")
+    except HisopoSpawnError as exc:
+        await application.process_error(update=update, error=exc)
+        return None
 
 
 async def _spawn_hisopo(
@@ -546,11 +556,10 @@ async def _spawn_hisopo(
         appearance_kind = COMMON_HISOPO
     file_id = _hisopo_file_id(state.settings, appearance_kind.key)
     if not file_id:
-        logger.warning(
-            "No pude lanzar un Hisopo en el chat %s: falta configurar el file_id comun.",
-            chat_id,
+        raise HisopoSpawnError(
+            "No pude lanzar un Hisopo: falta configurar el file_id comun "
+            f"(chat_id={chat_id}, source={source}, hisopo_type={actual_kind.key})."
         )
-        return None
 
     required_helpers = 1
     if actual_kind.key == GIANT_HISOPO.key:
@@ -610,8 +619,11 @@ async def _spawn_hisopo(
             reply_markup=keyboard,
         )
     except TelegramError as exc:
-        logger.warning("No pude lanzar un Hisopo en el chat %s: %s", chat_id, exc)
-        return None
+        raise HisopoSpawnError(
+            "No pude enviar la aparicion de un Hisopo "
+            f"(chat_id={chat_id}, source={source}, "
+            f"hisopo_type={actual_kind.key}, appearance_type={appearance_kind.key}): {exc}"
+        ) from exc
 
     spawned_at = now or datetime.now(timezone.utc)
     if spawned_at.tzinfo is None:
@@ -703,7 +715,11 @@ async def _scheduled_hisopo_job(context: ContextTypes.DEFAULT_TYPE) -> None:
     if not state.db.is_command_group_enabled(chat_id, "hisopos"):
         state.db.complete_hisopo_schedule(schedule.schedule_id, "cancelled")
         return
-    spawn = await _spawn_hisopo(context.application, chat_id, source="scheduled")
+    try:
+        spawn = await _spawn_hisopo(context.application, chat_id, source="scheduled")
+    except Exception:
+        state.db.complete_hisopo_schedule(schedule.schedule_id, "failed")
+        raise
     state.db.complete_hisopo_schedule(
         schedule.schedule_id,
         "sent" if spawn is not None else "failed",

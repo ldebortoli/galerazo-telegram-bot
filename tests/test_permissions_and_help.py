@@ -127,6 +127,7 @@ class PermissionsAndHelpTests(unittest.TestCase):
                 "/agrtrigger:",
                 "/eliminartrigger:",
                 "/eltrigger:",
+                "/coleccionhisopos:",
                 "/reglashisopo:",
                 "/ruletarusa:",
             ):

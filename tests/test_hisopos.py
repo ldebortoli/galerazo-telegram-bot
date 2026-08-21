@@ -14,9 +14,11 @@ from galerazo_bot.command_handlers import hisopos as hisopo_handlers
 from galerazo_bot.database import (
     MAX_HISOPO_SCHEDULES_PER_CHAT_DAY,
     Database,
+    HisopoCollectionEntry,
     HisopoScore,
 )
 from galerazo_bot.hisopos import (
+    COLLECTIBLE_HISOPO_KEYS,
     COMMON_HISOPO,
     DIAMOND_HISOPO,
     FAKE_HISOPO,
@@ -43,6 +45,7 @@ from galerazo_bot.hisopos import (
     is_fleeting_window_expired,
     radioactive_points_at,
     random_next_day_datetime,
+    render_hisopo_collection,
     render_hisopo_page,
     select_hisopo_disguise,
     select_hisopo_kind,
@@ -314,6 +317,25 @@ class HisopoRulesTests(unittest.TestCase):
         self.assertIn("1. bea", pages[1])
         self.assertEqual(render_hisopo_page([], 99).page, 1)
 
+    def test_collection_renders_real_types_counts_and_progress(self) -> None:
+        entries = [
+            HisopoCollectionEntry("common", 3, "2026-08-20T12:00:00+00:00", "2026-08-20T13:00:00+00:00"),
+            HisopoCollectionEntry("diamond", 1, "2026-08-20T14:00:00+00:00", "2026-08-20T14:00:00+00:00"),
+            HisopoCollectionEntry("mystery", 9, "2026-08-20T15:00:00+00:00", "2026-08-20T15:00:00+00:00"),
+        ]
+
+        rendered = render_hisopo_collection(entries, "Ana", "2")
+
+        self.assertEqual(len(COLLECTIBLE_HISOPO_KEYS), 11)
+        self.assertNotIn("mystery", COLLECTIBLE_HISOPO_KEYS)
+        self.assertIn("Colección histórica de Ana (2)", rendered)
+        self.assertIn("Tipos descubiertos: 2/11 · Capturas: 4", rendered)
+        self.assertIn("✅ hisopo común: 3", rendered)
+        self.assertIn("⬜ hisopo plateado: 0", rendered)
+        self.assertIn("✅ hisopo diamante: 1", rendered)
+        self.assertNotIn("hisopo misterioso:", rendered)
+        self.assertIn("cuenta como el tipo real", rendered)
+
 
 class HisopoDatabaseTests(unittest.TestCase):
     def setUp(self) -> None:
@@ -576,6 +598,14 @@ class HisopoDatabaseTests(unittest.TestCase):
             {score.user_id: score.points for score in self.db.get_hisopo_scores("-1")},
             {"2": 10, "3": -2},
         )
+        self.assertEqual(
+            {entry.hisopo_type: entry.capture_count for entry in self.db.get_hisopo_collection("-1", "2")},
+            {"fake": 1, "radioactive": 1, "twin": 1},
+        )
+        self.assertEqual(
+            {entry.hisopo_type: entry.capture_count for entry in self.db.get_hisopo_collection("-1", "3")},
+            {"putrid": 1},
+        )
 
     def test_giant_contributions_are_unique_atomic_and_reward_every_helper(self) -> None:
         self.db.get_or_create_user("4", "Final")
@@ -624,6 +654,11 @@ class HisopoDatabaseTests(unittest.TestCase):
             {score.user_id: score.points for score in self.db.get_hisopo_scores("-1")},
             {"2": 4, "3": 4, "4": 4},
         )
+        for user_id in ("2", "3", "4"):
+            self.assertEqual(
+                [(entry.hisopo_type, entry.capture_count) for entry in self.db.get_hisopo_collection("-1", user_id)],
+                [("giant", 1)],
+            )
         self.assertEqual(
             self.db.contribute_to_giant_hisopo(
                 "-1", "400", "1", self.now + timedelta(seconds=3), scheduled_for
@@ -773,6 +808,90 @@ class HisopoDatabaseTests(unittest.TestCase):
             "rotten",
         )
 
+    def test_expired_hidden_fleeting_does_not_enter_collection(self) -> None:
+        self.db.save_hisopo_spawn(
+            "-1",
+            "fleeting-mystery",
+            "fleeting",
+            5,
+            "message",
+            self.now.isoformat(),
+            (self.now + timedelta(minutes=20)).isoformat(),
+            appearance_type="mystery",
+        )
+
+        result = self.db.capture_hisopo(
+            "-1",
+            "fleeting-mystery",
+            "2",
+            self.now + timedelta(minutes=2),
+            (),
+            points_at_capture=0,
+        )
+
+        self.assertEqual(result.status, "captured")
+        self.assertEqual(result.spawn.points, 0)
+        self.assertEqual(self.db.get_hisopo_collection("-1", "2"), [])
+
+    def test_collection_migration_backfills_existing_normal_and_giant_captures(self) -> None:
+        self._spawn("historic-common", points=1)
+        self.db.capture_hisopo("-1", "historic-common", "2", self.now, ())
+        self.db.save_hisopo_spawn(
+            "-1",
+            "historic-fleeting",
+            "fleeting",
+            5,
+            "message",
+            self.now.isoformat(),
+            (self.now + timedelta(minutes=20)).isoformat(),
+            appearance_type="mystery",
+        )
+        self.db.capture_hisopo(
+            "-1",
+            "historic-fleeting",
+            "3",
+            self.now + timedelta(minutes=2),
+            (),
+            points_at_capture=0,
+        )
+        self.db.save_hisopo_spawn(
+            "-1",
+            "historic-giant",
+            "giant",
+            4,
+            "message",
+            self.now.isoformat(),
+            (self.now + timedelta(minutes=20)).isoformat(),
+            required_helpers=2,
+        )
+        self.db.contribute_to_giant_hisopo(
+            "-1", "historic-giant", "2", self.now, self.now + timedelta(days=1)
+        )
+        self.db.contribute_to_giant_hisopo(
+            "-1",
+            "historic-giant",
+            "3",
+            self.now + timedelta(seconds=1),
+            self.now + timedelta(days=1),
+        )
+        with self.db._connect() as conn:
+            conn.execute("DROP TABLE hisopo_collections")
+            conn.execute(
+                "DELETE FROM schema_migrations WHERE migration_id = ?",
+                ("20260820_add_hisopo_collections",),
+            )
+
+        rebuilt = Database(self.db.path)
+
+        self.assertEqual(
+            {entry.hisopo_type: entry.capture_count for entry in rebuilt.get_hisopo_collection("-1", "2")},
+            {"common": 1, "giant": 1},
+        )
+        self.assertEqual(
+            {entry.hisopo_type: entry.capture_count for entry in rebuilt.get_hisopo_collection("-1", "3")},
+            {"giant": 1},
+        )
+
 
 class HisopoCommandTests(unittest.IsolatedAsyncioTestCase):
     def _context(self, **overrides) -> CommandContext:
@@ -814,8 +933,36 @@ class HisopoCommandTests(unittest.IsolatedAsyncioTestCase):
         self.assertIn("Milagroso: 0,10 %", response)
         self.assertIn("mitad del puntaje del líder", response)
         self.assertIn("no le quita puntos a nadie", response)
+        self.assertIn("/coleccionhisopos", response)
         self.assertIn("/hisopos", response)
         self.assertLessEqual(len(response), 4096)
+
+    async def test_collection_handler_uses_self_or_replied_user(self) -> None:
+        db = MagicMock()
+        db.get_hisopo_collection.return_value = [
+            HisopoCollectionEntry("gold", 2, "first", "last")
+        ]
+        own = hisopo_handlers.handle_collection(
+            self._context(sender_display_name="Owner"),
+            db,
+        )
+        self.assertIn("Owner (1)", own)
+        self.assertIn("hisopo dorado: 2", own)
+        db.get_hisopo_collection.assert_called_with("-1", "1")
+
+        replied = hisopo_handlers.handle_collection(
+            self._context(
+                reply_to_user_id="2",
+                reply_to_display_name="Winner",
+            ),
+            db,
+        )
+        self.assertIn("Winner (2)", replied)
+        db.get_hisopo_collection.assert_called_with("-1", "2")
+        self.assertIn(
+            "grupos",
+            hisopo_handlers.handle_collection(self._context(chat_type="private"), db),
+        )
 
     async def test_send_ranking_success_pagination_and_failure(self) -> None:
         db = MagicMock()

@@ -220,7 +220,17 @@ class LifecycleAndBillingTests(unittest.IsolatedAsyncioTestCase):
             private_names,
             {"help", "ayuda", "start", "hola", "lil", "nivel", "version", "chats", "reportar", "donar", "config", "reglashisopo"},
         )
-        self.assertTrue({"galeraza", "galerazas", "triggers", "agregartrigger", "reglashisopo"} <= group_names)
+        self.assertTrue(
+            {
+                "galeraza",
+                "galerazas",
+                "triggers",
+                "agregartrigger",
+                "coleccionhisopos",
+                "reglashisopo",
+            }
+            <= group_names
+        )
         self.assertIn("ruletarusa", group_names)
         self.assertFalse({"config", "backup", "debug", "gasto"} & group_names)
         self.assertTrue({"config", "restringir", "habilitar", "restringidos", "reglashisopo"} <= admin_names)
@@ -228,6 +238,10 @@ class LifecycleAndBillingTests(unittest.IsolatedAsyncioTestCase):
         self.assertIn("shows this help", {command.description for command in english_commands})
         self.assertIn(
             "shows the Swab Collector rules",
+            {command.description for command in english_commands},
+        )
+        self.assertIn(
+            "shows your historical Swab collection",
             {command.description for command in english_commands},
         )
 
@@ -1327,6 +1341,7 @@ class HisopoTelegramTests(unittest.IsolatedAsyncioTestCase):
             bot_data={"state": bot_state},
             bot=bot,
             job_queue=job_queue,
+            process_error=AsyncMock(return_value=False),
         )
         return application, bot_state, bot, job_queue
 
@@ -1359,10 +1374,25 @@ class HisopoTelegramTests(unittest.IsolatedAsyncioTestCase):
 
         with patch.object(tb.secrets, "randbelow", return_value=0):
             missing_application, _, _, _ = self._application(db)
-            self.assertIsNone(await tb._spawn_hisopo(missing_application, "-1", "message"))
+            with self.assertRaisesRegex(tb.HisopoSpawnError, "file_id comun"):
+                await tb._spawn_hisopo(missing_application, "-1", "message")
         bot.send_photo.side_effect = TimedOut()
         with patch.object(tb.secrets, "randbelow", return_value=0):
-            self.assertIsNone(await tb._spawn_hisopo(application, "-1", "message"))
+            with self.assertRaisesRegex(tb.HisopoSpawnError, "chat_id=-1") as raised:
+                await tb._spawn_hisopo(application, "-1", "message")
+        self.assertIsInstance(raised.exception.__cause__, TimedOut)
+
+        update = SimpleNamespace(update_id=5)
+        with patch.object(tb.secrets, "randbelow", side_effect=[0, 0]):
+            self.assertIsNone(
+                await tb._maybe_spawn_hisopo_for_message(application, group, update)
+            )
+        application.process_error.assert_awaited_once()
+        self.assertIs(application.process_error.await_args.kwargs["update"], update)
+        self.assertIsInstance(
+            application.process_error.await_args.kwargs["error"],
+            tb.HisopoSpawnError,
+        )
 
         bot.send_photo.side_effect = None
         db.save_hisopo_spawn.return_value = spawn
@@ -1615,6 +1645,13 @@ class HisopoTelegramTests(unittest.IsolatedAsyncioTestCase):
             await tb._scheduled_hisopo_job(context)
         db.complete_hisopo_schedule.assert_called_with(1, "sent")
         with patch.object(tb, "_spawn_hisopo", AsyncMock(return_value=None)):
+            await tb._scheduled_hisopo_job(context)
+        db.complete_hisopo_schedule.assert_called_with(1, "failed")
+        with patch.object(
+            tb,
+            "_spawn_hisopo",
+            AsyncMock(side_effect=tb.HisopoSpawnError("failed spawn")),
+        ), self.assertRaisesRegex(tb.HisopoSpawnError, "failed spawn"):
             await tb._scheduled_hisopo_job(context)
         db.complete_hisopo_schedule.assert_called_with(1, "failed")
 

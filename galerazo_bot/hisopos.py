@@ -6,7 +6,7 @@ from dataclasses import dataclass, replace
 from datetime import datetime, time, timedelta, timezone
 from zoneinfo import ZoneInfo
 
-from .database import HisopoScore
+from .database import HisopoCollectionEntry, HisopoScore
 from .i18n import DEFAULT_LANGUAGE, t
 from .pagination import MESSAGE_LIMIT, PaginatedPage, build_page_line_groups, render_prebuilt_pages
 
@@ -73,6 +73,9 @@ HISOPO_KINDS = {
         MIRACLE_HISOPO,
     )
 }
+COLLECTIBLE_HISOPO_KEYS = tuple(
+    key for key in HISOPO_KINDS if key != MYSTERY_HISOPO.key
+)
 HISOPO_PROBABILITY_RANGES = {
     "common": (1, 4665),
     "silver": (4666, 6065),
@@ -267,6 +270,39 @@ def build_hisopo_lines(
         name = score.display_name or score.username or t(language, "user.unknown")
         lines.append(f"{prefix}{name} ({score.user_id}) => {score.points}")
     return lines
+
+
+def render_hisopo_collection(
+    entries: list[HisopoCollectionEntry],
+    user_name: str,
+    user_id: str,
+    language: str = DEFAULT_LANGUAGE,
+) -> str:
+    counts = {entry.hisopo_type: entry.capture_count for entry in entries}
+    discovered = sum(counts.get(key, 0) > 0 for key in COLLECTIBLE_HISOPO_KEYS)
+    captures = sum(counts.get(key, 0) for key in COLLECTIBLE_HISOPO_KEYS)
+    lines = [
+        t(
+            language,
+            "hisopos.collection.header",
+            user=user_name,
+            user_id=user_id,
+        ),
+        t(
+            language,
+            "hisopos.collection.progress",
+            discovered=discovered,
+            total=len(COLLECTIBLE_HISOPO_KEYS),
+            captures=captures,
+        ),
+        "",
+    ]
+    for key in COLLECTIBLE_HISOPO_KEYS:
+        count = counts.get(key, 0)
+        marker = "✅" if count else "⬜"
+        lines.append(f"{marker} {t(language, f'hisopos.type.{key}')}: {count}")
+    lines.extend(("", t(language, "hisopos.collection.mystery_note")))
+    return "\n".join(lines)
 
 
 def _position_at(scores: list[HisopoScore], index: int) -> int:

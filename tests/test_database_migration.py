@@ -89,6 +89,14 @@ class DatabaseMigrationTests(unittest.TestCase):
                 {score.user_id: score.points for score in db.get_hisopo_scores("-1001")},
                 {"1": 1, "2": 2},
             )
+            self.assertEqual(
+                {entry.hisopo_type: entry.capture_count for entry in db.get_hisopo_collection("-1001", "1")},
+                {"common": 1},
+            )
+            self.assertEqual(
+                {entry.hisopo_type: entry.capture_count for entry in db.get_hisopo_collection("-1001", "2")},
+                {"silver": 1},
+            )
             self.assertEqual(db.get_hisopo_spawn("-1001", "301").chat_id, "-1001")
             self.assertEqual(
                 db.get_hisopo_spawn("-1001", "301").appearance_type,

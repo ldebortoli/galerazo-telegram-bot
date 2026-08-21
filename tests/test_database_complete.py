@@ -248,6 +248,7 @@ class DatabaseCompleteTests(unittest.TestCase):
                     "20260729_drop_legacy_galeraza_message_states",
                     "20260820_add_hisopo_appearance_type",
                     "20260820_add_cooperative_hisopos",
+                    "20260820_add_hisopo_collections",
                 },
             )
             columns = {row["name"] for row in connection.execute("PRAGMA table_info(paginated_message_states)")}
