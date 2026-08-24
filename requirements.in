@@ -1,4 +1,5 @@
 av
+colorama
 coverage
 pytest
 pytest-asyncio

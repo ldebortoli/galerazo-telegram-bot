@@ -6,6 +6,26 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
 
 class RuntimeUpdateWorkflowTests(unittest.TestCase):
+    def test_monthly_dependency_updater_is_isolated_and_fully_validated(self) -> None:
+        script = (
+            PROJECT_ROOT / "scripts" / "deploy" / "Update-Dependencies.ps1"
+        ).read_text(encoding="utf-8")
+
+        self.assertIn("galerazo-dependency-update-", script)
+        self.assertIn('"--upgrade-strategy", "eager"', script)
+        self.assertIn("pip freeze", script)
+        self.assertIn("git diff --quiet -- requirements.txt", script)
+        self.assertGreater(script.index('Assert-Command -Name "docker"'), script.index("if ($dependencyDiff -eq 0)"))
+        self.assertIn('"coverage", "run", "-m", "pytest"', script)
+        self.assertIn('"-m", "pip", "check"', script)
+        self.assertIn("Build-DockerImage.ps1", script)
+        self.assertIn("finally", script)
+        self.assertNotIn("git commit", script)
+        self.assertNotIn("git push", script)
+
+        requirements_input = (PROJECT_ROOT / "requirements.in").read_text(encoding="utf-8")
+        self.assertIn("colorama\n", requirements_input)
+
     def test_validated_update_does_not_require_pull_request_permissions(self) -> None:
         workflow = (
             PROJECT_ROOT / ".github" / "workflows" / "runtime-update.yml"

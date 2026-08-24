@@ -126,6 +126,8 @@ Solo despues de esas validaciones crea y fusiona la actualizacion. Si algun paso
 
 Si no encuentra cambios de runtime o dependencias, omite la suite y el build Docker para no consumir minutos innecesarios.
 
+El corte mensual de Bot Control Center ejecuta `scripts/deploy/Update-Dependencies.ps1` dentro de un worktree temporal antes de decidir el deploy. Resuelve releases estables en un entorno virtual aislado; si `requirements.txt` cambia, exige pruebas nativas, cobertura completa, `pip check` y validacion Docker antes de permitir que el controlador cree y suba un commit sin `force`. Si no cambian ni el codigo ni el lock, termina sin publicar imagen ni tocar produccion. Un error de resolucion o validacion cancela todo el corte.
+
 ### CI y consumo de GitHub Actions
 
 - `Quality` ejecuta la suite Linux solo ante cambios sustantivos. Commits limitados a Markdown o `.gitignore` no generan un run.
