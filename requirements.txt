@@ -21,14 +21,14 @@ gspread==6.2.1
 h11==0.16.0
 httpcore==1.0.9
 httpx==0.28.1
-idna==3.18
+idna==3.19
 iniconfig==2.3.0
 oauthlib==3.3.1
 packaging==26.3
 pillow==12.3.0
 pluggy==1.6.0
 proto-plus==1.28.3
-protobuf==7.35.1
+protobuf==7.36.0
 pyasn1==0.6.4
 pyasn1_modules==0.4.2
 pycparser==3.0
