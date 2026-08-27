@@ -87,6 +87,23 @@ class TranslationTests(unittest.TestCase):
                     plain_rules,
                 )
 
+    def test_expired_hisopo_uses_the_same_brief_text_on_every_surface(self) -> None:
+        keys = (
+            "hisopos.expired_caption_collected",
+            "hisopos.expired_caption_mystery",
+            "hisopos.expired_popup_collected",
+            "hisopos.expired_popup_mystery",
+        )
+        for language, translations in TRANSLATIONS.items():
+            with self.subTest(language=language):
+                texts = [translations[key] for key in keys]
+                self.assertTrue(all(text == texts[0] for text in texts))
+                self.assertEqual(texts[0].count("{type_label}"), 1)
+        self.assertEqual(
+            TRANSLATIONS["es"][keys[0]],
+            "Era un {type_label}, pero se te venció, así que lo perdiste.",
+        )
+
     def test_southern_quechua_preserves_named_game_and_message_lines(self) -> None:
         self.assertIn("Galeraza", TRANSLATIONS["quz"]["galeraza.header"])
         self.assertEqual(

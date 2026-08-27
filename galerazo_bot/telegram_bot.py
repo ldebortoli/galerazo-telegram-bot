@@ -926,6 +926,10 @@ async def _hisopo_callback_entrypoint(
                     "hisopos.expired_popup_collected"
                     if expiration.collected_expired
                     else "hisopos.expired_popup_mystery",
+                    type_label=t(
+                        language,
+                        f"hisopos.type.{expiration.spawn.hisopo_type}",
+                    ),
                 ),
                 show_alert=True,
             )
@@ -1213,6 +1217,7 @@ async def _handle_hisopo_race_callback(
                 "hisopos.expired_popup_collected"
                 if expiration.collected_expired
                 else "hisopos.expired_popup_mystery",
+                type_label=t(language, f"hisopos.type.{spawn.hisopo_type}"),
             ),
             show_alert=True,
         )

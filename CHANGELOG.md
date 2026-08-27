@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.42] - 2026-08-27
+
+- Correcciones y mejoras: cuando un Hisopo se vence, tanto la leyenda como el aviso emergente indican de forma breve cuál era su tipo y que se perdió por haber vencido, sin agregar detalles de puntos ni de colección.
+
 ## [0.41] - 2026-08-21
 
 - Correcciones y mejoras: Frenético y Agujero negro ya no publican ni refrescan la mejor marca de la carrera. Cada participante mantiene su contador individual hasta 20 y ve su propio progreso solamente en la notificación privada de cada pulsación; el mensaje se edita al revelar un Misterioso y al mostrar el desenlace.

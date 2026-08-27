@@ -2528,7 +2528,7 @@ class HisopoTelegramTests(unittest.IsolatedAsyncioTestCase):
             )
         edit_expired.assert_awaited_once()
         callback.answer.assert_awaited_once_with(
-            "Llegaste tarde: no suma puntos, pero coleccionaste un hisopo vencido.",
+            "Era un hisopo frenético, pero se te venció, así que lo perdiste.",
             show_alert=True,
         )
 
@@ -2543,8 +2543,7 @@ class HisopoTelegramTests(unittest.IsolatedAsyncioTestCase):
             )
         edit_expired.assert_not_awaited()
         callback.answer.assert_awaited_once_with(
-            "Llegaste tarde. El Misterioso reveló su tipo, pero no suma puntos ni "
-            "un hisopo vencido.",
+            "Era un hisopo frenético, pero se te venció, así que lo perdiste.",
             show_alert=True,
         )
 
@@ -2583,11 +2582,10 @@ class HisopoTelegramTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(bot.edit_message_media.await_args.kwargs["media"].media, "expired-id")
         self.assertEqual(
             bot.edit_message_media.await_args.kwargs["media"].caption,
-            "Era un hisopo común. ¡Te lo perdiste! No suma puntos, pero descubriste "
-            "un hisopo vencido.",
+            "Era un hisopo común, pero se te venció, así que lo perdiste.",
         )
         callback.answer.assert_awaited_once_with(
-            "Llegaste tarde: no suma puntos, pero coleccionaste un hisopo vencido.",
+            "Era un hisopo común, pero se te venció, así que lo perdiste.",
             show_alert=True,
         )
 
@@ -2609,13 +2607,12 @@ class HisopoTelegramTests(unittest.IsolatedAsyncioTestCase):
         with patch.object(tb, "_is_user_restricted_in_callback_chat", return_value=False):
             await tb._hisopo_callback_entrypoint(update, context)
         self.assertEqual(bot.edit_message_media.await_args.kwargs["media"].media, "gold-id")
-        self.assertIn(
-            "El Misterioso era un hisopo dorado. ¡Te lo perdiste!",
+        self.assertEqual(
+            "Era un hisopo dorado, pero se te venció, así que lo perdiste.",
             bot.edit_message_media.await_args.kwargs["media"].caption,
         )
         callback.answer.assert_awaited_once_with(
-            "Llegaste tarde. El Misterioso reveló su tipo, pero no suma puntos ni "
-            "un hisopo vencido.",
+            "Era un hisopo dorado, pero se te venció, así que lo perdiste.",
             show_alert=True,
         )
 
