@@ -225,6 +225,9 @@ class MiniAppApiTests(unittest.IsolatedAsyncioTestCase):
             ],
             1,
         )
+        self.assertEqual(len(payload["paid_hisopos"]), 15)
+        self.assertEqual(payload["paid_hisopos"][-2]["key"], "galerazo")
+        self.assertEqual(payload["paid_hisopos"][-2]["price_stars"], 6000)
         self.assertEqual(payload["club"]["periods_paid"], 2)
 
         group_payload = json.loads(

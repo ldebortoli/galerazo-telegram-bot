@@ -24,6 +24,7 @@ GIFT_TYPE_HINTS = (
     "cuasar",
     "bigbang",
     "dengue",
+    "galerazo",
     "estelar",
 )
 

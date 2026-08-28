@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.47] - 2026-08-28
+
+- Nuevo Hisopo Galerazo, una edición especial de galera, conejo y oro en honor al Galerazo y a su creador. Se incorpora a la tienda por 6000 Stars, apenas por encima de Dengue, y puede comprarse más de una vez o regalarse como los demás Hisopos especiales.
+
 ## [0.46] - 2026-08-28
 
 - Correcciones y mejoras: el Club del Hisopo queda como una membresía mensual de apoyo y ya no acredita Estelares, Hisopos, puntos ni ventajas; los Estelares obtenidos anteriormente se conservan. La Mini App aclara este alcance, corrige `Invitale` y simplifica la opción para aparecer con nombre o de forma anónima en el Top colaboradores.

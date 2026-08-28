@@ -144,6 +144,14 @@ PAID_HISOPOS: tuple[PaidHisopo, ...] = (
         "hisopo-dengue.png",
         "#d7d2c7",
     ),
+    PaidHisopo(
+        "galerazo",
+        "Hisopo Galerazo",
+        "La edición máxima de galera, conejo y oro, en honor al Galerazo y a su creador.",
+        6000,
+        "hisopo-galerazo.png",
+        "#d0a74f",
+    ),
 )
 PAID_HISOPO_BY_KEY = {hisopo.key: hisopo for hisopo in PAID_HISOPOS}
 

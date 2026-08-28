@@ -560,6 +560,7 @@ La tienda ofrece coleccionables globales sin puntos ni cambios de probabilidad. 
 | Hisopo Cuásar | 650 Stars |
 | Hisopo Big Bang | 1000 Stars |
 | Hisopo Dengue | 5000 Stars |
+| Hisopo Galerazo | 6000 Stars |
 
 El Club se renueva cada 30 días como apoyo recurrente y no acredita Estelares ni otros artículos. Los Estelares obtenidos antes de este cambio se conservan. Cancelar detiene renovaciones futuras; un reembolso confirmado ajusta el período de membresía o retira del destinatario el artículo asociado a una compra. Los cobros se procesan de forma idempotente por `telegram_payment_charge_id`, verifican moneda, importe, producto, comprador, destinatario y firma antes de acreditarse. `/paysupport` y `/terminos` permanecen disponibles aunque la Mini App no esté publicada.
 
@@ -585,7 +586,7 @@ MINI_APP_PORT=8080
 
 Dejar `TELEGRAM_MINI_APP_URL` vacío desactiva el servidor y el botón sin afectar los comandos ni los pagos por enlaces de factura. El puerto de aplicación no debe exponerse directamente a Internet: el dominio HTTPS debe terminar TLS en un proxy y reenviar internamente al host/puerto configurado.
 
-Los cosméticos no necesitan `file_id` de Telegram: la Mini App sirve directamente los catorce PNG de `assets/hisopos/` desde el mismo origen HTTPS. Un `file_id` solo sería necesario si en el futuro el bot enviara uno de esos artes como foto dentro de un chat; además, ese identificador tendría que obtenerse con la misma identidad de bot que vaya a reutilizarlo.
+Los especiales no necesitan `file_id` de Telegram: la Mini App sirve directamente los quince PNG de `assets/hisopos/` desde el mismo origen HTTPS. Un `file_id` solo sería necesario si en el futuro el bot enviara uno de esos artes como foto dentro de un chat; además, ese identificador tendría que obtenerse con la misma identidad de bot que vaya a reutilizarlo.
 
 El saldo recibido queda primero como Stars del bot. Telegram aplica su plazo de disponibilidad y luego permite retirar el saldo elegible mediante Fragment hacia una billetera TON, sujeto al mínimo dinámico, autenticación en dos pasos y términos vigentes. Para llevarlo a una cuenta bancaria hay que vender los TON en un servicio compatible y retirar moneda fiduciaria; no existe un retiro directo Stars → banco y pueden aplicar verificación de identidad, comisiones e impuestos.
 
