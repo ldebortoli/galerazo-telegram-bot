@@ -194,6 +194,15 @@ Si hay mas de un dev, separalos por coma:
 TELEGRAM_DEV_USER_IDS=<tu-user-id>,<otro-user-id>
 ```
 
+Configura por separado al propietario. Solo esa persona vera las herramientas
+de gastos dentro de `/help`, y unicamente cuando lo abra en el chat privado del
+bot. El propietario tambien debe estar incluido en `TELEGRAM_DEV_USER_IDS` para
+poder ejecutarlas:
+
+```env
+TELEGRAM_OWNER_USER_ID=<tu-user-id>
+```
+
 Para conseguir tu user id podes usar `/debug` una vez que el bot este corriendo y te hayas configurado, o usar un bot externo de Telegram que muestre tu id.
 
 ### 3. Configurar canal de logging
@@ -247,6 +256,7 @@ Ejemplo:
 TELEGRAM_BOT_TOKEN=token-de-botfather
 OPENAI_API_KEY=clave-restringida-de-moderacion
 TELEGRAM_DEV_USER_IDS=
+TELEGRAM_OWNER_USER_ID=
 TELEGRAM_LOG_CHAT_ID=
 TELEGRAM_ANNOUNCEMENTS_CHAT_ID=
 TELEGRAM_HISOPO_COMMON_FILE_ID=file-id-del-hisopo-comun
@@ -721,21 +731,12 @@ La ruleta rusa funciona solo en grupos y supergrupos y viene deshabilitada por d
 
 ## Gastos
 
-Los gastos funcionan solo en grupos y supergrupos. Para chats nuevos vienen deshabilitados por defecto. Un usuario de nivel 2 o superior puede habilitarlos con:
+El subsistema de gastos queda reservado a los devs. Sus comandos no se publican
+en las sugerencias nativas de Telegram ni aparecen en `/help` de grupos o de
+otros usuarios. Solo el propietario configurado los ve al pedir `/help` por
+privado. La ejecucion conserva el permiso DEV y puede usarse en cualquier chat.
 
-```powershell
-/habilitargastos
-```
-
-Y deshabilitarlos con:
-
-```powershell
-/deshabilitargastos
-```
-
-Tambien aparecen en `/config` dentro de `Comandos -> Gastos`.
-
-Cuando el sistema esta habilitado, cualquier usuario del chat puede registrar gastos con este formato:
+El registro usa este formato:
 
 ```powershell
 /gasto monto | medio de pago | origen | descripcion
@@ -877,6 +878,7 @@ no forma parte del camino recomendado actual.
 - Copiar `.env.example` a `.env`.
 - Completar `TELEGRAM_BOT_TOKEN`.
 - Completar `TELEGRAM_DEV_USER_IDS`.
+- Completar `TELEGRAM_OWNER_USER_ID` con el propietario incluido entre los devs.
 - Agregar el bot al canal/grupo de logging y configurar `TELEGRAM_LOG_CHAT_ID`.
 - Agregar el bot al canal/grupo de anuncios y configurar `TELEGRAM_ANNOUNCEMENTS_CHAT_ID`.
 - Ejecutar `python app.py`.

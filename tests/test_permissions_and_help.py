@@ -105,6 +105,71 @@ class PermissionsAndHelpTests(unittest.TestCase):
             self.assertIn("Comandos de desarrollo:", dev_help)
             self.assertIn("/debug:", dev_help)
 
+    def test_expense_help_is_visible_only_to_owner_in_private(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            db = Database(Path(directory) / "test.sqlite3")
+            expense_commands = (
+                "/gasto:",
+                "/ultimosgastos:",
+                "/estadogastos:",
+                "/sincronizargastos:",
+            )
+
+            owner_private = asyncio.run(
+                handle_command_async(
+                    "/help",
+                    "1",
+                    db,
+                    chat_id="1",
+                    chat_type="private",
+                    user_level=UserLevel.DEV,
+                    owner_user_id="1",
+                )
+            )
+            owner_group = asyncio.run(
+                handle_command_async(
+                    "/help",
+                    "1",
+                    db,
+                    chat_id="-1",
+                    chat_type="group",
+                    user_level=UserLevel.DEV,
+                    owner_user_id="1",
+                )
+            )
+            other_dev_private = asyncio.run(
+                handle_command_async(
+                    "/help",
+                    "2",
+                    db,
+                    chat_id="2",
+                    chat_type="private",
+                    user_level=UserLevel.DEV,
+                    owner_user_id="1",
+                )
+            )
+            unconfigured_owner = asyncio.run(
+                handle_command_async(
+                    "/help",
+                    "1",
+                    db,
+                    chat_id="1",
+                    chat_type="private",
+                    user_level=UserLevel.DEV,
+                )
+            )
+
+            self.assertIn("Comandos de gastos:", owner_private)
+            for command in expense_commands:
+                with self.subTest(command=command):
+                    self.assertIn(command, owner_private)
+                    self.assertNotIn(command, owner_group)
+                    self.assertNotIn(command, other_dev_private)
+                    self.assertNotIn(command, unconfigured_owner)
+            self.assertNotIn("Comandos de gastos:", owner_group)
+            self.assertNotIn("Comandos de gastos:", other_dev_private)
+            self.assertNotIn("Comandos de gastos:", unconfigured_owner)
+
     def test_help_lists_aliases_and_disabled_configurable_commands(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             db = Database(Path(directory) / "test.sqlite3")

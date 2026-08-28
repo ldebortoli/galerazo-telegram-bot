@@ -30,6 +30,7 @@ FIELDS = (
     ("TELEGRAM_BOT_TOKEN", "Token del bot", True),
     ("OPENAI_API_KEY", "Clave de moderacion OpenAI", True),
     ("TELEGRAM_DEV_USER_IDS", "IDs de desarrolladores", False),
+    ("TELEGRAM_OWNER_USER_ID", "ID del propietario", False),
     ("TELEGRAM_LOG_CHAT_ID", "ID del canal de logs", False),
     ("TELEGRAM_ANNOUNCEMENTS_CHAT_ID", "ID del canal de anuncios", False),
     ("TELEGRAM_HISOPO_COMMON_FILE_ID", "File ID del hisopo comun", False),

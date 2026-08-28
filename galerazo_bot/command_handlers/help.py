@@ -15,6 +15,9 @@ HELP_GROUPS = (
     ("expenses", {"habilitargastos", "deshabilitargastos", "gasto", "ultimosgastos", "estadogastos", "sincronizargastos"}),
     ("dev", {"anuncio", "novedad", "backup", "debug", "reiniciarbot", "apagar"}),
 )
+EXPENSE_COMMAND_KEYS = frozenset(
+    {"gasto", "ultimosgastos", "estadogastos", "sincronizargastos"}
+)
 
 
 def handle(context: CommandContext, _db: Database) -> str:
@@ -23,6 +26,8 @@ def handle(context: CommandContext, _db: Database) -> str:
     available = []
     for command in iter_commands():
         if command.hidden or context.user_level < command.min_level:
+            continue
+        if command.command_key in EXPENSE_COMMAND_KEYS and not _can_show_expenses(context):
             continue
         available.append(command)
 
@@ -42,6 +47,14 @@ def handle(context: CommandContext, _db: Database) -> str:
         lines.extend(("", context.t("help.group.other")))
         lines.extend(f"/{command.name}: {context.t(f'help.{command.command_key}')}" for command in remaining)
     return "\n".join(lines)
+
+
+def _can_show_expenses(context: CommandContext) -> bool:
+    return (
+        context.chat_type == "private"
+        and context.owner_user_id is not None
+        and context.sender_id == context.owner_user_id
+    )
 
 
 COMMANDS = {

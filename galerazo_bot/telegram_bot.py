@@ -1967,6 +1967,7 @@ async def _handle_command_update(update: Update, context: ContextTypes.DEFAULT_T
         db=state.db,
         chat_id=str(chat.id),
         user_level=user_level,
+        owner_user_id=state.settings.telegram_owner_user_id,
         sender_username=user.username,
         sender_display_name=_display_name(user),
         reply_to_user_id=str(reply_to_user.id) if reply_to_user is not None else None,

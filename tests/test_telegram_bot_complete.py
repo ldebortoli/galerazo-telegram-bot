@@ -48,6 +48,7 @@ def settings(**overrides) -> Settings:
     values = dict(
         telegram_bot_token="token",
         telegram_dev_user_ids=frozenset({"1"}),
+        telegram_owner_user_id="1",
         telegram_log_chat_id="-10",
         telegram_announcements_chat_id="-11",
         database_path=Path("db.sqlite3"),
@@ -565,6 +566,7 @@ class CommandAndCallbackEntrypointTests(unittest.IsolatedAsyncioTestCase):
             await tb._handle_command_update(update, context)
         kwargs = handle.await_args.kwargs
         self.assertEqual(kwargs["reply_to_user_id"], "2")
+        self.assertEqual(kwargs["owner_user_id"], "1")
         self.assertTrue(callable(kwargs["send_debug_update"]))
         send.assert_awaited_once()
         self.assertEqual(send.await_args.kwargs["response_parse_mode"], "HTML")

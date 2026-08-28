@@ -17,6 +17,7 @@ class Settings:
     google_sheets_credentials_json_path: Path | None
     google_sheets_spreadsheet_id: str | None
     google_sheets_worksheet_name: str
+    telegram_owner_user_id: str | None = None
     openai_api_key: str | None = None
     google_cloud_billing_project_id: str | None = None
     google_cloud_billing_table: str | None = None
@@ -51,6 +52,7 @@ def load_settings() -> Settings:
     return Settings(
         telegram_bot_token=os.getenv("TELEGRAM_BOT_TOKEN", ""),
         telegram_dev_user_ids=_parse_id_list(os.getenv("TELEGRAM_DEV_USER_IDS", "")),
+        telegram_owner_user_id=os.getenv("TELEGRAM_OWNER_USER_ID") or None,
         telegram_log_chat_id=os.getenv("TELEGRAM_LOG_CHAT_ID") or None,
         telegram_announcements_chat_id=os.getenv("TELEGRAM_ANNOUNCEMENTS_CHAT_ID") or None,
         database_path=Path(os.getenv("DATABASE_PATH", "data/galerazo.sqlite3")),

@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.50] - 2026-08-28
+
+- Correcciones y mejoras de privacidad en la ayuda del bot.
+
 ## [0.49] - 2026-08-28
 
 - `/donar` presenta una invitación más breve para aportar con Telegram Stars, sumarse al Club del Hisopo o donar la jubilación de la abuela; se retiran las aclaraciones adicionales y el acceso externo queda identificado simplemente como `Cafecito`.

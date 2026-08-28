@@ -207,6 +207,7 @@ class ConfigurationAndEntrypointTests(unittest.TestCase):
         environment = {
             "TELEGRAM_BOT_TOKEN": "token",
             "TELEGRAM_DEV_USER_IDS": " 1, ,2 ",
+            "TELEGRAM_OWNER_USER_ID": "1",
             "TELEGRAM_LOG_CHAT_ID": "-1",
             "TELEGRAM_ANNOUNCEMENTS_CHAT_ID": "-2",
             "TELEGRAM_HISOPO_COMMON_FILE_ID": "common",
@@ -239,6 +240,7 @@ class ConfigurationAndEntrypointTests(unittest.TestCase):
         with patch.dict("os.environ", environment, clear=True):
             settings = config.load_settings()
         self.assertEqual(settings.telegram_dev_user_ids, frozenset({"1", "2"}))
+        self.assertEqual(settings.telegram_owner_user_id, "1")
         self.assertEqual(settings.google_sheets_credentials_json_path, Path("key.json"))
         self.assertEqual(settings.telegram_hisopo_common_file_id, "common")
         self.assertEqual(settings.telegram_hisopo_silver_file_id, "silver")

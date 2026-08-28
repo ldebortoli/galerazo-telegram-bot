@@ -69,6 +69,7 @@ class CommandContext:
     raw_text: str
     args: str
     language: str = DEFAULT_LANGUAGE
+    owner_user_id: str | None = None
     bot_user_id: str | None = None
     sender_username: str | None = None
     sender_display_name: str | None = None
