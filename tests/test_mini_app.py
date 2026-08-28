@@ -76,6 +76,19 @@ def request_stub(*, headers=None, query=None, body=None, json_error=None, path="
 
 
 class MiniAppAuthenticationTests(unittest.TestCase):
+    def test_support_copy_describes_club_and_privacy_without_stellar_reward(self) -> None:
+        mini_app_root = Path(__file__).resolve().parent.parent / "mini_app"
+        html = (mini_app_root / "index.html").read_text(encoding="utf-8")
+        javascript = (mini_app_root / "app.js").read_text(encoding="utf-8")
+
+        self.assertIn("Invitale Stars al proyecto", html)
+        self.assertNotIn("Invitále", html)
+        self.assertIn("Elegí cómo aparecer", html)
+        self.assertNotIn("Tu nombre, solo si querés", html)
+        self.assertIn("No entrega Hisopos, puntos ni ventajas", javascript)
+        self.assertNotIn("Recibís un Hisopo Estelar", javascript)
+        self.assertIn("Tus aportes aparecen como anónimos", javascript)
+
     def test_valid_init_data_and_direct_link(self) -> None:
         context = create_album_context("token", chat_id="-1001", user_id="1")
         user = validate_init_data(

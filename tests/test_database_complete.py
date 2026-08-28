@@ -269,6 +269,7 @@ class DatabaseCompleteTests(unittest.TestCase):
                     "20260821_add_hisopo_message_cleanup",
                     "20260821_add_bomb_hisopo",
                     "20260821_add_hisopo_races",
+                    "20260828_track_star_payment_rewards",
                 },
             )
             columns = {row["name"] for row in connection.execute("PRAGMA table_info(paginated_message_states)")}

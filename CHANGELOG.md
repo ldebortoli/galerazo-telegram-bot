@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.46] - 2026-08-28
+
+- Correcciones y mejoras: el Club del Hisopo queda como una membresía mensual de apoyo y ya no acredita Estelares, Hisopos, puntos ni ventajas; los Estelares obtenidos anteriormente se conservan. La Mini App aclara este alcance, corrige `Invitale` y simplifica la opción para aparecer con nombre o de forma anónima en el Top colaboradores.
+
 ## [0.45] - 2026-08-28
 
 - La tienda permite comprar más de una unidad del mismo Hisopo o regalarlo a otra persona mediante su `@alias` conocido por el bot o su `user_id`; el destinatario queda firmado en la factura y recibe la unidad tras el pago confirmado.

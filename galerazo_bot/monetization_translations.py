@@ -27,8 +27,8 @@ _ENGLISH = {
     ),
     "payments.terms": (
         "Stars purchases and Club del Hisopo\n"
-        "Paid Hisopos are cosmetic and give no points or advantage. Club del Hisopo renews every 30 days for the price shown before payment and grants one Estelar for each confirmed period. "
-        "Cancelling stops future renewals and preserves paid items. Approved refunds subtract donations from the ranking and remove the associated item or period. Telegram's Stars terms also apply: https://telegram.org/tos/stars"
+        "Paid Hisopos are cosmetic and give no points or advantage. Club del Hisopo is a support membership that renews every 30 days for the price shown before payment; it does not grant Hisopos, points or advantages. "
+        "Cancelling stops future renewals. Approved refunds subtract donations from the ranking, remove an associated purchased item when applicable and adjust the refunded membership period. Telegram's Stars terms also apply: https://telegram.org/tos/stars"
     ),
 }
 
@@ -58,8 +58,8 @@ _SPANISH = {
     ),
     "payments.terms": (
         "Compras con Stars y Club del Hisopo\n"
-        "Los Hisopos pagos son cosméticos y no dan puntos ni ventajas. El Club del Hisopo se renueva cada 30 días por el precio mostrado antes de pagar y acredita un Estelar por período confirmado. "
-        "Cancelar detiene cobros futuros y conserva lo ya pagado. Un reembolso aprobado descuenta la donación del ranking y retira el artículo o período asociado. También rigen los términos de Stars de Telegram: https://telegram.org/tos/stars"
+        "Los Hisopos pagos son cosméticos y no dan puntos ni ventajas. El Club del Hisopo es una membresía de apoyo que se renueva cada 30 días por el precio mostrado antes de pagar; no entrega Hisopos, puntos ni ventajas. "
+        "Cancelar detiene cobros futuros. Un reembolso aprobado descuenta la donación del ranking, retira el artículo comprado cuando corresponde y ajusta el período de membresía reembolsado. También rigen los términos de Stars de Telegram: https://telegram.org/tos/stars"
     ),
 }
 

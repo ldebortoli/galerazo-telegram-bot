@@ -43,8 +43,9 @@ class MonetizationCatalogTests(unittest.TestCase):
         self.assertEqual(product.reward_hisopo_key, "massive")
 
         club = invoice_spec("subscription", "club")
-        self.assertEqual(club.reward_hisopo_key, "stellar")
+        self.assertIsNone(club.reward_hisopo_key)
         self.assertEqual(club.subscription_period.days, 30)
+        self.assertIn("No entrega Hisopos", club.description)
 
         for kind, item_key in (
             ("donation", "12"),
@@ -245,6 +246,28 @@ class MonetizationDatabaseTests(unittest.TestCase):
         self.assertEqual((membership.periods_paid, membership.active_until), (0, None))
         self.assertEqual(self.db.get_paid_hisopo_ownership("1"), [])
 
+        self.db.grant_paid_hisopo(
+            recipient_user_id="1",
+            hisopo_key="stellar",
+            gifted_by_user_id="2",
+        )
+        self.assertTrue(
+            self._payment(
+                "club-without-reward",
+                kind="subscription",
+                item_key="club",
+                amount=100,
+                expires="2026-10-27T10:00:00+00:00",
+            )
+        )
+        self.assertEqual(self.db.get_paid_hisopo_ownership("1")[0].quantity, 1)
+        self.assertTrue(
+            self.db.refund_star_payment(
+                "club-without-reward", refunded_at="2026-10-28T10:00:00+00:00"
+            )
+        )
+        self.assertEqual(self.db.get_paid_hisopo_ownership("1")[0].quantity, 1)
+
         self.assertFalse(self.db.is_donor_display_public("1"))
         self.db.set_donor_display_public("1", True)
         self.db.set_donor_display_public("1", False)
@@ -258,6 +281,33 @@ class MonetizationDatabaseTests(unittest.TestCase):
         self.assertTrue(self.db.refund_star_payment("donation-2", refunded_at="2026-08-28T10:00:00+00:00"))
         entries = self.db.get_donor_leaderboard()
         self.assertEqual([(entry.user_id, entry.amount_stars, entry.display_public) for entry in entries], [("1", 25, True)])
+
+    def test_reward_migration_preserves_legacy_subscription_refunds(self) -> None:
+        self.assertTrue(
+            self._payment(
+                "legacy-club",
+                kind="subscription",
+                item_key="club",
+                reward="stellar",
+                amount=100,
+            )
+        )
+        with self.db._connect() as conn:
+            conn.execute(
+                "UPDATE star_payments SET reward_hisopo_key = NULL WHERE telegram_payment_charge_id = 'legacy-club'"
+            )
+            conn.execute(
+                "DELETE FROM schema_migrations WHERE migration_id = '20260828_track_star_payment_rewards'"
+            )
+
+        migrated = Database(self.db.path)
+        with migrated._connect() as conn:
+            reward = conn.execute(
+                "SELECT reward_hisopo_key FROM star_payments WHERE telegram_payment_charge_id = 'legacy-club'"
+            ).fetchone()["reward_hisopo_key"]
+        self.assertEqual(reward, "stellar")
+        self.assertTrue(migrated.refund_star_payment("legacy-club", refunded_at="later"))
+        self.assertEqual(migrated.get_paid_hisopo_ownership("1"), [])
 
 
 if __name__ == "__main__":

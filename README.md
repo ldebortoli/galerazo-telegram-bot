@@ -541,7 +541,7 @@ Los artes fuente y sus indicaciones de generación están en [`assets/hisopos`](
 
 ## Stars, Hisopos especiales y Mini App
 
-`/donar` crea facturas en Telegram Stars ligadas a la persona que ejecutó el comando. Permite aportes voluntarios de 25, 100 o 500 Stars, sumarse al Club del Hisopo por 100 Stars cada 30 días y conservar Cafecito como alternativa. Las donaciones no compran artículos; el Top colaboradores cuenta solamente donaciones confirmadas, descuenta reembolsos y muestra el nombre únicamente si la persona eligió hacerlo con `/donantes publico` o desde la Mini App. `/donantes anonimo` restaura el anonimato.
+`/donar` crea facturas en Telegram Stars ligadas a la persona que ejecutó el comando. Permite aportes voluntarios de 25, 100 o 500 Stars, sumarse al Club del Hisopo por 100 Stars cada 30 días y conservar Cafecito como alternativa. El Club es una membresía de apoyo: no entrega Hisopos, puntos ni ventajas. Las donaciones no compran artículos; el Top colaboradores cuenta solamente donaciones confirmadas, descuenta reembolsos y muestra el nombre únicamente si la persona eligió hacerlo con `/donantes publico` o desde la Mini App. `/donantes anonimo` restaura el anonimato.
 
 La tienda ofrece coleccionables globales sin puntos ni cambios de probabilidad. Cada compra suma una unidad aunque la persona ya tenga ese Hisopo. También se puede elegir `Regalar` e indicar el `@alias` de una persona conocida por el bot o cualquier `user_id` numérico; la factura firmada acredita la unidad al destinatario después de confirmarse el pago:
 
@@ -561,7 +561,7 @@ La tienda ofrece coleccionables globales sin puntos ni cambios de probabilidad. 
 | Hisopo Big Bang | 1000 Stars |
 | Hisopo Dengue | 5000 Stars |
 
-El Club acredita un Hisopo Estelar por cada período de 30 días efectivamente confirmado. Cancelar detiene renovaciones futuras y conserva los períodos ya pagados; un reembolso confirmado retira del destinatario el artículo o período asociado. Los cobros se procesan de forma idempotente por `telegram_payment_charge_id`, verifican moneda, importe, producto, comprador, destinatario y firma antes de acreditarse. `/paysupport` y `/terminos` permanecen disponibles aunque la Mini App no esté publicada.
+El Club se renueva cada 30 días como apoyo recurrente y no acredita Estelares ni otros artículos. Los Estelares obtenidos antes de este cambio se conservan. Cancelar detiene renovaciones futuras; un reembolso confirmado ajusta el período de membresía o retira del destinatario el artículo asociado a una compra. Los cobros se procesan de forma idempotente por `telegram_payment_charge_id`, verifican moneda, importe, producto, comprador, destinatario y firma antes de acreditarse. `/paysupport` y `/terminos` permanecen disponibles aunque la Mini App no esté publicada.
 
 La Mini App reúne tres pestañas: álbum, tienda y apoyo. Desde `/coleccionhisopos` en un grupo, el botón abre directamente el álbum propio de ese grupo mediante un contexto firmado. Desde el botón `Mis álbumes` del privado/perfil, el selector incluye `Todos los grupos` y cada grupo donde Telegram ya registró una colección de esa persona. La vista total suma por tipo las capturas de todos los grupos. Los Hisopos encontrados y especiales aparecen juntos en una sola grilla; estos últimos son globales y conservan la misma cantidad al cambiar de grupo. La autenticación valida el `initData` firmado por Telegram y rechaza sesiones de más de una hora.
 

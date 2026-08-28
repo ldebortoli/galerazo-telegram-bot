@@ -103,7 +103,7 @@ function productCard(item) {
 function renderClub() {
   const club = state.data.club;
   const card = $("#club-card");
-  card.innerHTML = `<span class="kicker">MEMBRESÍA · CADA 30 DÍAS</span><h2>Club del Hisopo</h2><p>Recibís un Hisopo Estelar por cada período confirmado. Si cancelás, los que ya pagaste siguen en tu colección.</p><div class="buy-row"><span class="price">⭐ ${club.price_stars} / 30 días</span></div>${club.periods_paid ? `<p>Períodos acreditados: ${club.periods_paid}${club.active_until ? ` · vigente hasta ${formatDate(club.active_until)}` : ""}</p>` : ""}`;
+  card.innerHTML = `<span class="kicker">MEMBRESÍA · CADA 30 DÍAS</span><h2>Club del Hisopo</h2><p>Una forma de apoyar el bot mes a mes. No entrega Hisopos, puntos ni ventajas.</p><div class="buy-row"><span class="price">⭐ ${club.price_stars} / 30 días</span></div>${club.periods_paid ? `<p>Períodos aportados: ${club.periods_paid}${club.active_until ? ` · vigente hasta ${formatDate(club.active_until)}` : ""}</p>` : ""}`;
   card.querySelector(".buy-row").append(actionButton(club.periods_paid ? "Gestionar o renovar" : "Sumarme al Club", () => checkout("subscription", "club")));
 }
 
@@ -167,7 +167,7 @@ async function updateVisibility(event) {
     });
     state.data.donor_public = isPublic;
     renderPrivacyCopy();
-    toast(isPublic ? "Tu nombre podrá aparecer en el ranking." : "Tus aportes vuelven a mostrarse como Anónimo.");
+    toast(isPublic ? "Tus aportes aparecen con tu nombre." : "Tus aportes aparecen como anónimos.");
   } catch (error) {
     event.target.checked = !isPublic;
     toast(error.message);
@@ -176,8 +176,8 @@ async function updateVisibility(event) {
 
 function renderPrivacyCopy() {
   $("#privacy-copy").textContent = state.data.donor_public
-    ? "Tu nombre puede aparecer junto al total de aportes confirmados."
-    : "Tus aportes aparecen como Anónimo. Las compras y cuotas del Club no cuentan.";
+    ? "Tus aportes aparecen con tu nombre."
+    : "Tus aportes aparecen como anónimos.";
 }
 
 function donorRow(item) {

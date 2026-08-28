@@ -150,7 +150,7 @@ PAID_HISOPO_BY_KEY = {hisopo.key: hisopo for hisopo in PAID_HISOPOS}
 CLUB_HISOPO = PaidHisopo(
     "stellar",
     "Hisopo Estelar",
-    "Edición exclusiva que acredita cada período pagado del Club del Hisopo.",
+    "Una edición especial del universo Hisopo.",
     100,
     "hisopo-estelar.png",
     "#d5aa55",
@@ -183,9 +183,8 @@ def invoice_spec(kind: str, item_key: str) -> InvoiceSpec:
     if kind == "subscription" and item_key == "club":
         return InvoiceSpec(
             "Club del Hisopo",
-            "Membresía renovable cada 30 días con una edición Estelar por período pagado.",
+            "Membresía de apoyo renovable cada 30 días. No entrega Hisopos, puntos ni ventajas.",
             CLUB_HISOPO.price_stars,
-            reward_hisopo_key=CLUB_HISOPO.key,
             subscription_period=CLUB_SUBSCRIPTION_PERIOD,
         )
     raise PaymentPayloadError("El producto de Stars no existe.")

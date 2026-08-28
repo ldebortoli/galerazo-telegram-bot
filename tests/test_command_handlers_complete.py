@@ -136,7 +136,9 @@ class SmallAsyncHandlerTests(unittest.IsolatedAsyncioTestCase):
         self.assertIn("Anónimo — ⭐ 25", ranking)
         self.assertIn("/donantes publico", ranking)
         self.assertIn("Stars", donar.handle_support(make_context(), db))
-        self.assertIn("cosméticos", donar.handle_terms(make_context(), db))
+        terms = donar.handle_terms(make_context(), db)
+        self.assertIn("cosméticos", terms)
+        self.assertNotIn("acredita un Estelar", terms)
 
     async def test_galerazas_paths(self) -> None:
         self.assertIn("grupos", await galerazas.handle(make_context(chat_type="private"), MagicMock()))

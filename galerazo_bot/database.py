@@ -549,6 +549,7 @@ class Database:
                     recipient_user_id TEXT,
                     kind TEXT NOT NULL CHECK (kind IN ('donation', 'product', 'subscription')),
                     item_key TEXT NOT NULL,
+                    reward_hisopo_key TEXT,
                     amount_stars INTEGER NOT NULL CHECK (amount_stars > 0),
                     currency TEXT NOT NULL CHECK (currency = 'XTR'),
                     invoice_payload TEXT NOT NULL,
@@ -811,6 +812,28 @@ class Database:
                         REFERENCES hisopo_spawns (chat_id, message_id),
                     FOREIGN KEY (user_id) REFERENCES users (user_id)
                 )
+                """
+            )
+            conn.execute(
+                "INSERT INTO schema_migrations (migration_id) VALUES (?)",
+                (migration_id,),
+            )
+
+        migration_id = "20260828_track_star_payment_rewards"
+        applied = conn.execute(
+            "SELECT 1 FROM schema_migrations WHERE migration_id = ?", (migration_id,)
+        ).fetchone()
+        if applied is None:
+            _ensure_column(conn, "star_payments", "reward_hisopo_key", "TEXT")
+            conn.execute(
+                """
+                UPDATE star_payments
+                SET reward_hisopo_key = CASE
+                    WHEN kind = 'product' THEN item_key
+                    WHEN kind = 'subscription' THEN 'stellar'
+                    ELSE ''
+                END
+                WHERE reward_hisopo_key IS NULL
                 """
             )
             conn.execute(
@@ -2816,11 +2839,12 @@ class Database:
                 """
                 INSERT INTO star_payments (
                     telegram_payment_charge_id, provider_payment_charge_id,
-                    user_id, recipient_user_id, kind, item_key, amount_stars, currency,
+                    user_id, recipient_user_id, kind, item_key, reward_hisopo_key,
+                    amount_stars, currency,
                     invoice_payload, source_chat_id, is_recurring,
                     is_first_recurring, subscription_expiration_date, paid_at
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT(telegram_payment_charge_id) DO NOTHING
                 """,
                 (
@@ -2830,6 +2854,7 @@ class Database:
                     effective_recipient_id,
                     kind,
                     item_key,
+                    reward_hisopo_key or "",
                     amount_stars,
                     currency,
                     invoice_payload,
@@ -2883,7 +2908,7 @@ class Database:
             payment = conn.execute(
                 """
                 SELECT user_id, COALESCE(recipient_user_id, user_id) AS recipient_user_id,
-                       kind, item_key
+                       kind, item_key, reward_hisopo_key
                 FROM star_payments
                 WHERE telegram_payment_charge_id = ? AND status = 'paid'
                 """,
@@ -2899,9 +2924,7 @@ class Database:
                 """,
                 (refunded_at, telegram_payment_charge_id),
             )
-            reward_key = payment["item_key"] if payment["kind"] == "product" else None
-            if payment["kind"] == "subscription":
-                reward_key = "stellar"
+            reward_key = payment["reward_hisopo_key"] or None
             if reward_key is not None:
                 conn.execute(
                     """
