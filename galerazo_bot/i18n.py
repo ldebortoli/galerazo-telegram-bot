@@ -434,6 +434,29 @@ for _language, _catalog in HISOPO_TRANSLATIONS.items():
 for _language, _catalog in MONETIZATION_TRANSLATIONS.items():
     TRANSLATIONS[_language].update(_catalog)
 
+_DEV_PRIVATE_HINTS = {
+    "es": "Para ver los comandos de desarrollo, enviame /help por privado.",
+    "en": "To see the developer commands, send me /help in a private chat.",
+    "ca": "Per veure les ordres de desenvolupament, envia'm /help per privat.",
+    "de": "Um die Entwicklerbefehle zu sehen, sende mir /help im privaten Chat.",
+    "es_ES": "Para ver los comandos de desarrollo, envíame /help por privado.",
+    "eu": "Garapen-komandoak ikusteko, bidali /help txat pribatuan.",
+    "fr": "Pour voir les commandes de développement, envoie-moi /help en privé.",
+    "gn": "Rehecha hag̃ua umi tembiapoukapy moheñói rehegua, emondo chéve /help ñemongeta ñemi rupi.",
+    "it": "Per vedere i comandi di sviluppo, inviami /help in privato.",
+    "ja": "開発者向けコマンドを見るには、プライベートチャットで /help を送信してください。",
+    "la": "Ut mandata evolutionis videas, mitte mihi /help privatim.",
+    "nl": "Stuur me /help in een privéchat om de ontwikkelaarscommando's te zien.",
+    "pt_BR": "Para ver os comandos de desenvolvimento, envie /help para mim no privado.",
+    "pt_PT": "Para veres os comandos de desenvolvimento, envia-me /help em privado.",
+    "quz": "Ruwachiq kamachiykunata rikunaykipaq, sapalla rimaynipi /help niyta kachamuy.",
+    "ru": "Чтобы увидеть команды разработчика, отправьте мне /help в личном чате.",
+    "zh_Hans": "要查看开发者命令，请在私聊中向我发送 /help。",
+    "zh_Hant": "若要查看開發者指令，請在私訊中傳送 /help 給我。",
+}
+for _language, _hint in _DEV_PRIVATE_HINTS.items():
+    TRANSLATIONS[_language]["help.dev_private_hint"] = _hint
+
 
 def t(language: str | None, key: str, **kwargs) -> str:
     normalized_language = language if language in TRANSLATIONS else DEFAULT_LANGUAGE

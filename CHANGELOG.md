@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.51] - 2026-08-28
+
+- Correcciones y mejoras de privacidad en la ayuda contextual del bot.
+
 ## [0.50] - 2026-08-28
 
 - Correcciones y mejoras de privacidad en la ayuda del bot.

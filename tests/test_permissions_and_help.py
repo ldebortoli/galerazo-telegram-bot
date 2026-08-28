@@ -94,16 +94,59 @@ class PermissionsAndHelpTests(unittest.TestCase):
             db = Database(Path(directory) / "test.sqlite3")
             db.get_or_create_user("1", "User")
 
-            common_help = asyncio.run(handle_command_async("/help", "1", db))
-            dev_help = asyncio.run(
-                handle_command_async("/help", "1", db, user_level=UserLevel.DEV)
+            common_help = asyncio.run(
+                handle_command_async("/help", "1", db, chat_id="-1", chat_type="group")
+            )
+            admin_help = asyncio.run(
+                handle_command_async(
+                    "/help",
+                    "1",
+                    db,
+                    chat_id="-1",
+                    chat_type="group",
+                    user_level=UserLevel.ADMIN,
+                )
+            )
+            dev_private_help = asyncio.run(
+                handle_command_async(
+                    "/help",
+                    "1",
+                    db,
+                    chat_id="1",
+                    chat_type="private",
+                    user_level=UserLevel.DEV,
+                )
+            )
+            dev_group_help = asyncio.run(
+                handle_command_async(
+                    "/help",
+                    "1",
+                    db,
+                    chat_id="-1",
+                    chat_type="group",
+                    user_level=UserLevel.DEV,
+                )
             )
 
             self.assertIn("Comandos generales:", common_help)
             self.assertNotIn("Comandos de desarrollo:", common_help)
             self.assertNotIn("/debug:", common_help)
-            self.assertIn("Comandos de desarrollo:", dev_help)
-            self.assertIn("/debug:", dev_help)
+            self.assertNotIn("enviame /help por privado", common_help)
+            self.assertNotIn("enviame /help por privado", admin_help)
+            self.assertIn("Comandos de desarrollo:", dev_private_help)
+            self.assertIn("/debug:", dev_private_help)
+            self.assertIn("/bloquear:", dev_private_help)
+            self.assertIn("/salir:", dev_private_help)
+            self.assertNotIn("enviame /help por privado", dev_private_help)
+            self.assertNotIn("Comandos de desarrollo:", dev_group_help)
+            self.assertNotIn("/debug:", dev_group_help)
+            self.assertNotIn("/bloquear:", dev_group_help)
+            self.assertNotIn("/salir:", dev_group_help)
+            self.assertTrue(
+                dev_group_help.endswith(
+                    "Para ver los comandos de desarrollo, enviame /help por privado."
+                )
+            )
 
     def test_expense_help_is_visible_only_to_owner_in_private(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

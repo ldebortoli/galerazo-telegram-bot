@@ -142,6 +142,21 @@ class CommandCoreCompleteTests(unittest.IsolatedAsyncioTestCase):
             response = help_handler.handle(make_context(), MagicMock())
         self.assertIn("Otros", response)
         self.assertIn("/custom", response)
+
+        dev_custom = commands.Command("devcustom", "", lambda *_: None, UserLevel.DEV)
+        with patch("galerazo_bot.commands.iter_commands", return_value=(dev_custom,)):
+            group_response = help_handler.handle(
+                make_context(user_level=UserLevel.DEV), MagicMock()
+            )
+            private_response = help_handler.handle(
+                make_context(chat_id="1", chat_type="private", user_level=UserLevel.DEV),
+                MagicMock(),
+            )
+        self.assertNotIn("/devcustom", group_response)
+        self.assertTrue(group_response.endswith(TRANSLATIONS["es"]["help.dev_private_hint"]))
+        self.assertIn("/devcustom", private_response)
+        self.assertNotIn(TRANSLATIONS["es"]["help.dev_private_hint"], private_response)
+
         self.assertIn("common", nivel.handle(make_context(), MagicMock()))
         self.assertEqual([level.label for level in UserLevel], ["common", "admin", "dev"])
 

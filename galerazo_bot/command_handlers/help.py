@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from ..command_model import Command
 from ..database import Database
-from ..roles import CommandContext
+from ..roles import CommandContext, UserLevel
 
 
 HELP_GROUPS = (
@@ -27,6 +27,8 @@ def handle(context: CommandContext, _db: Database) -> str:
     for command in iter_commands():
         if command.hidden or context.user_level < command.min_level:
             continue
+        if command.min_level == UserLevel.DEV and context.chat_type != "private":
+            continue
         if command.command_key in EXPENSE_COMMAND_KEYS and not _can_show_expenses(context):
             continue
         available.append(command)
@@ -46,6 +48,9 @@ def handle(context: CommandContext, _db: Database) -> str:
     if remaining:
         lines.extend(("", context.t("help.group.other")))
         lines.extend(f"/{command.name}: {context.t(f'help.{command.command_key}')}" for command in remaining)
+
+    if context.user_level >= UserLevel.DEV and context.chat_type != "private":
+        lines.extend(("", context.t("help.dev_private_hint")))
     return "\n".join(lines)
 
 
