@@ -8,7 +8,7 @@ from datetime import timedelta
 
 STARS_CURRENCY = "XTR"
 CLUB_SUBSCRIPTION_PERIOD = timedelta(days=30)
-PAYMENT_PAYLOAD_VERSION = "h1"
+PAYMENT_PAYLOAD_VERSION = "h2"
 
 
 @dataclass(frozen=True)
@@ -26,6 +26,7 @@ class PaymentIntent:
     kind: str
     item_key: str
     user_id: str
+    recipient_user_id: str
     source_chat_id: str | None
 
 
@@ -175,7 +176,7 @@ def invoice_spec(kind: str, item_key: str) -> InvoiceSpec:
         product = PAID_HISOPO_BY_KEY[item_key]
         return InvoiceSpec(
             product.name,
-            f"Hisopo cosmético permanente. {product.description}",
+            f"Hisopo especial permanente. {product.description}",
             product.price_stars,
             reward_hisopo_key=product.key,
         )
@@ -196,11 +197,15 @@ def create_payment_payload(
     kind: str,
     item_key: str,
     user_id: str,
+    recipient_user_id: str | None = None,
     source_chat_id: str | None = None,
 ) -> str:
     invoice_spec(kind, item_key)
+    recipient_value = recipient_user_id or user_id
     chat_value = source_chat_id or "0"
-    unsigned = ":".join((PAYMENT_PAYLOAD_VERSION, kind, item_key, user_id, chat_value))
+    unsigned = ":".join(
+        (PAYMENT_PAYLOAD_VERSION, kind, item_key, user_id, recipient_value, chat_value)
+    )
     signature = _signature(bot_token, "payment", unsigned)
     payload = f"{unsigned}:{signature}"
     if len(payload.encode("utf-8")) > 128:  # Telegram's invoice payload limit.
@@ -215,20 +220,33 @@ def parse_payment_payload(
     expected_user_id: str | None = None,
 ) -> PaymentIntent:
     parts = payload.split(":")
-    if len(parts) != 6:
+    if len(parts) == 6:
+        version, kind, item_key, user_id, chat_value, signature = parts
+        recipient_user_id = user_id
+    elif len(parts) == 7:
+        version, kind, item_key, user_id, recipient_user_id, chat_value, signature = parts
+    else:
         raise PaymentPayloadError("El identificador del pago no es válido.")
-    version, kind, item_key, user_id, chat_value, signature = parts
     unsigned = ":".join(parts[:-1])
     expected_signature = _signature(bot_token, "payment", unsigned)
-    if version != PAYMENT_PAYLOAD_VERSION or not hmac.compare_digest(signature, expected_signature):
+    if version not in {"h1", PAYMENT_PAYLOAD_VERSION} or not hmac.compare_digest(
+        signature, expected_signature
+    ):
         raise PaymentPayloadError("La firma del pago no es válida.")
+    if version == "h1" and len(parts) != 6:
+        raise PaymentPayloadError("El identificador del pago no es válido.")
+    if version == PAYMENT_PAYLOAD_VERSION and len(parts) != 7:
+        raise PaymentPayloadError("El identificador del pago no es válido.")
     if expected_user_id is not None and user_id != expected_user_id:
         raise PaymentPayloadError("Este pago fue creado para otra persona.")
+    if not user_id or not recipient_user_id:
+        raise PaymentPayloadError("El identificador del pago no es válido.")
     invoice_spec(kind, item_key)
     return PaymentIntent(
         kind=kind,
         item_key=item_key,
         user_id=user_id,
+        recipient_user_id=recipient_user_id,
         source_chat_id=None if chat_value == "0" else chat_value,
     )
 

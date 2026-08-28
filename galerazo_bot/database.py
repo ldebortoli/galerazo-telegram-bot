@@ -546,6 +546,7 @@ class Database:
                     telegram_payment_charge_id TEXT PRIMARY KEY,
                     provider_payment_charge_id TEXT,
                     user_id TEXT NOT NULL,
+                    recipient_user_id TEXT,
                     kind TEXT NOT NULL CHECK (kind IN ('donation', 'product', 'subscription')),
                     item_key TEXT NOT NULL,
                     amount_stars INTEGER NOT NULL CHECK (amount_stars > 0),
@@ -558,10 +559,12 @@ class Database:
                     subscription_expiration_date TEXT,
                     paid_at TEXT NOT NULL,
                     refunded_at TEXT,
-                    FOREIGN KEY (user_id) REFERENCES users (user_id)
+                    FOREIGN KEY (user_id) REFERENCES users (user_id),
+                    FOREIGN KEY (recipient_user_id) REFERENCES users (user_id)
                 )
                 """
             )
+            _ensure_column(conn, "star_payments", "recipient_user_id", "TEXT")
             conn.execute(
                 """
                 CREATE INDEX IF NOT EXISTS idx_star_payments_donations
@@ -2650,6 +2653,32 @@ class Database:
             for row in rows
         ]
 
+    def get_hisopo_collection_totals(self, user_id: str) -> list[HisopoCollectionEntry]:
+        with self._connect() as conn:
+            rows = conn.execute(
+                """
+                SELECT
+                    hisopo_type,
+                    SUM(capture_count) AS capture_count,
+                    MIN(first_captured_at) AS first_captured_at,
+                    MAX(last_captured_at) AS last_captured_at
+                FROM hisopo_collections
+                WHERE user_id = ? AND capture_count > 0
+                GROUP BY hisopo_type
+                ORDER BY first_captured_at, hisopo_type
+                """,
+                (user_id,),
+            ).fetchall()
+        return [
+            HisopoCollectionEntry(
+                hisopo_type=row["hisopo_type"],
+                capture_count=row["capture_count"],
+                first_captured_at=row["first_captured_at"],
+                last_captured_at=row["last_captured_at"],
+            )
+            for row in rows
+        ]
+
     def list_hisopo_albums_for_user(self, user_id: str) -> list[HisopoAlbumSummary]:
         with self._connect() as conn:
             rows = conn.execute(
@@ -2771,27 +2800,34 @@ class Database:
         is_recurring: bool = False,
         is_first_recurring: bool = False,
         subscription_expiration_date: str | None = None,
+        recipient_user_id: str | None = None,
     ) -> bool:
+        effective_recipient_id = recipient_user_id or user_id
         with self._connect() as conn:
             conn.execute(
                 "INSERT INTO users (user_id) VALUES (?) ON CONFLICT(user_id) DO NOTHING",
                 (user_id,),
             )
+            conn.execute(
+                "INSERT INTO users (user_id) VALUES (?) ON CONFLICT(user_id) DO NOTHING",
+                (effective_recipient_id,),
+            )
             inserted = conn.execute(
                 """
                 INSERT INTO star_payments (
                     telegram_payment_charge_id, provider_payment_charge_id,
-                    user_id, kind, item_key, amount_stars, currency,
+                    user_id, recipient_user_id, kind, item_key, amount_stars, currency,
                     invoice_payload, source_chat_id, is_recurring,
                     is_first_recurring, subscription_expiration_date, paid_at
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT(telegram_payment_charge_id) DO NOTHING
                 """,
                 (
                     telegram_payment_charge_id,
                     provider_payment_charge_id,
                     user_id,
+                    effective_recipient_id,
                     kind,
                     item_key,
                     amount_stars,
@@ -2818,7 +2854,7 @@ class Database:
                         quantity = paid_hisopo_ownership.quantity + 1,
                         last_acquired_at = excluded.last_acquired_at
                     """,
-                    (user_id, reward_hisopo_key, paid_at, paid_at),
+                    (effective_recipient_id, reward_hisopo_key, paid_at, paid_at),
                 )
             if kind == "subscription":
                 conn.execute(
@@ -2846,7 +2882,8 @@ class Database:
         with self._connect() as conn:
             payment = conn.execute(
                 """
-                SELECT user_id, kind, item_key
+                SELECT user_id, COALESCE(recipient_user_id, user_id) AS recipient_user_id,
+                       kind, item_key
                 FROM star_payments
                 WHERE telegram_payment_charge_id = ? AND status = 'paid'
                 """,
@@ -2871,7 +2908,7 @@ class Database:
                     DELETE FROM paid_hisopo_ownership
                     WHERE user_id = ? AND hisopo_key = ? AND quantity = 1
                     """,
-                    (payment["user_id"], reward_key),
+                    (payment["recipient_user_id"], reward_key),
                 )
                 conn.execute(
                     """
@@ -2879,7 +2916,7 @@ class Database:
                     SET quantity = quantity - 1, last_acquired_at = ?
                     WHERE user_id = ? AND hisopo_key = ? AND quantity > 1
                     """,
-                    (refunded_at, payment["user_id"], reward_key),
+                    (refunded_at, payment["recipient_user_id"], reward_key),
                 )
             if payment["kind"] == "subscription":
                 summary = conn.execute(

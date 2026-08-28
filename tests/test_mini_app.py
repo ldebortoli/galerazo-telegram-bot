@@ -17,6 +17,7 @@ from galerazo_bot.database import Database, DonorLeaderboardEntry
 from galerazo_bot.mini_app import (
     InitDataError,
     MINI_APP_API_KEY,
+    ALL_GROUPS_CHAT_ID,
     MiniAppApi,
     MiniAppService,
     MiniAppUser,
@@ -26,7 +27,7 @@ from galerazo_bot.mini_app import (
     start_mini_app,
     validate_init_data,
 )
-from galerazo_bot.monetization import create_album_context
+from galerazo_bot.monetization import create_album_context, parse_payment_payload
 
 
 NOW = datetime(2026, 8, 27, 12, tzinfo=timezone.utc)
@@ -158,6 +159,7 @@ class MiniAppApiTests(unittest.IsolatedAsyncioTestCase):
         self.temporary = tempfile.TemporaryDirectory()
         self.db = Database(Path(self.temporary.name) / "test.sqlite3")
         self.db.get_or_create_user("1", "Ada Lovelace", "ada")
+        self.db.get_or_create_user("2", "Bob Builder", "bobby")
         self.db.register_chat("-1", "group", "Álbum Uno")
         with self.db._connect() as conn:
             conn.execute(
@@ -201,7 +203,9 @@ class MiniAppApiTests(unittest.IsolatedAsyncioTestCase):
         user = preview.authenticate(request_stub())
         self.assertEqual(user.user_id, "preview")
         payload = json.loads((await preview.bootstrap(request_stub())).text)
-        self.assertEqual(payload["albums"][0]["title"], "Codex - Logs")
+        self.assertEqual(payload["albums"][0]["title"], "Todos los grupos")
+        self.assertEqual(payload["selected_chat_id"], ALL_GROUPS_CHAT_ID)
+        self.assertEqual(len(payload["albums"]), 3)
         self.assertEqual(
             next(item for item in payload["paid_hisopos"] if item["key"] == "serene")[
                 "quantity"
@@ -209,6 +213,16 @@ class MiniAppApiTests(unittest.IsolatedAsyncioTestCase):
             1,
         )
         self.assertEqual(payload["club"]["periods_paid"], 2)
+
+        group_payload = json.loads(
+            (
+                await preview.bootstrap(
+                    request_stub(query={"chat_id": "-1004433295809"})
+                )
+            ).text
+        )
+        self.assertEqual(group_payload["selected_chat_id"], "-1004433295809")
+        self.assertEqual(group_payload["natural_hisopos"][0]["quantity"], 5)
 
     async def test_real_bootstrap_selects_direct_query_fallback_and_empty_albums(self) -> None:
         direct_context = create_album_context("token", chat_id="-1", user_id="1")
@@ -229,14 +243,27 @@ class MiniAppApiTests(unittest.IsolatedAsyncioTestCase):
         )
         self.assertEqual(payload["selected_chat_id"], "-1")
 
+        aggregate = json.loads(
+            (await self.api.bootstrap(request_stub(headers=self.headers))).text
+        )
+        self.assertEqual(aggregate["selected_chat_id"], ALL_GROUPS_CHAT_ID)
+        self.assertEqual(aggregate["albums"][0]["captures"], 3)
+
         no_album_data = signed_init_data(user={"id": 2, "first_name": "Grace"})
         payload = json.loads(
-            (await self.api.bootstrap(request_stub(headers={"X-Telegram-Init-Data": no_album_data}))).text
+            (
+                await self.api.bootstrap(
+                    request_stub(
+                        headers={"X-Telegram-Init-Data": no_album_data},
+                        query={"chat_id": ALL_GROUPS_CHAT_ID},
+                    )
+                )
+            ).text
         )
         self.assertIsNone(payload["selected_chat_id"])
         self.assertEqual(payload["albums"], [])
 
-    async def test_invoice_preview_validation_conflict_and_real_creation(self) -> None:
+    async def test_invoice_preview_repeat_purchase_gifts_and_real_creation(self) -> None:
         with self.assertRaises(web.HTTPUnauthorized):
             await self.api.create_invoice(request_stub(body={"kind": "donation", "item_key": "25"}))
         with self.assertRaises(web.HTTPBadRequest):
@@ -262,10 +289,10 @@ class MiniAppApiTests(unittest.IsolatedAsyncioTestCase):
             reward_hisopo_key="serene",
             paid_at="2026-08-27T10:00:00+00:00",
         )
-        with self.assertRaises(web.HTTPConflict):
-            await self.api.create_invoice(
-                request_stub(headers=self.headers, body={"kind": "product", "item_key": "serene"})
-            )
+        repeated = await self.api.create_invoice(
+            request_stub(headers=self.headers, body={"kind": "product", "item_key": "serene"})
+        )
+        self.assertEqual(json.loads(repeated.text)["recipient_user_id"], "1")
 
         preview_db = MagicMock()
         preview_db.owns_paid_hisopo.return_value = False
@@ -280,6 +307,12 @@ class MiniAppApiTests(unittest.IsolatedAsyncioTestCase):
             request_stub(body={"kind": "donation", "item_key": "25"})
         )
         self.assertTrue(json.loads(preview_response.text)["preview"])
+        preview_gift = await preview.create_invoice(
+            request_stub(
+                body={"kind": "product", "item_key": "massive", "recipient": "@bobby"}
+            )
+        )
+        self.assertIn("@bobby", json.loads(preview_gift.text)["message"])
 
         response = await self.api.create_invoice(
             request_stub(
@@ -289,6 +322,46 @@ class MiniAppApiTests(unittest.IsolatedAsyncioTestCase):
         )
         self.assertEqual(json.loads(response.text)["invoice_url"], "https://t.me/invoice")
         self.assertNotIn("subscription_period", self.bot.create_invoice_link.await_args.kwargs)
+        self.assertEqual(
+            parse_payment_payload(
+                "token", self.bot.create_invoice_link.await_args.kwargs["payload"]
+            ).recipient_user_id,
+            "1",
+        )
+
+        gifted = await self.api.create_invoice(
+            request_stub(
+                headers=self.headers,
+                body={
+                    "kind": "product",
+                    "item_key": "massive",
+                    "source_chat_id": ALL_GROUPS_CHAT_ID,
+                    "recipient": "@bobby",
+                },
+            )
+        )
+        self.assertEqual(json.loads(gifted.text)["recipient_user_id"], "2")
+        gift_call = self.bot.create_invoice_link.await_args.kwargs
+        self.assertIn("Regalo para @bobby", gift_call["description"])
+        gift_intent = parse_payment_payload("token", gift_call["payload"])
+        self.assertEqual((gift_intent.user_id, gift_intent.recipient_user_id), ("1", "2"))
+
+        numeric_gift = await self.api.create_invoice(
+            request_stub(
+                headers=self.headers,
+                body={"kind": "product", "item_key": "massive", "recipient": "999"},
+            )
+        )
+        self.assertEqual(json.loads(numeric_gift.text)["recipient_user_id"], "999")
+
+        for body in (
+            {"kind": "product", "item_key": "massive", "recipient": "bad!"},
+            {"kind": "product", "item_key": "massive", "recipient": "0"},
+            {"kind": "product", "item_key": "massive", "recipient": "@unknown"},
+            {"kind": "donation", "item_key": "25", "recipient": "2"},
+        ):
+            with self.subTest(body=body), self.assertRaises(web.HTTPBadRequest):
+                await self.api.create_invoice(request_stub(headers=self.headers, body=body))
 
         await self.api.create_invoice(
             request_stub(
@@ -349,12 +422,14 @@ class MiniAppApiTests(unittest.IsolatedAsyncioTestCase):
             albums=[SimpleNamespace(chat_id="-1", title=None, discovered_count=1, capture_count=2)],
             selected_chat_id="-1",
             counts={"giant": 1},
+            aggregate_counts={"giant": 1},
             ownership={"stellar": 2},
             club_periods=2,
             club_active_until=None,
             donor_public=True,
         )
-        self.assertEqual(payload["albums"][0]["title"], "Grupo -1")
+        self.assertEqual(payload["albums"][0]["title"], "Todos los grupos")
+        self.assertEqual(payload["albums"][1]["title"], "Grupo -1")
         self.assertEqual([entry["name"] for entry in payload["donors"]], ["One", "@two", "Usuario 3", "Anónimo"])
         self.assertEqual(payload["paid_hisopos"][-1]["quantity"], 2)
         self.assertEqual(next(item for item in payload["natural_hisopos"] if item["key"] == "giant")["quantity"], 1)

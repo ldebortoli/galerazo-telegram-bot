@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import tempfile
 import unittest
+import hashlib
+import hmac
 from pathlib import Path
 
 from galerazo_bot.database import Database
@@ -55,20 +57,47 @@ class MonetizationCatalogTests(unittest.TestCase):
                 invoice_spec(kind, item_key)
 
     def test_signed_payment_payload_roundtrip_and_rejections(self) -> None:
+        def signed(unsigned: str) -> str:
+            key = hashlib.sha256(b"galerazo:payment:token").digest()
+            signature = hmac.new(key, unsigned.encode(), hashlib.sha256).hexdigest()[:24]
+            return f"{unsigned}:{signature}"
+
         payload = create_payment_payload(
             "token",
             kind="product",
             item_key="massive",
             user_id="123",
+            recipient_user_id="456",
             source_chat_id="-1001",
         )
         intent = parse_payment_payload("token", payload, expected_user_id="123")
-        self.assertEqual((intent.kind, intent.item_key, intent.source_chat_id), ("product", "massive", "-1001"))
+        self.assertEqual(
+            (intent.kind, intent.item_key, intent.recipient_user_id, intent.source_chat_id),
+            ("product", "massive", "456", "-1001"),
+        )
 
         no_chat = create_payment_payload(
             "token", kind="donation", item_key="25", user_id="123"
         )
         self.assertIsNone(parse_payment_payload("token", no_chat).source_chat_id)
+        self.assertEqual(parse_payment_payload("token", no_chat).recipient_user_id, "123")
+
+        legacy_unsigned = "h1:product:massive:123:-1001"
+        legacy_intent = parse_payment_payload(
+            "token", signed(legacy_unsigned), expected_user_id="123"
+        )
+        self.assertEqual(legacy_intent.recipient_user_id, "123")
+
+        for malformed_unsigned in (
+            "h1:product:massive:123:456:-1001",
+            "h2:product:massive:123:-1001",
+            "h2:product:massive::456:0",
+            "h2:product:massive:123::0",
+        ):
+            with self.subTest(malformed_unsigned=malformed_unsigned), self.assertRaisesRegex(
+                PaymentPayloadError, "no es válido"
+            ):
+                parse_payment_payload("token", signed(malformed_unsigned))
 
         with self.assertRaisesRegex(PaymentPayloadError, "otra persona"):
             parse_payment_payload("token", payload, expected_user_id="456")
@@ -126,6 +155,7 @@ class MonetizationDatabaseTests(unittest.TestCase):
         amount: int = 25,
         paid_at: str = "2026-08-27T10:00:00+00:00",
         expires: str | None = None,
+        recipient_user_id: str | None = None,
     ) -> bool:
         return self.db.record_star_payment(
             telegram_payment_charge_id=charge_id,
@@ -142,6 +172,7 @@ class MonetizationDatabaseTests(unittest.TestCase):
             is_recurring=kind == "subscription",
             is_first_recurring=charge_id.endswith("1"),
             subscription_expiration_date=expires,
+            recipient_user_id=recipient_user_id,
         )
 
     def test_albums_ownership_payments_refunds_and_donors(self) -> None:
@@ -161,6 +192,11 @@ class MonetizationDatabaseTests(unittest.TestCase):
             [("-1", 2, 4), ("-2", 1, 2)],
         )
         self.assertEqual(self.db.list_hisopo_albums_for_user("missing"), [])
+        totals = self.db.get_hisopo_collection_totals("1")
+        self.assertEqual(
+            [(entry.hisopo_type, entry.capture_count) for entry in totals],
+            [("common", 3), ("gold", 3)],
+        )
 
         self.assertFalse(self.db.owns_paid_hisopo("1", "serene"))
         self.assertTrue(self._payment("product-1", kind="product", item_key="serene", reward="serene", amount=50))
@@ -175,6 +211,26 @@ class MonetizationDatabaseTests(unittest.TestCase):
         self.assertEqual(self.db.get_paid_hisopo_ownership("1"), [])
         self.assertFalse(self.db.refund_star_payment("product-1", refunded_at="later"))
         self.assertFalse(self.db.refund_star_payment("missing", refunded_at="later"))
+
+        self.assertTrue(
+            self._payment(
+                "gift-1",
+                kind="product",
+                item_key="massive",
+                reward="massive",
+                amount=150,
+                recipient_user_id="2",
+            )
+        )
+        self.assertFalse(self.db.owns_paid_hisopo("1", "massive"))
+        self.assertTrue(self.db.owns_paid_hisopo("2", "massive"))
+        with self.db._connect() as conn:
+            gift = conn.execute(
+                "SELECT user_id, recipient_user_id FROM star_payments WHERE telegram_payment_charge_id = 'gift-1'"
+            ).fetchone()
+        self.assertEqual((gift["user_id"], gift["recipient_user_id"]), ("1", "2"))
+        self.assertTrue(self.db.refund_star_payment("gift-1", refunded_at="later"))
+        self.assertFalse(self.db.owns_paid_hisopo("2", "massive"))
 
         self.assertIsNone(self.db.get_club_membership("1"))
         self.assertTrue(self._payment("club-1", kind="subscription", item_key="club", reward="stellar", amount=100, expires="2026-09-26T10:00:00+00:00"))

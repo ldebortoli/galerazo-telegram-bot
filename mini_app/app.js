@@ -1,5 +1,5 @@
 const tg = window.Telegram?.WebApp;
-const state = { data: null, tab: "album", busy: false };
+const state = { data: null, tab: "album", busy: false, giftItem: null };
 const $ = (selector) => document.querySelector(selector);
 
 if (tg) {
@@ -18,6 +18,11 @@ document.addEventListener("DOMContentLoaded", () => {
   $("#album-select").addEventListener("change", (event) => load(event.target.value));
   $("#donor-public").addEventListener("change", updateVisibility);
   $("#retry").addEventListener("click", () => load());
+  $("#gift-form").addEventListener("submit", submitGift);
+  $("#gift-cancel").addEventListener("click", closeGift);
+  $("#gift-recipient").addEventListener("focus", (event) => {
+    requestAnimationFrame(() => event.target.scrollIntoView({ block: "center", behavior: "smooth" }));
+  });
   load();
 });
 
@@ -57,16 +62,15 @@ function render() {
   select.replaceChildren(...data.albums.map((album) => option(album.title, album.chat_id, album.chat_id === data.selected_chat_id)));
   select.disabled = data.albums.length < 2;
   const selected = data.albums.find((album) => album.chat_id === data.selected_chat_id);
-  const discovered = data.natural_hisopos.filter((item) => item.quantity > 0).length;
-  const total = data.natural_hisopos.length;
+  const albumItems = [...data.natural_hisopos, ...data.paid_hisopos];
+  const discovered = albumItems.filter((item) => item.quantity > 0).length;
+  const total = albumItems.length;
+  const specialUnits = data.paid_hisopos.reduce((sum, item) => sum + item.quantity, 0);
   $("#album-summary").innerHTML = selected
-    ? `<span class="kicker">${escapeHtml(selected.title)}</span><strong>${discovered} de ${total}</strong><div class="progress-track"><div class="progress-bar" style="width:${Math.round(discovered / total * 100)}%"></div></div><p>${selected.captures} capturas históricas · los cosméticos son globales</p>`
+    ? `<span class="kicker">${escapeHtml(selected.title)}</span><strong>${discovered} de ${total}</strong><div class="progress-track"><div class="progress-bar" style="width:${Math.round(discovered / total * 100)}%"></div></div><p>${selected.captures} capturas históricas · ${specialUnits} Hisopos especiales</p>`
     : `<span class="kicker">MIS ÁLBUMES</span><h2>Todavía no hay una colección</h2><p>Capturá tu primer Hisopo en un grupo para que aparezca acá.</p>`;
-  $("#natural-count").textContent = `${discovered}/${total}`;
-  $("#natural-grid").replaceChildren(...data.natural_hisopos.map(collectibleCard));
-  const owned = data.paid_hisopos.filter((item) => item.quantity > 0);
-  $("#paid-count").textContent = String(owned.length);
-  $("#owned-grid").replaceChildren(...(owned.length ? owned.map(collectibleCard) : [emptyCard("Todavía no compraste Hisopos cosméticos.")]));
+  $("#album-count").textContent = `${discovered}/${total}`;
+  $("#album-grid").replaceChildren(...albumItems.map(collectibleCard));
   $("#store-grid").replaceChildren(...data.paid_hisopos.filter((item) => !item.club_only).map(productCard));
   renderClub();
   $("#donation-buttons").replaceChildren(...data.donation_tiers.map((amount) => actionButton(`⭐ ${amount}`, () => checkout("donation", String(amount)))));
@@ -78,17 +82,21 @@ function render() {
 function collectibleCard(item) {
   const card = document.createElement("article");
   card.className = `collectible ${item.quantity ? "" : "locked"}`;
-  card.innerHTML = `<img src="${item.image}" alt="${escapeHtml(item.name)}" loading="lazy"><span class="quantity">×${item.quantity}</span>${item.quantity ? "" : '<span class="lock">?</span>'}<div class="collectible-body"><h3>${escapeHtml(item.name)}</h3><p>${item.quantity ? "En tu colección" : "Sin descubrir"}</p></div>`;
+  const missingCopy = item.price_stars ? "No adquirido" : "Sin descubrir";
+  card.innerHTML = `<img src="${item.image}" alt="${escapeHtml(item.name)}" loading="lazy"><span class="quantity">×${item.quantity}</span>${item.quantity ? "" : '<span class="lock">?</span>'}<div class="collectible-body"><h3>${escapeHtml(item.name)}</h3><p>${item.quantity ? "En tu colección" : missingCopy}</p></div>`;
   return card;
 }
 
 function productCard(item) {
   const card = document.createElement("article");
   card.className = "product";
-  card.innerHTML = `<img src="${item.image}" alt="${escapeHtml(item.name)}" loading="lazy"><div class="product-body"><h3>${escapeHtml(item.name)}</h3><p>${escapeHtml(item.description)}</p><div class="buy-row"><span class="price">⭐ ${item.price_stars}</span></div></div>`;
-  const button = actionButton(item.quantity ? "Ya es tuyo" : "Comprar", () => checkout("product", item.key));
-  button.disabled = item.quantity > 0;
-  card.querySelector(".buy-row").append(button);
+  const ownedCopy = item.quantity ? `<span class="owned-copy">Tenés ×${item.quantity}</span>` : "";
+  card.innerHTML = `<img src="${item.image}" alt="${escapeHtml(item.name)}" loading="lazy"><div class="product-body"><h3>${escapeHtml(item.name)}</h3><p>${escapeHtml(item.description)}</p><div class="buy-row"><span class="price">⭐ ${item.price_stars}</span>${ownedCopy}</div><div class="product-actions"></div></div>`;
+  const actions = card.querySelector(".product-actions");
+  actions.append(
+    actionButton(item.quantity ? "Comprar otro" : "Comprar", () => checkout("product", item.key)),
+    actionButton("Regalar", () => openGift(item), "secondary")
+  );
   return card;
 }
 
@@ -99,14 +107,14 @@ function renderClub() {
   card.querySelector(".buy-row").append(actionButton(club.periods_paid ? "Gestionar o renovar" : "Sumarme al Club", () => checkout("subscription", "club")));
 }
 
-async function checkout(kind, itemKey) {
+async function checkout(kind, itemKey, recipient = null) {
   if (state.busy) return;
   state.busy = true;
   try {
     const result = await api("/api/invoice", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ kind, item_key: itemKey, source_chat_id: state.data.selected_chat_id })
+      body: JSON.stringify({ kind, item_key: itemKey, source_chat_id: state.data.selected_chat_id, recipient })
     });
     if (result.preview) {
       toast(result.message);
@@ -123,6 +131,30 @@ async function checkout(kind, itemKey) {
   } finally {
     state.busy = false;
   }
+}
+
+function openGift(item) {
+  state.giftItem = item;
+  $("#gift-title").textContent = `Regalar ${item.name}`;
+  $("#gift-recipient").value = "";
+  const dialog = $("#gift-dialog");
+  dialog.showModal();
+  requestAnimationFrame(() => $("#gift-recipient").focus());
+}
+
+function closeGift() {
+  const dialog = $("#gift-dialog");
+  if (dialog.open) dialog.close();
+  state.giftItem = null;
+}
+
+function submitGift(event) {
+  event.preventDefault();
+  const item = state.giftItem;
+  const recipient = $("#gift-recipient").value.trim();
+  if (!item || !recipient) return;
+  closeGift();
+  checkout("product", item.key, recipient);
 }
 
 async function updateVisibility(event) {
@@ -154,9 +186,9 @@ function donorRow(item) {
   return row;
 }
 
-function actionButton(label, handler) {
+function actionButton(label, handler, variant = "") {
   const button = document.createElement("button");
-  button.className = "button";
+  button.className = `button ${variant}`.trim();
   button.type = "button";
   button.textContent = label;
   button.addEventListener("click", handler);

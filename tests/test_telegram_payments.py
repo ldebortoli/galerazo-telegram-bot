@@ -7,7 +7,7 @@ from unittest.mock import AsyncMock, MagicMock
 
 from telegram.error import TimedOut
 
-from galerazo_bot.monetization import create_payment_payload
+from galerazo_bot.monetization import create_payment_payload, parse_payment_payload
 from galerazo_bot.telegram_payments import (
     _message_datetime,
     answer_pre_checkout_query,
@@ -61,12 +61,17 @@ class TelegramPaymentTests(unittest.IsolatedAsyncioTestCase):
             item_key="massive",
             user_id="1",
             source_chat_id="-1",
+            recipient_user_id="2",
         )
         self.assertEqual(result, "https://t.me/invoice")
         call = bot.create_invoice_link.await_args.kwargs
         self.assertEqual((call["currency"], call["prices"][0].amount), ("XTR", 150))
         self.assertNotIn("provider_token", call)
         self.assertNotIn("subscription_period", call)
+        self.assertEqual(
+            parse_payment_payload("token", call["payload"]).recipient_user_id,
+            "2",
+        )
 
         await create_invoice_url(
             bot,
@@ -132,7 +137,6 @@ class TelegramPaymentTests(unittest.IsolatedAsyncioTestCase):
             total_amount=150,
             answer=AsyncMock(),
         )
-        db.owns_paid_hisopo.return_value = False
         await answer_pre_checkout_query(query=query, db=db, bot_token="token")
         query.answer.assert_awaited_once_with(ok=True)
 
@@ -147,10 +151,10 @@ class TelegramPaymentTests(unittest.IsolatedAsyncioTestCase):
                 self.assertFalse(current.answer.await_args.kwargs["ok"])
                 self.assertIn(expected, current.answer.await_args.kwargs["error_message"])
 
-        db.owns_paid_hisopo.return_value = True
+        # Tenerlo previamente no bloquea una compra adicional.
         query.answer.reset_mock()
         await answer_pre_checkout_query(query=query, db=db, bot_token="token")
-        self.assertIn("tenés", query.answer.await_args.kwargs["error_message"])
+        query.answer.assert_awaited_once_with(ok=True)
 
     async def test_successful_payments_are_recorded_and_acknowledged(self) -> None:
         db = MagicMock()
@@ -193,7 +197,24 @@ class TelegramPaymentTests(unittest.IsolatedAsyncioTestCase):
                 self.assertIn(expected, message.reply_text.await_args.args[0])
                 kwargs = db.record_star_payment.call_args.kwargs
                 self.assertEqual(kwargs["source_chat_id"], "-1")
+                self.assertEqual(kwargs["recipient_user_id"], "1")
                 self.assertEqual(kwargs["subscription_expiration_date"], expiration.isoformat() if expiration else None)
+
+        gift_payload = create_payment_payload(
+            "token",
+            kind="product",
+            item_key="massive",
+            user_id="1",
+            recipient_user_id="2",
+        )
+        gift_message = payment_message(successful_payment(gift_payload, amount=150))
+        self.assertTrue(
+            await process_successful_payment(
+                message=gift_message, db=db, bot_token="token"
+            )
+        )
+        self.assertEqual(db.record_star_payment.call_args.kwargs["recipient_user_id"], "2")
+        self.assertIn("Regalo confirmado", gift_message.reply_text.await_args.args[0])
 
         db.record_star_payment.return_value = False
         duplicate_payload = create_payment_payload(

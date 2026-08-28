@@ -26,7 +26,7 @@ body {
     var(--bg);
 }
 
-button, select { font: inherit; }
+button, select, input { font: inherit; }
 a { color: inherit; }
 
 .app-shell {
@@ -113,7 +113,6 @@ select {
 
 .section-heading { margin: 26px 2px 12px; }
 .section-heading .kicker { display: block; margin-bottom: 5px; }
-.paid-heading { margin-top: 32px; }
 
 .card-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
 .collectible {
@@ -155,10 +154,12 @@ select {
   font-weight: 800;
   cursor: pointer;
 }
-.button:disabled { color: #92979b; background: #292f34; cursor: default; }
 .button.secondary { color: var(--text); border: 1px solid var(--line); background: var(--surface-2); }
-.buy-row { display: flex; align-items: center; gap: 8px; margin-top: 10px; }
+.buy-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 10px; }
+.product-actions { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 9px; }
+.product-actions .button { padding: 8px 10px; font-size: 12px; }
 .price { color: #d9c28f; font-size: 13px; font-weight: 800; }
+.owned-copy { color: var(--green); font-size: 11px; font-weight: 750; }
 
 .club-card { position: relative; overflow: hidden; padding: 22px; margin-bottom: 12px; background: radial-gradient(circle at 85% 10%, rgba(204, 163, 80, .2), transparent 45%), #12161a; }
 .club-card::after { content: "✦"; position: absolute; right: 22px; top: 15px; color: #d7b96f; font-size: 42px; opacity: .65; }
@@ -187,6 +188,36 @@ select {
 .state-card.error { display: grid; gap: 12px; color: var(--danger); }
 .toast { position: fixed; left: 50%; bottom: max(20px, env(safe-area-inset-bottom)); z-index: 50; max-width: calc(100vw - 32px); transform: translate(-50%, 20px); padding: 11px 14px; border: 1px solid #3b434a; border-radius: 12px; color: var(--text); background: #1d2328; opacity: 0; pointer-events: none; transition: .2s; }
 .toast.visible { transform: translate(-50%, 0); opacity: 1; }
+
+.gift-dialog {
+  width: min(calc(100% - 28px), 460px);
+  max-height: min(620px, calc(100dvh - 32px));
+  margin: auto;
+  padding: 0;
+  overflow: auto;
+  border: 1px solid #343c43;
+  border-radius: 20px;
+  color: var(--text);
+  background: #111519;
+  box-shadow: 0 28px 90px rgba(0, 0, 0, .65);
+}
+.gift-dialog::backdrop { background: rgba(2, 4, 5, .78); backdrop-filter: blur(5px); }
+.gift-dialog form { display: grid; gap: 13px; padding: 22px; }
+.gift-dialog h2 { margin-top: -5px; font: 650 23px/1.15 Georgia, serif; }
+.gift-dialog p { color: var(--muted); font-size: 13px; line-height: 1.45; }
+.gift-dialog label { color: var(--muted); font-size: 12px; font-weight: 700; }
+.gift-dialog input {
+  width: 100%;
+  min-height: 46px;
+  padding: 11px 12px;
+  border: 1px solid #3a434b;
+  border-radius: 11px;
+  outline: none;
+  color: var(--text);
+  background: #1a2025;
+}
+.gift-dialog input:focus { border-color: #9e8d64; box-shadow: 0 0 0 3px rgba(183, 164, 119, .12); }
+.dialog-actions { display: flex; justify-content: flex-end; gap: 8px; padding-top: 3px; }
 
 @media (min-width: 620px) {
   .card-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }

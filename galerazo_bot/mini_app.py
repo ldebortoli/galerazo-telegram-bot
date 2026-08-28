@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import hmac
 import json
+import re
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -31,6 +32,7 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 MINI_APP_ROOT = PROJECT_ROOT / "mini_app"
 HISOPO_ASSET_ROOT = PROJECT_ROOT / "assets" / "hisopos"
 MAX_INIT_DATA_AGE_SECONDS = 60 * 60
+ALL_GROUPS_CHAT_ID = "all"
 
 
 NATURAL_HISOPO_IMAGES = {
@@ -154,18 +156,28 @@ class MiniAppApi:
         except InitDataError as exc:
             raise web.HTTPUnauthorized(text=str(exc)) from exc
         if self.preview_mode and user.user_id == "preview":
-            return web.json_response(self._preview_bootstrap(user))
+            return web.json_response(
+                self._preview_bootstrap(user, request.query.get("chat_id"))
+            )
         self.db.get_or_create_user(user.user_id, user.display_name, user.username)
         albums = self.db.list_hisopo_albums_for_user(user.user_id)
+        aggregate_collection = self.db.get_hisopo_collection_totals(user.user_id)
+        aggregate_counts = {
+            entry.hisopo_type: entry.capture_count for entry in aggregate_collection
+        }
         selected_chat_id = self._selected_chat_id(
             user,
             albums,
             request.query.get("chat_id"),
         )
         collection = (
-            self.db.get_hisopo_collection(selected_chat_id, user.user_id)
-            if selected_chat_id is not None
-            else []
+            aggregate_collection
+            if selected_chat_id == ALL_GROUPS_CHAT_ID
+            else (
+                self.db.get_hisopo_collection(selected_chat_id, user.user_id)
+                if selected_chat_id is not None
+                else []
+            )
         )
         counts = {entry.hisopo_type: entry.capture_count for entry in collection}
         ownership = {
@@ -179,6 +191,7 @@ class MiniAppApi:
                 albums=albums,
                 selected_chat_id=selected_chat_id,
                 counts=counts,
+                aggregate_counts=aggregate_counts,
                 ownership=ownership,
                 club_periods=membership.periods_paid if membership else 0,
                 club_active_until=membership.active_until if membership else None,
@@ -197,32 +210,46 @@ class MiniAppApi:
             raise web.HTTPUnauthorized(text=str(exc)) from exc
         except (KeyError, TypeError, ValueError, json.JSONDecodeError) as exc:
             raise web.HTTPBadRequest(text="El producto solicitado no es válido.") from exc
-        if kind == "product" and self.db.owns_paid_hisopo(user.user_id, item_key):
-            raise web.HTTPConflict(text="Ya tenés este Hisopo cosmético.")
+        recipient_user_id, recipient_label = self._purchase_recipient(
+            user,
+            kind=kind,
+            value=body.get("recipient"),
+        )
         if self.preview_mode and user.user_id == "preview":
+            action = f"Regalo para {recipient_label}" if recipient_label else "Compra"
             return web.json_response(
-                {"preview": True, "message": f"Pago de {spec.amount_stars} Stars simulado."}
+                {
+                    "preview": True,
+                    "message": f"{action} de {spec.amount_stars} Stars simulada.",
+                }
             )
+        self.db.get_or_create_user(user.user_id, user.display_name, user.username)
         source_chat_id = self._valid_source_chat_id(user.user_id, body.get("source_chat_id"))
         payload = create_payment_payload(
             self.bot_token,
             kind=kind,
             item_key=item_key,
             user_id=user.user_id,
+            recipient_user_id=recipient_user_id,
             source_chat_id=source_chat_id,
         )
         kwargs: dict[str, Any] = {}
         if spec.subscription_period is not None:
             kwargs["subscription_period"] = spec.subscription_period
+        description = spec.description
+        if recipient_label:
+            description = f"Regalo para {recipient_label}. {description}"
         invoice_url = await self.bot.create_invoice_link(
             title=spec.title,
-            description=spec.description,
+            description=description,
             payload=payload,
             currency=STARS_CURRENCY,
             prices=[LabeledPrice(spec.title, spec.amount_stars)],
             **kwargs,
         )
-        return web.json_response({"invoice_url": invoice_url})
+        return web.json_response(
+            {"invoice_url": invoice_url, "recipient_user_id": recipient_user_id}
+        )
 
     async def donor_visibility(self, request: web.Request) -> web.Response:
         try:
@@ -258,16 +285,52 @@ class MiniAppApi:
                 requested = None
             if requested in available:
                 return requested
-        return query_chat_id if query_chat_id in available else next(iter(available), None)
+        if query_chat_id == ALL_GROUPS_CHAT_ID:
+            return ALL_GROUPS_CHAT_ID if available else None
+        if query_chat_id in available:
+            return query_chat_id
+        return ALL_GROUPS_CHAT_ID if available else None
 
     def _valid_source_chat_id(self, user_id: str, value: Any) -> str | None:
         if value is None:
             return None
         chat_id = str(value)
+        if chat_id == ALL_GROUPS_CHAT_ID:
+            return None
         available = {album.chat_id for album in self.db.list_hisopo_albums_for_user(user_id)}
         if chat_id not in available:
             raise web.HTTPBadRequest(text="Ese álbum no pertenece al usuario.")
         return chat_id
+
+    def _purchase_recipient(
+        self,
+        user: MiniAppUser,
+        *,
+        kind: str,
+        value: Any,
+    ) -> tuple[str, str | None]:
+        recipient = "" if value is None else str(value).strip()
+        if kind != "product":
+            if recipient:
+                raise web.HTTPBadRequest(text="Solo se pueden regalar Hisopos de la tienda.")
+            return user.user_id, None
+        if not recipient:
+            return user.user_id, None
+        if recipient.isascii() and recipient.isdecimal():
+            if int(recipient) <= 0:
+                raise web.HTTPBadRequest(text="El user ID de destino no es válido.")
+            return recipient, recipient
+        alias = recipient.removeprefix("@")
+        if not re.fullmatch(r"[A-Za-z0-9_]{5,32}", alias):
+            raise web.HTTPBadRequest(text="Ingresá un @alias o user ID válido.")
+        if self.preview_mode and user.user_id == "preview":
+            return f"preview-{alias.lower()}", f"@{alias}"
+        recipient_user = self.db.get_user_by_username(alias)
+        if recipient_user is None:
+            raise web.HTTPBadRequest(
+                text=f"No conozco a @{alias} todavía. Probá con su user ID."
+            )
+        return recipient_user.user_id, f"@{recipient_user.username or alias}"
 
     def _bootstrap_payload(
         self,
@@ -276,6 +339,7 @@ class MiniAppApi:
         albums: list[Any],
         selected_chat_id: str | None,
         counts: dict[str, int],
+        aggregate_counts: dict[str, int],
         ownership: dict[str, int],
         club_periods: int,
         club_active_until: str | None,
@@ -295,17 +359,28 @@ class MiniAppApi:
             )
         paid = [self._paid_product_payload(product, ownership) for product in PAID_HISOPOS]
         paid.append(self._paid_product_payload(CLUB_HISOPO, ownership, club_only=True))
+        album_payload = [
+            {
+                "chat_id": album.chat_id,
+                "title": album.title or f"Grupo {album.chat_id}",
+                "discovered": album.discovered_count,
+                "captures": album.capture_count,
+            }
+            for album in albums
+        ]
+        if albums:
+            album_payload.insert(
+                0,
+                {
+                    "chat_id": ALL_GROUPS_CHAT_ID,
+                    "title": "Todos los grupos",
+                    "discovered": sum(count > 0 for count in aggregate_counts.values()),
+                    "captures": sum(album.capture_count for album in albums),
+                },
+            )
         return {
             "user": {"id": user.user_id, "name": user.display_name},
-            "albums": [
-                {
-                    "chat_id": album.chat_id,
-                    "title": album.title or f"Grupo {album.chat_id}",
-                    "discovered": album.discovered_count,
-                    "captures": album.capture_count,
-                }
-                for album in albums
-            ],
+            "albums": album_payload,
             "selected_chat_id": selected_chat_id,
             "natural_hisopos": natural,
             "paid_hisopos": paid,
@@ -344,22 +419,45 @@ class MiniAppApi:
             "club_only": club_only,
         }
 
-    def _preview_bootstrap(self, user: MiniAppUser) -> dict[str, Any]:
+    def _preview_bootstrap(
+        self,
+        user: MiniAppUser,
+        requested_chat_id: str | None = None,
+    ) -> dict[str, Any]:
         class Album:
             chat_id = "-1004440313456"
             title = "Codex - Logs"
             discovered_count = 11
             capture_count = 37
 
-        counts = {
+        class SecondAlbum:
+            chat_id = "-1004433295809"
+            title = "Bots y Automatizaciones"
+            discovered_count = 7
+            capture_count = 19
+
+        aggregate_counts = {
             key: count
             for key, count in zip(COLLECTIBLE_HISOPO_KEYS, (12, 7, 4, 1, 3, 2, 0, 1, 2, 3, 1))
         }
+        selected_chat_id = (
+            requested_chat_id
+            if requested_chat_id
+            in {ALL_GROUPS_CHAT_ID, Album.chat_id, SecondAlbum.chat_id}
+            else ALL_GROUPS_CHAT_ID
+        )
+        counts = aggregate_counts
+        if selected_chat_id == SecondAlbum.chat_id:
+            counts = {
+                key: count
+                for key, count in zip(COLLECTIBLE_HISOPO_KEYS, (5, 1, 0, 0, 1, 0, 0))
+            }
         return self._bootstrap_payload(
             user=user,
-            albums=[Album()],
-            selected_chat_id=Album.chat_id,
+            albums=[Album(), SecondAlbum()],
+            selected_chat_id=selected_chat_id,
             counts=counts,
+            aggregate_counts=aggregate_counts,
             ownership={"serene": 1, "crimson": 1},
             club_periods=2,
             club_active_until="2026-09-26T12:00:00+00:00",

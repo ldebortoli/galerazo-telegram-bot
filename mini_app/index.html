@@ -5,9 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#090b0d">
   <title>Álbum de Hisopos</title>
-  <link rel="stylesheet" href="/static/styles.css?v=043">
+  <link rel="stylesheet" href="/static/styles.css?v=045">
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <script src="/static/app.js?v=043" defer></script>
+  <script src="/static/app.js?v=045" defer></script>
 </head>
 <body>
   <div class="app-shell">
@@ -36,26 +36,21 @@
 
         <section id="tab-album" class="panel active">
           <div class="album-toolbar">
-            <label for="album-select">Álbum del grupo</label>
+            <label for="album-select">Ver álbum</label>
             <select id="album-select"></select>
           </div>
           <article id="album-summary" class="hero-card"></article>
           <div class="section-heading">
-            <div><span class="kicker">ENCONTRADOS</span><h2>Colección del grupo</h2></div>
-            <span id="natural-count" class="counter"></span>
+            <div><span class="kicker">HISOPOS</span><h2>Tu colección</h2></div>
+            <span id="album-count" class="counter"></span>
           </div>
-          <div id="natural-grid" class="card-grid"></div>
-          <div class="section-heading paid-heading">
-            <div><span class="kicker">ESPECIALES</span><h2>Colección cosmética</h2></div>
-            <span id="paid-count" class="counter"></span>
-          </div>
-          <div id="owned-grid" class="card-grid"></div>
+          <div id="album-grid" class="card-grid"></div>
         </section>
 
         <section id="tab-store" class="panel">
           <article class="hero-card store-hero">
             <div><span class="kicker">SIN PAY-TO-WIN</span><h2>Hisopos con personalidad</h2></div>
-            <p>Son piezas cosméticas permanentes. No suman puntos ni cambian tus probabilidades.</p>
+            <p>Son piezas permanentes. No suman puntos ni cambian tus probabilidades.</p>
           </article>
           <div id="store-grid" class="store-grid"></div>
         </section>
@@ -89,5 +84,19 @@
     </main>
     <div id="toast" class="toast" role="status" aria-live="polite"></div>
   </div>
+
+  <dialog id="gift-dialog" class="gift-dialog">
+    <form id="gift-form">
+      <span class="kicker">REGALAR HISOPOS</span>
+      <h2 id="gift-title">Elegí el destinatario</h2>
+      <p>Ingresá su @alias o user ID. Si el bot todavía no conoce el alias, usá el ID numérico.</p>
+      <label for="gift-recipient">Destinatario</label>
+      <input id="gift-recipient" name="recipient" type="text" inputmode="text" autocomplete="off" placeholder="@alias o user ID" required>
+      <div class="dialog-actions">
+        <button id="gift-cancel" class="button secondary" type="button">Cancelar</button>
+        <button class="button" type="submit">Continuar al pago</button>
+      </div>
+    </form>
+  </dialog>
 </body>
 </html>

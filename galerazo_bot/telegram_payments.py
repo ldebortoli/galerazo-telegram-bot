@@ -32,6 +32,7 @@ async def create_invoice_url(
     item_key: str,
     user_id: str,
     source_chat_id: str | None,
+    recipient_user_id: str | None = None,
 ) -> str:
     spec = invoice_spec(kind, item_key)
     payload = create_payment_payload(
@@ -39,6 +40,7 @@ async def create_invoice_url(
         kind=kind,
         item_key=item_key,
         user_id=user_id,
+        recipient_user_id=recipient_user_id,
         source_chat_id=source_chat_id,
     )
     kwargs: dict[str, Any] = {}
@@ -126,8 +128,6 @@ async def answer_pre_checkout_query(
         spec = invoice_spec(intent.kind, intent.item_key)
         if query.currency != STARS_CURRENCY or query.total_amount != spec.amount_stars:
             raise PaymentPayloadError("El importe del pago no coincide con el producto.")
-        if intent.kind == "product" and db.owns_paid_hisopo(intent.user_id, intent.item_key):
-            raise PaymentPayloadError("Ya tenés este Hisopo cosmético.")
     except PaymentPayloadError as exc:
         await query.answer(ok=False, error_message=str(exc)[:200])
         return
@@ -175,6 +175,7 @@ async def process_successful_payment(
         is_recurring=bool(payment.is_recurring),
         is_first_recurring=bool(payment.is_first_recurring),
         subscription_expiration_date=expiration_text,
+        recipient_user_id=intent.recipient_user_id,
     )
     if not recorded:
         return False
@@ -182,8 +183,10 @@ async def process_successful_payment(
         response = f"¡Gracias por aportar ⭐ {payment.total_amount}! Tu apoyo no compra puntos ni ventajas."
     elif intent.kind == "subscription":
         response = "¡Bienvenido al Club del Hisopo! Acredité un Hisopo Estelar por este período."
+    elif intent.recipient_user_id != intent.user_id:
+        response = f"¡Regalo confirmado! {spec.title} fue acreditado al usuario {intent.recipient_user_id}."
     else:
-        response = f"¡Compra confirmada! {spec.title} ya está en tu colección cosmética."
+        response = f"¡Compra confirmada! {spec.title} sumó una unidad a tu colección."
     await message.reply_text(response)
     return True
 

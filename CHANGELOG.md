@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.45] - 2026-08-28
+
+- La tienda permite comprar más de una unidad del mismo Hisopo o regalarlo a otra persona mediante su `@alias` conocido por el bot o su `user_id`; el destinatario queda firmado en la factura y recibe la unidad tras el pago confirmado.
+- La Mini App reúne los Hisopos encontrados y especiales en una sola colección, elimina la sección separada y suma la vista `Todos los grupos` con los totales acumulados de cada tipo y de capturas históricas.
+
 ## [0.44] - 2026-08-28
 
 - Los catorce Hisopos cosméticos ahora también pueden recibirse como regalo: aparecen en la colección global del destinatario sin generar una compra, una donación ni un período del Club.

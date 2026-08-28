@@ -79,14 +79,14 @@ def handle(context: CommandContext, db: Database) -> str:
     )
     return (
         f"Regalaste un {hisopo.name} a {recipient_user_id}. "
-        f"Ahora tiene {quantity} en su colección cosmética global."
+        f"Ahora tiene {quantity} en su colección global."
     )
 
 
 COMMANDS = {
     "regalarhisopo": Command(
         "regalarhisopo",
-        "acredita un Hisopo cosmético a un usuario",
+        "acredita un Hisopo especial a un usuario",
         handle,
         UserLevel.DEV,
         hidden=True,
