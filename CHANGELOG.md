@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.44] - 2026-08-28
+
+- Los catorce Hisopos cosméticos ahora también pueden recibirse como regalo: aparecen en la colección global del destinatario sin generar una compra, una donación ni un período del Club.
+
 ## [0.43] - 2026-08-28
 
 - Nueva tienda de Hisopos cosméticos con trece coleccionables permanentes en Telegram Stars: de Caca, Sereno, Carmesí, Colosal, Masivo, Bacteriófago, Mundial, Invisible, Isótopo, Infinito, Cuásar, Big Bang y Dengue. Son globales y no dan puntos ni modifican probabilidades; Dengue es la pieza máxima a 5000 Stars.

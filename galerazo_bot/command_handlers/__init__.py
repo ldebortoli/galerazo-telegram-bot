@@ -18,6 +18,7 @@ from .lil import COMMANDS as LIL_COMMANDS
 from .nivel import COMMANDS as NIVEL_COMMANDS
 from .novedad import COMMANDS as NOVEDAD_COMMANDS
 from .reportar import COMMANDS as REPORTAR_COMMANDS
+from .regalar_hisopo import COMMANDS as GIFT_HISOPO_COMMANDS
 from .reiniciarbot import COMMANDS as RESTART_COMMANDS
 from .restrictions import COMMANDS as RESTRICTIONS_COMMANDS
 from .ruletarusa import COMMANDS as RUSSIAN_ROULETTE_COMMANDS
@@ -38,6 +39,7 @@ COMMANDS: dict[str, Command] = {
     **BLACKLIST_COMMANDS,
     **NOVEDAD_COMMANDS,
     **REPORTAR_COMMANDS,
+    **GIFT_HISOPO_COMMANDS,
     **RESTART_COMMANDS,
     **RESTRICTIONS_COMMANDS,
     **RUSSIAN_ROULETTE_COMMANDS,

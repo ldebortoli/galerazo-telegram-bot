@@ -583,6 +583,25 @@ class Database:
             )
             conn.execute(
                 """
+                CREATE TABLE IF NOT EXISTS paid_hisopo_gifts (
+                    gift_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    gifted_by_user_id TEXT NOT NULL,
+                    recipient_user_id TEXT NOT NULL,
+                    hisopo_key TEXT NOT NULL,
+                    gifted_at TEXT NOT NULL,
+                    FOREIGN KEY (gifted_by_user_id) REFERENCES users (user_id),
+                    FOREIGN KEY (recipient_user_id) REFERENCES users (user_id)
+                )
+                """
+            )
+            conn.execute(
+                """
+                CREATE INDEX IF NOT EXISTS idx_paid_hisopo_gifts_recipient
+                ON paid_hisopo_gifts (recipient_user_id, gifted_at)
+                """
+            )
+            conn.execute(
+                """
                 CREATE TABLE IF NOT EXISTS club_memberships (
                     user_id TEXT PRIMARY KEY,
                     periods_paid INTEGER NOT NULL DEFAULT 0 CHECK (periods_paid >= 0),
@@ -2689,6 +2708,51 @@ class Database:
                 (user_id, hisopo_key),
             ).fetchone()
         return row is not None
+
+    def grant_paid_hisopo(
+        self,
+        *,
+        recipient_user_id: str,
+        hisopo_key: str,
+        gifted_by_user_id: str,
+        gifted_at: str | None = None,
+    ) -> int:
+        acquired_at = gifted_at or datetime.now(timezone.utc).isoformat()
+        with self._connect() as conn:
+            conn.executemany(
+                "INSERT INTO users (user_id) VALUES (?) ON CONFLICT(user_id) DO NOTHING",
+                ((gifted_by_user_id,), (recipient_user_id,)),
+            )
+            conn.execute(
+                """
+                INSERT INTO paid_hisopo_gifts (
+                    gifted_by_user_id, recipient_user_id, hisopo_key, gifted_at
+                )
+                VALUES (?, ?, ?, ?)
+                """,
+                (gifted_by_user_id, recipient_user_id, hisopo_key, acquired_at),
+            )
+            conn.execute(
+                """
+                INSERT INTO paid_hisopo_ownership (
+                    user_id, hisopo_key, quantity,
+                    first_acquired_at, last_acquired_at
+                )
+                VALUES (?, ?, 1, ?, ?)
+                ON CONFLICT(user_id, hisopo_key) DO UPDATE SET
+                    quantity = paid_hisopo_ownership.quantity + 1,
+                    last_acquired_at = excluded.last_acquired_at
+                """,
+                (recipient_user_id, hisopo_key, acquired_at, acquired_at),
+            )
+            row = conn.execute(
+                """
+                SELECT quantity FROM paid_hisopo_ownership
+                WHERE user_id = ? AND hisopo_key = ?
+                """,
+                (recipient_user_id, hisopo_key),
+            ).fetchone()
+        return int(row["quantity"])
 
     def record_star_payment(
         self,

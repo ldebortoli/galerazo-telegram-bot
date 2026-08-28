@@ -585,6 +585,8 @@ MINI_APP_PORT=8080
 
 Dejar `TELEGRAM_MINI_APP_URL` vacío desactiva el servidor y el botón sin afectar los comandos ni los pagos por enlaces de factura. El puerto de aplicación no debe exponerse directamente a Internet: el dominio HTTPS debe terminar TLS en un proxy y reenviar internamente al host/puerto configurado.
 
+Los cosméticos no necesitan `file_id` de Telegram: la Mini App sirve directamente los catorce PNG de `assets/hisopos/` desde el mismo origen HTTPS. Un `file_id` solo sería necesario si en el futuro el bot enviara uno de esos artes como foto dentro de un chat; además, ese identificador tendría que obtenerse con la misma identidad de bot que vaya a reutilizarlo.
+
 El saldo recibido queda primero como Stars del bot. Telegram aplica su plazo de disponibilidad y luego permite retirar el saldo elegible mediante Fragment hacia una billetera TON, sujeto al mínimo dinámico, autenticación en dos pasos y términos vigentes. Para llevarlo a una cuenta bancaria hay que vender los TON en un servicio compatible y retirar moneda fiduciaria; no existe un retiro directo Stars → banco y pueden aplicar verificación de identidad, comisiones e impuestos.
 
 ## Configuracion por grupo
