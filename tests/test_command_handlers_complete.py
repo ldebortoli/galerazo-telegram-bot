@@ -9,7 +9,15 @@ from unittest.mock import AsyncMock, MagicMock, patch
 from galerazo_bot.commands import Command as _Command
 from galerazo_bot.command_handlers import backup, blacklist, chats, config, debug, donar, galerazas, reiniciarbot
 from galerazo_bot.command_handlers import apagar, anuncio, gastos, novedad, reportar, restrictions, salir, triggers, version
-from galerazo_bot.database import BlockedUser, ChatRestrictedUser, ChatStatsRow, Expense, Trigger, User
+from galerazo_bot.database import (
+    BlockedUser,
+    ChatRestrictedUser,
+    ChatStatsRow,
+    DonorLeaderboardEntry,
+    Expense,
+    Trigger,
+    User,
+)
 from galerazo_bot.expenses import ExpenseSheetStatus, ExpenseSubmissionResult, ExpenseSyncResult
 from galerazo_bot.roles import BackupResult, CommandContext, TriggerModerationResult, TriggerPayload, UserLevel
 from galerazo_bot.versioning import CURRENT_VERSION
@@ -70,6 +78,17 @@ class SmallAsyncHandlerTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_donation_and_restart_paths(self) -> None:
         self.assertIn("cafecito.app", donar.handle(make_context(), MagicMock()))
+        self.assertIn(
+            "abrir",
+            await donar.handle(
+                make_context(send_donation_menu=AsyncMock(return_value=False)), MagicMock()
+            ),
+        )
+        self.assertIsNone(
+            await donar.handle(
+                make_context(send_donation_menu=AsyncMock(return_value=True)), MagicMock()
+            )
+        )
         self.assertIn("configurado", await reiniciarbot.handle(make_context(), MagicMock()))
         self.assertIn(
             "crear",
@@ -94,6 +113,30 @@ class SmallAsyncHandlerTests(unittest.IsolatedAsyncioTestCase):
                 make_context(create_shutdown_confirmation=AsyncMock(return_value=True)), MagicMock()
             )
         )
+
+    async def test_donor_visibility_leaderboard_support_and_terms(self) -> None:
+        db = MagicMock()
+        self.assertIn("nombre", donar.handle_donors(make_context(args="publico"), db))
+        db.set_donor_display_public.assert_called_with("1", True)
+        self.assertIn("anónima", donar.handle_donors(make_context(args="privado"), db))
+        db.set_donor_display_public.assert_called_with("1", False)
+
+        db.get_donor_leaderboard.return_value = []
+        self.assertIn("Todavía", donar.handle_donors(make_context(), db))
+        db.get_donor_leaderboard.return_value = [
+            DonorLeaderboardEntry("1", "uno", "Uno", 500, True),
+            DonorLeaderboardEntry("2", "dos", None, 100, True),
+            DonorLeaderboardEntry("3", None, None, 25, True),
+            DonorLeaderboardEntry("4", "cuatro", "Cuatro", 25, False),
+        ]
+        ranking = donar.handle_donors(make_context(), db)
+        self.assertIn("Uno — ⭐ 500", ranking)
+        self.assertIn("@dos — ⭐ 100", ranking)
+        self.assertIn("ID 3 — ⭐ 25", ranking)
+        self.assertIn("Anónimo — ⭐ 25", ranking)
+        self.assertIn("/donantes publico", ranking)
+        self.assertIn("Stars", donar.handle_support(make_context(), db))
+        self.assertIn("cosméticos", donar.handle_terms(make_context(), db))
 
     async def test_galerazas_paths(self) -> None:
         self.assertIn("grupos", await galerazas.handle(make_context(chat_type="private"), MagicMock()))

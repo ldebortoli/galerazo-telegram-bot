@@ -68,3 +68,91 @@ Archivo: `hisopo-vencido.png`
 Prompt final, generado con ImageGen integrado y refinado para eliminar marcas de reloj:
 
 > Use case: stylized-concept. Asset type: square Telegram game collectible artwork. Create a generic “Hisopo Vencido” result image. Show exactly one old, dried-out double-ended cotton swab, centered diagonally and fully visible, with slightly yellowed frayed cotton, a faded beige shaft and a restrained dusty amber halo. Use a sober dark blue-gray background, a few drifting dust motes, soft floor shadow and polished whimsical 3D product-render quality consistent with a premium game collectible set. It should read instantly as expired and missed, not rotten gore or medical waste. Preserve generous margins and a strong thumbnail silhouette. Do not include clocks, clock hands, clock faces, numerals, tick marks, text, letters, people, logos, watermark, packaging or extra swabs.
+
+## Hisopos cosméticos de Stars
+
+Estas catorce piezas —trece de tienda y la exclusiva del Club— son artículos visuales y no se cargan como apariciones aleatorias. Se muestran directamente desde estos PNG en la Mini App.
+
+### Hisopo Sereno
+
+Archivo: `hisopo-sereno.png`
+
+> Use case: stylized-concept. Asset type: square premium game collectible. Create a calm, elegant double-ended cotton swab called “Hisopo Sereno”, centered diagonally and fully visible. Use a sage-green lacquered shaft, immaculate tactile cotton tips, a restrained circular aura, soft mist and tiny floating particles on a deep charcoal studio background. Polished whimsical 3D product render, sober low-saturation palette, generous safe margins, strong thumbnail silhouette. Exactly one swab; no text, people, hands, logos, watermark, packaging or bright neon.
+
+### Hisopo Carmesí
+
+Archivo: `hisopo-carmesi.png`
+
+> Use case: stylized-concept. Asset type: square premium game collectible. Create an opulent “Hisopo Carmesí”: exactly one double-ended cotton swab with a dark crimson velvet-like shaft, warm ivory cotton tips, subtle ruby ornaments and a restrained red halo. Place it diagonally on a black-to-burgundy studio background with soft cinematic light and delicate particles. Refined, mysterious and collectible rather than violent. Generous margins; no text, people, hands, hearts, logos, watermark, packaging, gore or extra swabs.
+
+### Hisopo Colosal
+
+Archivo: `hisopo-colosal.png`
+
+> Use case: stylized-concept. Asset type: square premium game collectible. Create a monumental “Hisopo Colosal”: one exceptionally thick double-ended cotton swab made from dark graphite and weathered bronze, floating diagonally above a smoky black stone-like background. Both cotton tips must remain unmistakable, oversized and richly textured. Add restrained dust, warm rim light and a powerful museum-object presence. Polished stylized 3D render, generous margins, no text, arms, people, logos, watermark, packaging, weapons or extra swabs.
+
+### Hisopo Masivo
+
+Archivo: `hisopo-masivo.png`
+
+> Use case: stylized-concept. Asset type: square premium game collectible. Create a humorous but polished “Hisopo Masivo”: exactly one recognizable double-ended cotton swab with exactly two large muscular human-like arms, one attached to each side of the central shaft, flexing symmetrical biceps. The swab itself remains the torso; both cotton tips stay visible. Use warm bronze skin, a dark graphite shaft, dramatic gym-style rim lighting and a sober black background with subtle dust. Strong centered silhouette, generous margins, high-detail whimsical 3D render. No text, face, legs, extra limbs, extra swabs, logos, watermark, weapons or neon colors.
+
+### Hisopo Mundial
+
+Archivo: `hisopo-mundial.png`
+
+> Use case: stylized-concept. Asset type: square premium game collectible. Create a “Hisopo Mundial”: exactly one double-ended cotton swab orbiting diagonally around a detailed luminous Earth. Use a deep black space background, restrained blue atmosphere, fine golden orbital trails and sparse stars. The swab must remain the main readable collectible with both cotton tips fully visible. Cinematic polished 3D render, generous safe margins, no text, flags, people, logos, watermark, additional planets or extra swabs.
+
+### Isótopo
+
+Archivo: `hisopo-isotopo.png`
+
+> Use case: stylized-concept. Asset type: square premium game collectible. Create “Isótopo”, a playful atomic cotton swab: exactly one double-ended swab with a cool metallic blue shaft, surrounded by elegant glowing electron orbits and small restrained particles. Use a deep black laboratory-cosmic background, cyan-blue rim light and a compact nucleus-like glow centered behind the shaft. Premium stylized 3D product render, scientifically suggestive but not a diagram, generous margins. No text, radiation symbol, people, logos, watermark, medical equipment or extra swabs.
+
+### Hisopo Infinito
+
+Archivo: `hisopo-infinito.png`
+
+> Use case: stylized-concept. Asset type: square premium game collectible. Create a mystical “Hisopo Infinito”: exactly one double-ended cotton swab crossing through a luminous violet-gold infinity loop made of energy. Keep both cotton tips and the full diagonal silhouette clearly visible. Use a deep black cosmic background with restrained purple nebula haze and fine stars. Polished high-detail 3D render, elegant rather than neon, generous safe margins. No text, numbers, people, logos, watermark, packaging or extra swabs.
+
+### Hisopo Estelar
+
+Archivo: `hisopo-estelar.png`
+
+> Use case: stylized-concept. Asset type: square premium game collectible and exclusive membership reward. Create a regal “Hisopo Estelar”: exactly one refined double-ended cotton swab with a midnight-blue shaft, warm gold fittings and bright pearlescent cotton tips, centered diagonally inside a restrained eight-point star halo. Use a deep black celestial background with fine golden stardust and soft blue rim light. Luxurious polished 3D render, generous margins and a strong Telegram-thumbnail silhouette. No text, crowns, people, logos, watermark, packaging or extra swabs.
+
+### Hisopo Bacteriófago
+
+Archivo: `hisopo-bacteriofago.png`
+
+> Use case: stylized-concept. Asset type: square premium Telegram game collectible artwork. Create a brand-new “Hisopo Bacteriófago” belonging to a sober dark luxury cotton-swab collectible set. Show exactly one unmistakable double-ended cotton swab centered diagonally and fully visible, reimagined with elegant bacteriophage-inspired biology: a refined geometric capsid-like crystal structure around the midpoint, delicate symmetrical tail-fiber legs attached only near the center, and subtle microscopic hexagonal motifs. Keep both pristine tactile cotton tips and the full shaft clearly recognizable. Use deep teal, muted emerald and cool silver bioluminescent accents on a solid black microscopic background, sparse floating particles, polished high-detail whimsical 3D product render, generous safe margins and a strong thumbnail silhouette. Scientific and fascinating, not diseased or frightening. No text, letters, numbers, people, hands, bacteria characters, medical gore, logos, watermark, packaging, or extra swabs. Exactly one swab; no face or eyes.
+
+### Hisopo Invisible
+
+Archivo: `hisopo-invisible.png`
+
+> Use case: stylized-concept. Asset type: square premium Telegram game collectible artwork for a fictional “Hisopo Invisible”. The image must contain no cotton swab at all and no visible object shaped like a swab. Create an elegant pure-black studio scene where an invisible diagonal collectible is suggested only by an extremely restrained displacement of fine dust motes, two faint soft indentations in mist at opposite diagonal ends, and a nearly imperceptible cool-silver rim shimmer around empty space. The center remains visibly empty. Sober luxury minimalism, deep solid black background, generous negative space, polished cinematic lighting, strong conceptual joke that the collectible is invisible. No swab, no stick, no cotton tips, no silhouette, no transparent ghost object, no text, letters, numbers, people, hands, face, eyes, logos, watermark, packaging, stars, planets, or other props. Do not draw the object; show only empty space and subtle environmental evidence.
+
+### Hisopo Cuásar
+
+Archivo: `hisopo-cuasar.png`
+
+> Use case: stylized-concept. Asset type: square premium Telegram game collectible artwork. Create a brand-new “Hisopo Cuásar” belonging to a sober dark luxury cotton-swab collectible set. Show exactly one unmistakable double-ended cotton swab centered diagonally and fully visible, aligned with the blazing axis of a distant quasar. Give it a sleek midnight graphite shaft with subtle blue-violet metallic details and bright tactile cotton tips. Behind the midpoint place a compact radiant accretion disk with two elegant narrow polar jets, one extending in each opposite direction, surrounded by sparse stars on a pure black space background. Dramatic but restrained violet, blue and warm-white lighting, polished high-detail whimsical 3D product render, generous safe margins, strong thumbnail silhouette. No text, letters, numbers, people, hands, planets, logos, watermark, packaging, weapons, gore, or extra swabs. Keep the jets secondary so the cotton swab reads first; avoid cropped tips and neon clutter.
+
+### Hisopo Big Bang
+
+Archivo: `hisopo-big-bang.png`
+
+> Use case: stylized-concept. Asset type: square premium Telegram game collectible artwork. Create a brand-new “Hisopo Big Bang” belonging to a sober dark luxury cotton-swab collectible set. Show exactly one unmistakable double-ended cotton swab centered diagonally and fully visible at the instant a miniature universe is born behind its midpoint: a compact brilliant white-gold core expanding into a restrained spherical burst of orange, magenta, blue cosmic dust and fine star particles. The swab remains the hero, with a dark obsidian shaft, pristine tactile cotton tips, cinematic rim light, deep solid-black space background, generous safe margins, strong thumbnail silhouette, polished high-detail whimsical 3D product render. No text, letters, numbers, people, hands, planets, logos, watermark, packaging, weapons, gore, or extra swabs. Avoid covering or cropping either cotton tip; avoid oversaturated neon.
+
+### Hisopo de Caca
+
+Archivo: `hisopo-de-caca.png`
+
+> Use case: stylized-concept. Asset type: square premium Telegram game collectible artwork. Create a funny but polished “Hisopo de Caca” belonging to a sober dark cotton-swab collectible set. Show exactly one unmistakable double-ended cotton swab centered diagonally and fully visible. Give the central shaft a rich dark-brown lacquer and add one small stylized glossy poop-swirl ornament wrapped around the midpoint, clearly readable and humorous, with restrained warm amber highlights. Both cotton tips remain pristine, white, tactile, and completely unobstructed. Use a pure black studio background, subtle brown dust particles, soft cinematic rim lighting, generous safe margins, strong thumbnail silhouette, high-detail whimsical 3D product render. Cute and cheeky, not disgusting: no realistic feces, stains, flies, toilet, bathroom, smell lines, gore, people, face, eyes, text, letters, logos, watermark, packaging, or extra swabs. Avoid cropping either tip and avoid oversaturated colors.
+
+### Hisopo Dengue
+
+Archivo: `hisopo-dengue.png`
+
+> Use case: stylized-concept. Asset type: square ultra-premium Telegram game collectible artwork. Create a brand-new “Hisopo Dengue”, an affectionate fictional tribute collectible inspired by the visual traits of an Aedes mosquito, belonging to a sober dark cotton-swab set. Show exactly one unmistakable double-ended cotton swab centered diagonally and fully visible. Give the shaft a glossy near-black finish with elegant ivory-white segmented markings reminiscent of Aedes aegypti legs, and attach one long, slender, clearly recognizable mosquito proboscis projecting from the midpoint without obscuring the swab. Add two restrained translucent mosquito-like wings near the center for silhouette recognition, but no complete insect body. Keep both cotton tips pristine, white, tactile, and fully visible. Use a pure black background, subtle silver particles, dramatic cool rim lighting, generous safe margins, strong thumbnail silhouette and museum-grade whimsical 3D product rendering. It must look like the rarest, most expensive item in the collection: refined black, ivory, silver and a tiny muted crimson accent. No text, letters, numbers, real person, portrait, face, eyes, disease imagery, blood, bite, skin, gore, logos, watermark, packaging, or extra swabs. Avoid horror, cropping and neon clutter.

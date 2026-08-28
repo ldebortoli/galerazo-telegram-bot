@@ -8,9 +8,18 @@ from telegram.ext import (
     ChatMemberHandler,
     CommandHandler,
     MessageHandler,
+    PreCheckoutQueryHandler,
     PrefixHandler,
     filters,
 )
+
+
+class RefundedPaymentFilter(filters.MessageFilter):
+    def filter(self, message) -> bool:
+        return message.refunded_payment is not None
+
+
+REFUNDED_PAYMENT = RefundedPaymentFilter()
 
 
 def register_handlers(
@@ -26,6 +35,9 @@ def register_handlers(
     hisopo_callback: Callable[..., Awaitable[None]],
     power_callback: Callable[..., Awaitable[None]],
     chat_member_callback: Callable[..., Awaitable[None]],
+    pre_checkout_callback: Callable[..., Awaitable[None]],
+    successful_payment_callback: Callable[..., Awaitable[None]],
+    refunded_payment_callback: Callable[..., Awaitable[None]],
     pagination_pattern: str,
     config_pattern: str,
     hisopo_pattern: str,
@@ -43,6 +55,15 @@ def register_handlers(
 
     application.add_handler(
         PrefixHandler(tuple(command_prefixes), tuple(command_names), command_callback),
+        group=1,
+    )
+    application.add_handler(PreCheckoutQueryHandler(pre_checkout_callback), group=1)
+    application.add_handler(
+        MessageHandler(filters.SUCCESSFUL_PAYMENT, successful_payment_callback),
+        group=1,
+    )
+    application.add_handler(
+        MessageHandler(REFUNDED_PAYMENT, refunded_payment_callback),
         group=1,
     )
     application.add_handler(CallbackQueryHandler(pagination_callback, pattern=pagination_pattern), group=1)

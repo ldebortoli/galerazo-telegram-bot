@@ -31,6 +31,10 @@ Base para un bot de Telegram con una version estable y reproducible de Python, `
 - `hisopos`: muestra la tabla del Recolector de Hisopos en grupos/supergrupos, si el juego está habilitado.
 - `coleccionhisopos`: muestra la colección histórica propia; al responder a otra persona, muestra la de ese usuario.
 - `reglashisopo`: muestra las reglas completas del Recolector de Hisopos, incluso si el juego está deshabilitado.
+- `donar`: abre aportes con Telegram Stars, el Club del Hisopo y Cafecito.
+- `donantes`: muestra el Top colaboradores; `publico` y `anonimo` controlan si aparece tu nombre.
+- `paysupport`: explica cómo reportar un problema con un pago.
+- `terminos`: muestra las condiciones de compras cosméticas, membresía y reembolsos.
 - `agregartrigger` / `agrtrigger`: agrega un trigger respondiendo a un mensaje en grupos/supergrupos.
 - `borrartrigger` / `eliminartrigger` / `eltrigger`: borra un trigger por nombre en grupos/supergrupos.
 - `triggers`: lista los triggers del grupo o supergrupo.
@@ -534,6 +538,54 @@ TELEGRAM_HISOPO_MIRACLE_FILE_ID=
 ```
 
 Los artes fuente y sus indicaciones de generación están en [`assets/hisopos`](assets/hisopos/README.md). Para obtener cada valor, enviá la imagen al bot como foto y respondé ese mensaje con `/debug`. En el JSON, usá el `file_id` de la última entrada de `message.photo`, que corresponde al mayor tamaño. El campo `file_unique_id` no sirve para reenviar archivos. Reiniciá el bot local después de guardar los valores necesarios en `.env`.
+
+## Stars, Hisopos cosméticos y Mini App
+
+`/donar` crea facturas en Telegram Stars ligadas a la persona que ejecutó el comando. Permite aportes voluntarios de 25, 100 o 500 Stars, sumarse al Club del Hisopo por 100 Stars cada 30 días y conservar Cafecito como alternativa. Las donaciones no compran artículos; el Top colaboradores cuenta solamente donaciones confirmadas, descuenta reembolsos y muestra el nombre únicamente si la persona eligió hacerlo con `/donantes publico` o desde la Mini App. `/donantes anonimo` restaura el anonimato.
+
+La tienda ofrece coleccionables globales y puramente cosméticos, sin puntos ni cambios de probabilidad:
+
+| Coleccionable | Precio |
+| --- | ---: |
+| Hisopo de Caca | 35 Stars |
+| Hisopo Sereno | 50 Stars |
+| Hisopo Carmesí | 75 Stars |
+| Hisopo Colosal | 100 Stars |
+| Hisopo Masivo | 150 Stars |
+| Hisopo Bacteriófago | 200 Stars |
+| Hisopo Mundial | 250 Stars |
+| Hisopo Invisible | 300 Stars |
+| Isótopo | 350 Stars |
+| Hisopo Infinito | 500 Stars |
+| Hisopo Cuásar | 650 Stars |
+| Hisopo Big Bang | 1000 Stars |
+| Hisopo Dengue | 5000 Stars |
+
+El Club acredita un Hisopo Estelar por cada período de 30 días efectivamente confirmado. Cancelar detiene renovaciones futuras y conserva los períodos ya pagados; un reembolso confirmado retira el artículo o período asociado. Los cobros se procesan de forma idempotente por `telegram_payment_charge_id`, verifican moneda, importe, producto, usuario y firma antes de acreditarse. `/paysupport` y `/terminos` permanecen disponibles aunque la Mini App no esté publicada.
+
+La Mini App reúne tres pestañas: álbum del grupo, tienda y apoyo. Desde `/coleccionhisopos` en un grupo, el botón abre directamente el álbum propio de ese grupo mediante un contexto firmado. Desde el botón `Mis álbumes` del privado/perfil, muestra un selector formado solo por grupos donde Telegram ya registró una colección de esa persona. Los cosméticos son globales y aparecen separados de las 16 categorías naturales. La autenticación valida el `initData` firmado por Telegram y rechaza sesiones de más de una hora.
+
+Para verla localmente con datos simulados:
+
+```powershell
+$env:PYTHONPATH = "."
+.\.venv\Scripts\python.exe scripts\preview_mini_app.py --host 127.0.0.1 --port 8765
+```
+
+Luego abrí `http://127.0.0.1:8765/`. Esta vista previa simula el checkout y nunca cobra Stars.
+
+Para activarla realmente hace falta publicar el mismo servicio detrás de HTTPS, crear en BotFather una Main Mini App con el nombre corto elegido y configurar:
+
+```env
+TELEGRAM_MINI_APP_URL=https://tu-dominio.example/hisopos
+TELEGRAM_MINI_APP_SHORT_NAME=hisopos
+MINI_APP_BIND_HOST=0.0.0.0
+MINI_APP_PORT=8080
+```
+
+Dejar `TELEGRAM_MINI_APP_URL` vacío desactiva el servidor y el botón sin afectar los comandos ni los pagos por enlaces de factura. El puerto de aplicación no debe exponerse directamente a Internet: el dominio HTTPS debe terminar TLS en un proxy y reenviar internamente al host/puerto configurado.
+
+El saldo recibido queda primero como Stars del bot. Telegram aplica su plazo de disponibilidad y luego permite retirar el saldo elegible mediante Fragment hacia una billetera TON, sujeto al mínimo dinámico, autenticación en dos pasos y términos vigentes. Para llevarlo a una cuenta bancaria hay que vender los TON en un servicio compatible y retirar moneda fiduciaria; no existe un retiro directo Stars → banco y pueden aplicar verificación de identidad, comisiones e impuestos.
 
 ## Configuracion por grupo
 

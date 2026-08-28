@@ -190,13 +190,14 @@ class LifecycleAndBillingTests(unittest.IsolatedAsyncioTestCase):
         fake_application = MagicMock()
         with patch.dict(tb.COMMANDS, {"hola": MagicMock(), "help": MagicMock()}, clear=True):
             tb._register_handlers(fake_application)
-        self.assertEqual(fake_application.add_handler.call_count, 10)
+        self.assertEqual(fake_application.add_handler.call_count, 13)
 
     def test_build_application_uses_per_chat_processor(self) -> None:
         db = MagicMock()
         builder = MagicMock()
         builder.bot.return_value = builder
         builder.post_init.return_value = builder
+        builder.post_shutdown.return_value = builder
         builder.concurrent_updates.return_value = builder
         builder.build.return_value = "app"
         retrying_bot = MagicMock()
@@ -206,6 +207,7 @@ class LifecycleAndBillingTests(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(tb._build_application("token", db), "app")
         build_bot.assert_called_once_with("token", tb.TELEGRAM_REQUEST_TIMEOUT_SECONDS)
         builder.bot.assert_called_once_with(retrying_bot)
+        builder.post_shutdown.assert_called_once_with(tb._post_shutdown)
         self.assertIsInstance(builder.concurrent_updates.call_args.args[0], tb.PerChatUpdateProcessor)
 
     async def test_botfather_command_suggestions_are_public_and_scoped(self) -> None:
@@ -222,7 +224,11 @@ class LifecycleAndBillingTests(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(
             private_names,
-            {"help", "ayuda", "start", "hola", "lil", "nivel", "version", "chats", "reportar", "donar", "config", "reglashisopo"},
+            {
+                "help", "ayuda", "start", "hola", "lil", "nivel", "version",
+                "chats", "reportar", "donar", "donantes", "paysupport", "terminos",
+                "config", "reglashisopo",
+            },
         )
         self.assertTrue(
             {
@@ -265,7 +271,9 @@ class LifecycleAndBillingTests(unittest.IsolatedAsyncioTestCase):
         db = MagicMock()
         app = SimpleNamespace(
             bot_data={"settings": settings(), "db": db},
-            bot=SimpleNamespace(get_me=AsyncMock(return_value=SimpleNamespace(id=99))),
+            bot=SimpleNamespace(
+                get_me=AsyncMock(return_value=SimpleNamespace(id=99, username="galerazo_bot"))
+            ),
         )
         with patch.object(tb, "_sync_botfather_commands", AsyncMock()) as sync, patch.object(
             tb, "_announce_current_release", AsyncMock()
@@ -273,10 +281,14 @@ class LifecycleAndBillingTests(unittest.IsolatedAsyncioTestCase):
             tb, "_cleanup_old_paginated_messages", AsyncMock()
         ) as cleanup, patch.object(
             tb, "_send_log_event", AsyncMock(return_value=True)
-        ) as log, patch.object(tb, "_schedule_google_cloud_billing_report") as schedule:
+        ) as log, patch.object(
+            tb, "_configure_mini_app", AsyncMock(return_value=False)
+        ) as configure_mini_app, patch.object(tb, "_schedule_google_cloud_billing_report") as schedule:
             await tb._post_init(app)
         self.assertEqual(app.bot_data["state"].bot_user_id, "99")
+        self.assertEqual(app.bot_data["state"].bot_username, "galerazo_bot")
         sync.assert_awaited_once_with(app.bot)
+        configure_mini_app.assert_awaited_once_with(app)
         announce.assert_awaited_once_with(db, app.bot, app.bot_data["settings"])
         cleanup.assert_awaited_once()
         log.assert_awaited_once()

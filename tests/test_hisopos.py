@@ -1787,6 +1787,18 @@ class HisopoCommandTests(unittest.IsolatedAsyncioTestCase):
             hisopo_handlers.handle_collection(self._context(chat_type="private"), db),
         )
 
+        self.assertIsNone(
+            await hisopo_handlers.handle_collection(
+                self._context(send_hisopo_collection=AsyncMock(return_value=True)), db
+            )
+        )
+        self.assertIn(
+            "mostrar",
+            await hisopo_handlers.handle_collection(
+                self._context(send_hisopo_collection=AsyncMock(return_value=False)), db
+            ),
+        )
+
     async def test_send_ranking_success_pagination_and_failure(self) -> None:
         db = MagicMock()
         db.get_chat_settings.return_value = SimpleNamespace(language="es")

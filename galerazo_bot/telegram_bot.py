@@ -25,9 +25,11 @@ from telegram import (
     InlineKeyboardMarkup,
     InputMediaPhoto,
     LinkPreviewOptions,
+    MenuButtonWebApp,
     Message,
     Update,
     User,
+    WebAppInfo,
 )
 from telegram.error import BadRequest, Conflict, Forbidden, NetworkError, TelegramError, TimedOut
 from telegram.ext import (
@@ -105,6 +107,7 @@ from .hisopos import (
     is_fleeting_window_expired,
     radioactive_points_at,
     random_next_day_datetime,
+    render_hisopo_collection,
     select_bomb_slots,
     select_hisopo_spawn,
     should_spawn_hisopo,
@@ -115,6 +118,7 @@ from .instance_lock import SingleInstance
 from .integration_status import save_logging_status
 from .logging_utils import configure_logging, exception_summary, redact_secrets
 from .media_moderation import OpenAIMediaModerator, trigger_media_kind
+from .mini_app import MiniAppService, direct_mini_app_url, start_mini_app
 from .pagination import (
     BUTTON_PREFIX,
     bold_first_line_entities as _bold_first_line_entities,
@@ -125,6 +129,12 @@ from .pagination import (
 )
 from .roles import BackupResult, RussianRouletteHitResult, TriggerModerationResult, TriggerPayload, UserLevel
 from .runtime import ensure_python_version
+from .telegram_payments import (
+    answer_pre_checkout_query,
+    process_refunded_payment,
+    process_successful_payment,
+    send_donation_menu as _send_donation_menu,
+)
 from .telegram_retry import build_retrying_ext_bot
 from .update_processor import PerChatUpdateProcessor
 from .versioning import CURRENT_VERSION, pending_release_notes
@@ -173,6 +183,7 @@ class BotState:
     bot_user_id: str
     expense_sheet_writer: GoogleSheetsExpenseWriter
     media_moderator: OpenAIMediaModerator
+    bot_username: str = ""
 
 
 class HisopoSpawnError(RuntimeError):
@@ -234,6 +245,7 @@ def _build_application(token: str, db: Database) -> Application:
         ApplicationBuilder()
         .bot(build_retrying_ext_bot(token, TELEGRAM_REQUEST_TIMEOUT_SECONDS))
         .post_init(_post_init)
+        .post_shutdown(_post_shutdown)
         .concurrent_updates(PerChatUpdateProcessor(db.resolve_chat_id))
         .build()
     )
@@ -252,11 +264,54 @@ def _register_handlers(application: Application) -> None:
         hisopo_callback=_hisopo_callback_entrypoint,
         power_callback=_restart_callback_entrypoint,
         chat_member_callback=_my_chat_member_entrypoint,
+        pre_checkout_callback=_pre_checkout_query_entrypoint,
+        successful_payment_callback=_successful_payment_entrypoint,
+        refunded_payment_callback=_refunded_payment_entrypoint,
         pagination_pattern=f"^{BUTTON_PREFIX}:",
         config_pattern=f"^{CONFIG_PREFIX}:",
         hisopo_pattern=f"^{HISOPO_CALLBACK_PREFIX}:",
         power_pattern=f"^({RESTART_CALLBACK_PREFIX}|{SHUTDOWN_CALLBACK_PREFIX}):",
     )
+
+
+async def _pre_checkout_query_entrypoint(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE,
+) -> None:
+    query = update.pre_checkout_query
+    if query is None:
+        return
+    state = _state(context)
+    await answer_pre_checkout_query(
+        query=query,
+        db=state.db,
+        bot_token=state.settings.telegram_bot_token,
+    )
+
+
+async def _successful_payment_entrypoint(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE,
+) -> None:
+    message = update.effective_message
+    if message is None:
+        return
+    state = _state(context)
+    await process_successful_payment(
+        message=message,
+        db=state.db,
+        bot_token=state.settings.telegram_bot_token,
+    )
+
+
+async def _refunded_payment_entrypoint(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE,
+) -> None:
+    message = update.effective_message
+    if message is None:
+        return
+    await process_refunded_payment(message=message, db=_state(context).db)
 
 
 async def _post_init(application: Application) -> None:
@@ -267,6 +322,7 @@ async def _post_init(application: Application) -> None:
         db=db,
         settings=settings,
         bot_user_id=str(bot_user.id),
+        bot_username=getattr(bot_user, "username", None) or "",
         expense_sheet_writer=GoogleSheetsExpenseWriter(
             GoogleSheetsConfig(
                 credentials_json_path=settings.google_sheets_credentials_json_path,
@@ -278,11 +334,53 @@ async def _post_init(application: Application) -> None:
     )
 
     await _sync_botfather_commands(application.bot)
+    await _configure_mini_app(application)
     await _announce_current_release(db, application.bot, settings)
     await _cleanup_old_paginated_messages(db, application.bot)
     _restore_hisopo_jobs(application)
     await _send_log_event(application.bot, settings.telegram_log_chat_id, "Galerazo Bot iniciado.")
     _schedule_google_cloud_billing_report(application, settings)
+
+
+async def _post_shutdown(application: Application) -> None:
+    service = application.bot_data.get("mini_app_service")
+    if isinstance(service, MiniAppService):
+        await service.stop()
+
+
+async def _configure_mini_app(application: Application) -> bool:
+    state = application.bot_data["state"]
+    public_url = state.settings.telegram_mini_app_url
+    if not public_url:
+        logger.info("Mini App de Hisopos desactivada: falta TELEGRAM_MINI_APP_URL.")
+        return False
+    if not public_url.startswith("https://"):
+        logger.error("Mini App de Hisopos desactivada: TELEGRAM_MINI_APP_URL debe usar HTTPS.")
+        return False
+    service = await start_mini_app(
+        db=state.db,
+        bot_token=state.settings.telegram_bot_token,
+        bot=application.bot,
+        public_url=public_url,
+        host=state.settings.mini_app_bind_host,
+        port=state.settings.mini_app_port,
+    )
+    application.bot_data["mini_app_service"] = service
+    try:
+        await application.bot.set_chat_menu_button(
+            menu_button=MenuButtonWebApp(
+                text="Mis álbumes",
+                web_app=WebAppInfo(public_url),
+            )
+        )
+    except TelegramError as exc:
+        logger.warning("No pude configurar el botón de la Mini App: %s", exc)
+    logger.info(
+        "Mini App de Hisopos escuchando en %s:%s.",
+        state.settings.mini_app_bind_host,
+        state.settings.mini_app_port,
+    )
+    return True
 
 
 async def _announce_current_release(db: Database, bot: Bot, settings: Settings) -> bool:
@@ -1915,6 +2013,22 @@ async def _handle_command_update(update: Update, context: ContextTypes.DEFAULT_T
         send_debug_update=lambda: _send_debug_update(state.db, message, update),
         send_galerazas=lambda: _send_galerazas(state.db, message, str(user.id)),
         send_hisopos=lambda: _send_hisopos(state.db, message, str(user.id)),
+        send_hisopo_collection=lambda: _send_hisopo_collection(
+            db=state.db,
+            message=message,
+            requester=user,
+            target_user=reply_to_user or user,
+            settings=state.settings,
+            bot_username=state.bot_username,
+        ),
+        send_donation_menu=lambda: _send_donation_menu(
+            bot=context.bot,
+            bot_token=state.settings.telegram_bot_token,
+            message=message,
+            user_id=str(user.id),
+            language=_chat_language(state.db, chat.id),
+            mini_app_url=state.settings.telegram_mini_app_url,
+        ),
         send_config_menu=lambda: _send_config_menu(state.db, message),
         create_restart_confirmation=lambda: _create_restart_confirmation(
             state.db,
@@ -1968,6 +2082,48 @@ async def _handle_command_update(update: Update, context: ContextTypes.DEFAULT_T
             state.db.mark_chat_inactive(str(chat.id), "send_message_failed")
             return
         raise
+
+
+async def _send_hisopo_collection(
+    *,
+    db: Database,
+    message: Message,
+    requester: User,
+    target_user: User,
+    settings: Settings,
+    bot_username: str,
+) -> bool:
+    chat_id = str(message.chat.id)
+    language = _chat_language(db, chat_id)
+    entries = db.get_hisopo_collection(chat_id, str(target_user.id))
+    text = render_hisopo_collection(
+        entries,
+        user_name=_display_name(target_user),
+        user_id=str(target_user.id),
+        language=language,
+    )
+    reply_markup = None
+    if (
+        settings.telegram_mini_app_url
+        and settings.telegram_mini_app_short_name
+        and bot_username
+    ):
+        url = direct_mini_app_url(
+            settings.telegram_bot_token,
+            bot_username=bot_username,
+            short_name=settings.telegram_mini_app_short_name,
+            chat_id=chat_id,
+            user_id=str(requester.id),
+        )
+        reply_markup = InlineKeyboardMarkup(
+            [[InlineKeyboardButton(t(language, "hisopos.collection.open_app"), url=url)]]
+        )
+    try:
+        await message.reply_text(text, reply_markup=reply_markup, do_quote=True)
+        return True
+    except TelegramError as exc:
+        logger.warning("No pude enviar la colección de Hisopos: %s", exc)
+        return False
 
 
 async def _callback_query_entrypoint(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:

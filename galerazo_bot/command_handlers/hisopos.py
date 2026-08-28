@@ -31,9 +31,11 @@ async def handle(context: CommandContext, _db: Database) -> str | None:
     return None
 
 
-def handle_collection(context: CommandContext, db: Database) -> str:
+def handle_collection(context: CommandContext, db: Database):
     if context.chat_type not in {"group", "supergroup"} or context.chat_id is None:
         return context.t("hisopos.group_only")
+    if context.send_hisopo_collection is not None:
+        return _send_collection(context)
     target_user_id = context.reply_to_user_id or context.sender_id
     target_name = (
         context.reply_to_display_name
@@ -49,6 +51,12 @@ def handle_collection(context: CommandContext, db: Database) -> str:
         user_id=target_user_id,
         language=context.language,
     )
+
+
+async def _send_collection(context: CommandContext) -> str | None:
+    if await context.send_hisopo_collection():
+        return None
+    return context.t("hisopos.send_failed")
 
 
 async def send_hisopos(

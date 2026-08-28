@@ -88,6 +88,37 @@ class HisopoCollectionEntry:
 
 
 @dataclass(frozen=True)
+class HisopoAlbumSummary:
+    chat_id: str
+    title: str | None
+    discovered_count: int
+    capture_count: int
+
+
+@dataclass(frozen=True)
+class PaidHisopoOwnership:
+    hisopo_key: str
+    quantity: int
+    first_acquired_at: str
+    last_acquired_at: str
+
+
+@dataclass(frozen=True)
+class ClubMembership:
+    periods_paid: int
+    active_until: str | None
+
+
+@dataclass(frozen=True)
+class DonorLeaderboardEntry:
+    user_id: str
+    username: str | None
+    display_name: str | None
+    amount_stars: int
+    display_public: bool
+
+
+@dataclass(frozen=True)
 class HisopoSpawn:
     chat_id: str
     message_id: str
@@ -505,6 +536,70 @@ class Database:
                     last_captured_at TEXT NOT NULL,
                     PRIMARY KEY (chat_id, user_id, hisopo_type),
                     FOREIGN KEY (chat_id) REFERENCES chats (chat_id),
+                    FOREIGN KEY (user_id) REFERENCES users (user_id)
+                )
+                """
+            )
+            conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS star_payments (
+                    telegram_payment_charge_id TEXT PRIMARY KEY,
+                    provider_payment_charge_id TEXT,
+                    user_id TEXT NOT NULL,
+                    kind TEXT NOT NULL CHECK (kind IN ('donation', 'product', 'subscription')),
+                    item_key TEXT NOT NULL,
+                    amount_stars INTEGER NOT NULL CHECK (amount_stars > 0),
+                    currency TEXT NOT NULL CHECK (currency = 'XTR'),
+                    invoice_payload TEXT NOT NULL,
+                    source_chat_id TEXT,
+                    status TEXT NOT NULL DEFAULT 'paid' CHECK (status IN ('paid', 'refunded')),
+                    is_recurring INTEGER NOT NULL DEFAULT 0,
+                    is_first_recurring INTEGER NOT NULL DEFAULT 0,
+                    subscription_expiration_date TEXT,
+                    paid_at TEXT NOT NULL,
+                    refunded_at TEXT,
+                    FOREIGN KEY (user_id) REFERENCES users (user_id)
+                )
+                """
+            )
+            conn.execute(
+                """
+                CREATE INDEX IF NOT EXISTS idx_star_payments_donations
+                ON star_payments (kind, status, user_id)
+                """
+            )
+            conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS paid_hisopo_ownership (
+                    user_id TEXT NOT NULL,
+                    hisopo_key TEXT NOT NULL,
+                    quantity INTEGER NOT NULL DEFAULT 1 CHECK (quantity > 0),
+                    first_acquired_at TEXT NOT NULL,
+                    last_acquired_at TEXT NOT NULL,
+                    PRIMARY KEY (user_id, hisopo_key),
+                    FOREIGN KEY (user_id) REFERENCES users (user_id)
+                )
+                """
+            )
+            conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS club_memberships (
+                    user_id TEXT PRIMARY KEY,
+                    periods_paid INTEGER NOT NULL DEFAULT 0 CHECK (periods_paid >= 0),
+                    active_until TEXT,
+                    last_charge_id TEXT,
+                    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (user_id) REFERENCES users (user_id),
+                    FOREIGN KEY (last_charge_id) REFERENCES star_payments (telegram_payment_charge_id)
+                )
+                """
+            )
+            conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS donor_profiles (
+                    user_id TEXT PRIMARY KEY,
+                    display_public INTEGER NOT NULL DEFAULT 0,
+                    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
                     FOREIGN KEY (user_id) REFERENCES users (user_id)
                 )
                 """
@@ -2532,6 +2627,289 @@ class Database:
                 capture_count=row["capture_count"],
                 first_captured_at=row["first_captured_at"],
                 last_captured_at=row["last_captured_at"],
+            )
+            for row in rows
+        ]
+
+    def list_hisopo_albums_for_user(self, user_id: str) -> list[HisopoAlbumSummary]:
+        with self._connect() as conn:
+            rows = conn.execute(
+                """
+                SELECT
+                    collections.chat_id,
+                    chats.title,
+                    COUNT(*) AS discovered_count,
+                    SUM(collections.capture_count) AS capture_count
+                FROM hisopo_collections AS collections
+                JOIN chats ON chats.chat_id = collections.chat_id
+                WHERE collections.user_id = ? AND collections.capture_count > 0
+                GROUP BY collections.chat_id, chats.title
+                ORDER BY lower(COALESCE(chats.title, collections.chat_id)), collections.chat_id
+                """,
+                (user_id,),
+            ).fetchall()
+        return [
+            HisopoAlbumSummary(
+                chat_id=row["chat_id"],
+                title=row["title"],
+                discovered_count=row["discovered_count"],
+                capture_count=row["capture_count"],
+            )
+            for row in rows
+        ]
+
+    def get_paid_hisopo_ownership(self, user_id: str) -> list[PaidHisopoOwnership]:
+        with self._connect() as conn:
+            rows = conn.execute(
+                """
+                SELECT hisopo_key, quantity, first_acquired_at, last_acquired_at
+                FROM paid_hisopo_ownership
+                WHERE user_id = ?
+                ORDER BY first_acquired_at, hisopo_key
+                """,
+                (user_id,),
+            ).fetchall()
+        return [
+            PaidHisopoOwnership(
+                hisopo_key=row["hisopo_key"],
+                quantity=row["quantity"],
+                first_acquired_at=row["first_acquired_at"],
+                last_acquired_at=row["last_acquired_at"],
+            )
+            for row in rows
+        ]
+
+    def owns_paid_hisopo(self, user_id: str, hisopo_key: str) -> bool:
+        with self._connect() as conn:
+            row = conn.execute(
+                """
+                SELECT 1 FROM paid_hisopo_ownership
+                WHERE user_id = ? AND hisopo_key = ?
+                """,
+                (user_id, hisopo_key),
+            ).fetchone()
+        return row is not None
+
+    def record_star_payment(
+        self,
+        *,
+        telegram_payment_charge_id: str,
+        provider_payment_charge_id: str | None,
+        user_id: str,
+        kind: str,
+        item_key: str,
+        amount_stars: int,
+        currency: str,
+        invoice_payload: str,
+        source_chat_id: str | None,
+        reward_hisopo_key: str | None,
+        paid_at: str,
+        is_recurring: bool = False,
+        is_first_recurring: bool = False,
+        subscription_expiration_date: str | None = None,
+    ) -> bool:
+        with self._connect() as conn:
+            conn.execute(
+                "INSERT INTO users (user_id) VALUES (?) ON CONFLICT(user_id) DO NOTHING",
+                (user_id,),
+            )
+            inserted = conn.execute(
+                """
+                INSERT INTO star_payments (
+                    telegram_payment_charge_id, provider_payment_charge_id,
+                    user_id, kind, item_key, amount_stars, currency,
+                    invoice_payload, source_chat_id, is_recurring,
+                    is_first_recurring, subscription_expiration_date, paid_at
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT(telegram_payment_charge_id) DO NOTHING
+                """,
+                (
+                    telegram_payment_charge_id,
+                    provider_payment_charge_id,
+                    user_id,
+                    kind,
+                    item_key,
+                    amount_stars,
+                    currency,
+                    invoice_payload,
+                    source_chat_id,
+                    int(is_recurring),
+                    int(is_first_recurring),
+                    subscription_expiration_date,
+                    paid_at,
+                ),
+            )
+            if inserted.rowcount == 0:
+                return False
+            if reward_hisopo_key is not None:
+                conn.execute(
+                    """
+                    INSERT INTO paid_hisopo_ownership (
+                        user_id, hisopo_key, quantity,
+                        first_acquired_at, last_acquired_at
+                    )
+                    VALUES (?, ?, 1, ?, ?)
+                    ON CONFLICT(user_id, hisopo_key) DO UPDATE SET
+                        quantity = paid_hisopo_ownership.quantity + 1,
+                        last_acquired_at = excluded.last_acquired_at
+                    """,
+                    (user_id, reward_hisopo_key, paid_at, paid_at),
+                )
+            if kind == "subscription":
+                conn.execute(
+                    """
+                    INSERT INTO club_memberships (
+                        user_id, periods_paid, active_until, last_charge_id
+                    )
+                    VALUES (?, 1, ?, ?)
+                    ON CONFLICT(user_id) DO UPDATE SET
+                        periods_paid = club_memberships.periods_paid + 1,
+                        active_until = COALESCE(excluded.active_until, club_memberships.active_until),
+                        last_charge_id = excluded.last_charge_id,
+                        updated_at = CURRENT_TIMESTAMP
+                    """,
+                    (user_id, subscription_expiration_date, telegram_payment_charge_id),
+                )
+        return True
+
+    def refund_star_payment(
+        self,
+        telegram_payment_charge_id: str,
+        *,
+        refunded_at: str,
+    ) -> bool:
+        with self._connect() as conn:
+            payment = conn.execute(
+                """
+                SELECT user_id, kind, item_key
+                FROM star_payments
+                WHERE telegram_payment_charge_id = ? AND status = 'paid'
+                """,
+                (telegram_payment_charge_id,),
+            ).fetchone()
+            if payment is None:
+                return False
+            conn.execute(
+                """
+                UPDATE star_payments
+                SET status = 'refunded', refunded_at = ?
+                WHERE telegram_payment_charge_id = ?
+                """,
+                (refunded_at, telegram_payment_charge_id),
+            )
+            reward_key = payment["item_key"] if payment["kind"] == "product" else None
+            if payment["kind"] == "subscription":
+                reward_key = "stellar"
+            if reward_key is not None:
+                conn.execute(
+                    """
+                    DELETE FROM paid_hisopo_ownership
+                    WHERE user_id = ? AND hisopo_key = ? AND quantity = 1
+                    """,
+                    (payment["user_id"], reward_key),
+                )
+                conn.execute(
+                    """
+                    UPDATE paid_hisopo_ownership
+                    SET quantity = quantity - 1, last_acquired_at = ?
+                    WHERE user_id = ? AND hisopo_key = ? AND quantity > 1
+                    """,
+                    (refunded_at, payment["user_id"], reward_key),
+                )
+            if payment["kind"] == "subscription":
+                summary = conn.execute(
+                    """
+                    SELECT COUNT(*) AS periods_paid
+                    FROM star_payments
+                    WHERE user_id = ? AND kind = 'subscription' AND status = 'paid'
+                    """,
+                    (payment["user_id"],),
+                ).fetchone()
+                latest = conn.execute(
+                    """
+                    SELECT subscription_expiration_date AS active_until,
+                           telegram_payment_charge_id AS last_charge_id
+                    FROM star_payments
+                    WHERE user_id = ? AND kind = 'subscription' AND status = 'paid'
+                    ORDER BY paid_at DESC, rowid DESC
+                    LIMIT 1
+                    """,
+                    (payment["user_id"],),
+                ).fetchone()
+                conn.execute(
+                    """
+                    UPDATE club_memberships
+                    SET periods_paid = ?, active_until = ?, last_charge_id = ?,
+                        updated_at = CURRENT_TIMESTAMP
+                    WHERE user_id = ?
+                    """,
+                    (
+                        summary["periods_paid"],
+                        latest["active_until"] if latest is not None else None,
+                        latest["last_charge_id"] if latest is not None else None,
+                        payment["user_id"],
+                    ),
+                )
+        return True
+
+    def get_club_membership(self, user_id: str) -> ClubMembership | None:
+        with self._connect() as conn:
+            row = conn.execute(
+                "SELECT periods_paid, active_until FROM club_memberships WHERE user_id = ?",
+                (user_id,),
+            ).fetchone()
+        if row is None:
+            return None
+        return ClubMembership(row["periods_paid"], row["active_until"])
+
+    def set_donor_display_public(self, user_id: str, display_public: bool) -> None:
+        self.get_or_create_user(user_id)
+        with self._connect() as conn:
+            conn.execute(
+                """
+                INSERT INTO donor_profiles (user_id, display_public)
+                VALUES (?, ?)
+                ON CONFLICT(user_id) DO UPDATE SET
+                    display_public = excluded.display_public,
+                    updated_at = CURRENT_TIMESTAMP
+                """,
+                (user_id, int(display_public)),
+            )
+
+    def is_donor_display_public(self, user_id: str) -> bool:
+        with self._connect() as conn:
+            row = conn.execute(
+                "SELECT display_public FROM donor_profiles WHERE user_id = ?",
+                (user_id,),
+            ).fetchone()
+        return bool(row["display_public"]) if row is not None else False
+
+    def get_donor_leaderboard(self, limit: int = 10) -> list[DonorLeaderboardEntry]:
+        with self._connect() as conn:
+            rows = conn.execute(
+                """
+                SELECT payments.user_id, users.username, users.display_name,
+                       SUM(payments.amount_stars) AS amount_stars,
+                       COALESCE(profiles.display_public, 0) AS display_public
+                FROM star_payments AS payments
+                LEFT JOIN users ON users.user_id = payments.user_id
+                LEFT JOIN donor_profiles AS profiles ON profiles.user_id = payments.user_id
+                WHERE payments.kind = 'donation' AND payments.status = 'paid'
+                GROUP BY payments.user_id, users.username, users.display_name,
+                         profiles.display_public
+                ORDER BY amount_stars DESC, payments.user_id
+                LIMIT ?
+                """,
+                (limit,),
+            ).fetchall()
+        return [
+            DonorLeaderboardEntry(
+                user_id=row["user_id"],
+                username=row["username"],
+                display_name=row["display_name"],
+                amount_stars=row["amount_stars"],
+                display_public=bool(row["display_public"]),
             )
             for row in rows
         ]

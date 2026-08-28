@@ -268,6 +268,10 @@ class DeploymentAutomationTests(unittest.TestCase):
             "TELEGRAM_HISOPO_TWIN_FILE_ID",
             "TELEGRAM_HISOPO_GIANT_FILE_ID",
             "TELEGRAM_HISOPO_MIRACLE_FILE_ID",
+            "TELEGRAM_MINI_APP_URL",
+            "TELEGRAM_MINI_APP_SHORT_NAME",
+            "MINI_APP_BIND_HOST",
+            "MINI_APP_PORT",
         ):
             self.assertIn(key, status_script)
             self.assertIn(key, patch_script)

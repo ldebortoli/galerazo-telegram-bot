@@ -39,6 +39,10 @@ class Settings:
     telegram_hisopo_twin_file_id: str | None = None
     telegram_hisopo_giant_file_id: str | None = None
     telegram_hisopo_miracle_file_id: str | None = None
+    telegram_mini_app_url: str | None = None
+    telegram_mini_app_short_name: str = "hisopos"
+    mini_app_bind_host: str = "127.0.0.1"
+    mini_app_port: int = 8080
 
 
 def load_settings() -> Settings:
@@ -88,6 +92,10 @@ def load_settings() -> Settings:
         telegram_hisopo_twin_file_id=os.getenv("TELEGRAM_HISOPO_TWIN_FILE_ID") or None,
         telegram_hisopo_giant_file_id=os.getenv("TELEGRAM_HISOPO_GIANT_FILE_ID") or None,
         telegram_hisopo_miracle_file_id=os.getenv("TELEGRAM_HISOPO_MIRACLE_FILE_ID") or None,
+        telegram_mini_app_url=os.getenv("TELEGRAM_MINI_APP_URL") or None,
+        telegram_mini_app_short_name=os.getenv("TELEGRAM_MINI_APP_SHORT_NAME", "hisopos"),
+        mini_app_bind_host=os.getenv("MINI_APP_BIND_HOST", "127.0.0.1"),
+        mini_app_port=int(os.getenv("MINI_APP_PORT", "8080")),
     )
 
 

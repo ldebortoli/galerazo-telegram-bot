@@ -7,10 +7,11 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from telegram import Chat, Message, MessageEntity, Update, User
-from telegram.ext import CommandHandler, MessageHandler, PrefixHandler
+from telegram.ext import CommandHandler, MessageHandler, PreCheckoutQueryHandler, PrefixHandler
 
 from galerazo_bot.commands import handle_command_async
 from galerazo_bot.database import Database
+from galerazo_bot.handler_registration import REFUNDED_PAYMENT
 from galerazo_bot.telegram_bot import POLLING_OPTIONS, _build_application, _register_handlers
 from galerazo_bot.update_processor import PerChatUpdateProcessor
 
@@ -24,6 +25,10 @@ class CapturingApplication:
 
 
 class CommandRoutingTests(unittest.TestCase):
+    def test_refunded_payment_filter(self) -> None:
+        self.assertFalse(REFUNDED_PAYMENT.filter(type("Message", (), {"refunded_payment": None})()))
+        self.assertTrue(REFUNDED_PAYMENT.filter(type("Message", (), {"refunded_payment": object()})()))
+
     def test_polling_keeps_pending_updates(self) -> None:
         self.assertFalse(POLLING_OPTIONS["drop_pending_updates"])
 
@@ -78,8 +83,18 @@ class CommandRoutingTests(unittest.TestCase):
             | frozenset({f"{prefix}reglashisopo" for prefix in ("!", ".", ">", "$")})
             <= prefix_handlers[0].commands,
         )
-        self.assertFalse(
-            any(group == 1 and isinstance(handler, MessageHandler) for group, handler in application.handlers)
+        payment_message_handlers = [
+            handler
+            for group, handler in application.handlers
+            if group == 1 and isinstance(handler, MessageHandler)
+        ]
+        self.assertEqual(len(payment_message_handlers), 2)
+        self.assertEqual(
+            sum(
+                group == 1 and isinstance(handler, PreCheckoutQueryHandler)
+                for group, handler in application.handlers
+            ),
+            1,
         )
 
         message = Message(

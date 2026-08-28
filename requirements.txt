@@ -1,6 +1,10 @@
+aiohappyeyeballs==2.7.1
+aiohttp==3.14.3
 aiolimiter==1.2.1
+aiosignal==1.4.0
 anyio==4.14.2
 APScheduler==3.11.3
+attrs==26.1.0
 av==18.1.0
 certifi==2026.7.22
 cffi==2.1.1
@@ -8,6 +12,7 @@ charset-normalizer==3.5.1
 colorama==0.4.6
 coverage==7.15.4
 cryptography==50.0.1
+frozenlist==1.8.0
 google-api-core==2.34.0
 google-auth==2.57.0
 google-auth-oauthlib==1.4.1
@@ -24,10 +29,12 @@ httpcore==1.0.9
 httpx==0.28.1
 idna==3.19
 iniconfig==2.3.0
+multidict==6.7.1
 oauthlib==3.3.1
 packaging==26.3
 pillow==12.3.0
 pluggy==1.6.0
+propcache==0.5.2
 proto-plus==1.28.4
 protobuf==7.36.0
 pyasn1==0.6.4
@@ -46,3 +53,4 @@ typing_extensions==4.16.0
 tzdata==2026.3
 tzlocal==5.4.4
 urllib3==2.7.0
+yarl==1.24.5

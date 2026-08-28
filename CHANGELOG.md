@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.43] - 2026-08-28
+
+- Nueva tienda de Hisopos cosméticos con trece coleccionables permanentes en Telegram Stars: de Caca, Sereno, Carmesí, Colosal, Masivo, Bacteriófago, Mundial, Invisible, Isótopo, Infinito, Cuásar, Big Bang y Dengue. Son globales y no dan puntos ni modifican probabilidades; Dengue es la pieza máxima a 5000 Stars.
+- `/donar` incorpora aportes de 25, 100 y 500 Stars y el Club del Hisopo renovable cada 30 días por 100 Stars, con un Hisopo Estelar por cada período confirmado. Los pagos y reembolsos son idempotentes y retiran el beneficio correspondiente al devolverse.
+- Nuevos `/donantes`, `/paysupport` y `/terminos`: el ranking cuenta únicamente donaciones confirmadas, descuenta reembolsos y mantiene anónimo el nombre salvo autorización expresa.
+- Nueva Mini App móvil con álbumes por grupo, colección cosmética, tienda, Club y aportes. Valida la firma y antigüedad de `initData`; desde un grupo abre el álbum propio de ese chat y desde el privado permite elegir solo entre grupos con colección conocida.
+- Se incorpora `aiohttp==3.14.3`, se actualizan el lock reproducible y la imagen Docker, y se agregan catorce artes originales para los cosméticos y el Club.
+
 ## [0.42] - 2026-08-27
 
 - Correcciones y mejoras: cuando un Hisopo se vence, tanto la leyenda como el aviso emergente indican de forma breve cuál era su tipo y que se perdió por haber vencido, sin agregar detalles de puntos ni de colección.

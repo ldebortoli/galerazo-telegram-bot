@@ -12,6 +12,7 @@ DOCKERFILE = ROOT / "Dockerfile"
 REQUIREMENTS_IN = ROOT / "requirements.in"
 REQUIREMENTS_LOCK = ROOT / "requirements.txt"
 DIRECT_DEPENDENCIES = {
+    "aiohttp",
     "av",
     "colorama",
     "coverage",
