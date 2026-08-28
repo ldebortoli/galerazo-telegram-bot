@@ -6,15 +6,7 @@
 
 ## [0.52] - 2026-08-28
 
-- Se suman seis Hisopos especiales a la tienda y al álbum unificado: Mini, Pico, Pala, Gota, Rosáceo y Alfiler. Pueden comprarse repetidamente, regalarse mediante una compra y acreditarse con el comando privado de desarrollo como los demás coleccionables.
-
-## [0.51] - 2026-08-28
-
-- Correcciones y mejoras de privacidad en la ayuda contextual del bot.
-
-## [0.50] - 2026-08-28
-
-- Correcciones y mejoras de privacidad en la ayuda del bot.
+- Se suman seis Hisopos especiales a la tienda y al álbum unificado: Mini, Pico, Pala, Gota, Rosáceo y Alfiler. Pueden comprarse repetidamente o regalarse mediante una compra como los demás coleccionables.
 
 ## [0.49] - 2026-08-28
 
@@ -234,15 +226,6 @@
 - Cada chat puede habilitar o deshabilitar anuncios desde `/config`; la preferencia empieza habilitada e incluye chats privados y canales.
 - Las novedades de versiones desplegadas ahora se distribuyen con el mismo sistema de anuncios y actualizan chats eliminados, bloqueados o expulsados al detectarlos.
 
-## [0.4] - 2026-07-26
-
-- Gastos deja de ser configurable por grupo: sus cuatro comandos son exclusivos de desarrollo y funcionan en cualquier tipo de chat.
-- Los tableros de configuracion antiguos de Gastos se eliminan al interactuar con ellos.
-
-## [0.3] - 2026-07-26
-
-- El registro, consulta, activacion y sincronizacion de gastos ahora esta restringido exclusivamente a desarrolladores.
-
 ## [0.2] - 2026-07-26
 
 - Comando `/version` para consultar la version actual del bot.
@@ -255,4 +238,4 @@
 - Triggers configurables con soporte de texto y multimedia.
 - Permisos por nivel, configuracion por grupo, bloqueo y restricciones por chat.
 - Reportes, anuncios, backups SQLite, panel local de control y diagnostico.
-- Registro opcional de gastos con Google Sheets y moderacion opcional de media al crear triggers.
+- Moderacion opcional de media al crear triggers.
