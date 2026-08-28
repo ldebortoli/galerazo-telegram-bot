@@ -84,6 +84,8 @@ class GiftHisopoTests(unittest.TestCase):
         bacteriophage = self.run_command("/regalarhisopo bacteriófago 267832653")
         galerazo = self.run_command("/regalarhisopo galerazo 267832653")
         stellar = self.run_command("/regalarhisopo estrella 267832653")
+        pink = self.run_command("/regalarhisopo rosáceo 267832653")
+        peak = self.run_command("/regalarhisopo pico 267832653")
 
         self.assertIn("Hisopo Big Bang", first)
         self.assertIn("Ahora tiene 1", first)
@@ -91,13 +93,22 @@ class GiftHisopoTests(unittest.TestCase):
         self.assertIn("Hisopo Bacteriófago", bacteriophage)
         self.assertIn("Hisopo Galerazo", galerazo)
         self.assertIn("Hisopo Estelar", stellar)
+        self.assertIn("Hisopo Rosáceo", pink)
+        self.assertIn("Hisopo Pico", peak)
         ownership = {
             entry.hisopo_key: entry.quantity
             for entry in self.db.get_paid_hisopo_ownership("267832653")
         }
         self.assertEqual(
             ownership,
-            {"big_bang": 2, "bacteriophage": 1, "galerazo": 1, "stellar": 1},
+            {
+                "big_bang": 2,
+                "bacteriophage": 1,
+                "galerazo": 1,
+                "stellar": 1,
+                "rosaceo": 1,
+                "pico": 1,
+            },
         )
         self.assertIsNone(self.db.get_club_membership("267832653"))
         with self.db._connect() as conn:
@@ -115,6 +126,8 @@ class GiftHisopoTests(unittest.TestCase):
                 ("1", "267832653", "bacteriophage"),
                 ("1", "267832653", "galerazo"),
                 ("1", "267832653", "stellar"),
+                ("1", "267832653", "rosaceo"),
+                ("1", "267832653", "pico"),
             ],
         )
 

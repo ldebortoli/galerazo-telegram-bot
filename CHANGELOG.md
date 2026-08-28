@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.52] - 2026-08-28
+
+- Se suman seis Hisopos especiales a la tienda y al álbum unificado: Mini, Pico, Pala, Gota, Rosáceo y Alfiler. Pueden comprarse repetidamente, regalarse mediante una compra y acreditarse con el comando privado de desarrollo como los demás coleccionables.
+
 ## [0.51] - 2026-08-28
 
 - Correcciones y mejoras de privacidad en la ayuda contextual del bot.

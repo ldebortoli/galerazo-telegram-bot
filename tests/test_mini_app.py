@@ -225,7 +225,9 @@ class MiniAppApiTests(unittest.IsolatedAsyncioTestCase):
             ],
             1,
         )
-        self.assertEqual(len(payload["paid_hisopos"]), 15)
+        self.assertEqual(len(payload["paid_hisopos"]), 21)
+        self.assertEqual(payload["paid_hisopos"][0]["key"], "mini")
+        self.assertEqual(payload["paid_hisopos"][0]["price_stars"], 25)
         self.assertEqual(payload["paid_hisopos"][-2]["key"], "galerazo")
         self.assertEqual(payload["paid_hisopos"][-2]["price_stars"], 6000)
         self.assertEqual(payload["club"]["periods_paid"], 2)

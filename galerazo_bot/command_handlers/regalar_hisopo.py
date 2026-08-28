@@ -11,10 +11,16 @@ from ..roles import CommandContext, UserLevel
 
 GIFTABLE_HISOPOS = (*PAID_HISOPOS, CLUB_HISOPO)
 GIFT_TYPE_HINTS = (
+    "mini",
     "caca",
+    "pico",
+    "pala",
     "sereno",
+    "gota",
     "carmesi",
+    "rosaceo",
     "colosal",
+    "alfiler",
     "masivo",
     "bacteriofago",
     "mundial",

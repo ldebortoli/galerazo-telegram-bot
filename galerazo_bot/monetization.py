@@ -41,12 +41,36 @@ class InvoiceSpec:
 
 PAID_HISOPOS: tuple[PaidHisopo, ...] = (
     PaidHisopo(
+        "mini",
+        "Hisopo Mini",
+        "Cortito, compacto y con la misma dignidad que los grandes.",
+        25,
+        "hisopo-mini.png",
+        "#7eb2d4",
+    ),
+    PaidHisopo(
         "poop",
         "Hisopo de Caca",
         "Una edición marrón, brillante y orgullosamente ridícula.",
         35,
         "hisopo-de-caca.png",
         "#9a673d",
+    ),
+    PaidHisopo(
+        "pico",
+        "Hisopo Pico",
+        "Dos puntas cónicas de microrelieve para una precisión exageradamente elegante.",
+        40,
+        "hisopo-pico.png",
+        "#d6d9df",
+    ),
+    PaidHisopo(
+        "pala",
+        "Hisopo Pala",
+        "Dos puntas planas y anguladas con vocación de espátula fina.",
+        45,
+        "hisopo-pala.png",
+        "#d7b9a7",
     ),
     PaidHisopo(
         "serene",
@@ -57,6 +81,14 @@ PAID_HISOPOS: tuple[PaidHisopo, ...] = (
         "#9cab84",
     ),
     PaidHisopo(
+        "gota",
+        "Hisopo Gota",
+        "Dos puntas suaves en forma de lágrima y un brillo acuático.",
+        60,
+        "hisopo-gota.png",
+        "#62bbc0",
+    ),
+    PaidHisopo(
         "crimson",
         "Hisopo Carmesí",
         "Una edición de terciopelo rojo y carácter intenso.",
@@ -65,12 +97,28 @@ PAID_HISOPOS: tuple[PaidHisopo, ...] = (
         "#b34b62",
     ),
     PaidHisopo(
+        "rosaceo",
+        "Hisopo Rosáceo",
+        "Palo rosa, algodón rosa y ni una sola concesión cromática.",
+        90,
+        "hisopo-rosaceo.png",
+        "#ef76a8",
+    ),
+    PaidHisopo(
         "colossal",
         "Hisopo Colosal",
         "Una pieza monumental de grafito y bronce.",
         100,
         "hisopo-colosal.png",
         "#a98b69",
+    ),
+    PaidHisopo(
+        "alfiler",
+        "Hisopo Alfiler",
+        "Mitad Hisopo, mitad alfiler: precisión plateada de colección.",
+        125,
+        "hisopo-alfiler.png",
+        "#bfc3c9",
     ),
     PaidHisopo(
         "massive",

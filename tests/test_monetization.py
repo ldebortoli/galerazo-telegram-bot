@@ -24,23 +24,28 @@ from galerazo_bot.monetization import (
 
 class MonetizationCatalogTests(unittest.TestCase):
     def test_catalog_is_unique_cosmetic_and_has_varied_prices(self) -> None:
-        self.assertEqual(len(PAID_HISOPOS), 14)
+        self.assertEqual(len(PAID_HISOPOS), 20)
         self.assertEqual(len({item.key for item in PAID_HISOPOS}), len(PAID_HISOPOS))
         self.assertEqual(len({item.image_name for item in PAID_HISOPOS}), len(PAID_HISOPOS))
         self.assertEqual(
             [item.price_stars for item in PAID_HISOPOS],
-            [35, 50, 75, 100, 150, 200, 250, 300, 350, 500, 650, 1000, 5000, 6000],
+            [25, 35, 40, 45, 50, 60, 75, 90, 100, 125, 150, 200, 250, 300, 350, 500, 650, 1000, 5000, 6000],
+        )
+        self.assertEqual(
+            {item.key for item in PAID_HISOPOS[:10]},
+            {"mini", "poop", "pico", "pala", "serene", "gota", "crimson", "rosaceo", "colossal", "alfiler"},
         )
         self.assertEqual(PAID_HISOPOS[-2].name, "Hisopo Dengue")
         self.assertEqual(PAID_HISOPOS[-1].name, "Hisopo Galerazo")
         self.assertEqual(CLUB_HISOPO.name, "Hisopo Estelar")
         self.assertEqual(DONATION_TIERS, (25, 100, 500))
 
-    def test_galerazo_art_is_catalog_ready(self) -> None:
-        asset = Path(__file__).parents[1] / "assets" / "hisopos" / "hisopo-galerazo.png"
-        with Image.open(asset) as image:
-            self.assertEqual(image.size, (1254, 1254))
-            self.assertEqual(image.mode, "RGB")
+    def test_every_paid_hisopo_art_is_catalog_ready(self) -> None:
+        assets = Path(__file__).parents[1] / "assets" / "hisopos"
+        for item in PAID_HISOPOS:
+            with self.subTest(item=item.key), Image.open(assets / item.image_name) as image:
+                self.assertEqual(image.size, (1254, 1254))
+                self.assertEqual(image.mode, "RGB")
 
     def test_invoice_specs_and_invalid_products(self) -> None:
         donation = invoice_spec("donation", "25")

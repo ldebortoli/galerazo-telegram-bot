@@ -71,7 +71,43 @@ Prompt final, generado con ImageGen integrado y refinado para eliminar marcas de
 
 ## Hisopos especiales de Stars
 
-Estas quince piezas —catorce de tienda y la histórica Estelar— son artículos visuales y no se cargan como apariciones aleatorias. Se muestran directamente desde estos PNG en la Mini App.
+Estas veintiuna piezas —veinte de tienda y la histórica Estelar— son artículos visuales y no se cargan como apariciones aleatorias. Se muestran directamente desde estos PNG en la Mini App.
+
+### Hisopo Mini
+
+Archivo: `hisopo-mini.png`
+
+> Use case: stylized-concept. Asset type: square premium Telegram game collectible artwork. Images 1 to 3 are style references for the Galerazo Bot cosmetic swab collectible set. Create a brand-new “Hisopo Mini”. Show exactly one unmistakable classic double-ended cotton swab with a deliberately tiny, very short central shaft. The complete object must be stubby and compact: the shaft between the cotton tips is only about twice the length of one cotton tip, making the whole swab visibly much shorter than a normal swab. Both pristine cotton tips remain plump, tactile and proportionally large. Use a pure black luxury studio background with a small restrained warm-white halo and sparse tiny dust motes. Polished high-detail whimsical 3D product render matching the references. Square, compact object centered diagonally, fully visible, generous safe margins emphasizing its miniature size, no cropping. Charming, premium, tiny but dignified. Ivory cotton, muted powder-blue short shaft, restrained silver fittings. No text, letters, numbers, ruler, measuring marks, people, hands, face, eyes, logos, watermark, packaging, extra objects or extra swabs. Exactly one short double-ended swab. Do not render a normal long shaft.
+
+### Hisopo Pico
+
+Archivo: `hisopo-pico.png`
+
+> Use case: stylized-concept. Asset type: square premium Telegram game collectible artwork. Image 1 is only a real-world reference for the three specialty applicator tip shapes; Image 2 and Image 3 are style references for the Galerazo Bot cosmetic swab collectible set. Create a brand-new “Hisopo Pico”. Show exactly one unmistakable double-ended swab-like cosmetic applicator, centered diagonally from lower-left to upper-right and fully visible. Replace both ordinary cotton tips with matching compact white conical microbrush tips covered in neat, short, rounded silicone micro-spikes, inspired by the center applicator in Image 1. The two ends must read clearly as pointed textured applicator tips, not cotton balls and not sharp needles. Use a pure black luxury studio background with a restrained cool-white circular halo and sparse silver dust. Polished high-detail whimsical 3D product render matching the references. Square, one object only, strong centered silhouette, generous safe margins, no cropping. Pearl white tips, satin graphite shaft, cool silver accents. No text, letters, numbers, people, hands, face, eyes, logos, watermark, packaging, extra objects or extra swabs. Keep the tips blunt and cosmetic, with rounded micro-spikes; no weapon, gore, medical procedure or insect imagery.
+
+### Hisopo Pala
+
+Archivo: `hisopo-pala.png`
+
+> Use case: stylized-concept. Asset type: square premium Telegram game collectible artwork. Image 1 is only a real-world reference for the three specialty applicator tip shapes; Image 2 and Image 3 are style references for the Galerazo Bot cosmetic swab collectible set. Create a brand-new “Hisopo Pala”. Show exactly one unmistakable double-ended cosmetic swab, centered diagonally from lower-left to upper-right and fully visible. Replace both ordinary cotton tips with matching soft white flat angled paddle tips: smooth compact wedge-shaped spatulas with a broad beveled face, inspired by the left applicator in Image 1. Both paddle ends must be clearly visible and symmetrical, unmistakably flat rather than pointed or teardrop shaped. Use a pure black luxury studio background with a restrained warm ivory halo and sparse bronze-silver dust. Polished high-detail whimsical 3D product render matching the references. Square, one object only, strong centered silhouette, generous safe margins, no cropping. Ivory-white paddle tips, satin pale blush shaft, restrained champagne-metal fittings. No text, letters, numbers, people, hands, face, eyes, logos, watermark, packaging, extra objects or extra swabs. The paddle tips are soft cosmetic applicators, not blades; no weapon, gore or medical procedure.
+
+### Hisopo Gota
+
+Archivo: `hisopo-gota.png`
+
+> Use case: stylized-concept. Asset type: square premium Telegram game collectible artwork. Image 1 is only a real-world reference for the three specialty applicator tip shapes; Image 2 and Image 3 are style references for the Galerazo Bot cosmetic swab collectible set. Create a brand-new “Hisopo Gota”. Show exactly one unmistakable double-ended cosmetic swab, centered diagonally from lower-left to upper-right and fully visible. Replace both ordinary cotton tips with matching smooth white teardrop-shaped applicator tips, inspired by the right applicator in Image 1. Each end must have a clean rounded base tapering gently to a soft point, like a suspended drop, and both ends must be fully visible. Use a pure black luxury studio background with a restrained translucent aqua circular ripple and a few tiny pearly droplets. Polished high-detail whimsical 3D product render matching the references. Square, one object only, strong centered silhouette, generous safe margins, no cropping. Pearly white teardrop tips, translucent pale-aqua shaft, cool silver rim light. No text, letters, numbers, people, hands, face, eyes, logos, watermark, packaging, extra objects or extra swabs. Tips must be soft cosmetic applicators, not needles; no weapon, gore or medical procedure.
+
+### Hisopo Rosáceo
+
+Archivo: `hisopo-rosaceo.png`
+
+> Use case: stylized-concept. Asset type: square premium Telegram game collectible artwork. Images 1 to 3 are style references for the Galerazo Bot cosmetic swab collectible set. Create a brand-new “Hisopo Rosáceo”. Show exactly one unmistakable classic double-ended cotton swab, centered diagonally from lower-left to upper-right and fully visible. The entire physical collectible must be genuinely pink: both cotton tips are saturated soft rose-pink fibers, the full shaft is glossy bubblegum pink, and the small fittings are muted rose metal. Do not leave any part of the swab white, gray, black or colorless. Use a pure black luxury studio background with a restrained blush-pink circular aura, velvety rose mist and sparse pink pearly particles. Polished high-detail whimsical 3D product render matching the references. Square, one object only, strong centered silhouette, generous safe margins, no cropping. Layered blush, rose, bubblegum and muted magenta on black; clearly visible soft pink cotton fibers and glossy pink shaft. No text, letters, numbers, people, hands, face, eyes, hearts, bows, flowers, logos, watermark, packaging, extra objects or extra swabs. Exactly one double-ended swab, and every part of the object itself is pink.
+
+### Hisopo Alfiler
+
+Archivo: `hisopo-alfiler.png`
+
+> Use case: stylized-concept. Asset type: square premium Telegram game collectible artwork. Images 1 to 3 are style references for the Galerazo Bot cosmetic swab collectible set. Create a brand-new “Hisopo Alfiler”, an elegant hybrid between a cotton swab and a sewing pin. Show exactly one slender object centered diagonally and fully visible: one end has a single pristine tactile white cotton swab tip, while the opposite end narrows into one fine polished steel pin point. The shaft is slim reflective silver with one tiny muted rose-gold collar near the cotton. It must read immediately as a cotton-tipped pin, not as two separate crossed objects. Use a pure black luxury studio background with a restrained silver circular halo and sparse metallic dust. Polished high-detail whimsical 3D product render matching the references. Square, one hybrid object only, clear diagonal silhouette, generous safe margins, both cotton and point safely inside frame. Silver steel, white cotton, tiny muted rose-gold accent. No text, letters, numbers, people, hands, face, eyes, blood, skin, medical procedure, logos, watermark, packaging, thread, buttons, extra pins, extra swabs or extra objects. The point is visually fine but the image is decorative and nonviolent; no weapon framing.
 
 ### Hisopo Sereno
 
