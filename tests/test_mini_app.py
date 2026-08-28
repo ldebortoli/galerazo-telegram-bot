@@ -219,6 +219,9 @@ class MiniAppApiTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(payload["albums"][0]["title"], "Todos los grupos")
         self.assertEqual(payload["selected_chat_id"], ALL_GROUPS_CHAT_ID)
         self.assertEqual(len(payload["albums"]), 3)
+        self.assertEqual(len(payload["natural_hisopos"]), 17)
+        used = next(item for item in payload["natural_hisopos"] if item["key"] == "used")
+        self.assertEqual(used["image"], "/assets/hisopos/hisopo-usado.png")
         self.assertEqual(
             next(item for item in payload["paid_hisopos"] if item["key"] == "serene")[
                 "quantity"

@@ -48,6 +48,7 @@ from galerazo_bot.hisopos import (
     RADIOACTIVE_POINT_VALUES,
     SILVER_HISOPO,
     TWIN_HISOPO,
+    USED_HISOPO,
     build_hisopo_lines,
     build_hisopo_pages,
     giant_required_helpers,
@@ -109,7 +110,7 @@ class HisopoRulesTests(unittest.TestCase):
                 )
                 collection = render_hisopo_collection([], "User", "2", language)
                 self.assertNotIn(mystery_note, collection)
-                self.assertEqual(len(collection.splitlines()), 19)
+                self.assertEqual(len(collection.splitlines()), 20)
 
     def test_all_localized_rules_document_the_miracle_cap(self) -> None:
         for language, catalog in HISOPO_TRANSLATIONS.items():
@@ -146,7 +147,9 @@ class HisopoRulesTests(unittest.TestCase):
     def test_type_boundaries_and_invalid_values(self) -> None:
         expected = {
             1: COMMON_HISOPO,
-            3465: COMMON_HISOPO,
+            2965: COMMON_HISOPO,
+            2966: USED_HISOPO,
+            3465: USED_HISOPO,
             3466: SILVER_HISOPO,
             4865: SILVER_HISOPO,
             4866: GOLD_HISOPO,
@@ -206,7 +209,8 @@ class HisopoRulesTests(unittest.TestCase):
         self.assertEqual(
             probabilities,
             {
-                "common": 3465,
+                "common": 2965,
+                "used": 500,
                 "silver": 1400,
                 "gold": 1000,
                 "fleeting": 700,
@@ -242,6 +246,11 @@ class HisopoRulesTests(unittest.TestCase):
         self.assertEqual(putrid.actual, PUTRID_HISOPO)
         self.assertEqual(putrid.appearance, DIAMOND_HISOPO)
 
+        used = select_hisopo_spawn(2966, randbelow=lambda _limit: 0)
+        self.assertEqual(used.actual, USED_HISOPO)
+        self.assertEqual(used.appearance, COMMON_HISOPO)
+        self.assertEqual(used.actual.points, -2)
+
         mystery_common = select_hisopo_spawn(6566, randbelow=lambda _limit: 0)
         self.assertEqual(mystery_common.actual, COMMON_HISOPO)
         self.assertEqual(mystery_common.appearance, MYSTERY_HISOPO)
@@ -258,7 +267,9 @@ class HisopoRulesTests(unittest.TestCase):
 
         expected_actuals = {
             0: "common",
-            3464: "common",
+            2964: "common",
+            2965: "used",
+            3464: "used",
             3465: "silver",
             4864: "silver",
             4865: "gold",
@@ -423,10 +434,11 @@ class HisopoRulesTests(unittest.TestCase):
 
         rendered = render_hisopo_collection(entries, "Ana", "2")
 
-        self.assertEqual(len(COLLECTIBLE_HISOPO_KEYS), 16)
+        self.assertEqual(len(COLLECTIBLE_HISOPO_KEYS), 17)
         self.assertIn("mystery", COLLECTIBLE_HISOPO_KEYS)
+        self.assertIn("used", COLLECTIBLE_HISOPO_KEYS)
         self.assertIn("Colección histórica de Ana (2)", rendered)
-        self.assertIn("Tipos descubiertos: 3/16 · Capturas: 5", rendered)
+        self.assertIn("Tipos descubiertos: 3/17 · Capturas: 5", rendered)
         self.assertIn("✅ hisopo común: 3", rendered)
         self.assertIn("❓ hisopo plateado: 0", rendered)
         self.assertNotIn("⬜", rendered)
@@ -435,6 +447,7 @@ class HisopoRulesTests(unittest.TestCase):
         self.assertIn("❓ hisopo bomba: 0", rendered)
         self.assertIn("❓ hisopo frenético: 0", rendered)
         self.assertIn("❓ hisopo agujero negro: 0", rendered)
+        self.assertIn("❓ hisopo usado: 0", rendered)
         self.assertIn("❓ hisopo vencido: 0", rendered)
         self.assertIn("❓ hisopo gigante: 0", rendered)
         self.assertNotIn("hisopo gigante cooperativo: 0", rendered)
@@ -1736,7 +1749,8 @@ class HisopoCommandTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(hisopo_handlers.COMMANDS["reglashisopo"].response_parse_mode, "HTML")
         self.assertIn("Reglas del Recolector de Hisopos", response)
         self.assertIn("<b>🎮 Cómo jugar</b>", response)
-        self.assertIn("<b>Común:</b> 34,65 %", response)
+        self.assertIn("<b>Común:</b> 29,65 %", response)
+        self.assertIn("<b>Usado:</b> 5 %", response)
         self.assertIn("<b>Diamante:</b> 1 %", response)
         self.assertIn("<b>Gigante cooperativo:</b> 0,25 %", response)
         self.assertIn("total de miembros que informa Telegram menos Galerazo", response)
@@ -1757,7 +1771,7 @@ class HisopoCommandTests(unittest.IsolatedAsyncioTestCase):
         self.assertIn("<code>/coleccionhisopos</code>", response)
         self.assertIn("<code>/hisopos</code>", response)
         self.assertNotIn("Cada callback se cuenta", response)
-        self.assertLess(len(response), 3500)
+        self.assertLess(len(response), 3700)
         self.assertLessEqual(len(response), 4096)
 
     async def test_collection_handler_uses_self_or_replied_user(self) -> None:

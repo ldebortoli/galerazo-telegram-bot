@@ -29,6 +29,7 @@ class Settings:
     telegram_hisopo_fleeting_file_id: str | None = None
     telegram_hisopo_mystery_file_id: str | None = None
     telegram_hisopo_putrid_file_id: str | None = None
+    telegram_hisopo_used_file_id: str | None = None
     telegram_hisopo_radioactive_file_id: str | None = None
     telegram_hisopo_bomb_file_id: str | None = None
     telegram_hisopo_bomb_defused_file_id: str | None = None
@@ -78,6 +79,7 @@ def load_settings() -> Settings:
         telegram_hisopo_fleeting_file_id=os.getenv("TELEGRAM_HISOPO_FLEETING_FILE_ID") or None,
         telegram_hisopo_mystery_file_id=os.getenv("TELEGRAM_HISOPO_MYSTERY_FILE_ID") or None,
         telegram_hisopo_putrid_file_id=os.getenv("TELEGRAM_HISOPO_PUTRID_FILE_ID") or None,
+        telegram_hisopo_used_file_id=os.getenv("TELEGRAM_HISOPO_USED_FILE_ID") or None,
         telegram_hisopo_radioactive_file_id=os.getenv("TELEGRAM_HISOPO_RADIOACTIVE_FILE_ID") or None,
         telegram_hisopo_bomb_file_id=os.getenv("TELEGRAM_HISOPO_BOMB_FILE_ID") or None,
         telegram_hisopo_bomb_defused_file_id=os.getenv(

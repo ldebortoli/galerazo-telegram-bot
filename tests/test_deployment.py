@@ -257,6 +257,7 @@ class DeploymentAutomationTests(unittest.TestCase):
             "TELEGRAM_HISOPO_FLEETING_FILE_ID",
             "TELEGRAM_HISOPO_MYSTERY_FILE_ID",
             "TELEGRAM_HISOPO_PUTRID_FILE_ID",
+            "TELEGRAM_HISOPO_USED_FILE_ID",
             "TELEGRAM_HISOPO_RADIOACTIVE_FILE_ID",
             "TELEGRAM_HISOPO_BOMB_FILE_ID",
             "TELEGRAM_HISOPO_BOMB_DEFUSED_FILE_ID",

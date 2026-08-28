@@ -41,6 +41,7 @@ FIELDS = (
     ("TELEGRAM_HISOPO_FLEETING_FILE_ID", "File ID del hisopo fugaz", False),
     ("TELEGRAM_HISOPO_MYSTERY_FILE_ID", "File ID del hisopo misterioso", False),
     ("TELEGRAM_HISOPO_PUTRID_FILE_ID", "File ID del hisopo putrefacto", False),
+    ("TELEGRAM_HISOPO_USED_FILE_ID", "File ID del hisopo usado", False),
     ("TELEGRAM_HISOPO_RADIOACTIVE_FILE_ID", "File ID del hisopo radiactivo", False),
     ("TELEGRAM_HISOPO_BOMB_FILE_ID", "File ID del hisopo bomba", False),
     ("TELEGRAM_HISOPO_BOMB_DEFUSED_FILE_ID", "File ID del hisopo bomba desactivado", False),

@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.54] - 2026-08-28
+
+- Nuevo Hisopo Usado: aparece camuflado, revela su arte con cera al capturarlo, resta 2 puntos y ocupa un 5 % tomado íntegramente del Hisopo Común. También se incorpora a la colección, las reglas y la Mini App.
+
 ## [0.53] - 2026-08-28
 
 - Correcciones y mejoras del registro de errores: el canal muestra solo la excepción y recibe el traceback junto con la update completa en un TXT adjunto; los callbacks que Telegram ya considera vencidos se descartan silenciosamente.

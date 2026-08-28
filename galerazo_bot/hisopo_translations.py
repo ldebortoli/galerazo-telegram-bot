@@ -490,6 +490,7 @@ HISOPO_SPECIAL_TRANSLATIONS: dict[str, dict[str, str]] = {
         "hisopos.type.fleeting": "hisopo fugaz",
         "hisopos.type.mystery": "hisopo misterioso",
         "hisopos.type.putrid": "hisopo putrefacto",
+        "hisopos.type.used": "hisopo usado",
         "hisopos.type.radioactive": "hisopo radiactivo",
         "hisopos.type.fake": "hisopo falso",
         "hisopos.type.twin": "hisopo gemelo",
@@ -507,6 +508,7 @@ HISOPO_SPECIAL_TRANSLATIONS: dict[str, dict[str, str]] = {
         "hisopos.type.fleeting": "fleeting swab",
         "hisopos.type.mystery": "mystery swab",
         "hisopos.type.putrid": "putrid swab",
+        "hisopos.type.used": "used swab",
         "hisopos.type.radioactive": "radioactive swab",
         "hisopos.type.fake": "fake swab",
         "hisopos.type.twin": "twin swab",
@@ -524,6 +526,7 @@ HISOPO_SPECIAL_TRANSLATIONS: dict[str, dict[str, str]] = {
         "hisopos.type.fleeting": "hisopo fugaz",
         "hisopos.type.mystery": "hisopo misterioso",
         "hisopos.type.putrid": "hisopo putrefacto",
+        "hisopos.type.used": "hisopo usado",
         "hisopos.type.radioactive": "hisopo radiactivo",
         "hisopos.type.fake": "hisopo falso",
         "hisopos.type.twin": "hisopo gemelo",
@@ -541,6 +544,7 @@ HISOPO_SPECIAL_TRANSLATIONS: dict[str, dict[str, str]] = {
         "hisopos.type.fleeting": "bastonet fugaç",
         "hisopos.type.mystery": "bastonet misteriós",
         "hisopos.type.putrid": "bastonet putrefacte",
+        "hisopos.type.used": "bastonet usat",
         "hisopos.type.radioactive": "bastonet radioactiu",
         "hisopos.type.fake": "bastonet fals",
         "hisopos.type.twin": "bastonet bessó",
@@ -558,6 +562,7 @@ HISOPO_SPECIAL_TRANSLATIONS: dict[str, dict[str, str]] = {
         "hisopos.type.fleeting": "flüchtiges Wattestäbchen",
         "hisopos.type.mystery": "mysteriöses Wattestäbchen",
         "hisopos.type.putrid": "verrottetes Wattestäbchen",
+        "hisopos.type.used": "benutztes Wattestäbchen",
         "hisopos.type.radioactive": "radioaktives Wattestäbchen",
         "hisopos.type.fake": "falsches Wattestäbchen",
         "hisopos.type.twin": "Zwillings-Wattestäbchen",
@@ -575,6 +580,7 @@ HISOPO_SPECIAL_TRANSLATIONS: dict[str, dict[str, str]] = {
         "hisopos.type.fleeting": "kotoi-zotz iheskorra",
         "hisopos.type.mystery": "kotoi-zotz misteriotsua",
         "hisopos.type.putrid": "kotoi-zotz ustela",
+        "hisopos.type.used": "erabilitako kotoi-zotza",
         "hisopos.type.radioactive": "kotoi-zotz erradioaktiboa",
         "hisopos.type.fake": "kotoi-zotz faltsua",
         "hisopos.type.twin": "kotoi-zotz bikia",
@@ -592,6 +598,7 @@ HISOPO_SPECIAL_TRANSLATIONS: dict[str, dict[str, str]] = {
         "hisopos.type.fleeting": "coton-tige fugace",
         "hisopos.type.mystery": "coton-tige mystérieux",
         "hisopos.type.putrid": "coton-tige putride",
+        "hisopos.type.used": "coton-tige usagé",
         "hisopos.type.radioactive": "coton-tige radioactif",
         "hisopos.type.fake": "faux coton-tige",
         "hisopos.type.twin": "coton-tige jumeau",
@@ -609,6 +616,7 @@ HISOPO_SPECIAL_TRANSLATIONS: dict[str, dict[str, str]] = {
         "hisopos.type.fleeting": "hisopo pya'e",
         "hisopos.type.mystery": "hisopo ñemigua",
         "hisopos.type.putrid": "hisopo tujúva",
+        "hisopos.type.used": "hisopo ojeporúva",
         "hisopos.type.radioactive": "hisopo radiactivo",
         "hisopos.type.fake": "hisopo gua'u",
         "hisopos.type.twin": "hisopo kõi",
@@ -626,6 +634,7 @@ HISOPO_SPECIAL_TRANSLATIONS: dict[str, dict[str, str]] = {
         "hisopos.type.fleeting": "cotton fioc fugace",
         "hisopos.type.mystery": "cotton fioc misterioso",
         "hisopos.type.putrid": "cotton fioc putrefatto",
+        "hisopos.type.used": "cotton fioc usato",
         "hisopos.type.radioactive": "cotton fioc radioattivo",
         "hisopos.type.fake": "cotton fioc falso",
         "hisopos.type.twin": "cotton fioc gemello",
@@ -643,6 +652,7 @@ HISOPO_SPECIAL_TRANSLATIONS: dict[str, dict[str, str]] = {
         "hisopos.type.fleeting": "一瞬の綿棒",
         "hisopos.type.mystery": "ミステリー綿棒",
         "hisopos.type.putrid": "腐敗した綿棒",
+        "hisopos.type.used": "使用済み綿棒",
         "hisopos.type.radioactive": "放射性綿棒",
         "hisopos.type.fake": "偽物の綿棒",
         "hisopos.type.twin": "双子の綿棒",
@@ -660,6 +670,7 @@ HISOPO_SPECIAL_TRANSLATIONS: dict[str, dict[str, str]] = {
         "hisopos.type.fleeting": "bacillum fugax",
         "hisopos.type.mystery": "bacillum arcanum",
         "hisopos.type.putrid": "bacillum putridum",
+        "hisopos.type.used": "bacillum usitatum",
         "hisopos.type.radioactive": "bacillum radioactivum",
         "hisopos.type.fake": "bacillum falsum",
         "hisopos.type.twin": "bacillum geminum",
@@ -677,6 +688,7 @@ HISOPO_SPECIAL_TRANSLATIONS: dict[str, dict[str, str]] = {
         "hisopos.type.fleeting": "vluchtig wattenstaafje",
         "hisopos.type.mystery": "mysterieus wattenstaafje",
         "hisopos.type.putrid": "verrot wattenstaafje",
+        "hisopos.type.used": "gebruikt wattenstaafje",
         "hisopos.type.radioactive": "radioactief wattenstaafje",
         "hisopos.type.fake": "nep-wattenstaafje",
         "hisopos.type.twin": "tweeling-wattenstaafje",
@@ -694,6 +706,7 @@ HISOPO_SPECIAL_TRANSLATIONS: dict[str, dict[str, str]] = {
         "hisopos.type.fleeting": "cotonete fugaz",
         "hisopos.type.mystery": "cotonete misterioso",
         "hisopos.type.putrid": "cotonete pútrido",
+        "hisopos.type.used": "cotonete usado",
         "hisopos.type.radioactive": "cotonete radioativo",
         "hisopos.type.fake": "cotonete falso",
         "hisopos.type.twin": "cotonete gêmeo",
@@ -711,6 +724,7 @@ HISOPO_SPECIAL_TRANSLATIONS: dict[str, dict[str, str]] = {
         "hisopos.type.fleeting": "cotonete fugaz",
         "hisopos.type.mystery": "cotonete misterioso",
         "hisopos.type.putrid": "cotonete pútrido",
+        "hisopos.type.used": "cotonete usado",
         "hisopos.type.radioactive": "cotonete radioativo",
         "hisopos.type.fake": "cotonete falso",
         "hisopos.type.twin": "cotonete gémeo",
@@ -728,6 +742,7 @@ HISOPO_SPECIAL_TRANSLATIONS: dict[str, dict[str, str]] = {
         "hisopos.type.fleeting": "utqay hisopo",
         "hisopos.type.mystery": "pakasqa hisopo",
         "hisopos.type.putrid": "ismuq hisopo",
+        "hisopos.type.used": "llamk'achisqa hisopo",
         "hisopos.type.radioactive": "radiactivo hisopo",
         "hisopos.type.fake": "llulla hisopo",
         "hisopos.type.twin": "iskay hisopo",
@@ -745,6 +760,7 @@ HISOPO_SPECIAL_TRANSLATIONS: dict[str, dict[str, str]] = {
         "hisopos.type.fleeting": "мимолётная ватная палочка",
         "hisopos.type.mystery": "таинственная ватная палочка",
         "hisopos.type.putrid": "гнилая ватная палочка",
+        "hisopos.type.used": "использованная ватная палочка",
         "hisopos.type.radioactive": "радиоактивная ватная палочка",
         "hisopos.type.fake": "поддельная ватная палочка",
         "hisopos.type.twin": "ватная палочка-близнец",
@@ -762,6 +778,7 @@ HISOPO_SPECIAL_TRANSLATIONS: dict[str, dict[str, str]] = {
         "hisopos.type.fleeting": "瞬逝棉签",
         "hisopos.type.mystery": "神秘棉签",
         "hisopos.type.putrid": "腐烂棉签",
+        "hisopos.type.used": "用过的棉签",
         "hisopos.type.radioactive": "放射性棉签",
         "hisopos.type.fake": "假棉签",
         "hisopos.type.twin": "双生棉签",
@@ -779,6 +796,7 @@ HISOPO_SPECIAL_TRANSLATIONS: dict[str, dict[str, str]] = {
         "hisopos.type.fleeting": "瞬逝棉花棒",
         "hisopos.type.mystery": "神秘棉花棒",
         "hisopos.type.putrid": "腐爛棉花棒",
+        "hisopos.type.used": "用過的棉花棒",
         "hisopos.type.radioactive": "放射性棉花棒",
         "hisopos.type.fake": "假棉花棒",
         "hisopos.type.twin": "雙生棉花棒",
@@ -2263,8 +2281,8 @@ for _language, _schedule_rule in HISOPO_SCHEDULE_CAP_RULES.items():
         "hisopos.rules"
     ].replace("\n- /hisopos", f"\n{_schedule_rule}\n- /hisopos", 1)
 for _language, _collection_rule in HISOPO_COLLECTION_RULES.items():
-    _collection_rule = _collection_rule.replace("12", "16", 1).replace(
-        "duodecim", "sedecim", 1
+    _collection_rule = _collection_rule.replace("12", "17", 1).replace(
+        "duodecim", "septendecim", 1
     )
     _mystery_giant_note = HISOPO_MYSTERY_GIANT_COLLECTION_NOTES[_language]
     _collection_rule = f"{_collection_rule} {_mystery_giant_note}"
@@ -2276,6 +2294,36 @@ for _language, _collection_rule in HISOPO_COLLECTION_RULES.items():
         f"\n{_collection_rule}\n- /hisopos",
         1,
     )
+
+
+HISOPO_USED_RULES: dict[str, tuple[str, str]] = {
+    "es": ("- Común: 29,65 %, +1 pt.", "- Usado: 5 %, se disfraza de común, plateado, dorado o diamante y resta 2 pt al capturarlo."),
+    "en": ("- Common: 29.65%, +1 pt.", "- Used: 5%, disguised as common, silver, gold or diamond, and subtracts 2 pt when captured."),
+    "es_ES": ("- Común: 29,65 %, +1 pt.", "- Usado: 5 %, se disfraza de común, plateado, dorado o diamante y resta 2 pt al capturarlo."),
+    "ca": ("- Comú: 29,65 %, +1 pt.", "- Usat: 5 %, es disfressa de comú, plata, or o diamant i resta 2 pt en capturar-lo."),
+    "de": ("- Gewöhnlich: 29,65 %, +1 Pkt.", "- Benutzt: 5 %, tarnt sich als gewöhnlich, silbern, golden oder Diamant und zieht beim Fangen 2 Pkt. ab."),
+    "eu": ("- Arrunta: % 29,65, +1 puntu.", "- Erabilia: % 5, arrunt, zilar, urre edo diamante gisa mozorrotzen da eta harrapatzean 2 puntu kentzen ditu."),
+    "fr": ("- Commun : 29,65 %, +1 pt.", "- Usagé : 5 %, se déguise en commun, argenté, doré ou diamant et retire 2 pt à la capture."),
+    "gn": ("- Jepivegua: 29,65 %, +1 kyta.", "- Ojeporúva: 5 %, oñemo'ã jepivegua, plata, óro térã diamánteramo ha ojapyhývo oipe'a 2 kyta."),
+    "it": ("- Comune: 29,65 %, +1 pt.", "- Usato: 5 %, si maschera da comune, argento, oro o diamante e sottrae 2 pt alla cattura."),
+    "ja": ("- 通常：29.65%、+1点。", "- 使用済み：5%。通常、銀、金、ダイヤに変装し、捕獲すると2点減ります。"),
+    "la": ("- Commune: 29,65 %, +1 punctum.", "- Usitatum: 5 %, commune, argenteum, aureum vel adamantinum simulans, captum 2 puncta detrahit."),
+    "nl": ("- Gewoon: 29,65%, +1 pt.", "- Gebruikt: 5%, vermomd als gewoon, zilver, goud of diamant en trekt bij vangst 2 pt af."),
+    "pt_BR": ("- Comum: 29,65%, +1 pt.", "- Usado: 5%, aparece disfarçado de comum, prata, ouro ou diamante e tira 2 pt ao ser capturado."),
+    "pt_PT": ("- Comum: 29,65 %, +1 pt.", "- Usado: 5 %, aparece disfarçado de comum, prata, ouro ou diamante e retira 2 pt quando é capturado."),
+    "quz": ("- Sapsi: 29,65 %, +1 puntu.", "- Llamk'achisqa: 5 %, sapsi, qullqi, quri utaq qhapaq rumi hina pakakun, hap'iptin 2 puntuta qichun."),
+    "ru": ("- Обычная: 29,65 %, +1 очко.", "- Использованная: 5 %, маскируется под обычную, серебряную, золотую или алмазную и при поимке снимает 2 очка."),
+    "zh_Hans": ("- 普通：29.65%，+1分。", "- 用过：5%，伪装成普通、银、金或钻石棉签，捕获时扣2分。"),
+    "zh_Hant": ("- 普通：29.65%，+1分。", "- 用過：5%，偽裝成普通、銀、金或鑽石棉花棒，捕獲時扣2分。"),
+}
+
+for _language, (_common_rule, _used_rule) in HISOPO_USED_RULES.items():
+    _rules = HISOPO_TRANSLATIONS[_language]["hisopos.rules"].splitlines()
+    if len(_rules) != 26 or "34" not in _rules[4] or "5" not in _rules[9]:  # pragma: no cover
+        raise RuntimeError(f"No pude agregar las reglas del Hisopo usado para {_language}.")
+    _rules[4] = _common_rule
+    _rules.insert(10, _used_rule)
+    HISOPO_TRANSLATIONS[_language]["hisopos.rules"] = "\n".join(_rules)
 
 
 _HISOPO_RULE_HEADINGS: dict[str, tuple[str, str, str, str, str]] = {
@@ -2327,7 +2375,7 @@ def _rule_bullet_html(text: str, *, bold_label: bool = False) -> str:
 
 def _compact_hisopo_rules(rules: str, headings: tuple[str, str, str, str, str]) -> str:
     lines = rules.splitlines()
-    if len(lines) != 26:  # pragma: no cover - guards the localized rules template
+    if len(lines) != 27:  # pragma: no cover - guards the localized rules template
         raise RuntimeError("El formato base de las reglas de Hisopos cambió.")
     how_to_play, types, special_games, important, commands = headings
     rendered = [
@@ -2338,21 +2386,21 @@ def _compact_hisopo_rules(rules: str, headings: tuple[str, str, str, str, str]) 
         _rule_bullet_html(_first_rule_sentences(lines[3], 1)),
         "",
         f"<b>🎲 {escape(types)}</b>",
-        *(_rule_bullet_html(line, bold_label=True) for line in lines[4:14]),
+        *(_rule_bullet_html(line, bold_label=True) for line in lines[4:15]),
         "",
         f"<b>✨ {escape(special_games)}</b>",
-        _rule_bullet_html(lines[16], bold_label=True),
         _rule_bullet_html(lines[17], bold_label=True),
-        _rule_bullet_html(_first_rule_sentences(lines[18], 2), bold_label=True),
+        _rule_bullet_html(lines[18], bold_label=True),
         _rule_bullet_html(_first_rule_sentences(lines[19], 2), bold_label=True),
-        _rule_bullet_html(lines[20], bold_label=True),
+        _rule_bullet_html(_first_rule_sentences(lines[20], 2), bold_label=True),
+        _rule_bullet_html(lines[21], bold_label=True),
         "",
         f"<b>ℹ️ {escape(important)}</b>",
-        _rule_bullet_html(lines[14]),
-        _rule_bullet_html(lines[21], bold_label=True),
-        _rule_bullet_html(lines[22]),
-        _rule_bullet_html(lines[23], bold_label=True),
+        _rule_bullet_html(lines[15]),
+        _rule_bullet_html(lines[22], bold_label=True),
+        _rule_bullet_html(lines[23]),
         _rule_bullet_html(lines[24], bold_label=True),
+        _rule_bullet_html(lines[25], bold_label=True),
         "",
         f"<b>⌨️ {escape(commands)}</b>",
         "• <code>/hisopos</code> · <code>/coleccionhisopos</code> · <code>/config</code>",

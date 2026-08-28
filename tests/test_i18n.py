@@ -9,6 +9,7 @@ from galerazo_bot.hisopo_translations import (
     HISOPO_COLLECTION_RULES,
     HISOPO_GIANT_COUNT_RULES,
     HISOPO_SCHEDULE_CAP_RULES,
+    HISOPO_USED_RULES,
 )
 
 
@@ -67,6 +68,7 @@ class TranslationTests(unittest.TestCase):
         self.assertEqual(set(HISOPO_GIANT_COUNT_RULES), set(TRANSLATIONS))
         self.assertEqual(set(HISOPO_SCHEDULE_CAP_RULES), set(TRANSLATIONS))
         self.assertEqual(set(HISOPO_COLLECTION_RULES), set(TRANSLATIONS))
+        self.assertEqual(set(HISOPO_USED_RULES), set(TRANSLATIONS))
         for language, translations in TRANSLATIONS.items():
             with self.subTest(language=language):
                 rules = translations["hisopos.rules"]

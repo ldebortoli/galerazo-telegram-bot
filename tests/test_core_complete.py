@@ -235,6 +235,7 @@ class ConfigurationAndEntrypointTests(unittest.TestCase):
             "TELEGRAM_HISOPO_FLEETING_FILE_ID": "fleeting",
             "TELEGRAM_HISOPO_MYSTERY_FILE_ID": "mystery",
             "TELEGRAM_HISOPO_PUTRID_FILE_ID": "putrid",
+            "TELEGRAM_HISOPO_USED_FILE_ID": "used",
             "TELEGRAM_HISOPO_RADIOACTIVE_FILE_ID": "radioactive",
             "TELEGRAM_HISOPO_BOMB_FILE_ID": "bomb",
             "TELEGRAM_HISOPO_BOMB_DEFUSED_FILE_ID": "bomb-defused",
@@ -270,6 +271,7 @@ class ConfigurationAndEntrypointTests(unittest.TestCase):
         self.assertEqual(settings.telegram_hisopo_fleeting_file_id, "fleeting")
         self.assertEqual(settings.telegram_hisopo_mystery_file_id, "mystery")
         self.assertEqual(settings.telegram_hisopo_putrid_file_id, "putrid")
+        self.assertEqual(settings.telegram_hisopo_used_file_id, "used")
         self.assertEqual(settings.telegram_hisopo_radioactive_file_id, "radioactive")
         self.assertEqual(settings.telegram_hisopo_bomb_file_id, "bomb")
         self.assertEqual(settings.telegram_hisopo_bomb_defused_file_id, "bomb-defused")

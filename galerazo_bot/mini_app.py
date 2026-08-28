@@ -43,6 +43,7 @@ NATURAL_HISOPO_IMAGES = {
     "fleeting": "hisopo-fugaz.png",
     "mystery": "hisopo-misterioso.png",
     "putrid": "hisopo-putrefacto.png",
+    "used": "hisopo-usado.png",
     "radioactive": "hisopo-radiactivo.png",
     "fake": "hisopo-falso.png",
     "twin": "hisopo-gemelo.png",

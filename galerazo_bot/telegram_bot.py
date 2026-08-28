@@ -911,6 +911,7 @@ def _hisopo_file_id(settings: Settings, hisopo_type: str) -> str | None:
         "fleeting": settings.telegram_hisopo_fleeting_file_id,
         "mystery": settings.telegram_hisopo_mystery_file_id,
         "putrid": settings.telegram_hisopo_putrid_file_id,
+        "used": settings.telegram_hisopo_used_file_id,
         "radioactive": settings.telegram_hisopo_radioactive_file_id,
         "bomb": settings.telegram_hisopo_bomb_file_id,
         "frenetic": settings.telegram_hisopo_frenetic_file_id,

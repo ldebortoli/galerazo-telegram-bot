@@ -56,6 +56,7 @@ GOLD_HISOPO = HisopoKind("gold", 3)
 FLEETING_HISOPO = HisopoKind("fleeting", 5, expiration=HISOPO_FLEETING_EXPIRATION)
 MYSTERY_HISOPO = HisopoKind("mystery", 0, hides_points=True)
 PUTRID_HISOPO = HisopoKind("putrid", -2)
+USED_HISOPO = HisopoKind("used", -2)
 RADIOACTIVE_HISOPO = HisopoKind("radioactive", 0, hides_points=True)
 BOMB_HISOPO = HisopoKind("bomb", HISOPO_BOMB_DEFUSE_POINTS, hides_points=True)
 FRENETIC_HISOPO = HisopoKind("frenetic", 3)
@@ -76,6 +77,7 @@ HISOPO_KINDS = {
         FLEETING_HISOPO,
         MYSTERY_HISOPO,
         PUTRID_HISOPO,
+        USED_HISOPO,
         RADIOACTIVE_HISOPO,
         BOMB_HISOPO,
         FRENETIC_HISOPO,
@@ -90,7 +92,8 @@ HISOPO_KINDS = {
 }
 COLLECTIBLE_HISOPO_KEYS = tuple(HISOPO_KINDS)
 HISOPO_PROBABILITY_RANGES = {
-    "common": (1, 3465),
+    "common": (1, 2965),
+    "used": (2966, 3465),
     "silver": (3466, 4865),
     "gold": (4866, 5865),
     "fleeting": (5866, 6565),
@@ -145,7 +148,7 @@ def select_hisopo_spawn(
     if outer_kind.key == "mystery":
         actual_kind = _select_weighted_non_mystery_kind(randbelow)
         return HisopoSelection(actual=actual_kind, appearance=MYSTERY_HISOPO)
-    if outer_kind.key in {"fake", "putrid"}:
+    if outer_kind.key in {"fake", "putrid", "used"}:
         return HisopoSelection(
             actual=outer_kind,
             appearance=select_hisopo_disguise(randbelow),
