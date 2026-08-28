@@ -9,9 +9,8 @@ _ENGLISH = {
     "donation.send_failed": "I could not open the support menu. Please try again later.",
     "donation.open_mini_app": "Open Hisopo collection",
     "donation.menu": (
-        "Support Galerazo Bot\n\n"
-        "Choose a voluntary Telegram Stars contribution or join the Club del Hisopo. "
-        "Donations and membership never add points or improve odds. Each button is created for the person who used /donar."
+        "Choose a monetary contribution with Telegram Stars, join the Club del Hisopo, "
+        "or donate your grandma's pension."
     ),
     "hisopos.collection.open_app": "Open interactive album",
     "donors.public": "Your name may now appear next to your confirmed donations.",
@@ -40,9 +39,8 @@ _SPANISH = {
     "donation.send_failed": "No pude abrir el menú de apoyo. Probá de nuevo más tarde.",
     "donation.open_mini_app": "Abrir colección de Hisopos",
     "donation.menu": (
-        "Apoyá a Galerazo Bot\n\n"
-        "Elegí un aporte voluntario con Telegram Stars o sumate al Club del Hisopo. "
-        "Las donaciones y la membresía nunca suman puntos ni mejoran probabilidades. Cada botón se crea para quien usó /donar."
+        "Elegí un aporte monetario con Telegram Stars, sumate al Club del Hisopo o "
+        "doname la jubilación de tu abuela."
     ),
     "hisopos.collection.open_app": "Abrir álbum interactivo",
     "donors.public": "Tu nombre ahora puede aparecer junto a tus aportes confirmados.",

@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.49] - 2026-08-28
+
+- `/donar` presenta una invitación más breve para aportar con Telegram Stars, sumarse al Club del Hisopo o donar la jubilación de la abuela; se retiran las aclaraciones adicionales y el acceso externo queda identificado simplemente como `Cafecito`.
+
 ## [0.48] - 2026-08-28
 
 - Cada donación, compra, regalo o cuota del Club confirmada mediante Telegram Stars ahora genera un aviso en el canal de logging con la persona, el concepto, el destinatario cuando corresponde y el importe. Las reentregas del mismo cobro no duplican el aviso y Cafecito queda fuera porque no envía esos eventos al bot.

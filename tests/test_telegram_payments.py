@@ -116,6 +116,14 @@ class TelegramPaymentTests(unittest.IsolatedAsyncioTestCase):
         markup = private.reply_text.await_args.kwargs["reply_markup"]
         self.assertEqual(len(markup.inline_keyboard), 4)
         self.assertEqual(markup.inline_keyboard[2][0].web_app.url, "https://example.test")
+        self.assertEqual(markup.inline_keyboard[-1][0].text, "Cafecito")
+        self.assertEqual(
+            private.reply_text.await_args.args[0],
+            "Elegí un aporte monetario con Telegram Stars, sumate al Club del Hisopo o "
+            "doname la jubilación de tu abuela.",
+        )
+        self.assertNotIn("Cada botón", private.reply_text.await_args.args[0])
+        self.assertNotIn("mejoran probabilidades", private.reply_text.await_args.args[0])
 
         group = payment_message()
         group.chat.type = "group"
