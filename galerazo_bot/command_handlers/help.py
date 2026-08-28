@@ -12,11 +12,11 @@ HELP_GROUPS = (
     ("galeraza", {"galeraza", "galerazas"}),
     ("triggers", {"agregartrigger", "agrtrigger", "borrartrigger", "eliminartrigger", "eltrigger", "triggers"}),
     ("games", {"hisopos", "coleccionhisopos", "reglashisopo", "ruletarusa"}),
-    ("expenses", {"habilitargastos", "deshabilitargastos", "gasto", "ultimosgastos", "estadogastos", "sincronizargastos"}),
+    ("expenses", {"gasto", "pagoresumen", "cierre", "ayudagastos", "ultimosgastos", "estadogastos", "sincronizargastos"}),
     ("dev", {"anuncio", "novedad", "backup", "debug", "reiniciarbot", "apagar"}),
 )
 EXPENSE_COMMAND_KEYS = frozenset(
-    {"gasto", "ultimosgastos", "estadogastos", "sincronizargastos"}
+    {"gasto", "pagoresumen", "cierre", "ayudagastos", "ultimosgastos", "estadogastos", "sincronizargastos"}
 )
 
 
@@ -55,11 +55,7 @@ def handle(context: CommandContext, _db: Database) -> str:
 
 
 def _can_show_expenses(context: CommandContext) -> bool:
-    return (
-        context.chat_type == "private"
-        and context.owner_user_id is not None
-        and context.sender_id == context.owner_user_id
-    )
+    return context.chat_type == "private" and context.sender_id in context.expense_user_ids
 
 
 COMMANDS = {

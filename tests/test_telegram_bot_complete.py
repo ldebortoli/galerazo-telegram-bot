@@ -4,7 +4,8 @@ import json
 import tempfile
 import unittest
 from dataclasses import replace
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
+from decimal import Decimal
 from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -39,6 +40,9 @@ from galerazo_bot.database import (
     Trigger,
 )
 from galerazo_bot.google_sheets import GoogleSheetsConfig, GoogleSheetsExpenseWriter
+from galerazo_bot.google_sheets import ExpenseSheetWriteResult
+from galerazo_bot.exchange_rates import ExchangeRateError, ExchangeRateQuote
+from galerazo_bot.expenses import ExpenseDraft, ExpenseMovement
 from galerazo_bot.roles import TriggerModerationResult, TriggerPayload, UserLevel
 from galerazo_bot import telegram_bot as tb
 from galerazo_bot.command_handlers import galerazas as galeraza_handlers
@@ -222,6 +226,22 @@ class LifecycleAndBillingTests(unittest.IsolatedAsyncioTestCase):
             command.command for command in tb._suggested_bot_commands("es", UserLevel.ADMIN, True)
         }
         english_commands = tb._suggested_bot_commands("en", UserLevel.ADMIN, True)
+        hidden_expenses = {
+            "gasto",
+            "pagoresumen",
+            "cierre",
+            "ayudagastos",
+            "ultimosgastos",
+            "estadogastos",
+            "sincronizargastos",
+        }
+        for level in UserLevel:
+            self.assertTrue(
+                hidden_expenses.isdisjoint(
+                    command.command
+                    for command in tb._suggested_bot_commands("es", level, True)
+                )
+            )
 
         self.assertEqual(
             private_names,
@@ -965,16 +985,79 @@ class GalerazaExpenseAndConfigTests(unittest.IsolatedAsyncioTestCase):
         expense = Expense(1, "-1", "1", None, None, 100, "ARS", "cash", "box", "food", "pending", None, "now", None)
         db.add_expense.return_value = expense
         writer = MagicMock()
-        writer.append_expense_row.return_value = (True, None)
-        result = await tb._submit_expense(db, writer, message, user, "ARS", 100, "cash", "box", "food")
+        writer.write_expense.return_value = ExpenseSheetWriteResult(True)
+        provider = MagicMock()
+        provider.binance_usdt_sell_rate.return_value = ExchangeRateQuote(
+            Decimal("1600"), datetime(2026, 7, 22, tzinfo=timezone.utc)
+        )
+        draft = ExpenseDraft(
+            100,
+            "ARS",
+            "Efectivo",
+            "Otros",
+            "Lucas",
+            "food",
+            date(2026, 7, 22),
+            0,
+            ExpenseMovement.PURCHASE,
+            True,
+            True,
+        )
+        result = await tb._submit_expense(db, writer, provider, message, user, draft)
         self.assertTrue(result.synced)
-        db.mark_expense_synced.assert_called_with(1)
-        writer.append_expense_row.return_value = (False, "api")
+        db.mark_expense_synced.assert_called_with(1, None, None, None)
+        writer.write_expense.return_value = ExpenseSheetWriteResult(False, "api")
         writer.is_configured.return_value = False
-        result = await tb._submit_expense(db, writer, message, user, "ARS", 100, "cash", "box", "food")
+        result = await tb._submit_expense(db, writer, provider, message, user, draft)
         self.assertFalse(result.synced)
         self.assertFalse(result.configured)
-        db.mark_expense_failed.assert_called_with(1, "api")
+        db.mark_expense_failed.assert_called_with(1, "api", None, None, None)
+
+        historical = replace(draft, occurred_on=date(2026, 7, 21))
+        self.assertEqual(
+            (await tb._submit_expense(db, writer, provider, message, user, historical)).error,
+            "historical_rate_required",
+        )
+        provider.binance_usdt_sell_rate.side_effect = ExchangeRateError("offline")
+        self.assertEqual(
+            (await tb._submit_expense(db, writer, provider, message, user, draft)).error,
+            "exchange_rate_unavailable",
+        )
+        provider.binance_usdt_sell_rate.side_effect = None
+
+        late_utc_message = message_stub(
+            chat=message.chat,
+            date=datetime(2026, 7, 22, 2, tzinfo=timezone.utc),
+        )
+        local_date_draft = replace(draft, occurred_on=date(2026, 7, 21))
+        writer.is_configured.return_value = True
+        writer.write_expense.return_value = ExpenseSheetWriteResult(True)
+        self.assertTrue(
+            (
+                await tb._submit_expense(
+                    db, writer, provider, late_utc_message, user, local_date_draft
+                )
+            ).synced
+        )
+
+        writer.is_configured.return_value = True
+        writer.write_expense.return_value = ExpenseSheetWriteResult(True)
+        provider.binance_usdt_sell_rate.reset_mock()
+        usd = replace(draft, currency="USD", installments=1, usd_rate_override=None)
+        self.assertTrue((await tb._submit_expense(db, writer, provider, message, user, usd)).synced)
+        provider.binance_usdt_sell_rate.assert_not_called()
+        manual = replace(draft, usd_rate_override=Decimal("1599.25"))
+        self.assertTrue((await tb._submit_expense(db, writer, provider, message, user, manual)).synced)
+        provider.binance_usdt_sell_rate.assert_not_called()
+
+        writer.write_expense.return_value = ExpenseSheetWriteResult(True, month_created=True)
+        with patch.object(tb, "_sync_pending_expenses", AsyncMock()) as sync:
+            self.assertTrue((await tb._submit_expense(db, writer, provider, message, user, draft)).synced)
+        sync.assert_awaited_once()
+        no_open = replace(draft, opens_cashflow_month=False)
+        with patch.object(tb, "_sync_pending_expenses", AsyncMock()) as sync:
+            self.assertTrue((await tb._submit_expense(db, writer, provider, message, user, no_open)).synced)
+        sync.assert_not_awaited()
 
         writer.is_configured.return_value = False
         writer.is_ready.return_value = False
@@ -990,9 +1073,14 @@ class GalerazaExpenseAndConfigTests(unittest.IsolatedAsyncioTestCase):
         writer.is_configured.return_value = True
         expense2 = replace(expense, expense_id=2, username="alias", display_name="Name")
         db.list_pending_expenses.return_value = [expense, expense2]
-        writer.append_expense_row.side_effect = [(True, None), (False, "fail")]
+        writer.write_expense.side_effect = [
+            ExpenseSheetWriteResult(True),
+            ExpenseSheetWriteResult(False, "fail"),
+        ]
         result = await tb._sync_pending_expenses(db, writer, message)
         self.assertEqual((result.synced_count, result.failed_count, result.last_error), (1, 1, "fail"))
+        writer.add_card_closing.return_value = SimpleNamespace(added=True)
+        self.assertTrue((await tb._add_card_closing(writer, date(2026, 8, 28))).added)
 
     async def test_send_config_menu_and_every_config_action(self) -> None:
         db = MagicMock()

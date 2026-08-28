@@ -256,6 +256,7 @@ Ejemplo:
 TELEGRAM_BOT_TOKEN=token-de-botfather
 OPENAI_API_KEY=clave-restringida-de-moderacion
 TELEGRAM_DEV_USER_IDS=
+TELEGRAM_EXPENSE_USER_IDS=
 TELEGRAM_OWNER_USER_ID=
 TELEGRAM_LOG_CHAT_ID=
 TELEGRAM_ANNOUNCEMENTS_CHAT_ID=
@@ -280,7 +281,8 @@ TELEGRAM_HISOPO_MIRACLE_FILE_ID=file-id-del-hisopo-milagroso
 DATABASE_PATH=data/galerazo.sqlite3
 GOOGLE_SHEETS_CREDENTIALS_JSON_PATH=secrets/google-service-account.json
 GOOGLE_SHEETS_SPREADSHEET_ID=replace-with-spreadsheet-id
-GOOGLE_SHEETS_WORKSHEET_NAME=Gastos
+GOOGLE_SHEETS_WORKSHEET_NAME=Gastos y compras
+GOOGLE_SHEETS_CASHFLOW_SHEET_PREFIX=Gastos
 GOOGLE_CLOUD_BILLING_PROJECT_ID=bot-fleet-production
 GOOGLE_CLOUD_BILLING_TABLE=bot-fleet-production.billing_export.gcp_billing_export_v1_XXXXXX_XXXXXX_XXXXXX
 GOOGLE_CLOUD_BILLING_REPORT_TIME=09:00
@@ -295,7 +297,8 @@ El sistema de gastos usa estas variables:
 ```env
 GOOGLE_SHEETS_CREDENTIALS_JSON_PATH=secrets/google-service-account.json
 GOOGLE_SHEETS_SPREADSHEET_ID=replace-with-spreadsheet-id
-GOOGLE_SHEETS_WORKSHEET_NAME=Gastos
+GOOGLE_SHEETS_WORKSHEET_NAME=Gastos y compras
+GOOGLE_SHEETS_CASHFLOW_SHEET_PREFIX=Gastos
 ```
 
 Si faltan credenciales o `GOOGLE_SHEETS_SPREADSHEET_ID`, el bot igual guarda los gastos en SQLite y los deja pendientes de sincronizacion para subirlos despues.
@@ -737,34 +740,52 @@ La ruleta rusa funciona solo en grupos y supergrupos y viene deshabilitada por d
 
 ## Gastos
 
-El subsistema de gastos queda reservado a los devs. Sus comandos no se publican
-en las sugerencias nativas de Telegram ni aparecen en `/help` de grupos o de
-otros usuarios. Solo el propietario configurado los ve al pedir `/help` por
-privado. La ejecucion conserva el permiso DEV y puede usarse en cualquier chat.
+El subsistema de gastos queda reservado a los IDs incluidos simultaneamente en
+`TELEGRAM_DEV_USER_IDS` y `TELEGRAM_EXPENSE_USER_IDS`. Sus comandos no se
+publican en las sugerencias nativas de Telegram, solo aparecen en `/help` para
+esas personas por privado y solo pueden ejecutarse en un chat privado con el bot.
 
 El registro usa este formato:
 
 ```powershell
-/gasto monto | medio de pago | origen | descripcion
+/gasto monto | categoria | forma de pago | descripcion
 ```
 
 Ejemplo:
 
 ```powershell
-/gasto 18500 | transferencia | caja del grupo | pizzas de la juntada
+/gasto 18500 | sal | mpl | pizzas de la juntada
 ```
 
-El bot guarda monto, moneda, medio de pago, origen, descripcion, usuario, chat, fecha y estado de sincronizacion.
+El bot guarda monto, moneda, categoria, autor, forma de pago, descripcion,
+fecha, cuotas, cotizacion y estado de sincronizacion. Los alias y formatos
+vigentes se consultan con `/ayudagastos`.
 
 Comandos utiles:
 
 ```powershell
+/pagoresumen
+/cierre
+/ayudagastos
 /ultimosgastos
 /estadogastos
 /sincronizargastos
 ```
 
-`/ultimosgastos` devuelve los ultimos gastos del chat. `/estadogastos` muestra si el grupo tiene gastos habilitados, si Google Sheets esta listo y cuantos pendientes hay. `/sincronizargastos` intenta subir los pendientes.
+`/gasto` registra compras; las de tarjeta de credito van solo a `Gastos y
+compras`, mientras que las inmediatas tambien van a la hoja anual. Una compra
+de tarjeta atrasada nunca abre un mes. `/pagoresumen` registra la salida real
+en la hoja anual sin abrir un mes inexistente. `/cierre` agrega una fecha a la
+columna `Cierres`; `/ultimosgastos` muestra el historial compartido,
+`/estadogastos` informa la conexion y `/sincronizargastos` reintenta pendientes.
+La cotizacion ARS/USD usa la venta (`bid`) de USDT en Binance informada por
+CriptoYa, no Binance P2P. Las compras directas en USD siempre se registran en un
+solo pago.
+
+Las escrituras son anexadas: el bot continúa después de la última fila usada y
+no completa huecos anteriores. Antes de enviar vuelve a comprobar la celda de
+fecha; si otra escritura ocupó la fila objetivo, recalcula una fila nueva o deja
+el gasto pendiente sin sobrescribirla.
 
 Si Google Sheets no esta configurado todavia, `/gasto` guarda igual en SQLite y lo deja pendiente. Si Telegram convierte el grupo en supergrupo, los gastos guardados migran al nuevo `chat_id`.
 

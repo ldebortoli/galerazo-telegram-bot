@@ -266,6 +266,19 @@ class Expense:
     sheet_error: str | None
     created_at: str
     synced_at: str | None
+    occurred_on: str = ""
+    movement_type: str = "purchase"
+    category: str = "Otros"
+    author: str = "Lucas"
+    installments: int = 0
+    usd_rate: str | None = None
+    usd_rate_source: str | None = None
+    usd_rate_quoted_at: str | None = None
+    include_cashflow: bool = False
+    opens_cashflow_month: bool = False
+    purchase_sheet_row: int | None = None
+    cashflow_sheet_name: str | None = None
+    cashflow_sheet_row: int | None = None
 
 
 @dataclass(frozen=True)
@@ -714,9 +727,44 @@ class Database:
                     sheet_error TEXT,
                     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
                     synced_at TEXT,
+                    occurred_on TEXT NOT NULL DEFAULT '',
+                    movement_type TEXT NOT NULL DEFAULT 'purchase',
+                    category TEXT NOT NULL DEFAULT 'Otros',
+                    author TEXT NOT NULL DEFAULT 'Lucas',
+                    installments INTEGER NOT NULL DEFAULT 0,
+                    usd_rate TEXT,
+                    usd_rate_source TEXT,
+                    usd_rate_quoted_at TEXT,
+                    include_cashflow INTEGER NOT NULL DEFAULT 0,
+                    opens_cashflow_month INTEGER NOT NULL DEFAULT 0,
+                    purchase_sheet_row INTEGER,
+                    cashflow_sheet_name TEXT,
+                    cashflow_sheet_row INTEGER,
                     FOREIGN KEY (chat_id) REFERENCES chats (chat_id),
                     FOREIGN KEY (user_id) REFERENCES users (user_id)
                 )
+                """
+            )
+            _ensure_column(conn, "expenses", "occurred_on", "TEXT NOT NULL DEFAULT ''")
+            _ensure_column(conn, "expenses", "movement_type", "TEXT NOT NULL DEFAULT 'purchase'")
+            _ensure_column(conn, "expenses", "category", "TEXT NOT NULL DEFAULT 'Otros'")
+            _ensure_column(conn, "expenses", "author", "TEXT NOT NULL DEFAULT 'Lucas'")
+            _ensure_column(conn, "expenses", "installments", "INTEGER NOT NULL DEFAULT 0")
+            _ensure_column(conn, "expenses", "usd_rate", "TEXT")
+            _ensure_column(conn, "expenses", "usd_rate_source", "TEXT")
+            _ensure_column(conn, "expenses", "usd_rate_quoted_at", "TEXT")
+            _ensure_column(conn, "expenses", "include_cashflow", "INTEGER NOT NULL DEFAULT 0")
+            _ensure_column(conn, "expenses", "opens_cashflow_month", "INTEGER NOT NULL DEFAULT 0")
+            _ensure_column(conn, "expenses", "purchase_sheet_row", "INTEGER")
+            _ensure_column(conn, "expenses", "cashflow_sheet_name", "TEXT")
+            _ensure_column(conn, "expenses", "cashflow_sheet_row", "INTEGER")
+            conn.execute(
+                """
+                UPDATE expenses
+                SET
+                    occurred_on = substr(created_at, 1, 10),
+                    category = source
+                WHERE occurred_on = ''
                 """
             )
             conn.execute(
@@ -3503,6 +3551,17 @@ class Database:
         payment_method: str,
         source: str,
         description: str,
+        *,
+        occurred_on: str = "",
+        movement_type: str = "purchase",
+        category: str = "Otros",
+        author: str = "Lucas",
+        installments: int = 0,
+        usd_rate: str | None = None,
+        usd_rate_source: str | None = None,
+        usd_rate_quoted_at: str | None = None,
+        include_cashflow: bool = False,
+        opens_cashflow_month: bool = False,
     ) -> Expense:
         chat_id = self.resolve_chat_id(chat_id)
         self.get_or_create_user(user_id)
@@ -3516,9 +3575,19 @@ class Database:
                     currency,
                     payment_method,
                     source,
-                    description
+                    description,
+                    occurred_on,
+                    movement_type,
+                    category,
+                    author,
+                    installments,
+                    usd_rate,
+                    usd_rate_source,
+                    usd_rate_quoted_at,
+                    include_cashflow,
+                    opens_cashflow_month
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     chat_id,
@@ -3528,6 +3597,16 @@ class Database:
                     payment_method,
                     source,
                     description,
+                    occurred_on,
+                    movement_type,
+                    category,
+                    author,
+                    installments,
+                    usd_rate,
+                    usd_rate_source,
+                    usd_rate_quoted_at,
+                    int(include_cashflow),
+                    int(opens_cashflow_month),
                 ),
             )
             row = conn.execute(
@@ -3546,7 +3625,20 @@ class Database:
                     expenses.sheet_status,
                     expenses.sheet_error,
                     expenses.created_at,
-                    expenses.synced_at
+                    expenses.synced_at,
+                    expenses.occurred_on,
+                    expenses.movement_type,
+                    expenses.category,
+                    expenses.author,
+                    expenses.installments,
+                    expenses.usd_rate,
+                    expenses.usd_rate_source,
+                    expenses.usd_rate_quoted_at,
+                    expenses.include_cashflow,
+                    expenses.opens_cashflow_month,
+                    expenses.purchase_sheet_row,
+                    expenses.cashflow_sheet_name,
+                    expenses.cashflow_sheet_row
                 FROM expenses
                 LEFT JOIN users ON users.user_id = expenses.user_id
                 WHERE expenses.expense_id = ?
@@ -3555,7 +3647,13 @@ class Database:
             ).fetchone()
         return _expense_from_row(row)
 
-    def mark_expense_synced(self, expense_id: int) -> None:
+    def mark_expense_synced(
+        self,
+        expense_id: int,
+        purchase_sheet_row: int | None = None,
+        cashflow_sheet_name: str | None = None,
+        cashflow_sheet_row: int | None = None,
+    ) -> None:
         with self._connect() as conn:
             conn.execute(
                 """
@@ -3563,13 +3661,23 @@ class Database:
                 SET
                     sheet_status = 'synced',
                     sheet_error = NULL,
-                    synced_at = CURRENT_TIMESTAMP
+                    synced_at = CURRENT_TIMESTAMP,
+                    purchase_sheet_row = COALESCE(?, purchase_sheet_row),
+                    cashflow_sheet_name = COALESCE(?, cashflow_sheet_name),
+                    cashflow_sheet_row = COALESCE(?, cashflow_sheet_row)
                 WHERE expense_id = ?
                 """,
-                (expense_id,),
+                (purchase_sheet_row, cashflow_sheet_name, cashflow_sheet_row, expense_id),
             )
 
-    def mark_expense_failed(self, expense_id: int, error: str | None) -> None:
+    def mark_expense_failed(
+        self,
+        expense_id: int,
+        error: str | None,
+        purchase_sheet_row: int | None = None,
+        cashflow_sheet_name: str | None = None,
+        cashflow_sheet_row: int | None = None,
+    ) -> None:
         with self._connect() as conn:
             conn.execute(
                 """
@@ -3577,17 +3685,23 @@ class Database:
                 SET
                     sheet_status = 'pending',
                     sheet_error = ?,
-                    synced_at = NULL
+                    synced_at = NULL,
+                    purchase_sheet_row = COALESCE(?, purchase_sheet_row),
+                    cashflow_sheet_name = COALESCE(?, cashflow_sheet_name),
+                    cashflow_sheet_row = COALESCE(?, cashflow_sheet_row)
                 WHERE expense_id = ?
                 """,
-                (error, expense_id),
+                (error, purchase_sheet_row, cashflow_sheet_name, cashflow_sheet_row, expense_id),
             )
 
-    def list_recent_expenses(self, chat_id: str, limit: int = 20) -> list[Expense]:
-        chat_id = self.resolve_chat_id(chat_id)
+    def list_recent_expenses(self, chat_id: str | None, limit: int = 20) -> list[Expense]:
+        if chat_id is not None:
+            chat_id = self.resolve_chat_id(chat_id)
+        where_clause = "WHERE expenses.chat_id = ?" if chat_id is not None else ""
+        parameters = (chat_id, limit) if chat_id is not None else (limit,)
         with self._connect() as conn:
             rows = conn.execute(
-                """
+                f"""
                 SELECT
                     expenses.expense_id,
                     expenses.chat_id,
@@ -3602,22 +3716,42 @@ class Database:
                     expenses.sheet_status,
                     expenses.sheet_error,
                     expenses.created_at,
-                    expenses.synced_at
+                    expenses.synced_at,
+                    expenses.occurred_on,
+                    expenses.movement_type,
+                    expenses.category,
+                    expenses.author,
+                    expenses.installments,
+                    expenses.usd_rate,
+                    expenses.usd_rate_source,
+                    expenses.usd_rate_quoted_at,
+                    expenses.include_cashflow,
+                    expenses.opens_cashflow_month,
+                    expenses.purchase_sheet_row,
+                    expenses.cashflow_sheet_name,
+                    expenses.cashflow_sheet_row
                 FROM expenses
                 LEFT JOIN users ON users.user_id = expenses.user_id
-                WHERE expenses.chat_id = ?
+                {where_clause}
                 ORDER BY expenses.expense_id DESC
                 LIMIT ?
                 """,
-                (chat_id, limit),
+                parameters,
             ).fetchall()
         return [_expense_from_row(row) for row in rows]
 
-    def list_pending_expenses(self, chat_id: str, limit: int = 200) -> list[Expense]:
-        chat_id = self.resolve_chat_id(chat_id)
+    def list_pending_expenses(self, chat_id: str | None, limit: int = 200) -> list[Expense]:
+        if chat_id is not None:
+            chat_id = self.resolve_chat_id(chat_id)
+        where_clause = (
+            "WHERE expenses.chat_id = ? AND expenses.sheet_status != 'synced'"
+            if chat_id is not None
+            else "WHERE expenses.sheet_status != 'synced'"
+        )
+        parameters = (chat_id, limit) if chat_id is not None else (limit,)
         with self._connect() as conn:
             rows = conn.execute(
-                """
+                f"""
                 SELECT
                     expenses.expense_id,
                     expenses.chat_id,
@@ -3632,27 +3766,47 @@ class Database:
                     expenses.sheet_status,
                     expenses.sheet_error,
                     expenses.created_at,
-                    expenses.synced_at
+                    expenses.synced_at,
+                    expenses.occurred_on,
+                    expenses.movement_type,
+                    expenses.category,
+                    expenses.author,
+                    expenses.installments,
+                    expenses.usd_rate,
+                    expenses.usd_rate_source,
+                    expenses.usd_rate_quoted_at,
+                    expenses.include_cashflow,
+                    expenses.opens_cashflow_month,
+                    expenses.purchase_sheet_row,
+                    expenses.cashflow_sheet_name,
+                    expenses.cashflow_sheet_row
                 FROM expenses
                 LEFT JOIN users ON users.user_id = expenses.user_id
-                WHERE expenses.chat_id = ? AND expenses.sheet_status != 'synced'
+                {where_clause}
                 ORDER BY expenses.expense_id ASC
                 LIMIT ?
                 """,
-                (chat_id, limit),
+                parameters,
             ).fetchall()
         return [_expense_from_row(row) for row in rows]
 
-    def count_pending_expenses(self, chat_id: str) -> int:
-        chat_id = self.resolve_chat_id(chat_id)
+    def count_pending_expenses(self, chat_id: str | None) -> int:
+        if chat_id is not None:
+            chat_id = self.resolve_chat_id(chat_id)
+        where_clause = (
+            "WHERE chat_id = ? AND sheet_status != 'synced'"
+            if chat_id is not None
+            else "WHERE sheet_status != 'synced'"
+        )
+        parameters = (chat_id,) if chat_id is not None else ()
         with self._connect() as conn:
             row = conn.execute(
-                """
+                f"""
                 SELECT COUNT(*) AS pending_count
                 FROM expenses
-                WHERE chat_id = ? AND sheet_status != 'synced'
+                {where_clause}
                 """,
-                (chat_id,),
+                parameters,
             ).fetchone()
         return int(row["pending_count"]) if row is not None else 0
 
@@ -3694,6 +3848,19 @@ def _expense_from_row(row: sqlite3.Row) -> Expense:
         sheet_error=row["sheet_error"],
         created_at=row["created_at"],
         synced_at=row["synced_at"],
+        occurred_on=row["occurred_on"],
+        movement_type=row["movement_type"],
+        category=row["category"],
+        author=row["author"],
+        installments=row["installments"],
+        usd_rate=row["usd_rate"],
+        usd_rate_source=row["usd_rate_source"],
+        usd_rate_quoted_at=row["usd_rate_quoted_at"],
+        include_cashflow=bool(row["include_cashflow"]),
+        opens_cashflow_month=bool(row["opens_cashflow_month"]),
+        purchase_sheet_row=row["purchase_sheet_row"],
+        cashflow_sheet_name=row["cashflow_sheet_name"],
+        cashflow_sheet_row=row["cashflow_sheet_row"],
     )
 
 

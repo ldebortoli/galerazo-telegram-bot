@@ -19,6 +19,7 @@ class RepositoryPrivacyTests(unittest.TestCase):
             "TELEGRAM_BOT_TOKEN",
             "OPENAI_API_KEY",
             "TELEGRAM_DEV_USER_IDS",
+            "TELEGRAM_EXPENSE_USER_IDS",
             "TELEGRAM_OWNER_USER_ID",
             "TELEGRAM_LOG_CHAT_ID",
             "TELEGRAM_ANNOUNCEMENTS_CHAT_ID",

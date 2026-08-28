@@ -434,6 +434,14 @@ for _language, _catalog in HISOPO_TRANSLATIONS.items():
 for _language, _catalog in MONETIZATION_TRANSLATIONS.items():
     TRANSLATIONS[_language].update(_catalog)
 
+_PRIVATE_EXPENSE_HELP_TEXTS = {
+    "help.pagoresumen": "registra el pago de un resumen de tarjeta",
+    "help.cierre": "agrega una fecha de cierre de tarjeta",
+    "help.ayudagastos": "explica cómo funcionan los gastos",
+}
+for _catalog in TRANSLATIONS.values():
+    _catalog.update(_PRIVATE_EXPENSE_HELP_TEXTS)
+
 _DEV_PRIVATE_HINTS = {
     "es": "Para ver los comandos de desarrollo, enviame /help por privado.",
     "en": "To see the developer commands, send me /help in a private chat.",

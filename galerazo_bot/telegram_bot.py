@@ -7,7 +7,7 @@ import os
 import secrets
 import sys
 import traceback
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from io import BytesIO
 from pathlib import Path
@@ -70,13 +70,16 @@ from .commands import (
 from .config import Settings, load_settings
 from .database import Database, HisopoMessageCleanup, HisopoSchedule, HisopoSpawn, Trigger
 from .expenses import (
+    CardClosingResult,
+    ExpenseDraft,
     ExpenseSheetStatus,
     ExpenseSubmissionResult,
     ExpenseSyncResult,
     fallback_sheet_detail,
-    format_amount,
 )
+from .exchange_rates import CriptoYaRateProvider, ExchangeRateError
 from .command_handlers.galerazas import (
+    ARGENTINA_TIMEZONE as _ARGENTINA_TIMEZONE,
     galeraza_game_date as _galeraza_game_date,
     is_galeraza_candidate as _is_galeraza_candidate,
     maybe_award_daily_galeraza as _maybe_award_daily_galeraza,
@@ -167,6 +170,9 @@ BOTFATHER_HIDDEN_COMMANDS = frozenset(
         "habilitargastos",
         "deshabilitargastos",
         "gasto",
+        "pagoresumen",
+        "cierre",
+        "ayudagastos",
         "ultimosgastos",
         "estadogastos",
         "sincronizargastos",
@@ -188,6 +194,7 @@ class BotState:
     bot_user_id: str
     expense_sheet_writer: GoogleSheetsExpenseWriter
     media_moderator: OpenAIMediaModerator
+    exchange_rate_provider: CriptoYaRateProvider = field(default_factory=CriptoYaRateProvider)
     bot_username: str = ""
 
 
@@ -342,8 +349,10 @@ async def _post_init(application: Application) -> None:
                 credentials_json_path=settings.google_sheets_credentials_json_path,
                 spreadsheet_id=settings.google_sheets_spreadsheet_id,
                 worksheet_name=settings.google_sheets_worksheet_name,
+                cashflow_sheet_prefix=settings.google_sheets_cashflow_sheet_prefix,
             )
         ),
+        exchange_rate_provider=CriptoYaRateProvider(),
         media_moderator=OpenAIMediaModerator(settings.openai_api_key),
     )
 
@@ -1973,6 +1982,7 @@ async def _handle_command_update(update: Update, context: ContextTypes.DEFAULT_T
         chat_id=str(chat.id),
         user_level=user_level,
         owner_user_id=state.settings.telegram_owner_user_id,
+        expense_user_ids=state.settings.telegram_expense_user_ids,
         sender_username=user.username,
         sender_display_name=_display_name(user),
         reply_to_user_id=str(reply_to_user.id) if reply_to_user is not None else None,
@@ -2003,16 +2013,13 @@ async def _handle_command_update(update: Update, context: ContextTypes.DEFAULT_T
             user=user,
             report_text=text,
         ),
-        submit_expense=lambda currency, amount_cents, payment_method, source, description: _submit_expense(
+        submit_expense=lambda draft: _submit_expense(
             db=state.db,
             writer=state.expense_sheet_writer,
+            rate_provider=state.exchange_rate_provider,
             message=message,
             user=user,
-            currency=currency,
-            amount_cents=int(amount_cents),
-            payment_method=payment_method,
-            source=source,
-            description=description,
+            draft=draft,
         ),
         sync_expenses=lambda: _sync_pending_expenses(
             db=state.db,
@@ -2023,6 +2030,10 @@ async def _handle_command_update(update: Update, context: ContextTypes.DEFAULT_T
             db=state.db,
             writer=state.expense_sheet_writer,
             chat_id=str(chat.id),
+        ),
+        add_card_closing=lambda closing_date: _add_card_closing(
+            state.expense_sheet_writer,
+            closing_date,
         ),
         create_backup=lambda: _create_and_send_backup(state.db, message),
         send_debug_update=lambda: _send_debug_update(state.db, message, update),
@@ -2595,49 +2606,81 @@ async def _send_report(
 async def _submit_expense(
     db: Database,
     writer: GoogleSheetsExpenseWriter,
+    rate_provider: CriptoYaRateProvider,
     message: Message,
     user: User,
-    currency: str,
-    amount_cents: int,
-    payment_method: str,
-    source: str,
-    description: str,
+    draft: ExpenseDraft,
 ) -> ExpenseSubmissionResult:
+    rate = draft.usd_rate_override
+    rate_source = "Cotización manual"
+    rate_quoted_at = None
+    if draft.currency == "ARS" and rate is None:
+        message_date = _telegram_message_datetime(message).astimezone(_ARGENTINA_TIMEZONE).date()
+        if draft.occurred_on != message_date:
+            return ExpenseSubmissionResult(
+                expense_id=0,
+                synced=False,
+                configured=writer.is_configured(),
+                error="historical_rate_required",
+            )
+        try:
+            quote = await asyncio.to_thread(rate_provider.binance_usdt_sell_rate)
+        except ExchangeRateError:
+            return ExpenseSubmissionResult(
+                expense_id=0,
+                synced=False,
+                configured=writer.is_configured(),
+                error="exchange_rate_unavailable",
+            )
+        rate = quote.ars_per_usdt
+        rate_source = quote.source
+        rate_quoted_at = quote.quoted_at.isoformat()
+    elif draft.currency == "USD":
+        rate_source = None
+
     expense = db.add_expense(
         chat_id=str(message.chat.id),
         user_id=str(user.id),
-        amount_cents=amount_cents,
-        currency=currency,
-        payment_method=payment_method,
-        source=source,
-        description=description,
+        amount_cents=draft.amount_cents,
+        currency=draft.currency,
+        payment_method=draft.payment_method,
+        source=draft.category,
+        description=draft.description,
+        occurred_on=draft.occurred_on.isoformat(),
+        movement_type=draft.movement_type,
+        category=draft.category,
+        author=draft.author,
+        installments=draft.installments,
+        usd_rate=str(rate) if rate is not None else None,
+        usd_rate_source=rate_source,
+        usd_rate_quoted_at=rate_quoted_at,
+        include_cashflow=draft.include_cashflow,
+        opens_cashflow_month=draft.opens_cashflow_month,
     )
-
-    row = [
-        str(expense.expense_id),
-        expense.created_at,
-        expense.chat_id,
-        message.chat.title or "-",
-        expense.user_id,
-        f"@{expense.username}" if expense.username else "-",
-        expense.display_name or "-",
-        format_amount(expense.amount_cents, expense.currency),
-        expense.currency,
-        expense.payment_method,
-        expense.source,
-        expense.description,
-    ]
-    synced, error = await asyncio.to_thread(writer.append_expense_row, row)
-    if synced:
-        db.mark_expense_synced(expense.expense_id)
+    write_result = await asyncio.to_thread(writer.write_expense, expense)
+    if write_result.success:
+        db.mark_expense_synced(
+            expense.expense_id,
+            write_result.purchase_sheet_row,
+            write_result.cashflow_sheet_name,
+            write_result.cashflow_sheet_row,
+        )
+        if write_result.month_created and draft.opens_cashflow_month:
+            await _sync_pending_expenses(db, writer, message)
         return ExpenseSubmissionResult(expense_id=expense.expense_id, synced=True, configured=True)
 
-    db.mark_expense_failed(expense.expense_id, error)
+    db.mark_expense_failed(
+        expense.expense_id,
+        write_result.error,
+        write_result.purchase_sheet_row,
+        write_result.cashflow_sheet_name,
+        write_result.cashflow_sheet_row,
+    )
     return ExpenseSubmissionResult(
         expense_id=expense.expense_id,
         synced=False,
         configured=writer.is_configured(),
-        error=error,
+        error=write_result.error,
     )
 
 
@@ -2652,7 +2695,7 @@ def _build_expense_sheet_status(
         configured=configured,
         ready=ready,
         worksheet_name=writer.worksheet_name if configured else None,
-        pending_count=db.count_pending_expenses(chat_id),
+        pending_count=db.count_pending_expenses(None),
         detail=fallback_sheet_detail(_chat_language(db, chat_id), configured, ready),
     )
 
@@ -2665,33 +2708,30 @@ async def _sync_pending_expenses(
     if not writer.is_configured():
         return ExpenseSyncResult(configured=False, synced_count=0, failed_count=0)
 
-    pending_expenses = db.list_pending_expenses(str(message.chat.id))
+    pending_expenses = db.list_pending_expenses(None)
     synced_count = 0
     failed_count = 0
     last_error = None
     for expense in pending_expenses:
-        row = [
-            str(expense.expense_id),
-            expense.created_at,
-            expense.chat_id,
-            message.chat.title or "-",
-            expense.user_id,
-            f"@{expense.username}" if expense.username else "-",
-            expense.display_name or "-",
-            format_amount(expense.amount_cents, expense.currency),
-            expense.currency,
-            expense.payment_method,
-            expense.source,
-            expense.description,
-        ]
-        synced, error = await asyncio.to_thread(writer.append_expense_row, row)
-        if synced:
-            db.mark_expense_synced(expense.expense_id)
+        write_result = await asyncio.to_thread(writer.write_expense, expense)
+        if write_result.success:
+            db.mark_expense_synced(
+                expense.expense_id,
+                write_result.purchase_sheet_row,
+                write_result.cashflow_sheet_name,
+                write_result.cashflow_sheet_row,
+            )
             synced_count += 1
             continue
-        db.mark_expense_failed(expense.expense_id, error)
+        db.mark_expense_failed(
+            expense.expense_id,
+            write_result.error,
+            write_result.purchase_sheet_row,
+            write_result.cashflow_sheet_name,
+            write_result.cashflow_sheet_row,
+        )
         failed_count += 1
-        last_error = error
+        last_error = write_result.error
 
     return ExpenseSyncResult(
         configured=True,
@@ -2699,6 +2739,13 @@ async def _sync_pending_expenses(
         failed_count=failed_count,
         last_error=last_error,
     )
+
+
+async def _add_card_closing(
+    writer: GoogleSheetsExpenseWriter,
+    closing_date,
+) -> CardClosingResult:
+    return await asyncio.to_thread(writer.add_card_closing, closing_date)
 
 
 async def _send_config_menu(db: Database, message: Message) -> bool:

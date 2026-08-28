@@ -47,12 +47,13 @@ class PermissionsAndHelpTests(unittest.TestCase):
 
             response = asyncio.run(
                 handle_command_async(
-                    "/gasto 100 | tarjeta | supermercado | compras",
+                    "/gasto 100 | sup | ef | compras",
                     "1",
                     db,
                     chat_id="1",
                     chat_type="private",
                     user_level=UserLevel.DEV,
+                    expense_user_ids=frozenset({"1", "2"}),
                 )
             )
             self.assertIn("No hay mecanismo configurado", response)
@@ -148,11 +149,14 @@ class PermissionsAndHelpTests(unittest.TestCase):
                 )
             )
 
-    def test_expense_help_is_visible_only_to_owner_in_private(self) -> None:
+    def test_expense_help_is_visible_only_to_expense_allowlist_in_private(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             db = Database(Path(directory) / "test.sqlite3")
             expense_commands = (
                 "/gasto:",
+                "/pagoresumen:",
+                "/cierre:",
+                "/ayudagastos:",
                 "/ultimosgastos:",
                 "/estadogastos:",
                 "/sincronizargastos:",
@@ -167,6 +171,7 @@ class PermissionsAndHelpTests(unittest.TestCase):
                     chat_type="private",
                     user_level=UserLevel.DEV,
                     owner_user_id="1",
+                    expense_user_ids=frozenset({"1", "2"}),
                 )
             )
             owner_group = asyncio.run(
@@ -178,9 +183,22 @@ class PermissionsAndHelpTests(unittest.TestCase):
                     chat_type="group",
                     user_level=UserLevel.DEV,
                     owner_user_id="1",
+                    expense_user_ids=frozenset({"1", "2"}),
                 )
             )
             other_dev_private = asyncio.run(
+                handle_command_async(
+                    "/help",
+                    "3",
+                    db,
+                    chat_id="3",
+                    chat_type="private",
+                    user_level=UserLevel.DEV,
+                    owner_user_id="1",
+                    expense_user_ids=frozenset({"1", "2"}),
+                )
+            )
+            jo_private = asyncio.run(
                 handle_command_async(
                     "/help",
                     "2",
@@ -189,6 +207,7 @@ class PermissionsAndHelpTests(unittest.TestCase):
                     chat_type="private",
                     user_level=UserLevel.DEV,
                     owner_user_id="1",
+                    expense_user_ids=frozenset({"1", "2"}),
                 )
             )
             unconfigured_owner = asyncio.run(
@@ -199,6 +218,7 @@ class PermissionsAndHelpTests(unittest.TestCase):
                     chat_id="1",
                     chat_type="private",
                     user_level=UserLevel.DEV,
+                    expense_user_ids=frozenset(),
                 )
             )
 
@@ -206,6 +226,7 @@ class PermissionsAndHelpTests(unittest.TestCase):
             for command in expense_commands:
                 with self.subTest(command=command):
                     self.assertIn(command, owner_private)
+                    self.assertIn(command, jo_private)
                     self.assertNotIn(command, owner_group)
                     self.assertNotIn(command, other_dev_private)
                     self.assertNotIn(command, unconfigured_owner)

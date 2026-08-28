@@ -118,6 +118,7 @@ def handle_command(
     submit_expense=None,
     sync_expenses=None,
     get_expense_sheet_status=None,
+    add_card_closing=None,
     create_backup=None,
     send_debug_update=None,
     send_galerazas=None,
@@ -133,6 +134,7 @@ def handle_command(
     moderate_trigger_payload=None,
     language: str | None = None,
     owner_user_id: str | None = None,
+    expense_user_ids: frozenset[str] = frozenset(),
 ) -> str | None:
     return asyncio.run(
         handle_command_async(
@@ -155,6 +157,7 @@ def handle_command(
             submit_expense=submit_expense,
             sync_expenses=sync_expenses,
             get_expense_sheet_status=get_expense_sheet_status,
+            add_card_closing=add_card_closing,
             create_backup=create_backup,
             send_debug_update=send_debug_update,
             send_galerazas=send_galerazas,
@@ -170,6 +173,7 @@ def handle_command(
             moderate_trigger_payload=moderate_trigger_payload,
             language=language,
             owner_user_id=owner_user_id,
+            expense_user_ids=expense_user_ids,
         )
     )
 
@@ -194,6 +198,7 @@ async def handle_command_async(
     submit_expense=None,
     sync_expenses=None,
     get_expense_sheet_status=None,
+    add_card_closing=None,
     create_backup=None,
     send_debug_update=None,
     send_galerazas=None,
@@ -209,6 +214,7 @@ async def handle_command_async(
     moderate_trigger_payload=None,
     language: str | None = None,
     owner_user_id: str | None = None,
+    expense_user_ids: frozenset[str] = frozenset(),
 ) -> str | None:
     context = CommandContext(
         sender_id=sender_id,
@@ -219,6 +225,7 @@ async def handle_command_async(
         args=command_args(text),
         language=language or _resolve_language(db, chat_id, chat_type),
         owner_user_id=owner_user_id,
+        expense_user_ids=expense_user_ids,
         bot_user_id=bot_user_id,
         sender_username=sender_username,
         sender_display_name=sender_display_name,
@@ -228,6 +235,7 @@ async def handle_command_async(
         submit_expense=submit_expense,
         sync_expenses=sync_expenses,
         get_expense_sheet_status=get_expense_sheet_status,
+        add_card_closing=add_card_closing,
         create_backup=create_backup,
         send_debug_update=send_debug_update,
         send_galerazas=send_galerazas,

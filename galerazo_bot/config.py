@@ -44,6 +44,8 @@ class Settings:
     telegram_mini_app_short_name: str = "hisopos"
     mini_app_bind_host: str = "127.0.0.1"
     mini_app_port: int = 8080
+    telegram_expense_user_ids: frozenset[str] = frozenset()
+    google_sheets_cashflow_sheet_prefix: str = "Gastos"
 
 
 def load_settings() -> Settings:
@@ -52,13 +54,17 @@ def load_settings() -> Settings:
     return Settings(
         telegram_bot_token=os.getenv("TELEGRAM_BOT_TOKEN", ""),
         telegram_dev_user_ids=_parse_id_list(os.getenv("TELEGRAM_DEV_USER_IDS", "")),
+        telegram_expense_user_ids=_parse_id_list(os.getenv("TELEGRAM_EXPENSE_USER_IDS", "")),
         telegram_owner_user_id=os.getenv("TELEGRAM_OWNER_USER_ID") or None,
         telegram_log_chat_id=os.getenv("TELEGRAM_LOG_CHAT_ID") or None,
         telegram_announcements_chat_id=os.getenv("TELEGRAM_ANNOUNCEMENTS_CHAT_ID") or None,
         database_path=Path(os.getenv("DATABASE_PATH", "data/galerazo.sqlite3")),
         google_sheets_credentials_json_path=_optional_path(os.getenv("GOOGLE_SHEETS_CREDENTIALS_JSON_PATH")),
         google_sheets_spreadsheet_id=os.getenv("GOOGLE_SHEETS_SPREADSHEET_ID") or None,
-        google_sheets_worksheet_name=os.getenv("GOOGLE_SHEETS_WORKSHEET_NAME", "Gastos"),
+        google_sheets_worksheet_name=os.getenv("GOOGLE_SHEETS_WORKSHEET_NAME", "Gastos y compras"),
+        google_sheets_cashflow_sheet_prefix=os.getenv(
+            "GOOGLE_SHEETS_CASHFLOW_SHEET_PREFIX", "Gastos"
+        ),
         openai_api_key=os.getenv("OPENAI_API_KEY") or None,
         google_cloud_billing_project_id=os.getenv("GOOGLE_CLOUD_BILLING_PROJECT_ID") or None,
         google_cloud_billing_table=os.getenv("GOOGLE_CLOUD_BILLING_TABLE") or None,

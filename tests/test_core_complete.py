@@ -192,7 +192,9 @@ class ExpenseAndDisplayCompleteTests(unittest.TestCase):
             self.assertEqual(expenses.parse_amount_to_cents(raw), expected)
         self.assertIsNone(expenses.parse_expense_command_args("1 | | x | y"))
         self.assertIsNone(expenses.parse_expense_command_args("bad | cash | x | y"))
-        self.assertIsNotNone(expenses.parse_expense_command_args("1 | cash | x | y"))
+        parsed = expenses.parse_expense_command_args("1 | sal | ef | y")
+        self.assertIsNotNone(parsed)
+        self.assertEqual(parsed.category, "Salidas")
         self.assertEqual(expenses.format_amount(-123456), "ARS -1.234,56")
         self.assertIn("#1", expenses.build_expense_line(1, 1, "USD", "m", "s", "d", "u", "ok"))
         self.assertIn("sincronizado", expenses.sync_status_label("es", True))
@@ -222,6 +224,7 @@ class ConfigurationAndEntrypointTests(unittest.TestCase):
         environment = {
             "TELEGRAM_BOT_TOKEN": "token",
             "TELEGRAM_DEV_USER_IDS": " 1, ,2 ",
+            "TELEGRAM_EXPENSE_USER_IDS": "1,2",
             "TELEGRAM_OWNER_USER_ID": "1",
             "TELEGRAM_LOG_CHAT_ID": "-1",
             "TELEGRAM_ANNOUNCEMENTS_CHAT_ID": "-2",
@@ -247,6 +250,7 @@ class ConfigurationAndEntrypointTests(unittest.TestCase):
             "GOOGLE_SHEETS_CREDENTIALS_JSON_PATH": "key.json",
             "GOOGLE_SHEETS_SPREADSHEET_ID": "sheet",
             "GOOGLE_SHEETS_WORKSHEET_NAME": "Tab",
+            "GOOGLE_SHEETS_CASHFLOW_SHEET_PREFIX": "Egresos",
             "OPENAI_API_KEY": "openai",
             "GOOGLE_CLOUD_BILLING_PROJECT_ID": "project",
             "GOOGLE_CLOUD_BILLING_TABLE": "project1.dataset.table",
@@ -255,8 +259,10 @@ class ConfigurationAndEntrypointTests(unittest.TestCase):
         with patch.dict("os.environ", environment, clear=True):
             settings = config.load_settings()
         self.assertEqual(settings.telegram_dev_user_ids, frozenset({"1", "2"}))
+        self.assertEqual(settings.telegram_expense_user_ids, frozenset({"1", "2"}))
         self.assertEqual(settings.telegram_owner_user_id, "1")
         self.assertEqual(settings.google_sheets_credentials_json_path, Path("key.json"))
+        self.assertEqual(settings.google_sheets_cashflow_sheet_prefix, "Egresos")
         self.assertEqual(settings.telegram_hisopo_common_file_id, "common")
         self.assertEqual(settings.telegram_hisopo_silver_file_id, "silver")
         self.assertEqual(settings.telegram_hisopo_gold_file_id, "gold")
@@ -378,30 +384,23 @@ class BillingSheetsHealthAndStatusTests(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(configured.worksheet_name, "Tab")
             self.assertFalse(missing.is_configured())
             self.assertFalse(missing.is_ready())
-            self.assertEqual(missing.append_expense_row([]), (False, "sheet_not_configured"))
-            self.assertEqual(configured.append_expense_row([]), (False, "sheet_not_ready"))
+            expense = MagicMock()
+            self.assertEqual(missing.write_expense(expense).error, "sheet_not_configured")
+            self.assertEqual(configured.write_expense(expense).error, "sheet_not_ready")
             key.write_text("{}", encoding="utf-8")
-            worksheet = MagicMock()
-            worksheet.get.return_value = []
             spreadsheet = MagicMock()
-            spreadsheet.worksheet.return_value = worksheet
             client = MagicMock()
             client.open_by_key.return_value = spreadsheet
             fake_gspread = MagicMock()
             fake_gspread.service_account.return_value = client
-            with patch.object(google_sheets, "gspread", fake_gspread):
+            with patch.object(google_sheets, "gspread", fake_gspread), patch.object(
+                configured, "_write_expense", return_value=google_sheets.ExpenseSheetWriteResult(True)
+            ):
                 self.assertTrue(configured.is_ready())
-                self.assertEqual(configured.append_expense_row(["x"]), (True, None))
-            worksheet.append_row.assert_any_call(list(google_sheets.EXPENSE_HEADERS), value_input_option="RAW")
-            worksheet.append_row.assert_any_call(["x"], value_input_option="USER_ENTERED")
-            worksheet.get.return_value = [["header"]]
-            configured._ensure_headers(worksheet)
-            spreadsheet.worksheet.side_effect = RuntimeError
-            spreadsheet.add_worksheet.return_value = worksheet
-            self.assertIs(configured._get_or_create_worksheet(spreadsheet), worksheet)
+                self.assertTrue(configured.write_expense(expense).success)
             fake_gspread.service_account.side_effect = RuntimeError("api")
             with patch.object(google_sheets, "gspread", fake_gspread):
-                self.assertEqual(configured.append_expense_row([]), (False, "api"))
+                self.assertEqual(configured.write_expense(expense).error, "api")
             with patch.object(google_sheets, "gspread", None):
                 self.assertFalse(configured.is_ready())
 

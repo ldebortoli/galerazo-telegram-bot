@@ -18,7 +18,12 @@ from galerazo_bot.database import (
     Trigger,
     User,
 )
-from galerazo_bot.expenses import ExpenseSheetStatus, ExpenseSubmissionResult, ExpenseSyncResult
+from galerazo_bot.expenses import (
+    CardClosingResult,
+    ExpenseSheetStatus,
+    ExpenseSubmissionResult,
+    ExpenseSyncResult,
+)
 from galerazo_bot.roles import BackupResult, CommandContext, TriggerModerationResult, TriggerPayload, UserLevel
 from galerazo_bot.versioning import CURRENT_VERSION
 
@@ -303,6 +308,17 @@ class BlacklistAndRestrictionsTests(unittest.TestCase):
 
 
 class ChatAndExpenseHandlerTests(unittest.IsolatedAsyncioTestCase):
+    @staticmethod
+    def expense_context(**overrides) -> CommandContext:
+        values = {
+            "chat_id": "1",
+            "chat_type": "private",
+            "owner_user_id": "1",
+            "expense_user_ids": frozenset({"1", "2"}),
+        }
+        values.update(overrides)
+        return make_context(**values)
+
     def test_chat_stats_with_present_and_missing_types(self) -> None:
         db = MagicMock()
         db.get_chat_stats.return_value = [ChatStatsRow("group", 2, 1, 1)]
@@ -314,57 +330,104 @@ class ChatAndExpenseHandlerTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_gasto_all_result_paths(self) -> None:
         db = MagicMock()
-        private = make_context(chat_type="private", args="18500 | transferencia | caja | pizzas")
+        valid = "18500 | sal | mpl | pizzas"
+        private = self.expense_context(args=valid)
         self.assertIn("configurado", await gastos.gasto(private, db))
-        self.assertIn("/gasto", await gastos.gasto(make_context(args="bad"), db))
-        valid = "18500 | transferencia | caja | pizzas"
-        self.assertIn("configurado", await gastos.gasto(make_context(args=valid), db))
+        self.assertIn("/gasto", await gastos.gasto(self.expense_context(args="bad"), db))
+        self.assertIn("Lucas y Jo", await gastos.gasto(make_context(args=valid), db))
         for result, expected in (
             (ExpenseSubmissionResult(1, True, True), "sincronizado"),
             (ExpenseSubmissionResult(2, False, False), "localmente"),
             (ExpenseSubmissionResult(3, False, True), "pendiente"),
+            (ExpenseSubmissionResult(4, False, True, "cashflow_month_not_open"), "todavía no está abierto"),
+            (ExpenseSubmissionResult(0, False, True, "historical_rate_required"), "cotización"),
+            (ExpenseSubmissionResult(0, False, True, "exchange_rate_unavailable"), "CriptoYa"),
         ):
             sender = AsyncMock(return_value=result)
-            response = await gastos.gasto(make_context(args=valid, submit_expense=sender), db)
+            response = await gastos.gasto(
+                self.expense_context(args=valid, submit_expense=sender), db
+            )
             self.assertIn(expected, response)
-            sender.assert_awaited_once_with("ARS", "1850000", "transferencia", "caja", "pizzas")
+            draft = sender.await_args.args[0]
+            self.assertEqual((draft.category, draft.payment_method), ("Salidas", "Mercado Pago Lucas"))
+
+    async def test_statement_closing_and_help_paths(self) -> None:
+        db = MagicMock()
+        self.assertIn("Lucas y Jo", await gastos.pagoresumen(make_context(args="x"), db))
+        self.assertIn("Uso:", await gastos.pagoresumen(self.expense_context(args="bad"), db))
+        self.assertIn(
+            "configurado",
+            await gastos.pagoresumen(self.expense_context(args="100 | mpl | Galicia"), db),
+        )
+        sender = AsyncMock(return_value=ExpenseSubmissionResult(8, True, True))
+        response = await gastos.pagoresumen(
+            self.expense_context(args="100 | mpl | Galicia", submit_expense=sender), db
+        )
+        self.assertIn("sincronizado", response)
+        self.assertEqual(sender.await_args.args[0].category, "Pago resumen tarjetas")
+
+        self.assertIn("Lucas y Jo", await gastos.cierre(make_context(args="x"), db))
+        self.assertIn("Uso:", await gastos.cierre(self.expense_context(args="x"), db))
+        self.assertIn("configurado", await gastos.cierre(self.expense_context(args="20/08/2026"), db))
+        for result, expected in (
+            (CardClosingResult(True, False, duplicate=True), "ya estaba"),
+            (CardClosingResult(True, True, row_number=33), "fila 33"),
+            (CardClosingResult(False, False, error="sheet_not_configured"), "configurado"),
+            (CardClosingResult(True, False, error="api"), "api"),
+        ):
+            response = await gastos.cierre(
+                self.expense_context(
+                    args="20/08/2026",
+                    add_card_closing=AsyncMock(return_value=result),
+                ),
+                db,
+            )
+            self.assertIn(expected, response)
+        self.assertIn("Compra inmediata", gastos.ayudagastos(self.expense_context(), db))
+        self.assertIn("Lucas y Jo", gastos.ayudagastos(make_context(), db))
 
     def test_recent_and_status_expenses(self) -> None:
         db = MagicMock()
-        private = make_context(chat_type="private")
+        private = self.expense_context()
         db.list_recent_expenses.return_value = []
         self.assertIn("hay gastos", gastos.ultimosgastos(private, db))
-        self.assertIn("hay gastos", gastos.ultimosgastos(make_context(), db))
+        self.assertIn("Lucas y Jo", gastos.ultimosgastos(make_context(), db))
         db.list_recent_expenses.return_value = [
             Expense(1, "-1", "2", "alias", "User", 12345, "ARS", "cash", "box", "food", "synced", None, "now", "now"),
             Expense(2, "-1", "3", None, None, 100, "ARS", "card", "shop", "item", "pending", None, "now", None),
         ]
-        response = gastos.ultimosgastos(make_context(), db)
+        response = gastos.ultimosgastos(private, db)
         self.assertIn("User (2)", response)
         self.assertIn("Usuario (3)", response)
         self.assertIn("sincronizado", response)
         self.assertIn("pendiente", response)
 
         db.count_pending_expenses.return_value = 4
-        response = gastos.estadogastos(make_context(), db)
+        self.assertIn("Lucas y Jo", gastos.estadogastos(make_context(), db))
+        response = gastos.estadogastos(private, db)
         self.assertIn("4", response)
         status = ExpenseSheetStatus(True, True, "Gastos", 2, None)
-        response = gastos.estadogastos(make_context(get_expense_sheet_status=lambda: status), db)
+        response = gastos.estadogastos(
+            self.expense_context(get_expense_sheet_status=lambda: status), db
+        )
         self.assertIn("2", response)
         status = replace(status, detail="Sheet OK")
-        self.assertIn("Sheet OK", gastos.estadogastos(make_context(get_expense_sheet_status=lambda: status), db))
+        self.assertIn(
+            "Sheet OK",
+            gastos.estadogastos(self.expense_context(get_expense_sheet_status=lambda: status), db),
+        )
 
     async def test_sync_expenses_paths(self) -> None:
         db = MagicMock()
-        self.assertIn("configurado", await gastos.sincronizargastos(make_context(chat_type="private"), db))
-        self.assertIn("configurado", await gastos.sincronizargastos(make_context(), db))
+        self.assertIn("configurado", await gastos.sincronizargastos(self.expense_context(), db))
+        self.assertIn("Lucas y Jo", await gastos.sincronizargastos(make_context(), db))
         for result, expected in (
             (ExpenseSyncResult(False, 0, 0), "configurado"),
             (ExpenseSyncResult(True, 2, 0), "Sincronizaci"),
             (ExpenseSyncResult(True, 2, 1), "parcial"),
         ):
             response = await gastos.sincronizargastos(
-                make_context(sync_expenses=AsyncMock(return_value=result)), db
+                self.expense_context(sync_expenses=AsyncMock(return_value=result)), db
             )
             self.assertIn(expected, response)
 
