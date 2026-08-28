@@ -301,6 +301,15 @@ async def _successful_payment_entrypoint(
         message=message,
         db=state.db,
         bot_token=state.settings.telegram_bot_token,
+        log_payment=(
+            lambda text: _send_log_event(
+                context.bot,
+                state.settings.telegram_log_chat_id,
+                text,
+            )
+        )
+        if state.settings.telegram_log_chat_id
+        else None,
     )
 
 

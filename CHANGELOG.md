@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.48] - 2026-08-28
+
+- Cada donación, compra, regalo o cuota del Club confirmada mediante Telegram Stars ahora genera un aviso en el canal de logging con la persona, el concepto, el destinatario cuando corresponde y el importe. Las reentregas del mismo cobro no duplican el aviso y Cafecito queda fuera porque no envía esos eventos al bot.
+
 ## [0.47] - 2026-08-28
 
 - Nuevo Hisopo Galerazo, una edición especial de galera, conejo y oro en honor al Galerazo y a su creador. Se incorpora a la tienda por 6000 Stars, apenas por encima de Dengue, y puede comprarse más de una vez o regalarse como los demás Hisopos especiales.

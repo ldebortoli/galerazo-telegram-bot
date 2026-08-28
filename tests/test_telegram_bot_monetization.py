@@ -44,7 +44,8 @@ class TelegramBotMonetizationTests(unittest.IsolatedAsyncioTestCase):
     async def test_payment_entrypoints_ignore_missing_and_delegate(self) -> None:
         bot_state = state()
         context = SimpleNamespace(
-            application=SimpleNamespace(bot_data={"state": bot_state})
+            application=SimpleNamespace(bot_data={"state": bot_state}),
+            bot=object(),
         )
         with patch.object(tb, "answer_pre_checkout_query", AsyncMock()) as precheckout:
             await tb._pre_checkout_query_entrypoint(SimpleNamespace(pre_checkout_query=None), context)
@@ -63,7 +64,12 @@ class TelegramBotMonetizationTests(unittest.IsolatedAsyncioTestCase):
             success.assert_not_awaited()
             message = object()
             await tb._successful_payment_entrypoint(SimpleNamespace(effective_message=message), context)
-            success.assert_awaited_once_with(message=message, db=bot_state.db, bot_token="token")
+            success.assert_awaited_once_with(
+                message=message,
+                db=bot_state.db,
+                bot_token="token",
+                log_payment=None,
+            )
 
         with patch.object(tb, "process_refunded_payment", AsyncMock()) as refund:
             await tb._refunded_payment_entrypoint(empty_update, context)
@@ -71,6 +77,28 @@ class TelegramBotMonetizationTests(unittest.IsolatedAsyncioTestCase):
             message = object()
             await tb._refunded_payment_entrypoint(SimpleNamespace(effective_message=message), context)
             refund.assert_awaited_once_with(message=message, db=bot_state.db)
+
+    async def test_successful_payment_entrypoint_connects_configured_log(self) -> None:
+        bot_state = state(settings(telegram_log_chat_id="-10"))
+        bot = object()
+        context = SimpleNamespace(
+            application=SimpleNamespace(bot_data={"state": bot_state}),
+            bot=bot,
+        )
+        message = object()
+        with (
+            patch.object(tb, "process_successful_payment", AsyncMock()) as success,
+            patch.object(tb, "_send_log_event", AsyncMock(return_value=True)) as send_log,
+        ):
+            await tb._successful_payment_entrypoint(
+                SimpleNamespace(effective_message=message),
+                context,
+            )
+            log_payment = success.await_args.kwargs["log_payment"]
+            self.assertIsNotNone(log_payment)
+            self.assertTrue(await log_payment("pago confirmado"))
+
+        send_log.assert_awaited_once_with(bot, "-10", "pago confirmado")
 
     async def test_post_shutdown_stops_only_real_service(self) -> None:
         app = SimpleNamespace(bot_data={})

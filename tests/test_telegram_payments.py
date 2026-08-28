@@ -7,9 +7,18 @@ from unittest.mock import AsyncMock, MagicMock
 
 from telegram.error import TimedOut
 
-from galerazo_bot.monetization import create_payment_payload, parse_payment_payload
+from galerazo_bot.monetization import (
+    PaymentIntent,
+    create_payment_payload,
+    invoice_spec,
+    parse_payment_payload,
+)
 from galerazo_bot.telegram_payments import (
+    _account_label,
     _message_datetime,
+    _stored_user_label,
+    _successful_payment_log_text,
+    _telegram_user_label,
     answer_pre_checkout_query,
     create_invoice_url,
     process_refunded_payment,
@@ -22,7 +31,15 @@ def payment_message(payment=None, *, user_id=1, date=None):
     return SimpleNamespace(
         successful_payment=payment,
         refunded_payment=payment,
-        from_user=SimpleNamespace(id=user_id) if user_id is not None else None,
+        from_user=(
+            SimpleNamespace(
+                id=user_id,
+                full_name="Ada Lovelace",
+                username="ada",
+            )
+            if user_id is not None
+            else None
+        ),
         date=date,
         chat=SimpleNamespace(id=-1001, type="private"),
         reply_text=AsyncMock(),
@@ -172,6 +189,7 @@ class TelegramPaymentTests(unittest.IsolatedAsyncioTestCase):
         )
         for index, (kind, item_key, amount, expected, expiration) in enumerate(cases):
             with self.subTest(kind=kind):
+                log_payment = AsyncMock(return_value=True)
                 payload = create_payment_payload(
                     "token",
                     kind=kind,
@@ -192,9 +210,31 @@ class TelegramPaymentTests(unittest.IsolatedAsyncioTestCase):
                     date=datetime(2026, 8, 27, tzinfo=timezone.utc),
                 )
                 self.assertTrue(
-                    await process_successful_payment(message=message, db=db, bot_token="token")
+                    await process_successful_payment(
+                        message=message,
+                        db=db,
+                        bot_token="token",
+                        log_payment=log_payment,
+                    )
                 )
                 self.assertIn(expected, message.reply_text.await_args.args[0])
+                log_payment.assert_awaited_once()
+                log_text = log_payment.await_args.args[0]
+                self.assertIn("⭐ Pago confirmado por Telegram", log_text)
+                self.assertIn("Ada Lovelace (@ada) · ID 1", log_text)
+                self.assertIn(f"Importe: ⭐ {amount}", log_text)
+                self.assertIn("Origen: chat -1", log_text)
+                self.assertIn(f"Cobro Telegram: charge-{index}", log_text)
+                expected_operation = {
+                    "donation": "Operación: Donación",
+                    "product": "Operación: Compra",
+                    "subscription": "Operación: Club del Hisopo · primera cuota",
+                }[kind]
+                self.assertIn(expected_operation, log_text)
+                if kind == "donation":
+                    self.assertNotIn("Concepto:", log_text)
+                else:
+                    self.assertIn("Concepto:", log_text)
                 kwargs = db.record_star_payment.call_args.kwargs
                 self.assertEqual(kwargs["source_chat_id"], "-1")
                 self.assertEqual(kwargs["recipient_user_id"], "1")
@@ -211,23 +251,119 @@ class TelegramPaymentTests(unittest.IsolatedAsyncioTestCase):
             recipient_user_id="2",
         )
         gift_message = payment_message(successful_payment(gift_payload, amount=150))
+        db.get_user.return_value = SimpleNamespace(
+            display_name="Grace Hopper",
+            username="grace",
+        )
+        gift_log = AsyncMock(return_value=True)
         self.assertTrue(
             await process_successful_payment(
-                message=gift_message, db=db, bot_token="token"
+                message=gift_message,
+                db=db,
+                bot_token="token",
+                log_payment=gift_log,
             )
         )
         self.assertEqual(db.record_star_payment.call_args.kwargs["recipient_user_id"], "2")
         self.assertIn("Regalo confirmado", gift_message.reply_text.await_args.args[0])
+        gift_text = gift_log.await_args.args[0]
+        self.assertIn("Operación: Regalo", gift_text)
+        self.assertIn("Concepto: Hisopo Masivo", gift_text)
+        self.assertIn("Destinatario: Grace Hopper (@grace) · ID 2", gift_text)
 
         db.record_star_payment.return_value = False
         duplicate_payload = create_payment_payload(
             "token", kind="donation", item_key="25", user_id="1"
         )
         duplicate = payment_message(successful_payment(duplicate_payload, amount=25))
+        duplicate_log = AsyncMock(return_value=True)
         self.assertFalse(
-            await process_successful_payment(message=duplicate, db=db, bot_token="token")
+            await process_successful_payment(
+                message=duplicate,
+                db=db,
+                bot_token="token",
+                log_payment=duplicate_log,
+            )
         )
         duplicate.reply_text.assert_not_awaited()
+        duplicate_log.assert_not_awaited()
+
+    async def test_successful_payment_survives_logging_failure(self) -> None:
+        db = MagicMock()
+        db.record_star_payment.return_value = True
+        payload = create_payment_payload(
+            "token",
+            kind="donation",
+            item_key="25",
+            user_id="1",
+        )
+        message = payment_message(successful_payment(payload, amount=25))
+        log_payment = AsyncMock(side_effect=RuntimeError("logging unavailable"))
+
+        self.assertTrue(
+            await process_successful_payment(
+                message=message,
+                db=db,
+                bot_token="token",
+                log_payment=log_payment,
+            )
+        )
+        log_payment.assert_awaited_once()
+        message.reply_text.assert_awaited_once()
+        self.assertIn("Gracias", message.reply_text.await_args.args[0])
+
+    async def test_payment_log_variants_and_account_labels(self) -> None:
+        db = MagicMock()
+        db.record_star_payment.return_value = True
+        payload = create_payment_payload(
+            "token",
+            kind="donation",
+            item_key="25",
+            user_id="1",
+        )
+        message = payment_message(successful_payment(payload, amount=25))
+        self.assertTrue(
+            await process_successful_payment(
+                message=message,
+                db=db,
+                bot_token="token",
+            )
+        )
+
+        intent = PaymentIntent("subscription", "club", "1", "1", None)
+        spec = invoice_spec("subscription", "club")
+        for recurring, expected in (
+            (True, "Club del Hisopo · renovación"),
+            (False, "Club del Hisopo · cuota"),
+        ):
+            with self.subTest(recurring=recurring):
+                text = _successful_payment_log_text(
+                    message=message,
+                    db=db,
+                    intent=intent,
+                    spec=spec,
+                    payment=successful_payment(
+                        "payload",
+                        amount=100,
+                        recurring=recurring,
+                        first=False,
+                    ),
+                )
+                self.assertIn(expected, text)
+                self.assertNotIn("Origen:", text)
+
+        db.get_user.return_value = None
+        self.assertEqual(_stored_user_label(db, "2"), "ID 2")
+        self.assertEqual(_account_label("3", "Nombre", None), "Nombre · ID 3")
+        self.assertEqual(_account_label("4", None, "@alias"), "@alias · ID 4")
+        self.assertEqual(_account_label("5", None, None), "ID 5")
+        self.assertEqual(
+            _telegram_user_label(
+                SimpleNamespace(full_name=None, username="@solo"),
+                "9",
+            ),
+            "@solo · ID 9",
+        )
 
     async def test_successful_payment_rejects_missing_or_invalid_confirmation(self) -> None:
         db = MagicMock()

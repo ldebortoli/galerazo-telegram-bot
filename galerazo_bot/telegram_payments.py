@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+from collections.abc import Awaitable, Callable
 from datetime import datetime, timezone
 from typing import Any
 
@@ -13,6 +14,8 @@ from .monetization import (
     CLUB_HISOPO,
     DONATION_TIERS,
     STARS_CURRENCY,
+    InvoiceSpec,
+    PaymentIntent,
     PaymentPayloadError,
     create_payment_payload,
     invoice_spec,
@@ -22,6 +25,7 @@ from .monetization import (
 
 logger = logging.getLogger(__name__)
 CAFE_URL = "https://cafecito.app/galerazobot"
+PaymentLogCallback = Callable[[str], Awaitable[bool]]
 
 
 async def create_invoice_url(
@@ -139,6 +143,7 @@ async def process_successful_payment(
     message: Message,
     db: Database,
     bot_token: str,
+    log_payment: PaymentLogCallback | None = None,
 ) -> bool:
     payment = message.successful_payment
     user = message.from_user
@@ -179,6 +184,22 @@ async def process_successful_payment(
     )
     if not recorded:
         return False
+    if log_payment is not None:
+        try:
+            await log_payment(
+                _successful_payment_log_text(
+                    message=message,
+                    db=db,
+                    intent=intent,
+                    spec=spec,
+                    payment=payment,
+                )
+            )
+        except Exception:
+            logger.exception(
+                "No pude registrar en el canal de logging el pago de Stars %s.",
+                payment.telegram_payment_charge_id,
+            )
     if intent.kind == "donation":
         response = f"¡Gracias por aportar ⭐ {payment.total_amount}! Tu apoyo no compra puntos ni ventajas."
     elif intent.kind == "subscription":
@@ -209,3 +230,74 @@ async def process_refunded_payment(*, message: Message, db: Database) -> bool:
 def _message_datetime(message: Message) -> datetime:
     value = message.date or datetime.now(timezone.utc)
     return value if value.tzinfo is not None else value.replace(tzinfo=timezone.utc)
+
+
+def _successful_payment_log_text(
+    *,
+    message: Message,
+    db: Database,
+    intent: PaymentIntent,
+    spec: InvoiceSpec,
+    payment: Any,
+) -> str:
+    is_gift = intent.kind == "product" and intent.recipient_user_id != intent.user_id
+    if intent.kind == "donation":
+        operation = "Donación"
+    elif intent.kind == "subscription":
+        if payment.is_first_recurring:
+            operation = "Club del Hisopo · primera cuota"
+        elif payment.is_recurring:
+            operation = "Club del Hisopo · renovación"
+        else:
+            operation = "Club del Hisopo · cuota"
+    elif is_gift:
+        operation = "Regalo"
+    else:
+        operation = "Compra"
+
+    lines = [
+        "⭐ Pago confirmado por Telegram",
+        f"Operación: {operation}",
+        f"Comprador: {_telegram_user_label(message.from_user, intent.user_id)}",
+        f"Importe: ⭐ {payment.total_amount}",
+    ]
+    if intent.kind != "donation":
+        lines.append(f"Concepto: {spec.title}")
+    if is_gift:
+        lines.append(
+            f"Destinatario: {_stored_user_label(db, intent.recipient_user_id)}"
+        )
+    if intent.source_chat_id is not None:
+        lines.append(f"Origen: chat {intent.source_chat_id}")
+    lines.append(f"Cobro Telegram: {payment.telegram_payment_charge_id}")
+    return "\n".join(lines)
+
+
+def _telegram_user_label(user: Any, fallback_user_id: str) -> str:
+    user_id = str(getattr(user, "id", None) or fallback_user_id)
+    display_name = getattr(user, "full_name", None)
+    username = getattr(user, "username", None)
+    return _account_label(user_id, display_name, username)
+
+
+def _stored_user_label(db: Database, user_id: str) -> str:
+    user = db.get_user(user_id)
+    if user is None:
+        return f"ID {user_id}"
+    return _account_label(user_id, user.display_name, user.username)
+
+
+def _account_label(
+    user_id: str,
+    display_name: object,
+    username: object,
+) -> str:
+    name = display_name.strip() if isinstance(display_name, str) else ""
+    alias = username.removeprefix("@").strip() if isinstance(username, str) else ""
+    if name and alias:
+        return f"{name} (@{alias}) · ID {user_id}"
+    if name:
+        return f"{name} · ID {user_id}"
+    if alias:
+        return f"@{alias} · ID {user_id}"
+    return f"ID {user_id}"
