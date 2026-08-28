@@ -6,15 +6,25 @@ from unittest.mock import AsyncMock, MagicMock, patch
 from telegram import Update
 from telegram.error import BadRequest, TimedOut
 
-from galerazo_bot.telegram_bot import _send_debug_update, _send_unhandled_error_event, _serialize_update
+from galerazo_bot.telegram_bot import (
+    _is_stale_callback_query_error,
+    _send_debug_update,
+    _send_log_document,
+    _send_unhandled_error_event,
+    _serialize_update,
+)
 
 
 class FakeBot:
     def __init__(self) -> None:
         self.messages: list[dict[str, object]] = []
+        self.documents: list[dict[str, object]] = []
 
     async def send_message(self, **kwargs) -> None:
         self.messages.append(kwargs)
+
+    async def send_document(self, **kwargs) -> None:
+        self.documents.append(kwargs)
 
 
 class DebugSerializationTests(unittest.IsolatedAsyncioTestCase):
@@ -98,7 +108,7 @@ class DebugSerializationTests(unittest.IsolatedAsyncioTestCase):
         self.assertFalse(sent)
         message.reply_document.assert_not_awaited()
 
-    async def test_unhandled_error_log_includes_update_json(self) -> None:
+    async def test_unhandled_error_sends_summary_and_full_debug_txt(self) -> None:
         bot = FakeBot()
         await _send_unhandled_error_event(
             bot,
@@ -108,11 +118,54 @@ class DebugSerializationTests(unittest.IsolatedAsyncioTestCase):
         )
 
         self.assertEqual(len(bot.messages), 1)
-        text = str(bot.messages[0]["text"])
-        self.assertTrue(text.startswith("RuntimeError: failure\n"))
-        self.assertIn("Error no handleado", text)
-        self.assertIn("Update JSON", text)
-        self.assertIn('"update_id": 23', text)
+        self.assertEqual(bot.messages[0]["text"], "RuntimeError: failure")
+        self.assertEqual(len(bot.documents), 1)
+        arguments = bot.documents[0]
+        debug_text = arguments["document"].getvalue().decode("utf-8")
+        self.assertEqual(arguments["filename"], "Debug del error de la update 23.txt")
+        self.assertIn("Error no handleado", debug_text)
+        self.assertIn("RuntimeError: failure", debug_text)
+        self.assertIn("Update JSON", debug_text)
+        self.assertIn('"update_id": 23', debug_text)
+        self.assertEqual(arguments["read_timeout"], 30)
+        self.assertEqual(arguments["write_timeout"], 30)
+        self.assertEqual(arguments["connect_timeout"], 30)
+        self.assertEqual(arguments["pool_timeout"], 30)
+
+    async def test_unhandled_error_without_log_chat_does_not_send_document(self) -> None:
+        bot = FakeBot()
+
+        await _send_unhandled_error_event(bot, None, RuntimeError("failure"), None)
+
+        self.assertEqual(bot.messages, [])
+        self.assertEqual(bot.documents, [])
+
+    async def test_error_debug_document_retries_one_timeout(self) -> None:
+        bot = SimpleNamespace(send_document=AsyncMock(side_effect=[TimedOut(), None]))
+
+        sent = await _send_log_document(bot, "-100123", b"debug", "debug.txt")
+
+        self.assertTrue(sent)
+        self.assertEqual(bot.send_document.await_count, 2)
+        for call in bot.send_document.await_args_list:
+            self.assertEqual(call.kwargs["document"].getvalue(), b"debug")
+
+    async def test_error_debug_document_returns_false_on_telegram_error(self) -> None:
+        bot = SimpleNamespace(send_document=AsyncMock(side_effect=BadRequest("rejected")))
+
+        sent = await _send_log_document(bot, "-100123", b"debug", "debug.txt")
+
+        self.assertFalse(sent)
+        self.assertEqual(bot.send_document.await_count, 1)
+
+    def test_detects_only_stale_callback_query_bad_request(self) -> None:
+        self.assertTrue(
+            _is_stale_callback_query_error(
+                BadRequest("Query is too old and response timeout expired or query ID is invalid")
+            )
+        )
+        self.assertFalse(_is_stale_callback_query_error(BadRequest("message is too old")))
+        self.assertFalse(_is_stale_callback_query_error(RuntimeError("query is too old")))
 
 
 if __name__ == "__main__":

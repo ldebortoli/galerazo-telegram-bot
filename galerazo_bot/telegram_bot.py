@@ -146,6 +146,11 @@ TELEGRAM_FILE_DOWNLOAD_LIMIT_BYTES = 20 * 1024 * 1024
 TELEGRAM_MESSAGE_LIMIT_CHARS = 4096
 TELEGRAM_DOCUMENT_TIMEOUT_SECONDS = 30
 TELEGRAM_REQUEST_TIMEOUT_SECONDS = 30
+STALE_CALLBACK_QUERY_ERROR_MARKERS = (
+    "query is too old",
+    "response timeout expired",
+    "query id is invalid",
+)
 PAGINATED_METADATA_TTL = timedelta(days=14)
 RESTART_CONFIRMATION_TTL = timedelta(minutes=5)
 HISOPO_MESSAGE_RETENTION = timedelta(hours=24)
@@ -2287,6 +2292,10 @@ async def _handle_error(update: object, context: ContextTypes.DEFAULT_TYPE) -> N
         )
         return
 
+    if context.error is not None and _is_stale_callback_query_error(context.error):
+        logger.debug("Callback query vencida ignorada: %s", context.error)
+        return
+
     logger.exception("Error no handleado procesando update.", exc_info=context.error)
     if isinstance(context.error, Conflict):
         logger.error(
@@ -3233,19 +3242,51 @@ async def _send_unhandled_error_event(
 ) -> None:
     summary = exception_summary(exc)
     trace = "".join(traceback.format_exception(type(exc), exc, exc.__traceback__))
-    if len(trace) > 2200:
-        trace = trace[-2200:]
-
     update_json = _serialize_update(update)
-    text = redact_secrets(
-        f"{summary}\n\nError no handleado:\n{trace}\nUpdate JSON:\n{update_json}"
+    debug_text = redact_secrets(
+        f"Error no handleado:\n{trace}\nUpdate JSON:\n{update_json}"
     )
-    await _send_log_text_with_truncation(
+    await _send_log_text_with_truncation(bot, log_chat_id, summary)
+    if not log_chat_id:
+        return
+
+    update_id = update.update_id if isinstance(update, Update) else None
+    update_label = str(update_id) if update_id is not None else "sin id"
+    await _send_log_document(
         bot,
         log_chat_id,
-        text,
-        truncation_notice="El reporte de error y su update fueron truncados al limite de Telegram.",
+        debug_text.encode("utf-8"),
+        f"Debug del error de la update {update_label}.txt",
     )
+
+
+async def _send_log_document(
+    bot: Bot,
+    log_chat_id: str,
+    payload: bytes,
+    filename: str,
+) -> bool:
+    async def send_document() -> None:
+        await bot.send_document(
+            chat_id=_parse_chat_id(log_chat_id),
+            document=BytesIO(payload),
+            filename=filename,
+            read_timeout=TELEGRAM_DOCUMENT_TIMEOUT_SECONDS,
+            write_timeout=TELEGRAM_DOCUMENT_TIMEOUT_SECONDS,
+            connect_timeout=TELEGRAM_DOCUMENT_TIMEOUT_SECONDS,
+            pool_timeout=TELEGRAM_DOCUMENT_TIMEOUT_SECONDS,
+        )
+
+    try:
+        try:
+            await send_document()
+        except TimedOut:
+            logger.warning("Timeout al enviar el TXT de un error; reintentando una vez.")
+            await send_document()
+    except (TelegramError, OSError, ValueError) as exc:
+        logger.warning("No pude enviar el TXT de un error al canal de logging: %s", exc)
+        return False
+    return True
 
 
 async def _send_log_event(bot: Bot, log_chat_id: str | None, text: str) -> bool:
@@ -3446,6 +3487,13 @@ def _serialize_update(update: object) -> str:
     else:
         payload = update
     return json.dumps(payload, ensure_ascii=False, indent=2, default=repr)
+
+
+def _is_stale_callback_query_error(exc: BaseException) -> bool:
+    if not isinstance(exc, BadRequest):
+        return False
+    detail = str(exc).casefold()
+    return all(marker in detail for marker in STALE_CALLBACK_QUERY_ERROR_MARKERS)
 
 
 async def _leave_chat(db: Database, bot: Bot, chat_id: int) -> bool:

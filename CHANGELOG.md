@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.53] - 2026-08-28
+
+- Correcciones y mejoras del registro de errores: el canal muestra solo la excepción y recibe el traceback junto con la update completa en un TXT adjunto; los callbacks que Telegram ya considera vencidos se descartan silenciosamente.
+
 ## [0.52] - 2026-08-28
 
 - Se suman seis Hisopos especiales a la tienda y al álbum unificado: Mini, Pico, Pala, Gota, Rosáceo y Alfiler. Pueden comprarse repetidamente, regalarse mediante una compra y acreditarse con el comando privado de desarrollo como los demás coleccionables.

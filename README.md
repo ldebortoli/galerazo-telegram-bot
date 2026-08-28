@@ -210,7 +210,7 @@ Para conseguir tu user id podes usar `/debug` una vez que el bot este corriendo 
 El canal de logging recibe solo los eventos que definamos explicitamente. Por ahora registra:
 
 - Inicio del bot.
-- Errores no handleados.
+- Errores no handleados: una línea con la excepción y un TXT de debug adjunto.
 
 Para configurarlo:
 
@@ -362,7 +362,7 @@ Por ahora el canal de logging solo recibe:
 - Avisos cuando un mensaje no paginable supera el limite de Telegram y se envia truncado.
 - Reporte diario del gasto mensual de Google Cloud cuando Billing esta configurado.
 
-Los reportes de excepciones comienzan con `TipoDeExcepcion: detalle` para que la causa sea visible inmediatamente; debajo conservan el contexto, la update y el traceback completo para diagnostico.
+Los reportes de excepciones muestran en el mensaje solamente `TipoDeExcepcion: detalle`. El traceback y la update completa se adjuntan sin caption en `Debug del error de la update {update_id}.txt`, de modo que nunca se recortan al límite de los mensajes. El `BadRequest` que Telegram devuelve cuando un callback ya venció (`Query is too old...`) se considera esperado y no se envía al canal.
 
 El canal de anuncios recibe mensajes enviados por devs con:
 

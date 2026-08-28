@@ -754,6 +754,16 @@ class CommandAndCallbackEntrypointTests(unittest.IsolatedAsyncioTestCase):
             await tb._handle_error(None, error_context)
         send.assert_not_awaited()
 
+        error_context.error = BadRequest(
+            "Query is too old and response timeout expired or query ID is invalid"
+        )
+        with patch.object(tb, "_send_unhandled_error_event", AsyncMock()) as send, patch.object(
+            tb.logger, "exception"
+        ) as log_exception:
+            await tb._handle_error({"callback_query": {}}, error_context)
+        send.assert_not_awaited()
+        log_exception.assert_not_called()
+
         for source in ("update", "job", "coroutine"):
             scoped_context = SimpleNamespace(
                 error=NetworkError("network failure"),
@@ -1289,7 +1299,7 @@ class PermissionsLoggingBackupAndMiscTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(await tb._resolve_russian_roulette_hit(bot, -1, "2", "99", frozenset()), tb.RussianRouletteHitResult.FAILED)
 
     async def test_logging_unhandled_announcement_and_status_paths(self) -> None:
-        bot = SimpleNamespace(send_message=AsyncMock())
+        bot = SimpleNamespace(send_message=AsyncMock(), send_document=AsyncMock())
         with patch.object(tb, "_send_log_text_with_truncation", AsyncMock()) as send:
             try:
                 raise RuntimeError("x" * 3000)
@@ -1297,7 +1307,10 @@ class PermissionsLoggingBackupAndMiscTests(unittest.IsolatedAsyncioTestCase):
                 await tb._send_unhandled_error_event(bot, "-10", exc, None)
         error_text = send.await_args.args[2]
         self.assertTrue(error_text.startswith("RuntimeError: "))
-        self.assertIn("Error no handleado", error_text)
+        self.assertNotIn("Error no handleado", error_text)
+        debug_text = bot.send_document.await_args.kwargs["document"].getvalue().decode("utf-8")
+        self.assertIn("Error no handleado", debug_text)
+        self.assertIn("Update JSON", debug_text)
         with patch.object(tb, "save_logging_status") as status:
             self.assertFalse(await tb._send_log_event(bot, None, "x"))
         status.assert_called_once()
