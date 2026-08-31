@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.55] - 2026-08-31
+
+- `/debug` ahora está disponible para cualquier usuario y aparece entre los comandos generales; devuelve únicamente el update que Telegram entregó para ese mensaje.
+
 ## [0.54] - 2026-08-28
 
 - Nuevo Hisopo Usado: aparece camuflado, revela su arte con cera al capturarlo, resta 2 puntos y ocupa un 5 % tomado íntegramente del Hisopo Común. También se incorpora a la colección, las reglas y la Mini App.

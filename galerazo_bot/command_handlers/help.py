@@ -6,14 +6,14 @@ from ..roles import CommandContext, UserLevel
 
 
 HELP_GROUPS = (
-    ("general", {"help", "ayuda", "start", "hola", "lil", "nivel", "version", "chats", "reportar", "donar", "donantes", "paysupport", "terminos"}),
+    ("general", {"help", "ayuda", "start", "hola", "lil", "nivel", "version", "chats", "debug", "reportar", "donar", "donantes", "paysupport", "terminos"}),
     ("blocking", {"bloquear", "desbloquear", "desloquear", "listanegra", "bloqueados"}),
     ("chat_admin", {"config", "restringir", "habilitar", "restringidos", "salir"}),
     ("galeraza", {"galeraza", "galerazas"}),
     ("triggers", {"agregartrigger", "agrtrigger", "borrartrigger", "eliminartrigger", "eltrigger", "triggers"}),
     ("games", {"hisopos", "coleccionhisopos", "reglashisopo", "ruletarusa"}),
     ("expenses", {"gasto", "pagoresumen", "cierre", "ayudagastos", "ultimosgastos", "estadogastos", "sincronizargastos"}),
-    ("dev", {"anuncio", "novedad", "backup", "debug", "reiniciarbot", "apagar"}),
+    ("dev", {"anuncio", "novedad", "backup", "reiniciarbot", "apagar"}),
 )
 EXPENSE_COMMAND_KEYS = frozenset(
     {"gasto", "pagoresumen", "cierre", "ayudagastos", "ultimosgastos", "estadogastos", "sincronizargastos"}

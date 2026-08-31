@@ -24,7 +24,7 @@ Base para un bot de Telegram con una version estable y reproducible de Python, `
 - `habilitar`: vuelve a habilitar un usuario restringido en el grupo actual. Solo admines del chat, quien agrego el bot o devs.
 - `restringidos`: lista usuarios restringidos en el grupo actual. Solo admines del chat, quien agrego el bot o devs.
 - `backup`: responde con un backup de SQLite. Solo devs.
-- `debug`: responde con el objeto update del mensaje. Solo devs.
+- `debug`: responde con el objeto update que Telegram entregó para ese mensaje.
 - `chats`: muestra estadisticas de chats por estado y tipo.
 - `config`: abre el tablero de configuracion del grupo. Solo admines del chat, quien agrego el bot o devs.
 - `galerazas`: muestra el ranking de La Galeraza en grupos/supergrupos.
@@ -203,7 +203,7 @@ poder ejecutarlas:
 TELEGRAM_OWNER_USER_ID=<tu-user-id>
 ```
 
-Para conseguir tu user id podes usar `/debug` una vez que el bot este corriendo y te hayas configurado, o usar un bot externo de Telegram que muestre tu id.
+Para conseguir tu user id podes usar `/debug` una vez que el bot este corriendo, o usar un bot externo de Telegram que muestre tu id.
 
 ### 3. Configurar canal de logging
 
@@ -400,7 +400,7 @@ El bot crea siempre una copia local en `backups/`. Si el archivo entra en el lim
 
 ## Debug
 
-Los devs pueden inspeccionar el update crudo de Telegram con:
+Cualquier usuario puede inspeccionar el update que Telegram entregó para su mensaje con:
 
 ```powershell
 /debug

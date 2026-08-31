@@ -248,7 +248,7 @@ class LifecycleAndBillingTests(unittest.IsolatedAsyncioTestCase):
             {
                 "help", "ayuda", "start", "hola", "lil", "nivel", "version",
                 "chats", "reportar", "donar", "donantes", "paysupport", "terminos",
-                "config", "reglashisopo",
+                "config", "debug", "reglashisopo",
             },
         )
         self.assertTrue(
@@ -263,9 +263,11 @@ class LifecycleAndBillingTests(unittest.IsolatedAsyncioTestCase):
             <= group_names
         )
         self.assertIn("ruletarusa", group_names)
-        self.assertFalse({"config", "backup", "debug", "gasto"} & group_names)
+        self.assertIn("debug", group_names)
+        self.assertFalse({"config", "backup", "gasto"} & group_names)
         self.assertTrue({"config", "restringir", "habilitar", "restringidos", "reglashisopo"} <= admin_names)
-        self.assertFalse({"backup", "debug", "gasto", "estadogastos"} & admin_names)
+        self.assertIn("debug", admin_names)
+        self.assertFalse({"backup", "gasto", "estadogastos"} & admin_names)
         self.assertIn("shows this help", {command.description for command in english_commands})
         self.assertIn(
             "shows the Swab Collector rules",

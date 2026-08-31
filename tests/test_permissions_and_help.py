@@ -11,6 +11,31 @@ from galerazo_bot.roles import UserLevel
 
 
 class PermissionsAndHelpTests(unittest.TestCase):
+    def test_common_user_can_use_debug(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            db = Database(Path(directory) / "test.sqlite3")
+            db.get_or_create_user("1", "Common")
+            calls = 0
+
+            async def send_debug_update() -> bool:
+                nonlocal calls
+                calls += 1
+                return True
+
+            response = asyncio.run(
+                handle_command_async(
+                    "/debug",
+                    "1",
+                    db,
+                    chat_id="-1",
+                    chat_type="group",
+                    send_debug_update=send_debug_update,
+                )
+            )
+
+            self.assertIsNone(response)
+            self.assertEqual(calls, 1)
+
     def test_common_user_cannot_use_dev_command(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             db = Database(Path(directory) / "test.sqlite3")
@@ -131,7 +156,7 @@ class PermissionsAndHelpTests(unittest.TestCase):
 
             self.assertIn("Comandos generales:", common_help)
             self.assertNotIn("Comandos de desarrollo:", common_help)
-            self.assertNotIn("/debug:", common_help)
+            self.assertIn("/debug:", common_help)
             self.assertNotIn("enviame /help por privado", common_help)
             self.assertNotIn("enviame /help por privado", admin_help)
             self.assertIn("Comandos de desarrollo:", dev_private_help)
@@ -140,7 +165,7 @@ class PermissionsAndHelpTests(unittest.TestCase):
             self.assertIn("/salir:", dev_private_help)
             self.assertNotIn("enviame /help por privado", dev_private_help)
             self.assertNotIn("Comandos de desarrollo:", dev_group_help)
-            self.assertNotIn("/debug:", dev_group_help)
+            self.assertIn("/debug:", dev_group_help)
             self.assertNotIn("/bloquear:", dev_group_help)
             self.assertNotIn("/salir:", dev_group_help)
             self.assertTrue(

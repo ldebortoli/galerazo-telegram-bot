@@ -16,5 +16,5 @@ async def handle(context: CommandContext, _db: Database) -> str | None:
 
 
 COMMANDS = {
-    "debug": Command("debug", "devuelve el update crudo del mensaje", handle, UserLevel.DEV),
+    "debug": Command("debug", "devuelve el update crudo del mensaje", handle, UserLevel.COMMON),
 }
