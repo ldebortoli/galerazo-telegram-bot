@@ -10,7 +10,7 @@ certifi==2026.7.22
 cffi==2.1.1
 charset-normalizer==3.5.1
 colorama==0.4.6
-coverage==7.15.4
+coverage==7.16.0
 cryptography==50.0.1
 frozenlist==1.8.0
 google-api-core==2.34.0
@@ -21,8 +21,8 @@ google-cloud-core==2.7.0
 google-crc32c==1.8.0
 google-resumable-media==2.10.2
 googleapis-common-protos==1.75.2
-grpcio==1.83.0
-grpcio-status==1.83.0
+grpcio==1.83.1
+grpcio-status==1.83.1
 gspread==6.2.1
 h11==0.16.0
 httpcore==1.0.9
