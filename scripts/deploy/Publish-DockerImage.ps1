@@ -14,7 +14,7 @@ Set-StrictMode -Version Latest
 $projectRoot = (Resolve-Path (Join-Path $PSScriptRoot "..\..")).Path
 $buildScript = Join-Path $PSScriptRoot "Build-DockerImage.ps1"
 $broadcastValidator = Join-Path $projectRoot "scripts\check_release_broadcast.py"
-$projectPython = Join-Path $projectRoot ".venv\Scripts\python.exe"
+$runtimeValidator = Join-Path $projectRoot "scripts\runtime_versions.py"
 
 function Assert-Command {
     param([Parameter(Mandatory = $true)][string]$Name)
@@ -38,10 +38,33 @@ Assert-Command -Name "docker"
 Assert-Command -Name "gcloud"
 Assert-Command -Name "git"
 
-if (-not (Test-Path -LiteralPath $projectPython)) {
-    throw "Falta el runtime local .venv para validar el broadcast de novedades."
+$projectPython = $null
+$pythonPrefixArguments = @()
+foreach ($candidate in @(
+    (Join-Path $projectRoot ".venv\Scripts\python.exe"),
+    (Join-Path $projectRoot ".venv/bin/python")
+)) {
+    if (Test-Path -LiteralPath $candidate) {
+        $projectPython = $candidate
+        break
+    }
 }
-Invoke-Native -Command $projectPython -Arguments @($broadcastValidator)
+if (-not $projectPython) {
+    $pythonLauncher = Get-Command "py" -ErrorAction SilentlyContinue
+    if ($pythonLauncher) {
+        $projectPython = $pythonLauncher.Source
+        $pythonPrefixArguments = @("-3.14")
+    }
+    else {
+        $pythonCommand = Get-Command "python" -ErrorAction SilentlyContinue
+        if (-not $pythonCommand) {
+            throw "No se encontro Python para validar el runtime y el broadcast de novedades."
+        }
+        $projectPython = $pythonCommand.Source
+    }
+}
+Invoke-Native -Command $projectPython -Arguments @($pythonPrefixArguments + $runtimeValidator)
+Invoke-Native -Command $projectPython -Arguments @($pythonPrefixArguments + $broadcastValidator)
 
 foreach ($value in @($ProjectId, $Location, $Repository)) {
     if ($value -notmatch '^[A-Za-z0-9][A-Za-z0-9._:-]*$') {

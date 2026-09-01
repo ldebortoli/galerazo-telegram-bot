@@ -354,8 +354,27 @@ class DeploymentAutomationTests(unittest.TestCase):
         self.assertIn("auth", publish)
         self.assertIn("configure-docker", publish)
         self.assertIn("last-image.txt", publish)
+        self.assertIn("runtime_versions.py", publish)
         self.assertIn("check_release_broadcast.py", publish)
+        self.assertIn('Get-Command "py"', publish)
+        self.assertIn('Get-Command "python"', publish)
+        self.assertIn(".venv\\Scripts\\python.exe", publish)
+        self.assertIn(".venv/bin/python", publish)
+        runtime_invocation = "@($pythonPrefixArguments + $runtimeValidator)"
+        broadcast_invocation = "@($pythonPrefixArguments + $broadcastValidator)"
+        self.assertLess(publish.index(runtime_invocation), publish.index(broadcast_invocation))
         self.assertLess(publish.index("check_release_broadcast.py"), publish.index("& $buildScript"))
+
+    def test_release_failure_notifications_require_and_encode_a_safe_detail(self) -> None:
+        invoke = (
+            PROJECT_ROOT / "scripts" / "deploy" / "Invoke-GceBotctl.ps1"
+        ).read_text(encoding="utf-8")
+
+        self.assertIn("ReleaseDetail", invoke)
+        self.assertIn("ReleaseDetail es obligatorio", invoke)
+        self.assertIn("ReleaseDetail solo se admite", invoke)
+        self.assertIn("[Convert]::ToBase64String", invoke)
+        self.assertIn("[Text.Encoding]::UTF8.GetBytes", invoke)
 
     def test_remote_deploy_backs_up_and_rolls_back_failed_release(self) -> None:
         deploy = (PROJECT_ROOT / "deploy" / "gce" / "deploy.sh").read_text(

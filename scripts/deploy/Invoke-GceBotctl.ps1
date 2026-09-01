@@ -8,6 +8,7 @@ param(
     [ValidateSet("delete-trigger", "block-user", "delete-and-block")][string]$ModerationAction,
     [string]$OutputFile,
     [ValidateSet("started", "succeeded", "failed", "skipped")][string]$ReleaseEvent,
+    [ValidateLength(1, 800)][string]$ReleaseDetail,
     [switch]$AcknowledgeModeration,
     [switch]$AcknowledgeStop
 )
@@ -34,6 +35,12 @@ if ($Action -eq "stop" -and -not $AcknowledgeStop) {
 }
 if ($Action -eq "notify-release" -and -not $ReleaseEvent) {
     throw "ReleaseEvent es obligatorio para notify-release."
+}
+if ($Action -eq "notify-release" -and $ReleaseEvent -eq "failed" -and -not $ReleaseDetail) {
+    throw "ReleaseDetail es obligatorio para informar un release fallido."
+}
+if ($Action -eq "notify-release" -and $ReleaseEvent -ne "failed" -and $ReleaseDetail) {
+    throw "ReleaseDetail solo se admite para un release fallido."
 }
 
 $gcloudCommand = Get-Command "gcloud" -ErrorAction SilentlyContinue
@@ -93,6 +100,10 @@ try {
     }
     elseif ($Action -eq "notify-release") {
         $remoteArguments += @($ReleaseEvent)
+        if ($ReleaseDetail) {
+            $detailBytes = [Text.Encoding]::UTF8.GetBytes($ReleaseDetail)
+            $remoteArguments += [Convert]::ToBase64String($detailBytes)
+        }
     }
     $remoteCommand = $remoteArguments -join " "
     $output = & $gcloud compute ssh $Instance `

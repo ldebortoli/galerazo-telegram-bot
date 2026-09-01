@@ -132,6 +132,35 @@ class BotControlContractTests(unittest.TestCase):
         self.assertEqual(fields["chat_id"], "-1004440313456")
         self.assertIn("terminé", fields["text"])
 
+    def test_failed_release_notification_includes_a_bounded_sanitized_detail(self) -> None:
+        detail = (
+            "Falló con 123456789:abcdefghijklmnopqrstuvwxyzABCDEF\n"
+            + "x" * 900
+        )
+        encoded = botctl.base64.b64encode(detail.encode("utf-8")).decode("ascii")
+        with patch.object(
+            botctl, "_telegram_json", return_value={"ok": True, "result": {}}
+        ) as telegram:
+            result = botctl.notify_release("failed", encoded)
+
+        self.assertEqual(result, {"notified": True, "event": "failed"})
+        message = telegram.call_args.args[2]["text"]
+        self.assertIn("Causa: Falló con [TELEGRAM_TOKEN_OCULTO]", message)
+        self.assertNotIn("abcdefghijklmnopqrstuvwxyzABCDEF", message)
+        self.assertLessEqual(len(message.split("Causa: ", 1)[1]), 800)
+
+    def test_release_notification_rejects_missing_invalid_or_unexpected_detail(self) -> None:
+        with self.assertRaisesRegex(ValueError, "detalle es obligatorio"):
+            botctl.notify_release("failed")
+        with self.assertRaisesRegex(ValueError, "Base64 UTF-8"):
+            botctl.notify_release("failed", "no-es-base64!")
+        encoded = botctl.base64.b64encode(b"detalle").decode("ascii")
+        with self.assertRaisesRegex(ValueError, "solo se admite"):
+            botctl.notify_release("succeeded", encoded)
+        control = botctl.base64.b64encode(b"detalle\x00oculto").decode("ascii")
+        with self.assertRaisesRegex(ValueError, "caracteres de control"):
+            botctl.notify_release("failed", control)
+
     def test_release_notifications_reject_unknown_events(self) -> None:
         with self.assertRaisesRegex(ValueError, "Evento de release inválido"):
             botctl.notify_release("arbitrary-message")

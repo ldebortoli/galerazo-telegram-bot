@@ -9,6 +9,7 @@ reducidas a moderación explícita y detención del servicio de Compose.
 from __future__ import annotations
 
 import base64
+import binascii
 from contextlib import closing
 from datetime import UTC, datetime
 import json
@@ -96,10 +97,30 @@ def _token() -> str:
     return token
 
 
-def notify_release(event: str) -> dict[str, Any]:
+def _decode_release_failure_detail(encoded_detail: str | None) -> str:
+    if not encoded_detail:
+        raise ValueError("El detalle es obligatorio para un release fallido.")
+    try:
+        raw_detail = base64.b64decode(encoded_detail, validate=True)
+        detail = raw_detail.decode("utf-8")
+    except (binascii.Error, UnicodeDecodeError, ValueError) as exc:
+        raise ValueError("El detalle del release no es Base64 UTF-8 válido.") from exc
+    if any(ord(character) < 32 and character not in "\r\n\t" for character in detail):
+        raise ValueError("El detalle del release contiene caracteres de control.")
+    detail = " ".join(TOKEN_PATTERN.sub("[TELEGRAM_TOKEN_OCULTO]", detail).split())
+    if not detail:
+        raise ValueError("El detalle del release fallido está vacío.")
+    return detail[:800]
+
+
+def notify_release(event: str, encoded_detail: str | None = None) -> dict[str, Any]:
     message = RELEASE_NOTIFICATION_MESSAGES.get(event)
     if message is None:
         raise ValueError("Evento de release inválido.")
+    if event == "failed":
+        message = f"{message}\nCausa: {_decode_release_failure_detail(encoded_detail)}"
+    elif encoded_detail is not None:
+        raise ValueError("El detalle solo se admite para un release fallido.")
     chat_id = _read_env().get("TELEGRAM_LOG_CHAT_ID", "")
     if not chat_id:
         raise RuntimeError("TELEGRAM_LOG_CHAT_ID no está configurado.")
@@ -501,8 +522,8 @@ def main(argv: list[str] | None = None) -> int:
             payload = moderate_trigger(arguments[0], arguments[1])
         elif action == "stop" and not arguments:
             payload = stop_service()
-        elif action == "notify-release" and len(arguments) == 1:
-            payload = notify_release(arguments[0])
+        elif action == "notify-release" and len(arguments) in {1, 2}:
+            payload = notify_release(arguments[0], arguments[1] if len(arguments) == 2 else None)
         else:
             raise ValueError(
                 "Uso: botctl.py status|triggers|media|moderate|stop|notify-release"

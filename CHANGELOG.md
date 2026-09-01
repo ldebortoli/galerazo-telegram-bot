@@ -3,6 +3,7 @@
 ## [0.58] - 2026-09-01
 
 - Correcciones y mejoras: cuando se acumulan varias versiones, el anuncio agrupa las novedades por tema en un resumen breve y evita repetir cada cambio individual.
+- Los releases programados validan el resumen desde su worktree aislado y, si fallan, informan en el canal de logs una causa útil, acotada y sin credenciales.
 
 ## [0.57] - 2026-09-01
 
