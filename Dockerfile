@@ -25,6 +25,7 @@ LABEL org.opencontainers.image.source="https://github.com/ldebortoli/galerazo-te
 
 COPY --chown=galerazo:galerazo app.py ./app.py
 COPY --chown=galerazo:galerazo CHANGELOG.md ./CHANGELOG.md
+COPY --chown=galerazo:galerazo BROADCAST_CHANGELOG.md ./BROADCAST_CHANGELOG.md
 COPY --chown=galerazo:galerazo .python-version ./.python-version
 COPY --chown=galerazo:galerazo galerazo_bot ./galerazo_bot
 COPY --chown=galerazo:galerazo mini_app ./mini_app

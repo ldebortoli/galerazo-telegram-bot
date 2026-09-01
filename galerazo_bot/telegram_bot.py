@@ -137,6 +137,7 @@ from .pagination import (
 )
 from .roles import BackupResult, RussianRouletteHitResult, TriggerModerationResult, TriggerPayload, UserLevel
 from .runtime import ensure_python_version
+from .release_broadcast import release_broadcast_notes
 from .telegram_payments import (
     answer_pre_checkout_query,
     process_refunded_payment,
@@ -145,7 +146,7 @@ from .telegram_payments import (
 )
 from .telegram_retry import build_retrying_ext_bot
 from .update_processor import PerChatUpdateProcessor
-from .versioning import CURRENT_VERSION, pending_release_notes
+from .versioning import CURRENT_VERSION
 
 
 logger = logging.getLogger(__name__)
@@ -417,9 +418,16 @@ async def _announce_current_release(db: Database, bot: Bot, settings: Settings) 
         return False
 
     try:
-        release_notes = pending_release_notes(announced_version)
+        release_notes = release_broadcast_notes(
+            CURRENT_VERSION,
+            announced_version,
+            TELEGRAM_MESSAGE_LIMIT_CHARS,
+        )
     except (OSError, ValueError) as exc:
-        error_text = f"No pude leer el changelog de la version {CURRENT_VERSION}: {exc}"
+        error_text = (
+            f"No pude preparar el broadcast de novedades de la version "
+            f"{CURRENT_VERSION}: {exc}. La version queda pendiente."
+        )
         logger.error(error_text)
         await _send_log_event(bot, settings.telegram_log_chat_id, error_text)
         return False

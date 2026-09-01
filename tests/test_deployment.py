@@ -354,6 +354,8 @@ class DeploymentAutomationTests(unittest.TestCase):
         self.assertIn("auth", publish)
         self.assertIn("configure-docker", publish)
         self.assertIn("last-image.txt", publish)
+        self.assertIn("check_release_broadcast.py", publish)
+        self.assertLess(publish.index("check_release_broadcast.py"), publish.index("& $buildScript"))
 
     def test_remote_deploy_backs_up_and_rolls_back_failed_release(self) -> None:
         deploy = (PROJECT_ROOT / "deploy" / "gce" / "deploy.sh").read_text(

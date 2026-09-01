@@ -324,13 +324,18 @@ class LifecycleAndBillingTests(unittest.IsolatedAsyncioTestCase):
         self.assertFalse(await tb._announce_current_release(db, bot, settings()))
 
         db.get_announced_release_version.return_value = None
-        with patch.object(tb, "pending_release_notes", side_effect=ValueError("bad")), patch.object(
+        with patch.object(tb, "release_broadcast_notes", side_effect=ValueError("bad")), patch.object(
             tb, "_send_log_event", AsyncMock(return_value=True)
         ) as log:
             self.assertFalse(await tb._announce_current_release(db, bot, settings()))
-        log.assert_awaited_once_with(bot, "-10", f"No pude leer el changelog de la version {tb.CURRENT_VERSION}: bad")
+        log.assert_awaited_once_with(
+            bot,
+            "-10",
+            f"No pude preparar el broadcast de novedades de la version {tb.CURRENT_VERSION}: "
+            "bad. La version queda pendiente.",
+        )
 
-        with patch.object(tb, "pending_release_notes", return_value="notes"), patch.object(
+        with patch.object(tb, "release_broadcast_notes", return_value="notes"), patch.object(
             tb, "_broadcast_announcement", AsyncMock(return_value=tb.AnnouncementBroadcastResult())
         ), patch.object(tb, "_send_log_event", AsyncMock(return_value=True)) as log:
             self.assertFalse(await tb._announce_current_release(db, bot, settings()))
@@ -341,7 +346,7 @@ class LifecycleAndBillingTests(unittest.IsolatedAsyncioTestCase):
             "el canal de anuncios no confirmo el envio. La version queda pendiente.",
         )
 
-        with patch.object(tb, "pending_release_notes", return_value="notes"), patch.object(
+        with patch.object(tb, "release_broadcast_notes", return_value="notes"), patch.object(
             tb,
             "_broadcast_announcement",
             AsyncMock(return_value=tb.AnnouncementBroadcastResult(too_long=True)),
@@ -357,7 +362,7 @@ class LifecycleAndBillingTests(unittest.IsolatedAsyncioTestCase):
             "La version queda pendiente.",
         )
 
-        with patch.object(tb, "pending_release_notes", return_value="notes"), patch.object(
+        with patch.object(tb, "release_broadcast_notes", return_value="notes"), patch.object(
             tb,
             "_broadcast_announcement",
             AsyncMock(return_value=tb.AnnouncementBroadcastResult(announcement_channel_sent=True)),

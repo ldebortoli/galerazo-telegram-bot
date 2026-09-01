@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.58] - 2026-09-01
+
+- Correcciones y mejoras: cuando se acumulan varias versiones, el anuncio agrupa las novedades por tema en un resumen breve y evita repetir cada cambio individual.
+
 ## [0.57] - 2026-09-01
 
 - Si el anuncio automático de novedades no puede completarse, el motivo queda informado en el canal de logs y la versión permanece pendiente para un reintento seguro.
