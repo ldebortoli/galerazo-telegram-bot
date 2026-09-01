@@ -363,9 +363,15 @@ class DeploymentAutomationTests(unittest.TestCase):
             encoding="utf-8"
         )
 
-        backup_index = deploy.index("galerazo_bot.deploy_backup")
         pull_index = deploy.index('docker compose -f "${compose_file}" pull bot')
-        self.assertLess(backup_index, pull_index)
+        preflight_index = deploy.index("docker run --rm --network none --read-only")
+        backup_index = deploy.index("galerazo_bot.deploy_backup")
+        image_replace_index = deploy.index("printf 'GALERAZO_IMAGE=%s")
+        self.assertLess(pull_index, preflight_index)
+        self.assertLess(preflight_index, backup_index)
+        self.assertLess(backup_index, image_replace_index)
+        self.assertIn("production was not changed", deploy)
+        self.assertIn("logs --no-color --tail 200 bot", deploy)
         self.assertIn("previous-image.env", deploy)
         self.assertIn("Restoring", deploy)
         self.assertIn("No previous image exists", deploy)

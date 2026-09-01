@@ -62,14 +62,16 @@ def load_settings() -> Settings:
         database_path=Path(os.getenv("DATABASE_PATH", "data/galerazo.sqlite3")),
         google_sheets_credentials_json_path=_optional_path(os.getenv("GOOGLE_SHEETS_CREDENTIALS_JSON_PATH")),
         google_sheets_spreadsheet_id=os.getenv("GOOGLE_SHEETS_SPREADSHEET_ID") or None,
-        google_sheets_worksheet_name=os.getenv("GOOGLE_SHEETS_WORKSHEET_NAME", "Gastos y compras"),
-        google_sheets_cashflow_sheet_prefix=os.getenv(
+        google_sheets_worksheet_name=_env_or_default(
+            "GOOGLE_SHEETS_WORKSHEET_NAME", "Gastos y compras"
+        ),
+        google_sheets_cashflow_sheet_prefix=_env_or_default(
             "GOOGLE_SHEETS_CASHFLOW_SHEET_PREFIX", "Gastos"
         ),
         openai_api_key=os.getenv("OPENAI_API_KEY") or None,
         google_cloud_billing_project_id=os.getenv("GOOGLE_CLOUD_BILLING_PROJECT_ID") or None,
         google_cloud_billing_table=os.getenv("GOOGLE_CLOUD_BILLING_TABLE") or None,
-        google_cloud_billing_report_time=os.getenv(
+        google_cloud_billing_report_time=_env_or_default(
             "GOOGLE_CLOUD_BILLING_REPORT_TIME", "09:00"
         ),
         telegram_hisopo_common_file_id=os.getenv("TELEGRAM_HISOPO_COMMON_FILE_ID") or None,
@@ -103,14 +105,21 @@ def load_settings() -> Settings:
         telegram_hisopo_giant_file_id=os.getenv("TELEGRAM_HISOPO_GIANT_FILE_ID") or None,
         telegram_hisopo_miracle_file_id=os.getenv("TELEGRAM_HISOPO_MIRACLE_FILE_ID") or None,
         telegram_mini_app_url=os.getenv("TELEGRAM_MINI_APP_URL") or None,
-        telegram_mini_app_short_name=os.getenv("TELEGRAM_MINI_APP_SHORT_NAME", "hisopos"),
-        mini_app_bind_host=os.getenv("MINI_APP_BIND_HOST", "127.0.0.1"),
-        mini_app_port=int(os.getenv("MINI_APP_PORT", "8080")),
+        telegram_mini_app_short_name=_env_or_default(
+            "TELEGRAM_MINI_APP_SHORT_NAME", "hisopos"
+        ),
+        mini_app_bind_host=_env_or_default("MINI_APP_BIND_HOST", "127.0.0.1"),
+        mini_app_port=int(_env_or_default("MINI_APP_PORT", "8080")),
     )
 
 
 def _parse_id_list(raw_value: str) -> frozenset[str]:
     return frozenset(item.strip() for item in raw_value.split(",") if item.strip())
+
+
+def _env_or_default(name: str, default: str) -> str:
+    value = os.getenv(name)
+    return value if value and value.strip() else default
 
 
 def _optional_path(raw_value: str | None) -> Path | None:

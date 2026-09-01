@@ -3,10 +3,11 @@ param(
     [Parameter(Mandatory = $true)][string]$ProjectId,
     [Parameter(Mandatory = $true)][string]$Zone,
     [Parameter(Mandatory = $true)][string]$Instance,
-    [Parameter(Mandatory = $true)][ValidateSet("status", "triggers", "media", "moderate", "stop")][string]$Action,
+    [Parameter(Mandatory = $true)][ValidateSet("status", "triggers", "media", "moderate", "stop", "notify-release")][string]$Action,
     [ValidatePattern('^[A-Za-z0-9_-]{1,2048}$')][string]$TriggerId,
     [ValidateSet("delete-trigger", "block-user", "delete-and-block")][string]$ModerationAction,
     [string]$OutputFile,
+    [ValidateSet("started", "succeeded", "failed", "skipped")][string]$ReleaseEvent,
     [switch]$AcknowledgeModeration,
     [switch]$AcknowledgeStop
 )
@@ -30,6 +31,9 @@ if ($Action -eq "moderate" -and (-not $ModerationAction -or -not $AcknowledgeMod
 }
 if ($Action -eq "stop" -and -not $AcknowledgeStop) {
     throw "La detencion requiere confirmacion explicita."
+}
+if ($Action -eq "notify-release" -and -not $ReleaseEvent) {
+    throw "ReleaseEvent es obligatorio para notify-release."
 }
 
 $gcloudCommand = Get-Command "gcloud" -ErrorAction SilentlyContinue
@@ -86,6 +90,9 @@ try {
     }
     elseif ($Action -eq "moderate") {
         $remoteArguments += @($TriggerId, $ModerationAction)
+    }
+    elseif ($Action -eq "notify-release") {
+        $remoteArguments += @($ReleaseEvent)
     }
     $remoteCommand = $remoteArguments -join " "
     $output = & $gcloud compute ssh $Instance `

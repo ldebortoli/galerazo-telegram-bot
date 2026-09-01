@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.56] - 2026-09-01
+
+- Correcciones y mejoras del release: la configuración opcional vacía vuelve a usar valores seguros y cada imagen se valida de forma aislada antes de reemplazar el contenedor activo.
+- Bot Control Center puede avisar en el canal de logs cuándo comienza y cómo termina un release programado.
+
 ## [0.55] - 2026-08-31
 
 - `/debug` ahora está disponible para cualquier usuario y aparece entre los comandos generales; devuelve únicamente el update que Telegram entregó para ese mensaje.

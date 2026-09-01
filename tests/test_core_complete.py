@@ -286,6 +286,25 @@ class ConfigurationAndEntrypointTests(unittest.TestCase):
         self.assertIsNone(config._optional_path(None))
         self.assertEqual(config._optional_path("x"), Path("x"))
 
+    def test_blank_optional_configuration_uses_safe_defaults(self) -> None:
+        environment = {
+            "GOOGLE_SHEETS_WORKSHEET_NAME": "",
+            "GOOGLE_SHEETS_CASHFLOW_SHEET_PREFIX": "  ",
+            "GOOGLE_CLOUD_BILLING_REPORT_TIME": "",
+            "TELEGRAM_MINI_APP_SHORT_NAME": "",
+            "MINI_APP_BIND_HOST": " ",
+            "MINI_APP_PORT": "",
+        }
+        with patch.dict("os.environ", environment, clear=True):
+            settings = config.load_settings()
+
+        self.assertEqual(settings.google_sheets_worksheet_name, "Gastos y compras")
+        self.assertEqual(settings.google_sheets_cashflow_sheet_prefix, "Gastos")
+        self.assertEqual(settings.google_cloud_billing_report_time, "09:00")
+        self.assertEqual(settings.telegram_mini_app_short_name, "hisopos")
+        self.assertEqual(settings.mini_app_bind_host, "127.0.0.1")
+        self.assertEqual(settings.mini_app_port, 8080)
+
     def test_cli_and_deploy_backup_entrypoints(self) -> None:
         settings = SimpleNamespace(database_path=Path("unused"))
         with (

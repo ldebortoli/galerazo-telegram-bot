@@ -38,6 +38,27 @@ if [[ "${registry_host}" == *.pkg.dev ]]; then
   gcloud auth configure-docker "${registry_host}" --quiet
 fi
 
+install -m 0644 /tmp/galerazo-compose.yaml "${compose_file}"
+install -m 0755 /tmp/galerazo-deploy.sh "${app_dir}/deploy.sh"
+install -m 0755 /tmp/galerazo-rollback.sh "${app_dir}/rollback.sh"
+
+echo "Pulling ${new_image}..."
+GALERAZO_IMAGE="${new_image}" docker compose -f "${compose_file}" pull bot
+
+echo "Validating the new image without touching the running container..."
+if ! docker run --rm --network none --read-only \
+    --tmpfs /tmp:rw,noexec,nosuid,size=16m \
+    --env-file "${bot_env}" \
+    -e DATABASE_PATH=/app/data/galerazo.sqlite3 \
+    -e BACKUPS_PATH=/app/backups \
+    -v /srv/galerazo/data:/app/data:ro \
+    -v /srv/galerazo/backups:/app/backups:ro \
+    -v /etc/galerazo/secrets:/app/secrets:ro \
+    "${new_image}" python -m galerazo_bot.healthcheck; then
+  echo "The new image failed its isolated healthcheck; production was not changed." >&2
+  exit 1
+fi
+
 old_image=""
 if [[ -f "${image_env}" ]]; then
   old_image="$(sed -n 's/^GALERAZO_IMAGE=//p' "${image_env}" | head -n 1)"
@@ -52,12 +73,6 @@ if [[ -n "${old_image}" ]]; then
   cp "${image_env}" "${previous_env}"
 fi
 
-install -m 0644 /tmp/galerazo-compose.yaml "${compose_file}"
-install -m 0755 /tmp/galerazo-deploy.sh "${app_dir}/deploy.sh"
-install -m 0755 /tmp/galerazo-rollback.sh "${app_dir}/rollback.sh"
-
-echo "Pulling ${new_image}..."
-GALERAZO_IMAGE="${new_image}" docker compose -f "${compose_file}" pull bot
 printf 'GALERAZO_IMAGE=%s\n' "${new_image}" > "${image_env}"
 chmod 0600 "${image_env}"
 
@@ -70,6 +85,8 @@ if docker compose --env-file "${image_env}" -f "${compose_file}" \
 fi
 
 echo "The new container did not become healthy." >&2
+docker compose --env-file "${image_env}" -f "${compose_file}" \
+  logs --no-color --tail 200 bot >&2 || true
 if [[ -n "${old_image}" && -f "${previous_env}" ]]; then
   echo "Restoring ${old_image}..." >&2
   cp "${previous_env}" "${image_env}"

@@ -55,7 +55,11 @@ class BotControlContractTests(unittest.TestCase):
         self.compose = self.root / "compose.yaml"
         self.compose.write_text("services: {}\n", encoding="utf-8")
         self.env = self.root / "bot.env"
-        self.env.write_text("TELEGRAM_BOT_TOKEN=123456789:abcdefghijklmnopqrstuvwxyzABCDEF\n", encoding="utf-8")
+        self.env.write_text(
+            "TELEGRAM_BOT_TOKEN=123456789:abcdefghijklmnopqrstuvwxyzABCDEF\n"
+            "TELEGRAM_LOG_CHAT_ID=-1004440313456\n",
+            encoding="utf-8",
+        )
         self.constants = patch.multiple(
             botctl,
             DATABASE_PATH=self.database,
@@ -115,6 +119,22 @@ class BotControlContractTests(unittest.TestCase):
         self.assertEqual(command[-2:], ["stop", "bot"])
         self.assertIn(str(self.root / "image.env"), command)
         self.assertNotIn("down", command)
+
+    def test_release_notifications_are_fixed_and_target_the_log_chat(self) -> None:
+        with patch.object(
+            botctl, "_telegram_json", return_value={"ok": True, "result": {}}
+        ) as telegram:
+            result = botctl.notify_release("succeeded")
+
+        self.assertEqual(result, {"notified": True, "event": "succeeded"})
+        method, _token, fields = telegram.call_args.args
+        self.assertEqual(method, "sendMessage")
+        self.assertEqual(fields["chat_id"], "-1004440313456")
+        self.assertIn("terminé", fields["text"])
+
+    def test_release_notifications_reject_unknown_events(self) -> None:
+        with self.assertRaisesRegex(ValueError, "Evento de release inválido"):
+            botctl.notify_release("arbitrary-message")
 
     def test_invalid_cli_and_identifiers_fail_without_leaking_tokens(self) -> None:
         with self.assertRaises(ValueError):

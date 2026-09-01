@@ -33,6 +33,15 @@ BOT_CONTROL_ACTOR = "bot-control-center"
 TOKEN_PATTERN = re.compile(r"\b\d{6,14}:[A-Za-z0-9_-]{20,}\b")
 MEDIA_TYPES = {"photo", "video", "animation", "audio", "voice", "document", "video_note", "sticker"}
 MODERATION_ACTIONS = {"delete-trigger", "block-user", "delete-and-block"}
+RELEASE_NOTIFICATION_MESSAGES = {
+    "started": "Bot Control Center: inicié el release programado de Galerazo.",
+    "succeeded": "Bot Control Center: terminé el release programado de Galerazo correctamente.",
+    "failed": (
+        "Bot Control Center: terminé el release programado de Galerazo con error. "
+        "Producción quedó restaurada o sin cambios; revisá la ventana de progreso."
+    ),
+    "skipped": "Bot Control Center: terminé el release programado de Galerazo sin cambios para desplegar.",
+}
 
 
 def _run(args: list[str], *, timeout: int = 15, check: bool = True) -> subprocess.CompletedProcess[str]:
@@ -85,6 +94,21 @@ def _token() -> str:
     if not token or token == "replace-me":
         raise RuntimeError("TELEGRAM_BOT_TOKEN no está configurado.")
     return token
+
+
+def notify_release(event: str) -> dict[str, Any]:
+    message = RELEASE_NOTIFICATION_MESSAGES.get(event)
+    if message is None:
+        raise ValueError("Evento de release inválido.")
+    chat_id = _read_env().get("TELEGRAM_LOG_CHAT_ID", "")
+    if not chat_id:
+        raise RuntimeError("TELEGRAM_LOG_CHAT_ID no está configurado.")
+    _telegram_json(
+        "sendMessage",
+        _token(),
+        {"chat_id": chat_id, "text": message},
+    )
+    return {"notified": True, "event": event}
 
 
 def _connect(*, readonly: bool) -> sqlite3.Connection:
@@ -477,8 +501,12 @@ def main(argv: list[str] | None = None) -> int:
             payload = moderate_trigger(arguments[0], arguments[1])
         elif action == "stop" and not arguments:
             payload = stop_service()
+        elif action == "notify-release" and len(arguments) == 1:
+            payload = notify_release(arguments[0])
         else:
-            raise ValueError("Uso: botctl.py status|triggers|media|moderate|stop")
+            raise ValueError(
+                "Uso: botctl.py status|triggers|media|moderate|stop|notify-release"
+            )
         print(json.dumps(payload, ensure_ascii=False, separators=(",", ":")))
         return 0
     except Exception as exc:
