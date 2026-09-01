@@ -23,5 +23,9 @@ def format_announcement(text: str, language: str) -> str:
     )
 
 
+def maximum_formatted_announcement_length(text: str) -> int:
+    return max(len(format_announcement(text, language)) for language in TRANSLATIONS)
+
+
 def announcement_fits(text: str, max_chars: int) -> bool:
-    return all(len(format_announcement(text, language)) <= max_chars for language in TRANSLATIONS)
+    return maximum_formatted_announcement_length(text) <= max_chars

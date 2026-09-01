@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.57] - 2026-09-01
+
+- Si el anuncio automático de novedades no puede completarse, el motivo queda informado en el canal de logs y la versión permanece pendiente para un reintento seguro.
+
 ## [0.56] - 2026-09-01
 
 - Correcciones y mejoras del release: la configuración opcional vacía vuelve a usar valores seguros y cada imagen se valida de forma aislada antes de reemplazar el contenedor activo.

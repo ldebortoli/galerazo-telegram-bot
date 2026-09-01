@@ -332,8 +332,30 @@ class LifecycleAndBillingTests(unittest.IsolatedAsyncioTestCase):
 
         with patch.object(tb, "pending_release_notes", return_value="notes"), patch.object(
             tb, "_broadcast_announcement", AsyncMock(return_value=tb.AnnouncementBroadcastResult())
-        ):
+        ), patch.object(tb, "_send_log_event", AsyncMock(return_value=True)) as log:
             self.assertFalse(await tb._announce_current_release(db, bot, settings()))
+        log.assert_awaited_once_with(
+            bot,
+            "-10",
+            f"No pude completar el anuncio de novedades de la version {tb.CURRENT_VERSION}: "
+            "el canal de anuncios no confirmo el envio. La version queda pendiente.",
+        )
+
+        with patch.object(tb, "pending_release_notes", return_value="notes"), patch.object(
+            tb,
+            "_broadcast_announcement",
+            AsyncMock(return_value=tb.AnnouncementBroadcastResult(too_long=True)),
+        ), patch.object(tb, "maximum_formatted_announcement_length", return_value=5000), patch.object(
+            tb, "_send_log_event", AsyncMock(return_value=True)
+        ) as log:
+            self.assertFalse(await tb._announce_current_release(db, bot, settings()))
+        log.assert_awaited_once_with(
+            bot,
+            "-10",
+            f"No pude anunciar las novedades de la version {tb.CURRENT_VERSION}: "
+            "el mensaje final tiene 5000 caracteres y supera el limite de Telegram de 4096. "
+            "La version queda pendiente.",
+        )
 
         with patch.object(tb, "pending_release_notes", return_value="notes"), patch.object(
             tb,

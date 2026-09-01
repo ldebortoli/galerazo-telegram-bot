@@ -59,7 +59,12 @@ from .cloud_billing import (
     format_google_cloud_billing_report,
     parse_report_time,
 )
-from .announcements import AnnouncementBroadcastResult, announcement_fits, format_announcement
+from .announcements import (
+    AnnouncementBroadcastResult,
+    announcement_fits,
+    format_announcement,
+    maximum_formatted_announcement_length,
+)
 from .commands import (
     COMMANDS,
     SYMBOL_COMMAND_PREFIXES,
@@ -425,7 +430,23 @@ async def _announce_current_release(db: Database, bot: Bot, settings: Settings) 
         text=release_notes,
         announcements_chat_id=settings.telegram_announcements_chat_id,
     )
-    if result.too_long or not result.announcement_channel_sent:
+    if result.too_long:
+        message_length = maximum_formatted_announcement_length(release_notes)
+        error_text = (
+            f"No pude anunciar las novedades de la version {CURRENT_VERSION}: "
+            f"el mensaje final tiene {message_length} caracteres y supera el limite "
+            f"de Telegram de {TELEGRAM_MESSAGE_LIMIT_CHARS}. La version queda pendiente."
+        )
+        logger.error(error_text)
+        await _send_log_event(bot, settings.telegram_log_chat_id, error_text)
+        return False
+    if not result.announcement_channel_sent:
+        error_text = (
+            f"No pude completar el anuncio de novedades de la version {CURRENT_VERSION}: "
+            "el canal de anuncios no confirmo el envio. La version queda pendiente."
+        )
+        logger.error(error_text)
+        await _send_log_event(bot, settings.telegram_log_chat_id, error_text)
         return False
 
     db.set_announced_release_version(CURRENT_VERSION)
