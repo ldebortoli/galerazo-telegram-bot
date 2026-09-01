@@ -1,8 +1,12 @@
 # Broadcast changelog
 
 Este archivo contiene resúmenes editoriales aptos para Telegram. `CHANGELOG.md` conserva
-el historial técnico detallado. Cada entrada indica la última versión ya anunciada que
-cubre y debe pasar de `borrador` a `aprobado` antes de publicar una imagen.
+el historial técnico detallado. Cada entrada indica la última versión ya procesada que
+cubre y debe pasar de `borrador` a `aprobado` antes de publicar una imagen. Una entrada
+vacía con estado `omitido` registra una excepción explícitamente solicitada por el usuario:
+el runtime avanza el cursor sin enviar un broadcast ni acumularla para otro release.
+
+## [0.59] desde=[0.58] estado=omitido
 
 ## [0.58] desde=[0.10] estado=aprobado
 

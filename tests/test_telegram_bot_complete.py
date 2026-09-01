@@ -335,6 +335,17 @@ class LifecycleAndBillingTests(unittest.IsolatedAsyncioTestCase):
             "bad. La version queda pendiente.",
         )
 
+        db.reset_mock()
+        db.get_announced_release_version.return_value = "0.58"
+        with patch.object(tb, "release_broadcast_notes", return_value=None), patch.object(
+            tb, "_broadcast_announcement", AsyncMock()
+        ) as broadcast, patch.object(tb, "_send_log_event", AsyncMock()) as log:
+            self.assertFalse(await tb._announce_current_release(db, bot, settings()))
+        db.set_announced_release_version.assert_called_once_with(tb.CURRENT_VERSION)
+        broadcast.assert_not_awaited()
+        log.assert_not_awaited()
+
+        db.reset_mock()
         with patch.object(tb, "release_broadcast_notes", return_value="notes"), patch.object(
             tb, "_broadcast_announcement", AsyncMock(return_value=tb.AnnouncementBroadcastResult())
         ), patch.object(tb, "_send_log_event", AsyncMock(return_value=True)) as log:

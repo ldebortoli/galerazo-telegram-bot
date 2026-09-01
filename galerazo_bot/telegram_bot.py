@@ -432,6 +432,14 @@ async def _announce_current_release(db: Database, bot: Bot, settings: Settings) 
         await _send_log_event(bot, settings.telegram_log_chat_id, error_text)
         return False
 
+    if release_notes is None:
+        db.set_announced_release_version(CURRENT_VERSION)
+        logger.info(
+            "Broadcast de novedades de la version %s omitido por decision explicita.",
+            CURRENT_VERSION,
+        )
+        return False
+
     result = await _broadcast_announcement(
         db=db,
         bot=bot,
@@ -2337,7 +2345,12 @@ async def _handle_error(update: object, context: ContextTypes.DEFAULT_TYPE) -> N
         logger.debug("Callback query vencida ignorada: %s", context.error)
         return
 
-    logger.exception("Error no handleado procesando update.", exc_info=context.error)
+    chat_context = _update_chat_context(update)
+    logger.exception(
+        "Error no handleado procesando update%s.",
+        f" en {chat_context}" if chat_context else "",
+        exc_info=context.error,
+    )
     if isinstance(context.error, Conflict):
         logger.error(
             "Telegram rechazo el polling porque otra instancia externa usa este token. "
@@ -3318,6 +3331,9 @@ async def _send_unhandled_error_event(
     update: object = None,
 ) -> None:
     summary = exception_summary(exc)
+    chat_context = _update_chat_context(update)
+    if chat_context:
+        summary = f"{summary}\nChat: {chat_context}"
     trace = "".join(traceback.format_exception(type(exc), exc, exc.__traceback__))
     update_json = _serialize_update(update)
     debug_text = redact_secrets(
@@ -3335,6 +3351,21 @@ async def _send_unhandled_error_event(
         debug_text.encode("utf-8"),
         f"Debug del error de la update {update_label}.txt",
     )
+
+
+def _update_chat_context(update: object) -> str | None:
+    if not isinstance(update, Update):
+        return None
+    chat = update.effective_chat
+    if chat is None:
+        return None
+    raw_name = (
+        getattr(chat, "title", None)
+        or getattr(chat, "full_name", None)
+        or getattr(chat, "username", None)
+    )
+    name = " ".join(str(raw_name).split())[:200] if raw_name else None
+    return f"{name} ({chat.id})" if name else str(chat.id)
 
 
 async def _send_log_document(
@@ -3355,11 +3386,7 @@ async def _send_log_document(
         )
 
     try:
-        try:
-            await send_document()
-        except TimedOut:
-            logger.warning("Timeout al enviar el TXT de un error; reintentando una vez.")
-            await send_document()
+        await send_document()
     except (TelegramError, OSError, ValueError) as exc:
         logger.warning("No pude enviar el TXT de un error al canal de logging: %s", exc)
         return False
@@ -3545,11 +3572,7 @@ async def _send_debug_update(
                 pool_timeout=TELEGRAM_DOCUMENT_TIMEOUT_SECONDS,
             )
 
-        try:
-            await send_document()
-        except TimedOut:
-            logger.warning("Timeout al enviar update de debug; reintentando una vez.")
-            await send_document()
+        await send_document()
         return True
     except (TelegramError, OSError) as exc:
         logger.warning("No pude enviar update de debug: %s", exc)

@@ -9,7 +9,7 @@ from .announcements import maximum_formatted_announcement_length
 
 BROADCAST_CHANGELOG_PATH = Path(__file__).resolve().parent.parent / "BROADCAST_CHANGELOG.md"
 BROADCAST_HEADER_PATTERN = re.compile(
-    r"^## \[([^]]+)\] desde=\[([^]]+)\] estado=(borrador|aprobado)$"
+    r"^## \[([^]]+)\] desde=\[([^]]+)\] estado=(borrador|aprobado|omitido)$"
 )
 NO_PREVIOUS_VERSION = "ninguna"
 
@@ -84,6 +84,12 @@ def validate_release_broadcast(
     require_approved: bool = True,
 ) -> tuple[ReleaseBroadcast, int]:
     entry = release_broadcast_entry(version, path)
+    if entry.status == "omitido":
+        if entry.text:
+            raise ValueError(
+                f"el broadcast omitido de la version {version} no debe contener texto"
+            )
+        return entry, 0
     if require_approved and entry.status != "aprobado":
         raise ValueError(f"el broadcast de la version {version} sigue en borrador")
     if not entry.text:
@@ -106,7 +112,7 @@ def release_broadcast_notes(
     max_chars: int,
     *,
     path: Path = BROADCAST_CHANGELOG_PATH,
-) -> str:
+) -> str | None:
     entry, _maximum_length = validate_release_broadcast(
         version,
         max_chars,
@@ -118,4 +124,6 @@ def release_broadcast_notes(
         raise ValueError(
             f"el resumen aprobado parte de {expected}, pero produccion tiene anunciado {actual}"
         )
+    if entry.status == "omitido":
+        return None
     return entry.text

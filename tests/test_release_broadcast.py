@@ -20,11 +20,12 @@ class ReleaseBroadcastTests(unittest.TestCase):
         path.write_text(text, encoding="utf-8")
         return temporary, path
 
-    def test_current_release_has_an_approved_telegram_safe_broadcast(self) -> None:
+    def test_current_release_is_explicitly_omitted_without_text(self) -> None:
         entry, maximum_length = validate_release_broadcast(CURRENT_VERSION, 4096)
-        self.assertEqual(entry.status, "aprobado")
-        self.assertEqual(entry.previous_version, "0.10")
-        self.assertLessEqual(maximum_length, 4096)
+        self.assertEqual(entry.status, "omitido")
+        self.assertEqual(entry.previous_version, "0.58")
+        self.assertEqual(entry.text, "")
+        self.assertEqual(maximum_length, 0)
 
     def test_parses_approved_and_initial_entries_without_preamble(self) -> None:
         temporary, path = self._file(
@@ -64,6 +65,24 @@ class ReleaseBroadcastTests(unittest.TestCase):
         temporary, path = self._file("")
         with temporary, self.assertRaisesRegex(ValueError, "no contiene"):
             release_broadcast_entry("0.2", path)
+
+    def test_omitted_release_must_be_empty_and_advances_from_expected_version(self) -> None:
+        temporary, path = self._file(
+            "## [0.3] desde=[0.2] estado=omitido\n"
+        )
+        with temporary:
+            entry, length = validate_release_broadcast("0.3", 4096, path=path)
+            self.assertEqual(entry.status, "omitido")
+            self.assertEqual(length, 0)
+            self.assertIsNone(release_broadcast_notes("0.3", "0.2", 4096, path=path))
+            with self.assertRaisesRegex(ValueError, "produccion tiene anunciado 0.1"):
+                release_broadcast_notes("0.3", "0.1", 4096, path=path)
+
+        temporary, path = self._file(
+            "## [0.3] desde=[0.2] estado=omitido\nNo debe existir.\n"
+        )
+        with temporary, self.assertRaisesRegex(ValueError, "no debe contener texto"):
+            validate_release_broadcast("0.3", 4096, path=path)
 
     def test_validates_length_approval_and_announced_version_contract(self) -> None:
         text = (

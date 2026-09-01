@@ -1,9 +1,10 @@
 import json
 import unittest
+from datetime import datetime, timezone
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from telegram import Update
+from telegram import Chat, Message, Update
 from telegram.error import BadRequest, TimedOut
 
 from galerazo_bot.telegram_bot import (
@@ -75,18 +76,18 @@ class DebugSerializationTests(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(sent)
         message.reply_text.assert_not_awaited()
 
-    async def test_large_debug_retries_one_timeout(self) -> None:
+    async def test_large_debug_relies_on_global_timeout_policy(self) -> None:
         message = SimpleNamespace(
             reply_text=AsyncMock(),
-            reply_document=AsyncMock(side_effect=[TimedOut(), None]),
+            reply_document=AsyncMock(),
         )
         with patch("galerazo_bot.telegram_bot._serialize_update", return_value="x" * 5000):
             sent = await _send_debug_update(MagicMock(), message, Update(update_id=92))
 
         self.assertTrue(sent)
-        self.assertEqual(message.reply_document.await_count, 2)
+        self.assertEqual(message.reply_document.await_count, 1)
 
-    async def test_large_debug_returns_false_after_second_timeout(self) -> None:
+    async def test_large_debug_returns_false_after_global_policy_fails(self) -> None:
         message = SimpleNamespace(
             reply_text=AsyncMock(),
             reply_document=AsyncMock(side_effect=TimedOut()),
@@ -95,7 +96,7 @@ class DebugSerializationTests(unittest.IsolatedAsyncioTestCase):
             sent = await _send_debug_update(MagicMock(), message, Update(update_id=93))
 
         self.assertFalse(sent)
-        self.assertEqual(message.reply_document.await_count, 2)
+        self.assertEqual(message.reply_document.await_count, 1)
 
     async def test_small_debug_returns_false_on_telegram_error(self) -> None:
         message = SimpleNamespace(
@@ -140,15 +141,35 @@ class DebugSerializationTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(bot.messages, [])
         self.assertEqual(bot.documents, [])
 
-    async def test_error_debug_document_retries_one_timeout(self) -> None:
-        bot = SimpleNamespace(send_document=AsyncMock(side_effect=[TimedOut(), None]))
+    async def test_unhandled_error_summary_includes_update_chat_name_and_id(self) -> None:
+        bot = FakeBot()
+        chat = Chat(id=-100123, type="supergroup", title="Grupo de prueba")
+        message = Message(
+            message_id=10,
+            date=datetime(2026, 9, 1, tzinfo=timezone.utc),
+            chat=chat,
+        )
+
+        await _send_unhandled_error_event(
+            bot,
+            "-100999",
+            RuntimeError("failure"),
+            Update(update_id=24, message=message),
+        )
+
+        self.assertEqual(
+            bot.messages[0]["text"],
+            "RuntimeError: failure\nChat: Grupo de prueba (-100123)",
+        )
+
+    async def test_error_debug_document_relies_on_global_timeout_policy(self) -> None:
+        bot = SimpleNamespace(send_document=AsyncMock())
 
         sent = await _send_log_document(bot, "-100123", b"debug", "debug.txt")
 
         self.assertTrue(sent)
-        self.assertEqual(bot.send_document.await_count, 2)
-        for call in bot.send_document.await_args_list:
-            self.assertEqual(call.kwargs["document"].getvalue(), b"debug")
+        self.assertEqual(bot.send_document.await_count, 1)
+        self.assertEqual(bot.send_document.await_args.kwargs["document"].getvalue(), b"debug")
 
     async def test_error_debug_document_returns_false_on_telegram_error(self) -> None:
         bot = SimpleNamespace(send_document=AsyncMock(side_effect=BadRequest("rejected")))

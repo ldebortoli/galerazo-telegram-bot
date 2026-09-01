@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.59] - 2026-09-01
+
+- Correcciones y mejoras: los envios y ediciones ahora reintentan automaticamente los timeouts transitorios de Telegram, y los reportes de error incluyen el nombre del grupo o chat cuando la update lo permite.
+
 ## [0.58] - 2026-09-01
 
 - Correcciones y mejoras: cuando se acumulan varias versiones, el anuncio agrupa las novedades por tema en un resumen breve y evita repetir cada cambio individual.
