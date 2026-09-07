@@ -68,6 +68,24 @@ class ContainerRuntimeTests(unittest.TestCase):
             runtime_section,
         )
         self.assertNotIn("COPY --chown=galerazo:galerazo . .", runtime_section)
+        self.assertNotIn(" mini_app ", runtime_section)
+        self.assertNotIn("EXPOSE 8080", runtime_section)
+
+    def test_mini_app_tunnel_is_loopback_and_secrets_stay_out_of_build_context(self) -> None:
+        import json
+
+        ignored = (PROJECT_ROOT / ".dockerignore").read_text(encoding="utf-8").splitlines()
+        for entry in (".codex/", "AGENTS.md", ".env.*", "secrets/", "*.key"):
+            self.assertIn(entry, ignored)
+        unit = (PROJECT_ROOT / "deploy/gce/miniapp-tunnel.service").read_text(encoding="utf-8")
+        self.assertIn("--token-file /etc/galerazo/cloudflared.token", unit)
+        self.assertNotIn("--token ", unit)
+        self.assertIn("--edge-ip-version 6", unit)
+        self.assertIn("--metrics 127.0.0.1:", unit)
+        self.assertIn("--loglevel warn", unit)
+        ingress = json.loads((PROJECT_ROOT / "deploy/gce/miniapp-tunnel-config.example.json").read_text(encoding="utf-8"))["config"]["ingress"]
+        self.assertEqual(ingress[0]["service"], "http://127.0.0.1:8080")
+        self.assertEqual(ingress[-1], {"service": "http_status:404"})
 
     def test_production_compose_persists_data_without_public_ports(self) -> None:
         compose = (PROJECT_ROOT / "compose.production.yaml").read_text(encoding="utf-8")
@@ -273,6 +291,7 @@ class DeploymentAutomationTests(unittest.TestCase):
             "TELEGRAM_MINI_APP_SHORT_NAME",
             "MINI_APP_BIND_HOST",
             "MINI_APP_PORT",
+            "MINI_APP_PROXY_SECRET",
         ):
             self.assertIn(key, status_script)
             self.assertIn(key, patch_script)

@@ -590,29 +590,19 @@ Cada cobro nuevo confirmado por Telegram Stars se registra además en el canal d
 
 La Mini App reúne tres pestañas: álbum, tienda y apoyo. Desde `/coleccionhisopos` en un grupo, el botón abre directamente el álbum propio de ese grupo mediante un contexto firmado. Desde el botón `Mis álbumes` del privado/perfil, el selector incluye `Todos los grupos` y cada grupo donde Telegram ya registró una colección de esa persona. La vista total suma por tipo las capturas de todos los grupos. Los Hisopos encontrados y especiales aparecen juntos en una sola grilla; estos últimos son globales y conservan la misma cantidad al cambiar de grupo. La autenticación valida el `initData` firmado por Telegram y rechaza sesiones de más de una hora.
 
-Para verla localmente con datos simulados:
+El frontend vive ahora en Galerazo web, en `https://galerazo.com/miniapp`.
+Este servidor solo atiende la API autenticada desde el gateway; no sirve HTML,
+JavaScript, CSS, imagenes ni vistas simuladas. La firma de Telegram, SQLite,
+precios e idempotencia siguen en Python.
 
-```powershell
-$env:PYTHONPATH = "."
-.\.venv\Scripts\python.exe scripts\preview_mini_app.py --host 127.0.0.1 --port 8765
-```
+El preset seguro es `deploy/gce/miniapp.env.example`: requiere el mismo
+`MINI_APP_PROXY_SECRET` que el Worker y escucha exclusivamente en loopback.
+Una URL vacia conserva la integracion desactivada. No activar la URL ni el tunel
+sobre una imagen anterior a 0.60.
 
-Luego abrí `http://127.0.0.1:8765/`. Esta vista previa simula el checkout y nunca cobra Stars.
-
-Para activarla realmente hace falta publicar el mismo servicio detrás de HTTPS, crear en BotFather una Main Mini App con el nombre corto elegido y configurar:
-
-```env
-TELEGRAM_MINI_APP_URL=https://tu-dominio.example/hisopos
-TELEGRAM_MINI_APP_SHORT_NAME=hisopos
-MINI_APP_BIND_HOST=0.0.0.0
-MINI_APP_PORT=8080
-```
-
-Dejar `TELEGRAM_MINI_APP_URL` vacío desactiva el servidor y el botón sin afectar los comandos ni los pagos por enlaces de factura. El puerto de aplicación no debe exponerse directamente a Internet: el dominio HTTPS debe terminar TLS en un proxy y reenviar internamente al host/puerto configurado.
-
-Los especiales no necesitan `file_id` de Telegram: la Mini App sirve directamente los veintiún PNG de `assets/hisopos/` desde el mismo origen HTTPS. Un `file_id` solo sería necesario si en el futuro el bot enviara uno de esos artes como foto dentro de un chat; además, ese identificador tendría que obtenerse con la misma identidad de bot que vaya a reutilizarlo.
-
-El saldo recibido queda primero como Stars del bot. Telegram aplica su plazo de disponibilidad y luego permite retirar el saldo elegible mediante Fragment hacia una billetera TON, sujeto al mínimo dinámico, autenticación en dos pasos y términos vigentes. Para llevarlo a una cuenta bancaria hay que vender los TON en un servicio compatible y retirar moneda fiduciaria; no existe un retiro directo Stars → banco y pueden aplicar verificación de identidad, comisiones e impuestos.
+Ver [contrato y activacion](docs/MINIAPP_INTEGRATION.md) para BotFather, tunel
+IPv6, secrets, verificacion y rollback. La publicacion web no sustituye un
+release autorizado del bot ni el ensayo real dentro de Telegram.
 
 ## Configuracion por grupo
 

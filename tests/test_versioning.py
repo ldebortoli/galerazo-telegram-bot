@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import tempfile
+import re
 import unittest
 from pathlib import Path
 from unittest.mock import patch
@@ -9,6 +10,10 @@ from galerazo_bot import versioning
 
 
 class VersioningTests(unittest.TestCase):
+    def test_latest_changelog_heading_matches_runtime_version(self) -> None:
+        text = versioning.CHANGELOG_PATH.read_text(encoding="utf-8")
+        self.assertEqual(re.search(r"^## \[([^]]+)\]", text, re.MULTILINE).group(1), versioning.CURRENT_VERSION)
+
     def test_current_release_notes_reads_current_entry_and_rejects_invalid_changelog(self) -> None:
         self.assertIn(f"Galerazo Bot v{versioning.CURRENT_VERSION}", versioning.current_release_notes())
 

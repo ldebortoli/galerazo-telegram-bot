@@ -3,12 +3,12 @@ from __future__ import annotations
 import hashlib
 import hmac
 import json
+import logging
 import re
 from dataclasses import dataclass
 from datetime import datetime, timezone
-from pathlib import Path
 from typing import Any
-from urllib.parse import parse_qsl, quote
+from urllib.parse import parse_qsl, quote, urlsplit
 
 from aiohttp import web
 from telegram import LabeledPrice
@@ -28,11 +28,50 @@ from .monetization import (
 )
 
 
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
-MINI_APP_ROOT = PROJECT_ROOT / "mini_app"
-HISOPO_ASSET_ROOT = PROJECT_ROOT / "assets" / "hisopos"
+logger = logging.getLogger(__name__)
+
+
+class MiniAppTransportLogFilter(logging.Filter):
+    """aiohttp parser errors happen before middleware and may contain raw headers."""
+
+    def filter(self, record: logging.LogRecord) -> bool:
+        record.msg = "Mini App HTTP transport event."
+        record.args = ()
+        record.exc_info = None
+        record.exc_text = None
+        record.stack_info = None
+        return True
+
+
+transport_logger = logging.getLogger(f"{__name__}.transport")
+transport_logger.addFilter(MiniAppTransportLogFilter())
+
+PRODUCTION_MINI_APP_URL = "https://galerazo.com/miniapp"
+PROXY_SECRET_HEADER = "X-Galerazo-Proxy-Secret"
+MAX_INIT_DATA_BYTES = 8192
 MAX_INIT_DATA_AGE_SECONDS = 60 * 60
 ALL_GROUPS_CHAT_ID = "all"
+
+
+def valid_proxy_secret(value: str | None) -> bool:
+    return bool(value and re.fullmatch(r"[A-Za-z0-9_-]{32,256}", value))
+
+
+def validate_mini_app_runtime(
+    *, public_url: str, proxy_secret: str | None, host: str, bot_username: str
+) -> None:
+    url = urlsplit(public_url)
+    if (url.scheme != "https" or not url.hostname or url.username or url.password
+            or url.query or url.fragment):
+        raise ValueError("TELEGRAM_MINI_APP_URL debe ser una URL HTTPS sin credenciales.")
+    if not valid_proxy_secret(proxy_secret):
+        raise ValueError("MINI_APP_PROXY_SECRET requiere 32 a 256 caracteres URL-safe.")
+    if host not in {"127.0.0.1", "::1", "localhost"}:
+        raise ValueError("MINI_APP_BIND_HOST debe ser loopback para el proxy privado.")
+    if url.hostname in {"galerazo.com", "www.galerazo.com"} and (
+        public_url != PRODUCTION_MINI_APP_URL or bot_username != "galerazo_bot"
+    ):
+        raise ValueError("La Mini App publica requiere @galerazo_bot y su URL canonica.")
 
 
 NATURAL_HISOPO_IMAGES = {
@@ -75,7 +114,15 @@ def validate_init_data(
     now: datetime | None = None,
     max_age_seconds: int = MAX_INIT_DATA_AGE_SECONDS,
 ) -> MiniAppUser:
-    values = dict(parse_qsl(init_data, keep_blank_values=True))
+    if len(init_data.encode("utf-8")) > MAX_INIT_DATA_BYTES:
+        raise InitDataError("Los datos de Telegram exceden el limite permitido.")
+    try:
+        pairs = parse_qsl(init_data, keep_blank_values=True, strict_parsing=True, max_num_fields=32)
+    except ValueError as exc:
+        raise InitDataError("Los datos de Telegram no son validos.") from exc
+    values = dict(pairs)
+    if len(pairs) != len(values):
+        raise InitDataError("Los datos de Telegram contienen campos duplicados.")
     received_hash = values.pop("hash", "")
     if not received_hash:
         raise InitDataError("Falta la firma de Telegram.")
@@ -86,12 +133,15 @@ def validate_init_data(
         data_check_string.encode("utf-8"),
         hashlib.sha256,
     ).hexdigest()
-    if not hmac.compare_digest(received_hash, calculated_hash):
+    if not re.fullmatch(r"[0-9a-f]{64}", received_hash) or not hmac.compare_digest(received_hash, calculated_hash):
         raise InitDataError("La firma de Telegram no es válida.")
     try:
         auth_date = int(values["auth_date"])
         user_data = json.loads(values["user"])
-        user_id = str(user_data["id"])
+        raw_user_id = user_data["id"]
+        if type(raw_user_id) is not int or not 0 < raw_user_id < 2**63:
+            raise ValueError("Invalid user ID")
+        user_id = str(raw_user_id)
     except (KeyError, TypeError, ValueError, json.JSONDecodeError) as exc:
         raise InitDataError("Los datos de Telegram están incompletos.") from exc
     current_time = now or datetime.now(timezone.utc)
@@ -133,33 +183,25 @@ class MiniAppApi:
         bot_token: str,
         bot: Any | None,
         public_url: str,
-        preview_mode: bool = False,
+        proxy_secret: str | None = None,
     ) -> None:
         self.db = db
         self.bot_token = bot_token
         self.bot = bot
         self.public_url = public_url.rstrip("/")
-        self.preview_mode = preview_mode
-        self.preview_public = False
+        self.proxy_secret = proxy_secret
 
     def authenticate(self, request: web.Request) -> MiniAppUser:
         init_data = request.headers.get("X-Telegram-Init-Data", "")
-        if self.preview_mode and not init_data:
-            return MiniAppUser("preview", "Cale", "cale", None)
         return validate_init_data(init_data, self.bot_token)
-
-    async def index(self, _request: web.Request) -> web.FileResponse:
-        return web.FileResponse(MINI_APP_ROOT / "index.html")
 
     async def bootstrap(self, request: web.Request) -> web.Response:
         try:
             user = self.authenticate(request)
         except InitDataError as exc:
             raise web.HTTPUnauthorized(text=str(exc)) from exc
-        if self.preview_mode and user.user_id == "preview":
-            return web.json_response(
-                self._preview_bootstrap(user, request.query.get("chat_id"))
-            )
+        if any(key != "chat_id" for key in request.query) or len(request.query) > 1:
+            raise web.HTTPBadRequest(text="El pedido no es valido.")
         self.db.get_or_create_user(user.user_id, user.display_name, user.username)
         albums = self.db.list_hisopo_albums_for_user(user.user_id)
         aggregate_collection = self.db.get_hisopo_collection_totals(user.user_id)
@@ -204,6 +246,8 @@ class MiniAppApi:
         try:
             user = self.authenticate(request)
             body = await request.json()
+            if not isinstance(body, dict):
+                raise ValueError("Invalid request")
             kind = str(body["kind"])
             item_key = str(body["item_key"])
             spec = invoice_spec(kind, item_key)
@@ -216,14 +260,6 @@ class MiniAppApi:
             kind=kind,
             value=body.get("recipient"),
         )
-        if self.preview_mode and user.user_id == "preview":
-            action = f"Regalo para {recipient_label}" if recipient_label else "Compra"
-            return web.json_response(
-                {
-                    "preview": True,
-                    "message": f"{action} de {spec.amount_stars} Stars simulada.",
-                }
-            )
         self.db.get_or_create_user(user.user_id, user.display_name, user.username)
         source_chat_id = self._valid_source_chat_id(user.user_id, body.get("source_chat_id"))
         payload = create_payment_payload(
@@ -260,12 +296,10 @@ class MiniAppApi:
             raise web.HTTPUnauthorized(text=str(exc)) from exc
         except json.JSONDecodeError as exc:
             raise web.HTTPBadRequest(text="El pedido no es válido.") from exc
-        if not isinstance(body.get("public"), bool):
+        if not isinstance(body, dict) or not isinstance(body.get("public"), bool):
             raise web.HTTPBadRequest(text="La visibilidad debe ser pública o anónima.")
-        if self.preview_mode and user.user_id == "preview":
-            self.preview_public = body["public"]
-        else:
-            self.db.set_donor_display_public(user.user_id, body["public"])
+        self.db.get_or_create_user(user.user_id, user.display_name, user.username)
+        self.db.set_donor_display_public(user.user_id, body["public"])
         return web.json_response({"public": body["public"]})
 
     def _selected_chat_id(
@@ -275,6 +309,7 @@ class MiniAppApi:
         query_chat_id: str | None,
     ) -> str | None:
         available = {album.chat_id for album in albums}
+        requested = None
         if user.start_param:
             try:
                 requested = parse_album_context(
@@ -282,14 +317,18 @@ class MiniAppApi:
                     user.start_param,
                     expected_user_id=user.user_id,
                 )
-            except ValueError:
-                requested = None
-            if requested in available:
-                return requested
+            except ValueError as exc:
+                raise web.HTTPForbidden(text="El enlace del album no es valido para este usuario.") from exc
+            if requested not in available:
+                raise web.HTTPForbidden(text="Ese album no pertenece al usuario.")
         if query_chat_id == ALL_GROUPS_CHAT_ID:
             return ALL_GROUPS_CHAT_ID if available else None
-        if query_chat_id in available:
+        if query_chat_id is not None:
+            if query_chat_id not in available:
+                raise web.HTTPForbidden(text="Ese album no pertenece al usuario.")
             return query_chat_id
+        if requested in available:
+            return requested
         return ALL_GROUPS_CHAT_ID if available else None
 
     def _valid_source_chat_id(self, user_id: str, value: Any) -> str | None:
@@ -324,8 +363,6 @@ class MiniAppApi:
         alias = recipient.removeprefix("@")
         if not re.fullmatch(r"[A-Za-z0-9_]{5,32}", alias):
             raise web.HTTPBadRequest(text="Ingresá un @alias o user ID válido.")
-        if self.preview_mode and user.user_id == "preview":
-            return f"preview-{alias.lower()}", f"@{alias}"
         recipient_user = self.db.get_user_by_username(alias)
         if recipient_user is None:
             raise web.HTTPBadRequest(
@@ -420,50 +457,6 @@ class MiniAppApi:
             "club_only": club_only,
         }
 
-    def _preview_bootstrap(
-        self,
-        user: MiniAppUser,
-        requested_chat_id: str | None = None,
-    ) -> dict[str, Any]:
-        class Album:
-            chat_id = "-1004440313456"
-            title = "Codex - Logs"
-            discovered_count = 11
-            capture_count = 37
-
-        class SecondAlbum:
-            chat_id = "-1004433295809"
-            title = "Bots y Automatizaciones"
-            discovered_count = 7
-            capture_count = 19
-
-        aggregate_counts = {
-            key: count
-            for key, count in zip(COLLECTIBLE_HISOPO_KEYS, (12, 7, 4, 1, 3, 2, 0, 1, 2, 3, 1))
-        }
-        selected_chat_id = (
-            requested_chat_id
-            if requested_chat_id
-            in {ALL_GROUPS_CHAT_ID, Album.chat_id, SecondAlbum.chat_id}
-            else ALL_GROUPS_CHAT_ID
-        )
-        counts = aggregate_counts
-        if selected_chat_id == SecondAlbum.chat_id:
-            counts = {
-                key: count
-                for key, count in zip(COLLECTIBLE_HISOPO_KEYS, (5, 1, 0, 0, 1, 0, 0))
-            }
-        return self._bootstrap_payload(
-            user=user,
-            albums=[Album(), SecondAlbum()],
-            selected_chat_id=selected_chat_id,
-            counts=counts,
-            aggregate_counts=aggregate_counts,
-            ownership={"serene": 1, "crimson": 1},
-            club_periods=2,
-            club_active_until="2026-09-26T12:00:00+00:00",
-            donor_public=self.preview_public,
-        )
 
 
 MINI_APP_API_KEY = web.AppKey("mini_app_api", MiniAppApi)
@@ -471,16 +464,31 @@ MINI_APP_API_KEY = web.AppKey("mini_app_api", MiniAppApi)
 
 @web.middleware
 async def security_headers(request: web.Request, handler: Any) -> web.StreamResponse:
-    response = await handler(request)
-    response.headers["Content-Security-Policy"] = (
-        "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; "
-        "script-src 'self' https://telegram.org; connect-src 'self'"
-    )
+    try:
+        response = await handler(request)
+    except web.HTTPException as exc:
+        response = web.json_response({"error": f"http_{exc.status}"}, status=exc.status)
+    except Exception as exc:
+        # Do not log exception details: HTTP clients may include headers or initData.
+        logger.warning("Mini App API fallo (%s).", type(exc).__name__)
+        response = web.json_response({"error": "temporarily_unavailable"}, status=502)
+    response.headers["Content-Security-Policy"] = "default-src 'none'; frame-ancestors 'none'"
     response.headers["Referrer-Policy"] = "no-referrer"
     response.headers["X-Content-Type-Options"] = "nosniff"
-    if request.path.startswith("/api/"):
-        response.headers["Cache-Control"] = "no-store"
+    response.headers["Cache-Control"] = "no-store"
     return response
+
+
+@web.middleware
+async def authenticate_proxy(request: web.Request, handler: Any) -> web.StreamResponse:
+    if request.path.startswith("/api/"):
+        secret = request.app[MINI_APP_API_KEY].proxy_secret
+        if not valid_proxy_secret(secret):
+            raise web.HTTPServiceUnavailable()
+        supplied = request.headers.get(PROXY_SECRET_HEADER, "")
+        if not hmac.compare_digest(supplied.encode("utf-8", errors="replace"), secret.encode("ascii")):
+            raise web.HTTPForbidden()
+    return await handler(request)
 
 
 def build_mini_app(
@@ -489,23 +497,20 @@ def build_mini_app(
     bot_token: str,
     bot: Any | None,
     public_url: str,
-    preview_mode: bool = False,
+    proxy_secret: str | None = None,
 ) -> web.Application:
     api = MiniAppApi(
         db=db,
         bot_token=bot_token,
         bot=bot,
         public_url=public_url,
-        preview_mode=preview_mode,
+        proxy_secret=proxy_secret,
     )
-    app = web.Application(middlewares=[security_headers], client_max_size=64 * 1024)
+    app = web.Application(middlewares=[security_headers, authenticate_proxy], client_max_size=16 * 1024)
     app[MINI_APP_API_KEY] = api
-    app.router.add_get("/", api.index)
-    app.router.add_get("/api/bootstrap", api.bootstrap)
+    app.router.add_get("/api/bootstrap", api.bootstrap, allow_head=False)
     app.router.add_post("/api/invoice", api.create_invoice)
     app.router.add_post("/api/donor-visibility", api.donor_visibility)
-    app.router.add_static("/static", MINI_APP_ROOT, show_index=False)
-    app.router.add_static("/assets/hisopos", HISOPO_ASSET_ROOT, show_index=False)
     return app
 
 
@@ -524,6 +529,7 @@ async def start_mini_app(
     bot_token: str,
     bot: Any,
     public_url: str,
+    proxy_secret: str,
     host: str,
     port: int,
 ) -> MiniAppService:
@@ -532,8 +538,9 @@ async def start_mini_app(
         bot_token=bot_token,
         bot=bot,
         public_url=public_url,
+        proxy_secret=proxy_secret,
     )
-    runner = web.AppRunner(app, access_log=None)
+    runner = web.AppRunner(app, access_log=None, logger=transport_logger)
     await runner.setup()
     site = web.TCPSite(runner, host=host, port=port)
     await site.start()

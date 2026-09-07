@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import os
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -45,6 +45,7 @@ class Settings:
     telegram_mini_app_short_name: str = "hisopos"
     mini_app_bind_host: str = "127.0.0.1"
     mini_app_port: int = 8080
+    mini_app_proxy_secret: str | None = field(default=None, repr=False)
     telegram_expense_user_ids: frozenset[str] = frozenset()
     google_sheets_cashflow_sheet_prefix: str = "Gastos"
 
@@ -110,6 +111,7 @@ def load_settings() -> Settings:
         ),
         mini_app_bind_host=_env_or_default("MINI_APP_BIND_HOST", "127.0.0.1"),
         mini_app_port=int(_env_or_default("MINI_APP_PORT", "8080")),
+        mini_app_proxy_secret=os.getenv("MINI_APP_PROXY_SECRET") or None,
     )
 
 

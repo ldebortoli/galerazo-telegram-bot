@@ -1,4 +1,17 @@
 .env
+.env.*
+!.env.example
+.codex/
+AGENTS.md
+secrets/
+*.pem
+*.key
+*.p12
+*.pfx
+service-account*.json
+.coverage
+coverage-report.json
+.pytest_cache/
 .git
 .venv
 .update-venv

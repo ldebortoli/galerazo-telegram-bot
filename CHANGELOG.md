@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.60] - 2026-09-07
+
+- Preparacion de la Mini App en galerazo.com para consultar albumes, tienda y apoyo desde Telegram. Su activacion se realiza al completar la configuracion.
+- Correcciones y mejoras: el selector permite cambiar entre albumes propios despues de abrir un enlace de grupo; las facturas y confirmaciones del especial 67 usan su nombre publico.
+
 ## [0.59] - 2026-09-01
 
 - Correcciones y mejoras: los envios y ediciones ahora reintentan automaticamente los timeouts transitorios de Telegram, y los reportes de error incluyen el nombre del grupo o chat cuando la update lo permite.

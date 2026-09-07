@@ -28,10 +28,8 @@ COPY --chown=galerazo:galerazo CHANGELOG.md ./CHANGELOG.md
 COPY --chown=galerazo:galerazo BROADCAST_CHANGELOG.md ./BROADCAST_CHANGELOG.md
 COPY --chown=galerazo:galerazo .python-version ./.python-version
 COPY --chown=galerazo:galerazo galerazo_bot ./galerazo_bot
-COPY --chown=galerazo:galerazo mini_app ./mini_app
 COPY --chown=galerazo:galerazo assets/hisopos ./assets/hisopos
 
-EXPOSE 8080
 
 USER galerazo
 

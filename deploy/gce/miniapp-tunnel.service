@@ -1,0 +1,25 @@
+[Unit]
+Description=Galerazo Mini App API tunnel
+After=network-online.target
+Wants=network-online.target
+ConditionPathExists=/etc/galerazo/cloudflared.token
+
+[Service]
+Type=simple
+User=cloudflared
+Group=cloudflared
+ExecStart=/usr/bin/cloudflared tunnel --no-autoupdate --edge-ip-version 6 --protocol http2 --loglevel warn --metrics 127.0.0.1:20241 run --token-file /etc/galerazo/cloudflared.token
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=40
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectControlGroups=true
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+UMask=0077
+
+[Install]
+WantedBy=multi-user.target

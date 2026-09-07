@@ -126,7 +126,7 @@ from .instance_lock import SingleInstance
 from .integration_status import save_logging_status
 from .logging_utils import configure_logging, exception_summary, redact_secrets
 from .media_moderation import OpenAIMediaModerator, trigger_media_kind
-from .mini_app import MiniAppService, direct_mini_app_url, start_mini_app
+from .mini_app import MiniAppService, direct_mini_app_url, start_mini_app, validate_mini_app_runtime
 from .pagination import (
     BUTTON_PREFIX,
     bold_first_line_entities as _bold_first_line_entities,
@@ -383,14 +383,25 @@ async def _configure_mini_app(application: Application) -> bool:
     if not public_url:
         logger.info("Mini App de Hisopos desactivada: falta TELEGRAM_MINI_APP_URL.")
         return False
-    if not public_url.startswith("https://"):
-        logger.error("Mini App de Hisopos desactivada: TELEGRAM_MINI_APP_URL debe usar HTTPS.")
+    try:
+        validate_mini_app_runtime(
+            public_url=public_url,
+            proxy_secret=state.settings.mini_app_proxy_secret,
+            host=state.settings.mini_app_bind_host,
+            bot_username=state.bot_username,
+        )
+        identity = await application.bot.get_me()
+        if identity.username != state.bot_username:
+            raise ValueError("La identidad de Telegram no coincide con el runtime.")
+    except (ValueError, TelegramError):
+        logger.error("Mini App desactivada: verificar URL HTTPS, secreto, loopback e identidad del bot.")
         return False
     service = await start_mini_app(
         db=state.db,
         bot_token=state.settings.telegram_bot_token,
         bot=application.bot,
         public_url=public_url,
+        proxy_secret=state.settings.mini_app_proxy_secret,
         host=state.settings.mini_app_bind_host,
         port=state.settings.mini_app_port,
     )
@@ -410,6 +421,21 @@ async def _configure_mini_app(application: Application) -> bool:
         state.settings.mini_app_port,
     )
     return True
+
+
+def _available_mini_app_url(settings: Settings, bot_username: str) -> str | None:
+    if not settings.telegram_mini_app_url:
+        return None
+    try:
+        validate_mini_app_runtime(
+            public_url=settings.telegram_mini_app_url,
+            proxy_secret=settings.mini_app_proxy_secret,
+            host=settings.mini_app_bind_host,
+            bot_username=bot_username,
+        )
+    except ValueError:
+        return None
+    return settings.telegram_mini_app_url
 
 
 async def _announce_current_release(db: Database, bot: Bot, settings: Settings) -> bool:
@@ -2091,7 +2117,7 @@ async def _handle_command_update(update: Update, context: ContextTypes.DEFAULT_T
             message=message,
             user_id=str(user.id),
             language=_chat_language(state.db, chat.id),
-            mini_app_url=state.settings.telegram_mini_app_url,
+            mini_app_url=_available_mini_app_url(state.settings, state.bot_username),
         ),
         send_config_menu=lambda: _send_config_menu(state.db, message),
         create_restart_confirmation=lambda: _create_restart_confirmation(
@@ -2168,7 +2194,7 @@ async def _send_hisopo_collection(
     )
     reply_markup = None
     if (
-        settings.telegram_mini_app_url
+        _available_mini_app_url(settings, bot_username)
         and settings.telegram_mini_app_short_name
         and bot_username
     ):

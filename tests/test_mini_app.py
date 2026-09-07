@@ -76,19 +76,6 @@ def request_stub(*, headers=None, query=None, body=None, json_error=None, path="
 
 
 class MiniAppAuthenticationTests(unittest.TestCase):
-    def test_support_copy_describes_club_and_privacy_without_stellar_reward(self) -> None:
-        mini_app_root = Path(__file__).resolve().parent.parent / "mini_app"
-        html = (mini_app_root / "index.html").read_text(encoding="utf-8")
-        javascript = (mini_app_root / "app.js").read_text(encoding="utf-8")
-
-        self.assertIn("Invitale Stars al proyecto", html)
-        self.assertNotIn("Invitále", html)
-        self.assertIn("Elegí cómo aparecer", html)
-        self.assertNotIn("Tu nombre, solo si querés", html)
-        self.assertIn("No entrega Hisopos, puntos ni ventajas", javascript)
-        self.assertNotIn("Recibís un Hisopo Estelar", javascript)
-        self.assertIn("Tus aportes aparecen como anónimos", javascript)
-
     def test_valid_init_data_and_direct_link(self) -> None:
         context = create_album_context("token", chat_id="-1001", user_id="1")
         user = validate_init_data(
@@ -195,56 +182,6 @@ class MiniAppApiTests(unittest.IsolatedAsyncioTestCase):
     def tearDown(self) -> None:
         self.temporary.cleanup()
 
-    async def test_index_authentication_and_preview_bootstrap(self) -> None:
-        response = await self.api.index(request_stub())
-        self.assertEqual(response._path.name, "index.html")
-        self.assertEqual(response._path.parent.name, "mini_app")
-
-        with self.assertRaises(web.HTTPUnauthorized):
-            await self.api.bootstrap(request_stub())
-
-        preview_db = MagicMock()
-        preview_db.owns_paid_hisopo.return_value = False
-        preview_db.get_donor_leaderboard.return_value = []
-        preview = MiniAppApi(
-            db=preview_db,
-            bot_token="token",
-            bot=None,
-            public_url="http://localhost:8765",
-            preview_mode=True,
-        )
-        user = preview.authenticate(request_stub())
-        self.assertEqual(user.user_id, "preview")
-        payload = json.loads((await preview.bootstrap(request_stub())).text)
-        self.assertEqual(payload["albums"][0]["title"], "Todos los grupos")
-        self.assertEqual(payload["selected_chat_id"], ALL_GROUPS_CHAT_ID)
-        self.assertEqual(len(payload["albums"]), 3)
-        self.assertEqual(len(payload["natural_hisopos"]), 17)
-        used = next(item for item in payload["natural_hisopos"] if item["key"] == "used")
-        self.assertEqual(used["image"], "/assets/hisopos/hisopo-usado.png")
-        self.assertEqual(
-            next(item for item in payload["paid_hisopos"] if item["key"] == "serene")[
-                "quantity"
-            ],
-            1,
-        )
-        self.assertEqual(len(payload["paid_hisopos"]), 21)
-        self.assertEqual(payload["paid_hisopos"][0]["key"], "mini")
-        self.assertEqual(payload["paid_hisopos"][0]["price_stars"], 25)
-        self.assertEqual(payload["paid_hisopos"][-2]["key"], "galerazo")
-        self.assertEqual(payload["paid_hisopos"][-2]["price_stars"], 6000)
-        self.assertEqual(payload["club"]["periods_paid"], 2)
-
-        group_payload = json.loads(
-            (
-                await preview.bootstrap(
-                    request_stub(query={"chat_id": "-1004433295809"})
-                )
-            ).text
-        )
-        self.assertEqual(group_payload["selected_chat_id"], "-1004433295809")
-        self.assertEqual(group_payload["natural_hisopos"][0]["quantity"], 5)
-
     async def test_real_bootstrap_selects_direct_query_fallback_and_empty_albums(self) -> None:
         direct_context = create_album_context("token", chat_id="-1", user_id="1")
         direct_headers = {
@@ -259,10 +196,8 @@ class MiniAppApiTests(unittest.IsolatedAsyncioTestCase):
         invalid_context_headers = {
             "X-Telegram-Init-Data": signed_init_data(start_param="invalid")
         }
-        payload = json.loads(
-            (await self.api.bootstrap(request_stub(headers=invalid_context_headers, query={"chat_id": "-1"}))).text
-        )
-        self.assertEqual(payload["selected_chat_id"], "-1")
+        with self.assertRaises(web.HTTPForbidden):
+            await self.api.bootstrap(request_stub(headers=invalid_context_headers, query={"chat_id": "-1"}))
 
         aggregate = json.loads(
             (await self.api.bootstrap(request_stub(headers=self.headers))).text
@@ -284,7 +219,7 @@ class MiniAppApiTests(unittest.IsolatedAsyncioTestCase):
         self.assertIsNone(payload["selected_chat_id"])
         self.assertEqual(payload["albums"], [])
 
-    async def test_invoice_preview_repeat_purchase_gifts_and_real_creation(self) -> None:
+    async def test_invoice_repeat_purchase_gifts_and_real_creation(self) -> None:
         with self.assertRaises(web.HTTPUnauthorized):
             await self.api.create_invoice(request_stub(body={"kind": "donation", "item_key": "25"}))
         with self.assertRaises(web.HTTPBadRequest):
@@ -314,26 +249,6 @@ class MiniAppApiTests(unittest.IsolatedAsyncioTestCase):
             request_stub(headers=self.headers, body={"kind": "product", "item_key": "serene"})
         )
         self.assertEqual(json.loads(repeated.text)["recipient_user_id"], "1")
-
-        preview_db = MagicMock()
-        preview_db.owns_paid_hisopo.return_value = False
-        preview = MiniAppApi(
-            db=preview_db,
-            bot_token="token",
-            bot=None,
-            public_url="http://localhost",
-            preview_mode=True,
-        )
-        preview_response = await preview.create_invoice(
-            request_stub(body={"kind": "donation", "item_key": "25"})
-        )
-        self.assertTrue(json.loads(preview_response.text)["preview"])
-        preview_gift = await preview.create_invoice(
-            request_stub(
-                body={"kind": "product", "item_key": "massive", "recipient": "@bobby"}
-            )
-        )
-        self.assertIn("@bobby", json.loads(preview_gift.text)["message"])
 
         response = await self.api.create_invoice(
             request_stub(
@@ -399,7 +314,7 @@ class MiniAppApiTests(unittest.IsolatedAsyncioTestCase):
                 )
             )
 
-    async def test_donor_visibility_preview_real_and_invalid(self) -> None:
+    async def test_donor_visibility_real_and_invalid(self) -> None:
         with self.assertRaises(web.HTTPUnauthorized):
             await self.api.donor_visibility(request_stub(body={"public": True}))
         with self.assertRaises(web.HTTPBadRequest):
@@ -417,17 +332,6 @@ class MiniAppApiTests(unittest.IsolatedAsyncioTestCase):
         )
         self.assertTrue(json.loads(response.text)["public"])
         self.assertTrue(self.db.is_donor_display_public("1"))
-
-        preview_db = MagicMock()
-        preview = MiniAppApi(
-            db=preview_db,
-            bot_token="token",
-            bot=None,
-            public_url="http://localhost",
-            preview_mode=True,
-        )
-        await preview.donor_visibility(request_stub(body={"public": True}))
-        self.assertTrue(preview.preview_public)
 
     def test_payload_covers_album_and_donor_name_fallbacks(self) -> None:
         db = MagicMock()
@@ -464,23 +368,24 @@ class MiniAppApiTests(unittest.IsolatedAsyncioTestCase):
         static_response = await security_headers(
             request_stub(path="/static/app.js"), AsyncMock(return_value=web.Response())
         )
-        self.assertNotIn("Cache-Control", static_response.headers)
+        self.assertEqual(static_response.headers["Cache-Control"], "no-store")
 
         app = build_mini_app(
             db=self.db,
             bot_token="token",
             bot=self.bot,
             public_url="https://example.test",
-            preview_mode=True,
+            proxy_secret="s" * 32,
         )
         self.assertIsInstance(app[MINI_APP_API_KEY], MiniAppApi)
-        self.assertGreaterEqual(len(list(app.router.routes())), 7)
+        self.assertEqual(len(list(app.router.routes())), 3)
 
         service = await start_mini_app(
             db=self.db,
             bot_token="token",
             bot=self.bot,
             public_url="https://example.test",
+            proxy_secret="s" * 32,
             host="127.0.0.1",
             port=0,
         )

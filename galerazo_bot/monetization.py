@@ -231,8 +231,9 @@ def invoice_spec(kind: str, item_key: str) -> InvoiceSpec:
     if kind == "product" and item_key in PAID_HISOPO_BY_KEY:
         product = PAID_HISOPO_BY_KEY[item_key]
         return InvoiceSpec(
-            product.name,
-            f"Hisopo especial permanente. {product.description}",
+            "Hisopo 67" if item_key == "dengue" else product.name,
+            "Una edicion especial permanente de tu coleccion." if item_key == "dengue"
+            else f"Hisopo especial permanente. {product.description}",
             product.price_stars,
             reward_hisopo_key=product.key,
         )
@@ -307,18 +308,20 @@ def parse_payment_payload(
 
 
 def create_album_context(bot_token: str, *, chat_id: str, user_id: str) -> str:
-    unsigned = f"a1.{chat_id}.{user_id}"
-    return f"{unsigned}.{_signature(bot_token, 'album', unsigned)}"
+    # Use only URL-safe letters/digits/underscore/hyphen in Telegram startapp links.
+    unsigned = f"a2_{chat_id}_{user_id}"
+    return f"{unsigned}_{_signature(bot_token, 'album', unsigned)}"
 
 
 def parse_album_context(bot_token: str, value: str, *, expected_user_id: str) -> str:
-    parts = value.split(".")
+    separator = "_" if value.startswith("a2_") else "."
+    parts = value.split(separator)
     if len(parts) != 4:
         raise ValueError("El contexto del álbum no es válido.")
     version, chat_id, user_id, signature = parts
-    unsigned = ".".join(parts[:-1])
+    unsigned = separator.join(parts[:-1])
     expected = _signature(bot_token, "album", unsigned)
-    if version != "a1" or user_id != expected_user_id or not hmac.compare_digest(signature, expected):
+    if version != ("a2" if separator == "_" else "a1") or user_id != expected_user_id or not signature.isascii() or not hmac.compare_digest(signature, expected):
         raise ValueError("El contexto del álbum no es válido.")
     return chat_id
 

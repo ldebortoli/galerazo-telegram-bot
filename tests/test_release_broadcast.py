@@ -20,12 +20,20 @@ class ReleaseBroadcastTests(unittest.TestCase):
         path.write_text(text, encoding="utf-8")
         return temporary, path
 
-    def test_current_release_is_explicitly_omitted_without_text(self) -> None:
-        entry, maximum_length = validate_release_broadcast(CURRENT_VERSION, 4096)
+    def test_historical_059_release_is_explicitly_omitted_without_text(self) -> None:
+        entry, maximum_length = validate_release_broadcast("0.59", 4096)
         self.assertEqual(entry.status, "omitido")
         self.assertEqual(entry.previous_version, "0.58")
         self.assertEqual(entry.text, "")
         self.assertEqual(maximum_length, 0)
+
+    def test_current_release_has_matching_version_and_is_blocked_while_draft(self) -> None:
+        entry, maximum_length = validate_release_broadcast(CURRENT_VERSION, 4096, require_approved=False)
+        self.assertEqual(entry.version, CURRENT_VERSION)
+        self.assertLessEqual(maximum_length, 4096)
+        if entry.status == "borrador":
+            with self.assertRaisesRegex(ValueError, "borrador"):
+                validate_release_broadcast(CURRENT_VERSION, 4096)
 
     def test_parses_approved_and_initial_entries_without_preamble(self) -> None:
         temporary, path = self._file(

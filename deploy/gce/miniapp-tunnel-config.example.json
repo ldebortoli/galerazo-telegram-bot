@@ -1,0 +1,13 @@
+{
+  "config": {
+    "ingress": [
+      {
+        "hostname": "bot-api.galerazo.com",
+        "path": "^/api/(bootstrap|invoice|donor-visibility)$",
+        "service": "http://127.0.0.1:8080",
+        "originRequest": { "connectTimeout": 5 }
+      },
+      { "service": "http_status:404" }
+    ]
+  }
+}

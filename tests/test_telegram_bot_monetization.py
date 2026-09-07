@@ -111,7 +111,7 @@ class TelegramBotMonetizationTests(unittest.IsolatedAsyncioTestCase):
         runner.cleanup.assert_awaited_once()
 
     async def test_configure_mini_app_disabled_invalid_success_and_button_failure(self) -> None:
-        bot = SimpleNamespace(set_chat_menu_button=AsyncMock())
+        bot = SimpleNamespace(set_chat_menu_button=AsyncMock(), get_me=AsyncMock(return_value=SimpleNamespace(username="galerazo_bot")))
         app = SimpleNamespace(bot_data={"state": state(settings())}, bot=bot)
         self.assertFalse(await tb._configure_mini_app(app))
 
@@ -121,7 +121,8 @@ class TelegramBotMonetizationTests(unittest.IsolatedAsyncioTestCase):
         configured_state = state(
             settings(
                 telegram_mini_app_url="https://example.test",
-                mini_app_bind_host="0.0.0.0",
+                mini_app_bind_host="127.0.0.1",
+                mini_app_proxy_secret="s" * 32,
                 mini_app_port=8080,
             )
         )
@@ -134,7 +135,8 @@ class TelegramBotMonetizationTests(unittest.IsolatedAsyncioTestCase):
             bot_token="token",
             bot=bot,
             public_url="https://example.test",
-            host="0.0.0.0",
+            host="127.0.0.1",
+            proxy_secret="s" * 32,
             port=8080,
         )
         self.assertIs(app.bot_data["mini_app_service"], service)
@@ -175,6 +177,7 @@ class TelegramBotMonetizationTests(unittest.IsolatedAsyncioTestCase):
         configured = settings(
             telegram_mini_app_url="https://example.test",
             telegram_mini_app_short_name="hisopos",
+            mini_app_proxy_secret="s" * 32,
         )
         self.assertTrue(
             await tb._send_hisopo_collection(
