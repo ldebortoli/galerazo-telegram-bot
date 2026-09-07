@@ -1,7 +1,7 @@
 # Limite mensual de transferencia de la Mini App
 
-Implementado desde 0.62; **preparado, no activado en produccion**. Su activacion
-requiere el release autorizado y la configuracion pendiente de la Mini App.
+Implementado desde 0.62 y activado en produccion el 2026-09-07 con el release
+autorizado. Las instalaciones adicionales requieren configurar la Mini App.
 El supervisor corre en la VM existente, sin servicios pagos de Monitoring,
 BigQuery ni otra VM. Las imagenes ya se sirven comprimidas desde Cloudflare.
 
