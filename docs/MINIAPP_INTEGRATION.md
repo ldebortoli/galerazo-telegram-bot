@@ -8,6 +8,13 @@ No existe modo preview ni respuesta simulada en el backend.
 
 ## Contrato
 
+Condicion de costo: no generar gastos adicionales. Los assets se sirven desde
+Cloudflare y sus derivados WebP se mantienen en Galerazo web; la VM solo entrega
+JSON. Antes de activar Tunnel/API, comprobar el consumo compartido del Free Tier
+de Google Cloud y el plan gratuito de Workers. Tunnel sin cargo no elimina el
+costo potencial de salida de datos de la VM. No ampliar recursos ni activar
+servicios pagos automaticamente; un presupuesto de Billing solo alerta, no corta.
+
 | Gateway web | Backend | Metodo |
 | --- | --- | --- |
 | `/miniapp/api/bootstrap?chat_id=all` | `/api/bootstrap?chat_id=all` | GET |
