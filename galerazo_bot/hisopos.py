@@ -1,13 +1,14 @@
 from __future__ import annotations
 
 import secrets
-from collections.abc import Callable
+from collections.abc import Callable, Iterable
 from dataclasses import dataclass, replace
 from datetime import datetime, time, timedelta, timezone
 from zoneinfo import ZoneInfo
 
-from .database import HisopoCollectionEntry, HisopoScore
+from .database import HisopoCollectionEntry, HisopoScore, PaidHisopoOwnership
 from .i18n import DEFAULT_LANGUAGE, t
+from .monetization import CLUB_HISOPO, PAID_HISOPOS
 from .pagination import MESSAGE_LIMIT, PaginatedPage, build_page_line_groups, render_prebuilt_pages
 
 
@@ -306,6 +307,7 @@ def render_hisopo_collection(
     user_name: str,
     user_id: str,
     language: str = DEFAULT_LANGUAGE,
+    ownership: Iterable[PaidHisopoOwnership] = (),
 ) -> str:
     counts = {entry.hisopo_type: entry.capture_count for entry in entries}
     discovered = sum(counts.get(key, 0) > 0 for key in COLLECTIBLE_HISOPO_KEYS)
@@ -317,6 +319,7 @@ def render_hisopo_collection(
             user=user_name,
             user_id=user_id,
         ),
+        t(language, "hisopos.collection.chat"),
         t(
             language,
             "hisopos.collection.progress",
@@ -335,6 +338,12 @@ def render_hisopo_collection(
             else f"hisopos.type.{key}"
         )
         lines.append(f"{marker} {t(language, type_key)}: {count}")
+    cosmetic_counts = {entry.hisopo_key: entry.quantity for entry in ownership}
+    lines.extend(("", t(language, "hisopos.collection.cosmetics")))
+    for product in (*PAID_HISOPOS, CLUB_HISOPO):
+        count = cosmetic_counts.get(product.key, 0)
+        marker = "✅" if count else "❓"
+        lines.append(f"{marker} {product.public_name}: {count}")
     return "\n".join(lines)
 
 

@@ -50,6 +50,7 @@ def handle_collection(context: CommandContext, db: Database):
         user_name=target_name,
         user_id=target_user_id,
         language=context.language,
+        ownership=db.get_paid_hisopo_ownership(target_user_id),
     )
 
 

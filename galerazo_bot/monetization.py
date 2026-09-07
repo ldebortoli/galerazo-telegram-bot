@@ -20,6 +20,10 @@ class PaidHisopo:
     image_name: str
     accent: str
 
+    @property
+    def public_name(self) -> str:
+        return "Hisopo mosquito" if self.key == "dengue" else self.name
+
 
 @dataclass(frozen=True)
 class PaymentIntent:
@@ -231,7 +235,7 @@ def invoice_spec(kind: str, item_key: str) -> InvoiceSpec:
     if kind == "product" and item_key in PAID_HISOPO_BY_KEY:
         product = PAID_HISOPO_BY_KEY[item_key]
         return InvoiceSpec(
-            "Hisopo mosquito" if item_key == "dengue" else product.name,
+            product.public_name,
             "Una edicion especial permanente de tu coleccion." if item_key == "dengue"
             else f"Hisopo especial permanente. {product.description}",
             product.price_stars,

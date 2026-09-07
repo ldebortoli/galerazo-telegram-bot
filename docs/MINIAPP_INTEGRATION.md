@@ -78,9 +78,9 @@ de release de este proyecto. La web devuelve 503 hasta completar el corte.
    404. No habilitar cache, captura de headers/payloads, niveles debug ni reglas
    que registren el secreto o initData. No usar un Quick Tunnel efimero.
 3. Instalar `cloudflared` y la unidad supervisada siguiendo
-   [el mecanismo de corte mensual](MINIAPP_TRAFFIC_GUARD.md). Desde 0.62, el
+   [el mecanismo de corte mensual](MINIAPP_TRAFFIC_GUARD.md). Desde 0.63, el
    supervisor de la VM avisa a 700/850 MB y detiene exclusivamente el tunel a
-   925 MB. Usa el runtime exacto de la imagen aprobada, UID 10001, estado
+   950 MB. Usa el runtime exacto de la imagen aprobada, UID 10001, estado
    persistente y credenciales de avisos separadas. El bot sigue funcionando.
    No instalar un segundo servicio de tunel que eluda el corte. Habilitar esta
    unidad solamente durante el release autorizado. El token de tunel es

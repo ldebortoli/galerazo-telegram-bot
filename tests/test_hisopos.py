@@ -24,6 +24,7 @@ from galerazo_bot.database import (
     HisopoCollectionEntry,
     HisopoMessageCleanup,
     HisopoScore,
+    PaidHisopoOwnership,
 )
 from galerazo_bot.hisopos import (
     BLACK_HOLE_HISOPO,
@@ -110,7 +111,7 @@ class HisopoRulesTests(unittest.TestCase):
                 )
                 collection = render_hisopo_collection([], "User", "2", language)
                 self.assertNotIn(mystery_note, collection)
-                self.assertEqual(len(collection.splitlines()), 20)
+                self.assertLessEqual(len(collection.encode("utf-16-le")) // 2, 4096)
 
     def test_all_localized_rules_document_the_miracle_cap(self) -> None:
         for language, catalog in HISOPO_TRANSLATIONS.items():
@@ -439,7 +440,10 @@ class HisopoRulesTests(unittest.TestCase):
             HisopoCollectionEntry("mystery", 1, "2026-08-20T15:00:00+00:00", "2026-08-20T15:00:00+00:00"),
         ]
 
-        rendered = render_hisopo_collection(entries, "Ana", "2")
+        rendered = render_hisopo_collection(entries, "Ana", "2", ownership=[
+            PaidHisopoOwnership("mini", 10, "first", "last"),
+            PaidHisopoOwnership("stellar", 2, "first", "last"),
+        ])
 
         self.assertEqual(len(COLLECTIBLE_HISOPO_KEYS), 17)
         self.assertIn("mystery", COLLECTIBLE_HISOPO_KEYS)
@@ -460,7 +464,15 @@ class HisopoRulesTests(unittest.TestCase):
         self.assertNotIn("hisopo gigante cooperativo: 0", rendered)
         self.assertNotIn("cuenta como Misterioso y también como el tipo real", rendered)
         self.assertNotIn("solo quien lo revela suma Misterioso", rendered)
-        self.assertEqual(rendered.splitlines()[-1], "❓ hisopo vencido: 0")
+        natural, cosmetics = rendered.split("\n\nCosméticos — todos los chats\n")
+        self.assertIn("Coleccionables de este chat", natural)
+        self.assertEqual(natural.splitlines()[-1], "❓ hisopo vencido: 0")
+        self.assertIn("✅ Hisopo Mini: 10", cosmetics)
+        self.assertIn("❓ Hisopo Pico: 0", cosmetics)
+        self.assertIn("✅ Hisopo Estelar: 2", cosmetics)
+        self.assertIn("❓ Hisopo mosquito: 0", cosmetics)
+        self.assertNotIn("Hisopo Dengue", cosmetics)
+        self.assertNotIn("Capturas:", cosmetics)
 
 
 class HisopoDatabaseTests(unittest.TestCase):
@@ -1786,6 +1798,9 @@ class HisopoCommandTests(unittest.IsolatedAsyncioTestCase):
         db.get_hisopo_collection.return_value = [
             HisopoCollectionEntry("gold", 2, "first", "last")
         ]
+        db.get_paid_hisopo_ownership.side_effect = lambda user_id: [
+            PaidHisopoOwnership("pico", 4 if user_id == "1" else 9, "first", "last")
+        ]
         own = hisopo_handlers.handle_collection(
             self._context(sender_display_name="Owner"),
             db,
@@ -1793,6 +1808,8 @@ class HisopoCommandTests(unittest.IsolatedAsyncioTestCase):
         self.assertIn("Owner (1)", own)
         self.assertIn("hisopo dorado: 2", own)
         db.get_hisopo_collection.assert_called_with("-1", "1")
+        db.get_paid_hisopo_ownership.assert_called_with("1")
+        self.assertIn("Hisopo Pico: 4", own)
 
         replied = hisopo_handlers.handle_collection(
             self._context(
@@ -1803,6 +1820,8 @@ class HisopoCommandTests(unittest.IsolatedAsyncioTestCase):
         )
         self.assertIn("Winner (2)", replied)
         db.get_hisopo_collection.assert_called_with("-1", "2")
+        db.get_paid_hisopo_ownership.assert_called_with("2")
+        self.assertIn("Hisopo Pico: 9", replied)
         self.assertIn(
             "grupos",
             hisopo_handlers.handle_collection(self._context(chat_type="private"), db),

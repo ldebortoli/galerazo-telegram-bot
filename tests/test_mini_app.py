@@ -193,6 +193,14 @@ class MiniAppApiTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(payload["selected_chat_id"], "-1")
         self.assertEqual(payload["natural_hisopos"][0]["quantity"], 3)
 
+        # A button from somebody else's command must never expose their album
+        # or silently switch to the clicker's album.
+        other_headers = {"X-Telegram-Init-Data": signed_init_data(
+            user={"id": 2, "first_name": "Bob"}, start_param=direct_context)}
+        with self.assertRaises(web.HTTPForbidden) as rejected:
+            await self.api.bootstrap(request_stub(headers=other_headers))
+        self.assertIn("no es valido para este usuario", rejected.exception.text)
+
         invalid_context_headers = {
             "X-Telegram-Init-Data": signed_init_data(start_param="invalid")
         }
@@ -218,6 +226,31 @@ class MiniAppApiTests(unittest.IsolatedAsyncioTestCase):
         )
         self.assertIsNone(payload["selected_chat_id"])
         self.assertEqual(payload["albums"], [])
+
+    async def test_command_and_miniapp_share_global_cosmetics_across_chat_albums(self) -> None:
+        from galerazo_bot.command_handlers.hisopos import handle_collection
+        from galerazo_bot.roles import CommandContext, UserLevel
+
+        self.db.register_chat("-2", "group", "Álbum Dos")
+        with self.db._connect() as conn:
+            conn.execute("INSERT INTO hisopo_collections VALUES ('-2', '1', 'common', 8, 'first', 'last')")
+            conn.execute("INSERT INTO paid_hisopo_ownership VALUES ('1', 'pico', 10, 'first', 'last')")
+            conn.execute("INSERT INTO paid_hisopo_ownership VALUES ('1', 'stellar', 2, 'first', 'last')")
+            conn.execute("INSERT INTO paid_hisopo_ownership VALUES ('2', 'pico', 99, 'first', 'last')")
+        for chat_id, expected_captures in (("-1", 3), ("-2", 8)):
+            context = CommandContext(sender_id="1", chat_id=chat_id, chat_type="group",
+                user_level=UserLevel.COMMON, raw_text="/coleccionhisopos", args="")
+            text = handle_collection(context, self.db)
+            self.assertIn(f"hisopo común: {expected_captures}", text)
+            self.assertIn("Hisopo Pico: 10", text)
+            self.assertIn("Hisopo Estelar: 2", text)
+            self.assertNotIn("Hisopo Pico: 99", text)
+            payload = json.loads((await self.api.bootstrap(request_stub(
+                headers=self.headers, query={"chat_id": chat_id}))).text)
+            self.assertEqual(payload["natural_hisopos"][0]["quantity"], expected_captures)
+            quantities = {item["key"]:item["quantity"] for item in payload["paid_hisopos"]}
+            self.assertEqual(quantities["pico"], 10)
+            self.assertEqual(quantities["stellar"], 2)
 
     async def test_invoice_repeat_purchase_gifts_and_real_creation(self) -> None:
         with self.assertRaises(web.HTTPUnauthorized):

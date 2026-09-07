@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.63] - 2026-09-07
+
+- `/coleccionhisopos` muestra primero los coleccionables del chat y luego el inventario cosmetico global del usuario, con sus cantidades, incluidos los tipos todavia no adquiridos. Conserva el acceso a la Mini App y la consulta respondiendo a otra persona.
+- Correcciones y mejoras: el corte de la Mini App sube a 950 MB por mes calendario, con avisos a 700 y 850 MB. El monitor permite incorporar una base mensual auditada sin arrastrar meses anteriores ni perder el trafico posterior a la medicion; los avisos explicitan el mes y el horario de reinicio. El bot de Telegram continua funcionando al pausar la Mini App.
+
 ## [0.62] - 2026-09-07
 
 - Supervisor de transferencia preparado para la Mini App: avisos a 700 y 850 MB y pausa del tunel a 925 MB por mes, manteniendo el bot de Telegram en funcionamiento. Conserva el consumo entre reinicios y bloquea la Mini App cuando no hay historial fiable. Su activacion acompana la configuracion y el release de la Mini App.

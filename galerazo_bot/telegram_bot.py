@@ -2191,6 +2191,7 @@ async def _send_hisopo_collection(
         user_name=_display_name(target_user),
         user_id=str(target_user.id),
         language=language,
+        ownership=db.get_paid_hisopo_ownership(str(target_user.id)),
     )
     reply_markup = None
     if (

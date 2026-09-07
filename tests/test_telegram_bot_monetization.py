@@ -9,7 +9,7 @@ from telegram import User
 from telegram.error import TimedOut
 
 from galerazo_bot.config import Settings
-from galerazo_bot.database import HisopoCollectionEntry
+from galerazo_bot.database import HisopoCollectionEntry, PaidHisopoOwnership
 from galerazo_bot.mini_app import MiniAppService
 from galerazo_bot import telegram_bot as tb
 
@@ -152,6 +152,7 @@ class TelegramBotMonetizationTests(unittest.IsolatedAsyncioTestCase):
         db.get_hisopo_collection.return_value = [
             HisopoCollectionEntry("common", 2, "first", "last")
         ]
+        db.get_paid_hisopo_ownership.return_value = [PaidHisopoOwnership("alfiler", 3, "first", "last")]
         message = SimpleNamespace(
             chat=SimpleNamespace(id=-1),
             reply_text=AsyncMock(),
@@ -172,6 +173,9 @@ class TelegramBotMonetizationTests(unittest.IsolatedAsyncioTestCase):
         kwargs = message.reply_text.await_args.kwargs
         self.assertIsNone(kwargs["reply_markup"])
         self.assertIn("Grace (2)", message.reply_text.await_args.args[0])
+        self.assertIn("Cosméticos — todos los chats", message.reply_text.await_args.args[0])
+        self.assertIn("Hisopo Alfiler: 3", message.reply_text.await_args.args[0])
+        db.get_paid_hisopo_ownership.assert_called_with("2")
 
         message.reply_text.reset_mock()
         configured = settings(

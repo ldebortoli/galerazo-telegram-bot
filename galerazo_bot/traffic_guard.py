@@ -16,7 +16,7 @@ from .runtime import ensure_python_version
 
 MB = 1_000_000
 WARNING_BYTES = (700 * MB, 850 * MB)
-LIMIT_BYTES = 925 * MB
+LIMIT_BYTES = 950 * MB
 POLL_SECONDS = 2
 # Billing documents midnight UTC-8. Fixed PST also avoids an early DST reset.
 BILLING_ZONE = timezone(timedelta(hours=-8))
@@ -114,16 +114,36 @@ def save_budget(path: Path, budget: Budget) -> None:
     temp.replace(path)
 
 
+def monthly_baseline(period: str, used: int, anchor: Sample, current: Sample) -> Budget:
+    """Join an audited monthly estimate to live counters, without losing tail bytes.
+
+    Operator-only recovery: callers must verify the source/estimate, preserve a
+    backup and stop the supervisor before replacing its state. No cloud calls or
+    automatic resets. Unknown history still closes the tunnel in advance().
+    """
+    if (period != billing_period(anchor.at)[0] or period != billing_period(current.at)[0]
+            or type(used) is not int or used < 0 or anchor.boot_started > anchor.at
+            or not anchor.boot or not anchor.counters
+            or any(type(v) is not int or v < 0 for v in anchor.counters.values())
+            or current.boot_started != anchor.boot_started):
+        raise ValueError("Invalid monthly baseline")
+    budget = advance(Budget(period, anchor, used, False), current)
+    if budget.uncertain:
+        raise ValueError("Monthly baseline lost counter continuity")
+    return budget
+
+
 def notice_text(budget: Budget) -> str:
+    limit_mb = LIMIT_BYTES // MB
     if budget.uncertain:
         status = "Mini App pausada: falta historial fiable de transferencia."
     elif budget.blocked:
-        status = "Mini App pausada: se alcanzo el corte de 925 MB."
+        status = f"Mini App pausada: se alcanzo el corte de {limit_mb} MB."
     elif budget.used >= WARNING_BYTES[0]:
-        status = "Aviso de transferencia. La Mini App se pausa a los 925 MB."
+        status = f"Aviso de transferencia. La Mini App se pausa a los {limit_mb} MB."
     else:
-        status = "Monitor activo; la Mini App tiene margen para funcionar."
-    return (f"{status}\nPeriodo: {budget.period} (reinicio dia 1, 08:00 UTC).\n"
+        status = f"Monitor activo; la Mini App se pausa a los {limit_mb} MB del mes."
+    return (f"{status}\nMes calendario: {budget.period} (reinicio dia 1, 08:00 UTC / 05:00 Argentina).\n"
             f"Salida VM contabilizada conservadoramente: {budget.used / MB:.2f} MB.\n"
             "Telegram sigue funcionando. Esta medicion no es una factura ni incluye otras VM.")
 

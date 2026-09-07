@@ -1,7 +1,8 @@
 # Limite mensual de transferencia de la Mini App
 
 Implementado desde 0.62 y activado en produccion el 2026-09-07 con el release
-autorizado. Las instalaciones adicionales requieren configurar la Mini App.
+autorizado. El corte de 950 MB requiere 0.63; hasta desplegar esa correccion,
+0.62 mantiene el corte de 925 MB. Las instalaciones adicionales requieren configurar la Mini App.
 El supervisor corre en la VM existente, sin servicios pagos de Monitoring,
 BigQuery ni otra VM. Las imagenes ya se sirven comprimidas desde Cloudflare.
 
@@ -11,11 +12,11 @@ BigQuery ni otra VM. Las imagenes ya se sirven comprimidas desde Cloudflare.
 | --- | --- |
 | 700 MB | Aviso en el chat de logging configurado |
 | 850 MB | Segundo aviso |
-| 925 MB o mas | Detener cloudflared y avisar; mantener Telegram activo |
+| 950 MB o mas | Detener cloudflared y avisar; mantener Telegram activo |
 | Dia 1, 08:00 UTC | Nuevo periodo; permitir el tunel si el contador es fiable |
 | Lectura/persistencia fallida o historial incompleto | Mantener el tunel cerrado |
 
-MB significa 1.000.000 bytes; el corte es **925.000.000 bytes**, conservador
+MB significa 1.000.000 bytes; el corte es **950.000.000 bytes**, conservador
 frente a 1 GB/GiB. Se muestrea cada 2 segundos, con hasta 1 segundo adicional
 para detener el proceso antes de forzar su salida. El supervisor posee el
 proceso cloudflared; al morir su contenedor no sobrevive un tunel independiente.
@@ -52,10 +53,38 @@ interfaz o reinicio de VM deja el periodo bloqueado. El siguiente mes puede
 recuperarse con mediciones continuas. No borrar ni editar el archivo para
 reabrir la Mini App y no inicializar artificialmente el contador en cero.
 
-En la inspeccion del 2026-09-07, la VM llevaba unos 48 dias encendida y su
-interfaz reportaba aproximadamente 799,55 MB **desde el arranque**, no solo
-septiembre. Es una base conservadora util para la primera instalacion; no
-confirma el consumo facturado del mes. Debe volver a leerse al activar.
+En la inspeccion del 2026-09-07, el contador de unos 805 MB incluia trafico
+desde julio. Monitoring registra aproximadamente 130 MB del 1 al 7 de septiembre,
+con dos intervalos de un minuto sin datos. Para corregir ese primer mes se
+aplico una base estimada de 150 MB, que incluye unos 20 MB de reserva, mas
+todo el trafico local posterior a una muestra de enlace. Esa reserva es una
+precaucion operativa, no una cota demostrada de los minutos sin datos ni una
+garantia de facturacion. No se instalan agentes ni metricas personalizadas.
+La correccion se aplico a las 22:15 UTC con copia previa: 150.135.974 bytes
+incluyendo el trafico desde la muestra de enlace. El supervisor confirmo despues
+150.200.355 bytes, mes 2026-09 y aviso actualizado; el bot permanecio saludable.
+
+### Correccion auditada de una base mensual
+
+1. Leer la metrica nativa `compute.googleapis.com/instance/network/sent_bytes_count`
+   mediante `projects.timeSeries.list`, filtrando proyecto, instancia y mes
+   calendario. Sumar los DELTA en bytes, revisar paginacion, intervalos y huecos.
+   Conservar privadamente la respuesta original y la estimacion/reserva elegida.
+2. Capturar una muestra local `anchor`. Esperar a que Monitoring cubra al menos
+   esa fecha (ingesta hasta 240 segundos) y comprobar que la base elegida cubre
+   el total observado hasta esa muestra mas la reserva declarada.
+3. Detener **solo** el supervisor, respaldar el estado previo y obtener una
+   muestra `current`. Calcular `monthly_baseline(period, used, anchor, current)`:
+   exige el mismo mes, arranque e interfaces y contadores monotones; suma el
+   trafico transcurrido desde `anchor`. Si alguna comprobacion falla, abortar.
+4. Guardar atomicamente el nuevo presupuesto, conservar UID/GID 10001 y permisos
+   privados, arrancar el supervisor y verificar incremento del contador, tunel y
+   bot saludable. El siguiente muestreo suma tambien los bytes de la operacion.
+
+La correccion es una operacion administrativa puntual. No consulta APIs cada
+mes: desde entonces el supervisor conserva muestras continuas y abre un nuevo
+periodo el dia 1, sin llevar el saldo anterior. Un reinicio del proceso dentro
+del mismo mes conserva el saldo. No convertir una caida de contador en un reset.
 
 ## Activacion en el release autorizado
 
@@ -105,6 +134,7 @@ el mismo runtime. No existe una orden para anular el limite automaticamente.
 
 Suite nativa: `.venv/Scripts/python.exe -m pytest tests/test_traffic_guard.py`.
 Prueba umbrales exactos, reinicio y perdida/corrupcion de estado, cambio de mes,
+correccion mensual con trafico posterior y rechazo de muestras incompatibles,
 reinicio de VM, fallo de disco, perdida de interfaz, HTTP fallido, avisos lentos,
 proceso que ignora SIGTERM y salida segura. Las pruebas usan procesos/notificaciones
 simulados; el smoke Docker verifica el runtime Linux y un proceso real local sin

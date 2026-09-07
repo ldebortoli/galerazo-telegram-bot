@@ -18,13 +18,15 @@ def sample(at="2026-09-07T18:00:00+00:00", used=100, boot="a", boot_started=0):
 
 @pytest.mark.parametrize("used,blocked,level", [(0, False, 0), (699999999, False, 0),
     (700000000, False, 1), (849999999, False, 1), (850000000, False, 2),
-    (924999999, False, 2), (925000000, True, 3), (1100000000, True, 3)])
+    (925000000, False, 2), (949999999, False, 2), (950000000, True, 3), (1100000000, True, 3)])
 def test_exact_thresholds(used, blocked, level):
     budget = g.advance(None, sample(used=used))
     assert budget.used == used
     assert budget.blocked is blocked
     assert budget.notice == f"2026-09:{level}"
     assert "Telegram sigue funcionando" in g.notice_text(budget)
+    assert "950 MB" in g.notice_text(budget)
+    assert "Mes calendario: 2026-09" in g.notice_text(budget)
 
 
 def test_month_rollover_does_not_reset_at_utc_midnight_or_early_in_summer():
@@ -35,6 +37,36 @@ def test_month_rollover_does_not_reset_at_utc_midnight_or_early_in_summer():
     current = g.advance(previous, sample("2026-10-01T08:00:00+00:00", 950000050))
     assert current.period == "2026-10"
     assert current.used == 30 and not current.blocked
+
+
+def test_audited_monthly_baseline_removes_prior_months_and_preserves_tail_and_restart(tmp_path):
+    anchor = sample(used=805000000)
+    current = sample("2026-09-07T18:10:00+00:00", 805020000)
+    budget = g.monthly_baseline("2026-09", 150000000, anchor, current)
+    assert budget.used == 150020000 and not budget.blocked
+    assert budget.notified == ""  # notify the corrected monthly level
+    path = tmp_path / "budget.json"
+    g.save_budget(path, budget)
+    resumed = g.advance(g.load_budget(path), sample("2026-09-08T18:00:00+00:00", 805030000))
+    assert resumed.used == 150030000
+    # The corrected baseline is used only in September, never carried to October.
+    october = g.advance(resumed, sample("2026-10-01T08:00:00+00:00", 805030007))
+    assert october.period == "2026-10" and october.used == 7
+
+
+@pytest.mark.parametrize("field,value", [("period", "2026-08"), ("used", -1), ("used", True),
+    ("anchor", replace(sample(), boot_started=sample().at + 1)),
+    ("anchor", replace(sample(), boot="")), ("anchor", replace(sample(), counters={})),
+    ("anchor", replace(sample(), counters={"ens4:2": -1})),
+    ("current", replace(sample(), boot_started=1)), ("current", sample(boot="b")),
+    ("current", sample(used=99)), ("current", replace(sample(), counters={"ens4:3": 100})),
+    ("current", sample("2026-09-06T18:00:00+00:00")),
+    ("current", sample("2026-10-01T08:00:00+00:00"))])
+def test_monthly_baseline_rejects_wrong_month_invalid_data_or_lost_continuity(field, value):
+    args = dict(period="2026-09", used=10, anchor=sample(), current=sample())
+    args[field] = value
+    with pytest.raises(ValueError):
+        g.monthly_baseline(**args)
 
 
 def test_first_install_unknown_history_and_counter_discontinuities_stay_closed():
@@ -158,7 +190,7 @@ async def test_cutoff_precedes_slow_notification_and_is_persistent(tmp_path):
         assert spawn.call_count == 1
         assert "TELEGRAM_BOT_TOKEN" not in spawn.call_args.kwargs["env"]
         await s.step()  # pending notice must not start another child or notice
-        reading.return_value = sample(used=925000000)
+        reading.return_value = sample(used=950000000)
         await s.step()
         process.terminate.assert_called_once()
         assert g.load_budget(s.path).blocked
