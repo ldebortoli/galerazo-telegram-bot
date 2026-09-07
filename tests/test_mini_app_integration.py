@@ -178,7 +178,7 @@ async def test_invoice_gift_to_payment_keeps_authoritative_price_owner_and_idemp
     assert response.status == 200
     assert (await response.json())["invoice_url"] == "https://t.me/$fixture"
     invoice = bot.create_invoice_link.await_args.kwargs
-    assert invoice["title"] == "Hisopo 67"
+    assert invoice["title"] == "Hisopo mosquito"
     assert "Dengue" not in invoice["description"]
     assert invoice["currency"] == "XTR" and invoice["prices"][0].amount == 5000
     intent = parse_payment_payload("token", invoice["payload"])
@@ -197,7 +197,7 @@ async def test_invoice_gift_to_payment_keeps_authoritative_price_owner_and_idemp
     message = payment_message(successful_payment(invoice["payload"], amount=5000, charge_id="fixture-charge"))
     assert await process_successful_payment(message=message, db=db, bot_token="token")
     assert not await process_successful_payment(message=message, db=db, bot_token="token")
-    assert "Hisopo 67" in message.reply_text.await_args.args[0]
+    assert "Hisopo mosquito" in message.reply_text.await_args.args[0]
     assert not db.get_paid_hisopo_ownership("1")
     assert [(x.hisopo_key, x.quantity) for x in db.get_paid_hisopo_ownership("2")] == [("dengue", 1)]
     assert not db.get_hisopo_scores("-1")

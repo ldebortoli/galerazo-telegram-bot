@@ -6,9 +6,9 @@ cubre y debe pasar de `borrador` a `aprobado` antes de publicar una imagen. Una 
 vacía con estado `omitido` registra una excepción explícitamente solicitada por el usuario:
 el runtime avanza el cursor sin enviar un broadcast ni acumularla para otro release.
 
-## [0.60] desde=[0.59] estado=borrador
+## [0.61] desde=[0.59] estado=borrador
 
-Novedades de Galerazo Bot v0.60
+Novedades de Galerazo Bot v0.61
 
 La Mini App reune tus albumes, la tienda y las formas de apoyar al proyecto en galerazo.com, dentro de Telegram. Desde una coleccion de grupo podes cambiar a tus otros albumes o verlos todos juntos.
 

@@ -43,9 +43,9 @@ regalos. Crear una factura no acredita inventario ni registra un cobro.
 Telegram confirma el pago por polling; se verifican firma, comprador, moneda
 e importe y se aplica una vez por `telegram_payment_charge_id`.
 
-La identidad editorial `Hisopo 67` usa `special-67` en la web y su SKU historico
+La identidad editorial `Hisopo mosquito` usa `special-67` en la web y su SKU historico
 en el gateway/ledger. No migrar claves, posesiones, precios ni cantidades. Las
-facturas y confirmaciones del bot muestran tambien el nombre editorial neutro.
+facturas y confirmaciones del bot muestran tambien ese nombre editorial.
 El bootstrap interno conserva el catalogo historico; el Worker filtra su
 presentacion antes de enviarlo al navegador.
 

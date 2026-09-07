@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.61] - 2026-09-07
+
+- Correcciones y mejoras: las facturas y confirmaciones muestran Hisopo mosquito, en sintonia con la tienda.
+
 ## [0.60] - 2026-09-07
 
 - Preparacion de la Mini App en galerazo.com para consultar albumes, tienda y apoyo desde Telegram. Su activacion se realiza al completar la configuracion.
