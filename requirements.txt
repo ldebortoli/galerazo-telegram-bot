@@ -2,7 +2,7 @@ aiohappyeyeballs==2.7.1
 aiohttp==3.14.3
 aiolimiter==1.2.1
 aiosignal==1.4.0
-anyio==4.14.2
+anyio==4.15.1
 APScheduler==3.11.3
 attrs==26.1.0
 av==18.1.0
@@ -13,14 +13,14 @@ colorama==0.4.6
 coverage==7.16.0
 cryptography==50.0.1
 frozenlist==1.8.0
-google-api-core==2.34.0
-google-auth==2.57.0
+google-api-core==2.36.0
+google-auth==2.57.1
 google-auth-oauthlib==1.4.1
-google-cloud-bigquery==3.44.0
+google-cloud-bigquery==3.45.0
 google-cloud-core==2.7.0
 google-crc32c==1.8.0
 google-resumable-media==2.10.2
-googleapis-common-protos==1.75.2
+googleapis-common-protos==1.75.3
 grpcio==1.83.1
 grpcio-status==1.83.1
 gspread==6.2.1
@@ -31,6 +31,7 @@ idna==3.19
 iniconfig==2.3.0
 multidict==6.7.1
 oauthlib==3.3.1
+opentelemetry-api==1.44.0
 packaging==26.3
 pillow==12.3.0
 pluggy==1.6.0
