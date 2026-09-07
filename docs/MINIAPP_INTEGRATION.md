@@ -77,14 +77,15 @@ de release de este proyecto. La web devuelve 503 hasta completar el corte.
    Solo las tres rutas indicadas llegan al backend; todo lo demas termina en
    404. No habilitar cache, captura de headers/payloads, niveles debug ni reglas
    que registren el secreto o initData. No usar un Quick Tunnel efimero.
-3. Instalar una version estable verificada de `cloudflared` en la VM existente
-   (fijar la version al activar). Crear un usuario de sistema dedicado
-   `cloudflared` sin login. Guardar su token en
-   `/etc/galerazo/cloudflared.token`, propietario `cloudflared:cloudflared`, modo
-   0400, y copiar la unidad preparada como `galerazo-miniapp-tunnel.service`.
-   Habilitar/iniciar esta unidad solamente durante el corte autorizado. El token
-   nunca va en el comando, Git, mensajes o logs. El token de tunel es diferente
-   del secreto proxy y no se entrega al Worker.
+3. Instalar `cloudflared` y la unidad supervisada siguiendo
+   [el mecanismo de corte mensual](MINIAPP_TRAFFIC_GUARD.md). Desde 0.62, el
+   supervisor de la VM avisa a 700/850 MB y detiene exclusivamente el tunel a
+   925 MB. Usa el runtime exacto de la imagen aprobada, UID 10001, estado
+   persistente y credenciales de avisos separadas. El bot sigue funcionando.
+   No instalar un segundo servicio de tunel que eluda el corte. Habilitar esta
+   unidad solamente durante el release autorizado. El token de tunel es
+   diferente del secreto proxy y nunca se entrega al Worker ni va en Git,
+   argumentos, mensajes o logs.
 4. La unidad usa salida IPv6, HTTP/2 por TCP 7844 y metricas solo en loopback.
    La VM actual ya tiene Compose con red de host: `cloudflared` alcanza el
    `127.0.0.1:8080` del bot sin publicar puertos. No abrir firewall entrante,

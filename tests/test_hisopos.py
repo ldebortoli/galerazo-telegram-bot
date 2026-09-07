@@ -320,6 +320,13 @@ class HisopoRulesTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "miembros"):
             giant_required_helpers(0)
 
+    def test_radioactive_published_rules_match_all_time_bands_in_every_language(self) -> None:
+        for language, catalog in HISOPO_TRANSLATIONS.items():
+            with self.subTest(language=language):
+                line = next(line for line in catalog["hisopos.rules"].splitlines() if "-3" in line)
+                for marker in ("0-4", "-3", "5-9", "-1", "10-14", "+2", "15-17", "+4", "18-19", "+6"):
+                    self.assertIn(marker, line)
+
     def test_disguise_probabilities_and_radioactive_timeline(self) -> None:
         self.assertEqual(RADIOACTIVE_POINT_VALUES, (-3, -1, 2, 4, 6))
         expected_disguises = {

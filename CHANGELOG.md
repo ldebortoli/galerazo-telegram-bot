@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.62] - 2026-09-07
+
+- Supervisor de transferencia preparado para la Mini App: avisos a 700 y 850 MB y pausa del tunel a 925 MB por mes, manteniendo el bot de Telegram en funcionamiento. Conserva el consumo entre reinicios y bloquea la Mini App cuando no hay historial fiable. Su activacion acompana la configuracion y el release de la Mini App.
+
 ## [0.61] - 2026-09-07
 
 - Correcciones y mejoras: las facturas y confirmaciones muestran Hisopo mosquito, en sintonia con la tienda.

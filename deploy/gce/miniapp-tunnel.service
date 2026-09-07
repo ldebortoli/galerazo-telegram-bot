@@ -1,24 +1,25 @@
 [Unit]
-Description=Galerazo Mini App API tunnel
-After=network-online.target
+Description=Galerazo Mini App tunnel with monthly traffic cutoff
+After=network-online.target docker.service
 Wants=network-online.target
+Requires=docker.service
 ConditionPathExists=/etc/galerazo/cloudflared.token
+ConditionPathExists=/etc/galerazo/traffic-notifications.env
+StartLimitIntervalSec=300
+StartLimitBurst=3
 
 [Service]
 Type=simple
-User=cloudflared
-Group=cloudflared
-ExecStart=/usr/bin/cloudflared tunnel --no-autoupdate --edge-ip-version 6 --protocol http2 --loglevel warn --metrics 127.0.0.1:20241 run --token-file /etc/galerazo/cloudflared.token
+EnvironmentFile=/opt/galerazo/image.env
+# The approved bot image supplies the exact Python runtime. This separate
+# container has no Docker socket, SQLite or full bot environment.
+ExecStart=/usr/bin/docker run --rm --pull=never --name galerazo-miniapp-tunnel --init --network host --read-only --user 10001:10001 --cap-drop ALL --security-opt no-new-privileges --pids-limit 64 --memory 128m --no-healthcheck --log-driver local --log-opt max-size=2m --log-opt max-file=2 --env-file /etc/galerazo/traffic-notifications.env --mount type=bind,src=/usr/bin/cloudflared,dst=/usr/bin/cloudflared,readonly --mount type=bind,src=/etc/galerazo/cloudflared.token,dst=/etc/galerazo/cloudflared.token,readonly --mount type=bind,src=/srv/galerazo/traffic,dst=/var/lib/galerazo-traffic --tmpfs /tmp:size=16m,mode=1777 ${GALERAZO_IMAGE} python -m galerazo_bot.traffic_guard
+ExecStop=-/usr/bin/docker stop --time 5 galerazo-miniapp-tunnel
+# Killing the docker CLI must not leave an orphan tunnel behind.
+ExecStopPost=-/usr/bin/docker rm --force galerazo-miniapp-tunnel
 Restart=on-failure
-RestartSec=5
-TimeoutStopSec=40
-NoNewPrivileges=true
-PrivateTmp=true
-ProtectSystem=strict
-ProtectHome=true
-ProtectKernelTunables=true
-ProtectControlGroups=true
-RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+RestartSec=30
+TimeoutStopSec=15
 UMask=0077
 
 [Install]

@@ -78,11 +78,19 @@ class ContainerRuntimeTests(unittest.TestCase):
         for entry in (".codex/", "AGENTS.md", ".env.*", "secrets/", "*.key"):
             self.assertIn(entry, ignored)
         unit = (PROJECT_ROOT / "deploy/gce/miniapp-tunnel.service").read_text(encoding="utf-8")
-        self.assertIn("--token-file /etc/galerazo/cloudflared.token", unit)
+        from galerazo_bot.traffic_guard import TUNNEL_COMMAND
+        command = " ".join(TUNNEL_COMMAND)
+        self.assertIn("python -m galerazo_bot.traffic_guard", unit)
+        self.assertIn("--pull=never", unit)
+        self.assertIn("--user 10001:10001", unit)
+        self.assertIn("ExecStopPost=-/usr/bin/docker rm --force galerazo-miniapp-tunnel", unit)
+        self.assertNotIn("docker.sock", unit)
+        self.assertNotIn("/etc/galerazo/bot.env", unit)
+        self.assertIn("--token-file /etc/galerazo/cloudflared.token", command)
         self.assertNotIn("--token ", unit)
-        self.assertIn("--edge-ip-version 6", unit)
-        self.assertIn("--metrics 127.0.0.1:", unit)
-        self.assertIn("--loglevel warn", unit)
+        self.assertIn("--edge-ip-version 6", command)
+        self.assertIn("--metrics 127.0.0.1:", command)
+        self.assertIn("--loglevel warn", command)
         ingress = json.loads((PROJECT_ROOT / "deploy/gce/miniapp-tunnel-config.example.json").read_text(encoding="utf-8"))["config"]["ingress"]
         self.assertEqual(ingress[0]["service"], "http://127.0.0.1:8080")
         self.assertEqual(ingress[-1], {"service": "http_status:404"})

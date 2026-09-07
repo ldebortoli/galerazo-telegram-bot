@@ -3128,23 +3128,31 @@ class HisopoTelegramTests(unittest.IsolatedAsyncioTestCase):
             )
 
         db.capture_hisopo.side_effect = capture
-        captured_at = datetime(2026, 8, 20, 12, 19, tzinfo=timezone.utc)
-        with patch.object(tb, "datetime") as datetime_mock, patch.object(
-            tb,
-            "random_next_day_datetime",
-            return_value=datetime(2026, 8, 21, 1, tzinfo=timezone.utc),
-        ), patch.object(tb, "_is_user_restricted_in_callback_chat", return_value=False):
-            datetime_mock.now.return_value = captured_at
-            datetime_mock.fromisoformat.side_effect = datetime.fromisoformat
-            await tb._hisopo_callback_entrypoint(update, context)
+        for elapsed, points in ((timedelta(minutes=9, seconds=11, microseconds=879720), -1),
+                                (timedelta(minutes=10), 2), (timedelta(minutes=19), 6)):
+            with self.subTest(elapsed=elapsed):
+                captured_at = datetime(2026, 8, 20, 12, tzinfo=timezone.utc) + elapsed
+                callback.answer.reset_mock()
+                job_queue.run_once.reset_mock()
+                with patch.object(tb, "datetime") as datetime_mock, patch.object(
+                    tb, "random_next_day_datetime",
+                    return_value=datetime(2026, 8, 21, 1, tzinfo=timezone.utc),
+                ), patch.object(tb, "_is_user_restricted_in_callback_chat", return_value=False):
+                    datetime_mock.now.return_value = captured_at
+                    datetime_mock.fromisoformat.side_effect = datetime.fromisoformat
+                    async def delayed_edit(**_kwargs):
+                        datetime_mock.now.return_value = captured_at + timedelta(minutes=24)
+                    bot.edit_message_caption.side_effect = delayed_edit
+                    await tb._hisopo_callback_entrypoint(update, context)
 
-        self.assertEqual(db.capture_hisopo.call_args.kwargs["points_at_capture"], 6)
-        self.assertEqual(
-            bot.edit_message_caption.await_args.kwargs["caption"],
-            "Winner capturó un hisopo radiactivo y sumó 6 pt.",
-        )
-        callback.answer.assert_awaited_once_with("¡Hisopo capturado! Sumaste 6 pt.")
-        job_queue.run_once.assert_called_once()
+                self.assertEqual(db.capture_hisopo.call_args.kwargs["points_at_capture"], points)
+                self.assertEqual(db.capture_hisopo.call_args.kwargs["now"], captured_at)
+                action = "perdió" if points < 0 else "sumó"
+                self.assertEqual(bot.edit_message_caption.await_args.kwargs["caption"],
+                    f"Winner capturó un hisopo radiactivo y {action} {abs(points)} pt.")
+                popup = f"¡Hisopo capturado! Sumaste {points} pt." if points > 0 else "¡Hisopo capturado! Perdiste 1 pt."
+                callback.answer.assert_awaited_once_with(popup)
+                job_queue.run_once.assert_called_once()
 
     async def test_mystery_fleeting_after_its_minute_reveals_without_reward(self) -> None:
         db = MagicMock()
