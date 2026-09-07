@@ -1,8 +1,8 @@
 # Limite mensual de transferencia de la Mini App
 
 Implementado desde 0.62 y activado en produccion el 2026-09-07 con el release
-autorizado. El corte de 950 MB requiere 0.63; hasta desplegar esa correccion,
-0.62 mantiene el corte de 925 MB. Las instalaciones adicionales requieren configurar la Mini App.
+autorizado. El corte de 950 MB esta activo desde el release 0.63, desplegado
+sin anuncio el mismo dia. Las instalaciones adicionales requieren configurar la Mini App.
 El supervisor corre en la VM existente, sin servicios pagos de Monitoring,
 BigQuery ni otra VM. Las imagenes ya se sirven comprimidas desde Cloudflare.
 

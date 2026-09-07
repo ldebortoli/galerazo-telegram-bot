@@ -113,6 +113,10 @@ registrar la app con nombre corto `hisopos` y esa URL. Esto crea el enlace
 `https://t.me/galerazo_bot/hisopos`. La Bot API no enumera ni crea estas apps
 cortas: requiere la sesion del propietario, no el token del bot.
 
+El propietario completo ese registro y confirmo el 2026-09-07 que un boton
+anterior del grupo abre la Mini App y carga su coleccion. Albumes y apertura
+de factura en privado tambien fueron verificados, sin pagar.
+
 Opcionalmente configurar la Main Mini App en el perfil del mismo bot. Es una
 entrada distinta de la app corta; su enlace es
 `https://t.me/galerazo_bot?startapp`. No es requisito para los enlaces firmados
