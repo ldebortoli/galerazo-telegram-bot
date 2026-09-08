@@ -26,8 +26,8 @@ _ENGLISH = {
     ),
     "payments.terms": (
         "Stars purchases and Club del Hisopo\n"
-        "Paid Hisopos are cosmetic and give no points or advantage. Club del Hisopo is a support membership that renews every 30 days for the price shown before payment; it does not grant Hisopos, points or advantages. "
-        "Cancelling stops future renewals. Approved refunds subtract donations from the ranking, remove an associated purchased item when applicable and adjust the refunded membership period. Telegram's Stars terms also apply: https://telegram.org/tos/stars"
+        "Paid Hisopos are cosmetic and give no points or advantage. Club del Hisopo costs 100 Stars every 30 days. It grants one permanent Estelar after each 90 consecutive paid days, first at day 90, never when paying the third period in advance. "
+        "Cancelling stops future renewals; already paid time still counts. A gap after expiry resets unfinished progress; earned Estelares remain. Refunds remove the refunded time and any Club rewards it no longer supports, without removing gifted or legacy Estelares. Approved refunds also subtract donations from the ranking or remove the associated purchased item. Telegram's Stars terms apply: https://telegram.org/tos/stars"
     ),
 }
 
@@ -56,8 +56,8 @@ _SPANISH = {
     ),
     "payments.terms": (
         "Compras con Stars y Club del Hisopo\n"
-        "Los Hisopos pagos son cosméticos y no dan puntos ni ventajas. El Club del Hisopo es una membresía de apoyo que se renueva cada 30 días por el precio mostrado antes de pagar; no entrega Hisopos, puntos ni ventajas. "
-        "Cancelar detiene cobros futuros. Un reembolso aprobado descuenta la donación del ranking, retira el artículo comprado cuando corresponde y ajusta el período de membresía reembolsado. También rigen los términos de Stars de Telegram: https://telegram.org/tos/stars"
+        "Los Hisopos pagos son cosméticos y no dan puntos ni ventajas. El Club del Hisopo cuesta 100 Stars cada 30 días. Entrega un Estelar permanente al completar cada 90 días consecutivos pagos, el primero recién al día 90, nunca al pagar la tercera cuota por adelantado. "
+        "Cancelar detiene cobros futuros; el tiempo ya pagado sigue contando. Si vence y hay una interrupción, el progreso incompleto empieza de cero; los Estelares ganados se conservan. Un reembolso descuenta ese tiempo y los premios del Club que dejen de corresponder, sin quitar Estelares regalados o históricos. También descuenta donaciones del ranking o retira el artículo comprado cuando corresponde. Rigen los términos de Stars de Telegram: https://telegram.org/tos/stars"
     ),
 }
 

@@ -1822,10 +1822,21 @@ class HisopoCommandTests(unittest.IsolatedAsyncioTestCase):
         db.get_hisopo_collection.assert_called_with("-1", "2")
         db.get_paid_hisopo_ownership.assert_called_with("2")
         self.assertIn("Hisopo Pico: 9", replied)
-        self.assertIn(
-            "grupos",
-            hisopo_handlers.handle_collection(self._context(chat_type="private"), db),
-        )
+        db.get_hisopo_collection.reset_mock()
+        private = hisopo_handlers.handle_collection(self._context(
+            chat_type="private", sender_display_name="Owner",
+            reply_to_user_id="2", reply_to_display_name="Winner",
+        ), db)
+        self.assertIn("Owner (1)", private)
+        self.assertIn("Hisopo Pico: 4", private)
+        self.assertNotIn("Winner", private)
+        self.assertNotIn("Coleccionables de este chat", private)
+        self.assertNotIn("Tipos descubiertos", private)
+        self.assertNotIn("hisopo dorado", private)
+        db.get_hisopo_collection.assert_not_called()
+        db.get_paid_hisopo_ownership.assert_called_with("1")
+        for overrides in ({"chat_type": "channel"}, {"chat_id": None}):
+            self.assertIn("grupos", hisopo_handlers.handle_collection(self._context(**overrides), db))
 
         self.assertIsNone(
             await hisopo_handlers.handle_collection(

@@ -390,6 +390,7 @@ class MiniAppApiTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(payload["albums"][1]["title"], "Grupo -1")
         self.assertEqual([entry["name"] for entry in payload["donors"]], ["One", "@two", "Usuario 3", "Anónimo"])
         self.assertEqual(payload["paid_hisopos"][-1]["quantity"], 2)
+        self.assertEqual(payload["club"]["reward_days"], 90)
         self.assertEqual(next(item for item in payload["natural_hisopos"] if item["key"] == "giant")["quantity"], 1)
 
     async def test_security_headers_application_and_service_lifecycle(self) -> None:

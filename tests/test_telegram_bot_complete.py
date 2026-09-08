@@ -248,7 +248,7 @@ class LifecycleAndBillingTests(unittest.IsolatedAsyncioTestCase):
             {
                 "help", "ayuda", "start", "hola", "lil", "nivel", "version",
                 "chats", "reportar", "donar", "donantes", "paysupport", "terminos",
-                "config", "debug", "reglashisopo",
+                "config", "debug", "reglashisopo", "coleccionhisopos",
             },
         )
         self.assertTrue(
@@ -274,7 +274,7 @@ class LifecycleAndBillingTests(unittest.IsolatedAsyncioTestCase):
             {command.description for command in english_commands},
         )
         self.assertIn(
-            "shows your historical Swab collection",
+            "shows your Swab collection and cosmetics",
             {command.description for command in english_commands},
         )
 
@@ -306,7 +306,9 @@ class LifecycleAndBillingTests(unittest.IsolatedAsyncioTestCase):
             tb, "_send_log_event", AsyncMock(return_value=True)
         ) as log, patch.object(
             tb, "_configure_mini_app", AsyncMock(return_value=False)
-        ) as configure_mini_app, patch.object(tb, "_schedule_google_cloud_billing_report") as schedule:
+        ) as configure_mini_app, patch.object(tb, "_schedule_google_cloud_billing_report") as schedule, patch.object(
+            tb, "_schedule_club_rewards"
+        ) as club_schedule:
             await tb._post_init(app)
         self.assertEqual(app.bot_data["state"].bot_user_id, "99")
         self.assertEqual(app.bot_data["state"].bot_username, "galerazo_bot")
@@ -316,6 +318,7 @@ class LifecycleAndBillingTests(unittest.IsolatedAsyncioTestCase):
         cleanup.assert_awaited_once()
         log.assert_awaited_once()
         schedule.assert_called_once()
+        club_schedule.assert_called_once_with(app)
 
     async def test_release_announcement_only_marks_version_after_success(self) -> None:
         db = MagicMock()

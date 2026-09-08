@@ -154,7 +154,7 @@ class TelegramBotMonetizationTests(unittest.IsolatedAsyncioTestCase):
         ]
         db.get_paid_hisopo_ownership.return_value = [PaidHisopoOwnership("alfiler", 3, "first", "last")]
         message = SimpleNamespace(
-            chat=SimpleNamespace(id=-1),
+            chat=SimpleNamespace(id=-1, type="supergroup"),
             reply_text=AsyncMock(),
         )
         requester = User(id=1, first_name="Ada", is_bot=False)
@@ -207,6 +207,37 @@ class TelegramBotMonetizationTests(unittest.IsolatedAsyncioTestCase):
                 bot_username="galerazo_bot",
             )
         )
+
+
+    async def test_private_collection_only_shows_requester_cosmetics_and_uses_webapp(self) -> None:
+        db = MagicMock()
+        db.get_chat_settings.return_value = SimpleNamespace(language="es")
+        db.get_paid_hisopo_ownership.return_value = [PaidHisopoOwnership("stellar", 2, "first", "last")]
+        requester = User(id=1, first_name="Ada", is_bot=False)
+        for url in (None, "https://example.test"):
+            with self.subTest(url=url):
+                message = SimpleNamespace(chat=SimpleNamespace(id=1, type="private"), reply_text=AsyncMock())
+                self.assertTrue(await tb._send_hisopo_collection(
+                    db=db, message=message, requester=requester,
+                    target_user=User(id=99, first_name="Bot", is_bot=True),
+                    settings=settings(telegram_mini_app_url=url, mini_app_proxy_secret="s" * 32),
+                    bot_username="galerazo_bot",
+                ))
+                text = message.reply_text.await_args.args[0]
+                self.assertIn("Ada (1)", text)
+                self.assertIn("Hisopo Estelar: 2", text)
+                self.assertNotIn("hisopo común", text)
+                self.assertNotIn("Capturas:", text)
+                self.assertEqual(text.count("✅") + text.count("❓"), 21)
+                db.get_hisopo_collection.assert_not_called()
+                db.get_paid_hisopo_ownership.assert_called_with("1")
+                markup = message.reply_text.await_args.kwargs["reply_markup"]
+                if url:
+                    button = markup.inline_keyboard[0][0]
+                    self.assertEqual(button.web_app.url, url)
+                    self.assertIsNone(button.url)
+                else:
+                    self.assertIsNone(markup)
 
 
 if __name__ == "__main__":

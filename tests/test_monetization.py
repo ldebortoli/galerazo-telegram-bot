@@ -59,7 +59,7 @@ class MonetizationCatalogTests(unittest.TestCase):
         club = invoice_spec("subscription", "club")
         self.assertIsNone(club.reward_hisopo_key)
         self.assertEqual(club.subscription_period.days, 30)
-        self.assertIn("No entrega Hisopos", club.description)
+        self.assertIn("90 días consecutivos", club.description)
 
         for kind, item_key in (
             ("donation", "12"),

@@ -32,25 +32,28 @@ async def handle(context: CommandContext, _db: Database) -> str | None:
 
 
 def handle_collection(context: CommandContext, db: Database):
-    if context.chat_type not in {"group", "supergroup"} or context.chat_id is None:
+    if context.chat_type not in {"private", "group", "supergroup"} or context.chat_id is None:
         return context.t("hisopos.group_only")
     if context.send_hisopo_collection is not None:
         return _send_collection(context)
-    target_user_id = context.reply_to_user_id or context.sender_id
+    private = context.chat_type == "private"
+    target_user_id = context.sender_id if private else (context.reply_to_user_id or context.sender_id)
     target_name = (
-        context.reply_to_display_name
-        or context.reply_to_username
+        (None if private else context.reply_to_display_name)
+        or (None if private else context.reply_to_username)
         or context.sender_display_name
         or context.sender_username
         or context.t("user.unknown")
     )
-    entries = db.get_hisopo_collection(context.chat_id, target_user_id)
+    entries = [] if private else db.get_hisopo_collection(context.chat_id, target_user_id)
+    db.reconcile_club_rewards(user_id=target_user_id)
     return render_hisopo_collection(
         entries,
         user_name=target_name,
         user_id=target_user_id,
         language=context.language,
         ownership=db.get_paid_hisopo_ownership(target_user_id),
+        include_chat=not private,
     )
 
 
@@ -244,7 +247,7 @@ def migrate_chat_data(conn: sqlite3.Connection, old_chat_id: str, new_chat_id: s
 COMMANDS = {
     "coleccionhisopos": Command(
         "coleccionhisopos",
-        "muestra tu colección histórica de Hisopos",
+        "muestra tu colección de Hisopos y cosméticos",
         handle_collection,
         configurable_group="hisopos",
     ),

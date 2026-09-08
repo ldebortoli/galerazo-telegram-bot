@@ -367,8 +367,18 @@ async def _post_init(application: Application) -> None:
     await _announce_current_release(db, application.bot, settings)
     await _cleanup_old_paginated_messages(db, application.bot)
     _restore_hisopo_jobs(application)
+    _schedule_club_rewards(application)
     await _send_log_event(application.bot, settings.telegram_log_chat_id, "Galerazo Bot iniciado.")
     _schedule_google_cloud_billing_report(application, settings)
+
+
+def _schedule_club_rewards(application: Application) -> None:
+    application.bot_data["db"].reconcile_club_rewards()
+    application.job_queue.run_repeating(_club_rewards_job, interval=60, first=60, name="club-rewards")
+
+
+async def _club_rewards_job(context: ContextTypes.DEFAULT_TYPE) -> None:
+    context.application.bot_data["db"].reconcile_club_rewards()
 
 
 async def _post_shutdown(application: Application) -> None:
@@ -520,7 +530,7 @@ def _suggested_bot_commands(
             continue
         if command.name == "config" and include_group_commands and max_level < UserLevel.ADMIN:
             continue
-        if command.configurable_group is not None and not include_group_commands:
+        if command.configurable_group is not None and not include_group_commands and command.name != "coleccionhisopos":
             continue
         commands.append(BotCommand(command.name, t(language, f"help.{command.command_key}")))
     return tuple(commands)
@@ -2185,17 +2195,27 @@ async def _send_hisopo_collection(
 ) -> bool:
     chat_id = str(message.chat.id)
     language = _chat_language(db, chat_id)
-    entries = db.get_hisopo_collection(chat_id, str(target_user.id))
+    private = message.chat.type == "private"
+    if private:
+        target_user = requester
+    entries = [] if private else db.get_hisopo_collection(chat_id, str(target_user.id))
+    db.reconcile_club_rewards(user_id=str(target_user.id))
     text = render_hisopo_collection(
         entries,
         user_name=_display_name(target_user),
         user_id=str(target_user.id),
         language=language,
         ownership=db.get_paid_hisopo_ownership(str(target_user.id)),
+        include_chat=not private,
     )
     reply_markup = None
-    if (
-        _available_mini_app_url(settings, bot_username)
+    mini_app_url = _available_mini_app_url(settings, bot_username)
+    if private and mini_app_url:
+        reply_markup = InlineKeyboardMarkup(
+            [[InlineKeyboardButton(t(language, "hisopos.collection.open_app"), web_app=WebAppInfo(mini_app_url))]]
+        )
+    elif (
+        mini_app_url
         and settings.telegram_mini_app_short_name
         and bot_username
     ):

@@ -210,7 +210,7 @@ PAID_HISOPO_BY_KEY = {hisopo.key: hisopo for hisopo in PAID_HISOPOS}
 CLUB_HISOPO = PaidHisopo(
     "stellar",
     "Hisopo Estelar",
-    "Una edición especial del universo Hisopo.",
+    "Una pieza permanente del Club: un Estelar al completar cada 90 días consecutivos pagos.",
     100,
     "hisopo-estelar.png",
     "#d5aa55",
@@ -244,7 +244,7 @@ def invoice_spec(kind: str, item_key: str) -> InvoiceSpec:
     if kind == "subscription" and item_key == "club":
         return InvoiceSpec(
             "Club del Hisopo",
-            "Membresía de apoyo renovable cada 30 días. No entrega Hisopos, puntos ni ventajas.",
+            "100 Stars cada 30 días. Un Estelar permanente al completar cada 90 días consecutivos pagos; el primero recién al día 90. Sin puntos ni ventajas.",
             CLUB_HISOPO.price_stars,
             subscription_period=CLUB_SUBSCRIPTION_PERIOD,
         )

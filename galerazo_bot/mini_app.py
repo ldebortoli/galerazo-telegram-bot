@@ -14,6 +14,7 @@ from aiohttp import web
 from telegram import LabeledPrice
 
 from .database import Database
+from .club_rewards import CLUB_REWARD_INTERVAL
 from .hisopos import COLLECTIBLE_HISOPO_KEYS
 from .i18n import t
 from .monetization import (
@@ -223,6 +224,7 @@ class MiniAppApi:
             )
         )
         counts = {entry.hisopo_type: entry.capture_count for entry in collection}
+        self.db.reconcile_club_rewards(user_id=user.user_id)
         ownership = {
             entry.hisopo_key: entry.quantity
             for entry in self.db.get_paid_hisopo_ownership(user.user_id)
@@ -427,6 +429,7 @@ class MiniAppApi:
                 "price_stars": CLUB_HISOPO.price_stars,
                 "periods_paid": club_periods,
                 "active_until": club_active_until,
+                "reward_days": CLUB_REWARD_INTERVAL.days,
             },
             "donor_public": donor_public,
             "donors": [

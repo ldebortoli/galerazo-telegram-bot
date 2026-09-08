@@ -249,7 +249,7 @@ class TelegramPaymentTests(unittest.IsolatedAsyncioTestCase):
                 self.assertEqual(kwargs["subscription_expiration_date"], expiration.isoformat() if expiration else None)
                 if kind == "subscription":
                     self.assertIsNone(kwargs["reward_hisopo_key"])
-                    self.assertNotIn("Estelar", message.reply_text.await_args.args[0])
+                    self.assertIn("90 días consecutivos pagos", message.reply_text.await_args.args[0])
 
         gift_payload = create_payment_payload(
             "token",

@@ -9,6 +9,8 @@ from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
+from .club_rewards import reconcile_rewards
+
 
 MAX_HISOPO_SCHEDULES_PER_CHAT_DAY = 10
 MAX_HISOPO_MIRACLE_AWARD = 1_000
@@ -630,6 +632,19 @@ class Database:
                 )
                 """
             )
+            conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS club_reward_ledger (
+                    reward_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id TEXT NOT NULL REFERENCES users(user_id),
+                    quantity_delta INTEGER NOT NULL CHECK (quantity_delta != 0),
+                    earned_total INTEGER NOT NULL CHECK (earned_total >= 0),
+                    evaluated_at TEXT NOT NULL,
+                    processed_at TEXT NOT NULL
+                )
+                """
+            )
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_club_reward_member ON club_reward_ledger (user_id)")
             conn.execute(
                 """
                 CREATE TABLE IF NOT EXISTS donor_profiles (
@@ -2944,6 +2959,7 @@ class Database:
                     """,
                     (user_id, subscription_expiration_date, telegram_payment_charge_id),
                 )
+                reconcile_rewards(conn, datetime.now(timezone.utc), user_id=user_id)
         return True
 
     def refund_star_payment(
@@ -3023,7 +3039,13 @@ class Database:
                         payment["user_id"],
                     ),
                 )
+                reconcile_rewards(conn, datetime.now(timezone.utc), user_id=payment["user_id"], allow_revoke=True)
         return True
+
+    def reconcile_club_rewards(self, *, user_id: str | None = None, now: datetime | None = None) -> int:
+        with self._connect() as conn:
+            conn.execute("BEGIN IMMEDIATE")
+            return reconcile_rewards(conn, now or datetime.now(timezone.utc), user_id=user_id)
 
     def get_club_membership(self, user_id: str) -> ClubMembership | None:
         with self._connect() as conn:

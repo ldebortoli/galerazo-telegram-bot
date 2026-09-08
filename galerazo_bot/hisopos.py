@@ -308,6 +308,7 @@ def render_hisopo_collection(
     user_id: str,
     language: str = DEFAULT_LANGUAGE,
     ownership: Iterable[PaidHisopoOwnership] = (),
+    include_chat: bool = True,
 ) -> str:
     counts = {entry.hisopo_type: entry.capture_count for entry in entries}
     discovered = sum(counts.get(key, 0) > 0 for key in COLLECTIBLE_HISOPO_KEYS)
@@ -319,25 +320,23 @@ def render_hisopo_collection(
             user=user_name,
             user_id=user_id,
         ),
-        t(language, "hisopos.collection.chat"),
-        t(
-            language,
-            "hisopos.collection.progress",
-            discovered=discovered,
-            total=len(COLLECTIBLE_HISOPO_KEYS),
-            captures=captures,
-        ),
-        "",
     ]
-    for key in COLLECTIBLE_HISOPO_KEYS:
-        count = counts.get(key, 0)
-        marker = "✅" if count else "❓"
-        type_key = (
-            "hisopos.collection.type.giant"
-            if key == "giant"
-            else f"hisopos.type.{key}"
-        )
-        lines.append(f"{marker} {t(language, type_key)}: {count}")
+    if include_chat:
+        lines.extend([
+            t(language, "hisopos.collection.chat"),
+            t(language, "hisopos.collection.progress", discovered=discovered,
+              total=len(COLLECTIBLE_HISOPO_KEYS), captures=captures),
+            "",
+        ])
+        for key in COLLECTIBLE_HISOPO_KEYS:
+            count = counts.get(key, 0)
+            marker = "✅" if count else "❓"
+            type_key = (
+                "hisopos.collection.type.giant"
+                if key == "giant"
+                else f"hisopos.type.{key}"
+            )
+            lines.append(f"{marker} {t(language, type_key)}: {count}")
     cosmetic_counts = {entry.hisopo_key: entry.quantity for entry in ownership}
     lines.extend(("", t(language, "hisopos.collection.cosmetics")))
     for product in (*PAID_HISOPOS, CLUB_HISOPO):

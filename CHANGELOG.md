@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.64] - 2026-09-07
+
+- `/coleccionhisopos` también funciona en privado: muestra únicamente los cosméticos globales del solicitante y abre la Mini App. En grupos conserva la colección del chat y los cosméticos. Los menús de comandos privados incluyen este acceso.
+- El Club del Hisopo entrega un Estelar permanente al completar cada 90 días consecutivos pagos. El primero llega al terminar tres períodos de 30 días, nunca al pagar la tercera cuota por adelantado. Una interrupción reinicia el progreso incompleto; cancelar conserva el tiempo ya pagado y los premios ganados. El precio sigue en 100 Stars cada 30 días, sin puntos ni ventajas.
+- Correcciones y mejoras: acreditación automática y persistente, recuperación tras reinicios, protección ante pagos repetidos o superpuestos y ajustes por reembolsos sin afectar regalos ni recompensas de otras compras. La Mini App y los términos explican la nueva regla.
+
 ## [0.63] - 2026-09-07
 
 - `/coleccionhisopos` muestra primero los coleccionables del chat y luego el inventario cosmetico global del usuario, con sus cantidades, incluidos los tipos todavia no adquiridos. Conserva el acceso a la Mini App y la consulta respondiendo a otra persona.

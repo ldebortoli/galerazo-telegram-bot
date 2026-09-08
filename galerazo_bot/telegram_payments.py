@@ -203,7 +203,11 @@ async def process_successful_payment(
     if intent.kind == "donation":
         response = f"¡Gracias por aportar ⭐ {payment.total_amount}! Tu apoyo no compra puntos ni ventajas."
     elif intent.kind == "subscription":
-        response = "¡Gracias por sumarte al Club del Hisopo! Tu membresía de apoyo quedó activa."
+        response = (
+            "¡Gracias por sumarte al Club del Hisopo! Tu membresía quedó activa. "
+            "Recibís un Estelar permanente al completar cada 90 días consecutivos pagos; "
+            "el primero recién al día 90, no al pagar la tercera cuota."
+        )
     elif intent.recipient_user_id != intent.user_id:
         response = f"¡Regalo confirmado! {spec.title} fue acreditado al usuario {intent.recipient_user_id}."
     else:
