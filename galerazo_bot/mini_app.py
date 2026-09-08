@@ -5,7 +5,7 @@ import hmac
 import json
 import logging
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import datetime, timezone
 from typing import Any
 from urllib.parse import parse_qsl, quote, urlsplit
@@ -22,10 +22,11 @@ from .monetization import (
     DONATION_TIERS,
     PAID_HISOPOS,
     STARS_CURRENCY,
-    create_album_context,
+    create_shared_album_context,
     create_payment_payload,
     invoice_spec,
     parse_album_context,
+    parse_shared_album_context,
 )
 
 
@@ -169,7 +170,7 @@ def direct_mini_app_url(
     chat_id: str,
     user_id: str,
 ) -> str:
-    context = create_album_context(bot_token, chat_id=chat_id, user_id=user_id)
+    context = create_shared_album_context(bot_token, chat_id=chat_id, user_id=user_id)
     return (
         f"https://t.me/{bot_username.removeprefix('@')}/{short_name}"
         f"?startapp={quote(context, safe='')}"
@@ -201,10 +202,33 @@ class MiniAppApi:
             user = self.authenticate(request)
         except InitDataError as exc:
             raise web.HTTPUnauthorized(text=str(exc)) from exc
-        if any(key != "chat_id" for key in request.query) or len(request.query) > 1:
+        if (
+            any(key not in {"chat_id", "view"} for key in request.query)
+            or len(request.query) != len(set(request.query))
+            or request.query.get("view") not in {None, "mine"}
+        ):
             raise web.HTTPBadRequest(text="El pedido no es valido.")
         self.db.get_or_create_user(user.user_id, user.display_name, user.username)
+        # A return to the viewer's own album never uses the shared owner as identity.
+        if request.query.get("view") == "mine":
+            user = replace(user, start_param=None)
+        shared_album = None
+        if user.start_param and user.start_param.startswith("s1_"):
+            try:
+                chat_id, owner_id = parse_shared_album_context(self.bot_token, user.start_param)
+            except ValueError as exc:
+                raise web.HTTPForbidden(text="El enlace compartido no es válido.") from exc
+            owner = self.db.get_user(owner_id)
+            shared_album = self.db.get_hisopo_album_summary(chat_id, owner_id)
+            if owner is None or shared_album is None:
+                raise web.HTTPNotFound(text="El álbum compartido ya no está disponible.")
+            if owner_id != user.user_id:
+                if request.query.get("chat_id") not in {None, chat_id}:
+                    raise web.HTTPForbidden(text="El enlace solo comparte el grupo de origen.")
+                return web.json_response(self._shared_bootstrap(user, owner, shared_album))
         albums = self.db.list_hisopo_albums_for_user(user.user_id)
+        if shared_album is not None and not any(album.chat_id == shared_album.chat_id for album in albums):
+            albums.append(shared_album)
         aggregate_collection = self.db.get_hisopo_collection_totals(user.user_id)
         aggregate_counts = {
             entry.hisopo_type: entry.capture_count for entry in aggregate_collection
@@ -314,11 +338,14 @@ class MiniAppApi:
         requested = None
         if user.start_param:
             try:
-                requested = parse_album_context(
-                    self.bot_token,
-                    user.start_param,
-                    expected_user_id=user.user_id,
-                )
+                if user.start_param.startswith("s1_"):
+                    requested, _ = parse_shared_album_context(self.bot_token, user.start_param)
+                else:
+                    requested = parse_album_context(
+                        self.bot_token,
+                        user.start_param,
+                        expected_user_id=user.user_id,
+                    )
             except ValueError as exc:
                 raise web.HTTPForbidden(text="El enlace del album no es valido para este usuario.") from exc
             if requested not in available:
@@ -372,6 +399,22 @@ class MiniAppApi:
             )
         return recipient_user.user_id, f"@{recipient_user.username or alias}"
 
+    def _shared_bootstrap(self, viewer: MiniAppUser, owner: Any, album: Any) -> dict[str, Any]:
+        collection = self.db.get_hisopo_collection(album.chat_id, owner.user_id)
+        self.db.reconcile_club_rewards(user_id=owner.user_id)
+        return self._bootstrap_payload(
+            user=viewer,
+            albums=[album],
+            selected_chat_id=album.chat_id,
+            counts={entry.hisopo_type: entry.capture_count for entry in collection},
+            aggregate_counts={},
+            ownership={entry.hisopo_key: entry.quantity for entry in self.db.get_paid_hisopo_ownership(owner.user_id)},
+            club_periods=0,
+            club_active_until=None,
+            donor_public=False,
+            shared_owner={"id": owner.user_id, "name": owner.display_name or f"Usuario {owner.user_id}"},
+        )
+
     def _bootstrap_payload(
         self,
         *,
@@ -384,8 +427,8 @@ class MiniAppApi:
         club_periods: int,
         club_active_until: str | None,
         donor_public: bool,
+        shared_owner: dict[str, str] | None = None,
     ) -> dict[str, Any]:
-        leaderboard = self.db.get_donor_leaderboard()
         natural = []
         for key in COLLECTIBLE_HISOPO_KEYS:
             translation_key = "hisopos.collection.type.giant" if key == "giant" else f"hisopos.type.{key}"
@@ -408,7 +451,7 @@ class MiniAppApi:
             }
             for album in albums
         ]
-        if albums:
+        if albums and shared_owner is None:
             album_payload.insert(
                 0,
                 {
@@ -418,12 +461,19 @@ class MiniAppApi:
                     "captures": sum(album.capture_count for album in albums),
                 },
             )
-        return {
+        payload = {
             "user": {"id": user.user_id, "name": user.display_name},
+            "view": "shared" if shared_owner is not None else "own",
+            "album_owner": shared_owner or {"id": user.user_id, "name": user.display_name},
             "albums": album_payload,
             "selected_chat_id": selected_chat_id,
             "natural_hisopos": natural,
             "paid_hisopos": paid,
+        }
+        if shared_owner is not None:
+            return payload
+        return {
+            **payload,
             "donation_tiers": list(DONATION_TIERS),
             "club": {
                 "price_stars": CLUB_HISOPO.price_stars,
@@ -443,7 +493,7 @@ class MiniAppApi:
                     "amount_stars": entry.amount_stars,
                     "public": entry.display_public,
                 }
-                for entry in leaderboard
+                for entry in self.db.get_donor_leaderboard()
             ],
         }
 

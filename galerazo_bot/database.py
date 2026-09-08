@@ -2792,6 +2792,25 @@ class Database:
             for row in rows
         ]
 
+    def get_hisopo_album_summary(self, chat_id: str, user_id: str) -> HisopoAlbumSummary | None:
+        """Read only the group authorized by a shared link, including an empty album."""
+        with self._connect() as conn:
+            row = conn.execute(
+                """
+                SELECT chats.chat_id, chats.title,
+                    COUNT(collections.hisopo_type) AS discovered_count,
+                    COALESCE(SUM(collections.capture_count), 0) AS capture_count
+                FROM chats
+                LEFT JOIN hisopo_collections AS collections
+                    ON collections.chat_id = chats.chat_id
+                    AND collections.user_id = ? AND collections.capture_count > 0
+                WHERE chats.chat_id = ?
+                GROUP BY chats.chat_id, chats.title
+                """,
+                (user_id, chat_id),
+            ).fetchone()
+        return HisopoAlbumSummary(**dict(row)) if row is not None else None
+
     def get_paid_hisopo_ownership(self, user_id: str) -> list[PaidHisopoOwnership]:
         with self._connect() as conn:
             rows = conn.execute(

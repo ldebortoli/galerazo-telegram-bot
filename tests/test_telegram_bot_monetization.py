@@ -5,6 +5,9 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
 
+from urllib.parse import parse_qs, urlsplit
+from galerazo_bot.monetization import parse_shared_album_context
+
 from telegram import User
 from telegram.error import TimedOut
 
@@ -195,6 +198,9 @@ class TelegramBotMonetizationTests(unittest.IsolatedAsyncioTestCase):
         )
         button = message.reply_text.await_args.kwargs["reply_markup"].inline_keyboard[0][0]
         self.assertIn("startapp=", button.url)
+        shared = parse_shared_album_context("token", parse_qs(urlsplit(button.url).query)["startapp"][0])
+        self.assertEqual(shared, ("-1", "2"))
+        db.get_or_create_user.assert_called_with("2", "Grace", None)
 
         message.reply_text.side_effect = TimedOut()
         self.assertFalse(

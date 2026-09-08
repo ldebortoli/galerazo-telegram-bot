@@ -31,15 +31,33 @@ La clave debe tener entre 32 y 256 caracteres URL-safe. Generar
 `secrets.token_urlsafe(32)` en un proceso privado, sin mostrar su salida.
 El secreto compartido no sustituye la firma de Telegram.
 
-La firma HMAC usa el token del bot real y la sesion dura como maximo una hora;
+La firma HMAC usa el token del bot real y la sesión dura como máximo una hora;
 se rechazan fechas futuras, claves duplicadas, datos mayores a 8 KiB e IDs
-invalidos. El contexto `a2` de `start_param` usa solo letras, digitos, guion y
-guion bajo, y se firma para el usuario que pide
-el enlace y el grupo. El parser sigue aceptando contextos `a1` historicos. No es un permiso compartible: un enlace reenviado a otra
-persona no permite leer la coleccion original. Solo se consultan los albumes
-que SQLite registra para el usuario autenticado; no se infiere pertenencia a
-partir de un `chat_id` o `chat_instance` enviado por el cliente. La seleccion
-explicita puede cambiar a otro album propio o a `all` despues de un enlace.
+inválidos. `start_param` viaja dentro del initData firmado por Telegram.
+
+Desde 0.65 los nuevos botones grupales usan `s1_<grupo>_<titular>_<firma>`, con
+HMAC separado de los enlaces personales. El titular corresponde a la colección
+mostrada en el comando (incluida una consulta en respuesta a otra persona).
+Un visitante autenticado, aunque no pertenezca al grupo o reciba un reenvío,
+puede leer solo los cosméticos del titular y las capturas de ese grupo. Se consulta
+el resumen de ese grupo directamente, incluso vacío; no se listan los otros
+grupos ni se leen sus totales naturales globales o datos privados de apoyo.
+Las cantidades son actuales. Alterar titular, grupo o firma invalida el enlace.
+
+El bootstrap compartido incluye `view=shared`, `user` (visitante), `album_owner`
+(titular), un único `albums`, `selected_chat_id`, `natural_hisopos` y
+`paid_hisopos`. Omite Club, aportes y preferencias. `chat_id` solo puede ser el
+grupo firmado; `all` y cualquier otro grupo se rechazan. El frontend muestra
+«Álbum de…» en solo lectura y «Ver mi álbum» solicita `?view=mine`, que siempre
+selecciona al usuario autenticado y sus grupos. El titular de un enlace s1 abre
+su vista completa y puede cambiar entre sus grupos. Las respuestas propias
+incluyen `view=own`, `album_owner` y los campos previos de tienda y apoyo.
+
+Los enlaces personales anteriores `a1`/`a2` siguen ligados a su usuario; no se
+convierten retroactivamente en compartibles. La selección propia se limita a
+los álbumes que SQLite registra para el usuario autenticado, sin confiar en
+`chat_instance`, IDs de titular enviados por el cliente ni pertenencia inferida.
+El botón privado continúa abriendo la cuenta propia sin compartir un chat privado.
 
 Facturas: JSON de hasta 16 KiB, `kind`, `item_key`, `source_chat_id` opcional y
 `recipient` opcional. Precio, comprador y cantidad no son controlados por el

@@ -15,6 +15,8 @@ from galerazo_bot.monetization import (
     PAID_HISOPOS,
     PaymentPayloadError,
     create_album_context,
+    create_shared_album_context,
+    parse_shared_album_context,
     create_payment_payload,
     invoice_spec,
     parse_album_context,
@@ -145,6 +147,18 @@ class MonetizationCatalogTests(unittest.TestCase):
         ):
             with self.subTest(candidate=candidate, user_id=user_id), self.assertRaises(ValueError):
                 parse_album_context("token", candidate, expected_user_id=user_id)
+
+    def test_shared_context_has_separate_scope_and_rejects_tampering(self):
+        token = create_shared_album_context("token", chat_id="-1001", user_id="123")
+        self.assertEqual(parse_shared_album_context("token", token), ("-1001", "123"))
+        self.assertRegex(token, r"^[A-Za-z0-9_-]+$")
+        for candidate in ("bad", token.replace("-1001", "-1002"), token.replace("_123_", "_456_"), token[:-1]+"é", create_album_context("token", chat_id="-1001", user_id="123"), create_shared_album_context("token", chat_id="123", user_id="123")):
+            with self.subTest(candidate=candidate), self.assertRaises(ValueError):
+                parse_shared_album_context("token", candidate)
+        with self.assertRaises(ValueError):
+            parse_album_context("token", token, expected_user_id="123")
+        with self.assertRaises(ValueError):
+            parse_shared_album_context("different-bot", token)
 
 
 class MonetizationDatabaseTests(unittest.TestCase):

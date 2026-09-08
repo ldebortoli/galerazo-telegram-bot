@@ -2198,6 +2198,7 @@ async def _send_hisopo_collection(
     private = message.chat.type == "private"
     if private:
         target_user = requester
+    db.get_or_create_user(str(target_user.id), _display_name(target_user), target_user.username)
     entries = [] if private else db.get_hisopo_collection(chat_id, str(target_user.id))
     db.reconcile_club_rewards(user_id=str(target_user.id))
     text = render_hisopo_collection(
@@ -2224,7 +2225,7 @@ async def _send_hisopo_collection(
             bot_username=bot_username,
             short_name=settings.telegram_mini_app_short_name,
             chat_id=chat_id,
-            user_id=str(requester.id),
+            user_id=str(target_user.id),
         )
         reply_markup = InlineKeyboardMarkup(
             [[InlineKeyboardButton(t(language, "hisopos.collection.open_app"), url=url)]]

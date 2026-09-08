@@ -8,8 +8,9 @@ import unittest
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from types import SimpleNamespace
-from unittest.mock import AsyncMock, MagicMock
-from urllib.parse import urlencode
+from unittest.mock import AsyncMock, MagicMock, patch
+from multidict import MultiDict
+from urllib.parse import urlencode, urlsplit, parse_qs
 
 from aiohttp import web
 
@@ -27,7 +28,7 @@ from galerazo_bot.mini_app import (
     start_mini_app,
     validate_init_data,
 )
-from galerazo_bot.monetization import create_album_context, parse_payment_payload
+from galerazo_bot.monetization import create_album_context, create_shared_album_context, parse_shared_album_context, parse_payment_payload
 
 
 NOW = datetime(2026, 8, 27, 12, tzinfo=timezone.utc)
@@ -99,6 +100,8 @@ class MiniAppAuthenticationTests(unittest.TestCase):
             user_id="1",
         )
         self.assertTrue(url.startswith("https://t.me/galerazo_bot/hisopos?startapp="))
+
+        self.assertEqual(parse_shared_album_context("token", parse_qs(urlsplit(url).query)["startapp"][0]), ("-1001", "1"))
 
         minimal = validate_init_data(
             signed_init_data(
@@ -181,6 +184,95 @@ class MiniAppApiTests(unittest.IsolatedAsyncioTestCase):
 
     def tearDown(self) -> None:
         self.temporary.cleanup()
+
+    def shared_headers(self, *, owner="1", chat="-1", viewer=2, context=None):
+        return {"X-Telegram-Init-Data": signed_init_data(
+            user={"id": viewer, "first_name": "Visitor"},
+            start_param=context or create_shared_album_context("token", chat_id=chat, user_id=owner),
+        )}
+
+    async def test_shared_album_outsider_gets_only_origin_and_cosmetics_live(self):
+        self.db.register_chat("-9", "group", "Secret group")
+        with self.db._connect() as conn:
+            conn.execute("INSERT INTO hisopo_collections VALUES ('-9','1','gold',999,'first','last')")
+        self.db.grant_paid_hisopo(gifted_by_user_id="2", recipient_user_id="1", hisopo_key="stellar", gifted_at="2026-09-01")
+        self.db.set_donor_display_public("1", True)
+        headers = self.shared_headers()
+        # Guest reads must not even fetch the owner's other groups or private support data.
+        with (
+            patch.object(self.db, "list_hisopo_albums_for_user", side_effect=AssertionError("Other groups")),
+            patch.object(self.db, "get_hisopo_collection_totals", side_effect=AssertionError("Global totals")),
+            patch.object(self.db, "get_club_membership", side_effect=AssertionError("Membership")),
+            patch.object(self.db, "get_donor_leaderboard", side_effect=AssertionError("Support")),
+            patch.object(self.db, "is_donor_display_public", side_effect=AssertionError("Preference")),
+        ):
+            payload = json.loads((await self.api.bootstrap(request_stub(headers=headers))).text)
+        self.assertEqual(set(payload), {"user", "view", "album_owner", "albums", "selected_chat_id", "natural_hisopos", "paid_hisopos"})
+        self.assertEqual(payload["user"]["id"], "2")
+        self.assertEqual(payload["album_owner"], {"id": "1", "name": "Ada Lovelace"})
+        self.assertEqual(payload["view"], "shared")
+        self.assertEqual(payload["albums"], [{"chat_id": "-1", "title": "Álbum Uno", "captures": 3, "discovered": 1}])
+        self.assertNotIn("Secret group", json.dumps(payload))
+        self.assertEqual(payload["natural_hisopos"][0]["quantity"], 3)
+        self.assertEqual(next(x["quantity"] for x in payload["natural_hisopos"] if x["key"] == "gold"), 0)
+        self.assertEqual(payload["paid_hisopos"][-1]["quantity"], 1)
+        with self.db._connect() as conn:
+            conn.execute("UPDATE hisopo_collections SET capture_count=4 WHERE chat_id='-1'")
+        live = json.loads((await self.api.bootstrap(request_stub(headers=headers, query={"chat_id": "-1"}))).text)
+        self.assertEqual(live["natural_hisopos"][0]["quantity"], 4)
+
+    async def test_shared_scope_cannot_be_expanded_or_forged(self):
+        headers = self.shared_headers()
+        for query in ({"chat_id": "all"}, {"chat_id": "-9"}, {"chat_id": "2"}):
+            with self.subTest(query=query), self.assertRaises(web.HTTPForbidden):
+                await self.api.bootstrap(request_stub(headers=headers, query=query))
+        for query in ({"owner_id": "1"}, {"view": "shared"}, {"view": ""}, MultiDict([("view", "mine"), ("view", "mine")]), MultiDict([("chat_id", "-1"), ("chat_id", "all")])):
+            with self.subTest(query=query), self.assertRaises(web.HTTPBadRequest):
+                await self.api.bootstrap(request_stub(headers=headers, query=query))
+        token = create_shared_album_context("token", chat_id="-1", user_id="1")
+        for token in ("s1_bad", token.replace("_-1_", "_-9_"), token.replace("_1_", "_2_")):
+            with self.subTest(token=token), self.assertRaises(web.HTTPForbidden):
+                await self.api.bootstrap(request_stub(headers=self.shared_headers(context=token)))
+        for headers in (self.shared_headers(chat="-404"), self.shared_headers(owner="404")):
+            with self.assertRaises(web.HTTPNotFound):
+                await self.api.bootstrap(request_stub(headers=headers))
+
+    async def test_shared_return_to_own_and_owner_group_navigation(self):
+        headers = self.shared_headers()
+        own = json.loads((await self.api.bootstrap(request_stub(headers=headers, query={"view": "mine"}))).text)
+        self.assertEqual(own["view"], "own")
+        self.assertEqual(own["album_owner"]["id"], "2")
+        self.assertEqual(own["albums"], [])
+        self.assertTrue(all(x["quantity"] == 0 for x in own["natural_hisopos"]))
+        with self.assertRaises(web.HTTPForbidden):
+            await self.api.bootstrap(request_stub(headers=headers, query={"view": "mine", "chat_id": "-1"}))
+        for query in ({}, {"chat_id": "all"}, {"view": "mine", "chat_id": "all"}):
+            own = json.loads((await self.api.bootstrap(request_stub(headers=self.shared_headers(viewer=1), query=query))).text)
+            self.assertEqual(own["view"], "own")
+            self.assertEqual(len(own["albums"]), 2)
+            self.assertEqual(own["selected_chat_id"], query.get("chat_id", "-1"))
+        # An empty origin is still a valid shared album; no membership lookup is needed.
+        self.db.register_chat("-3", "group", "Empty group")
+        for viewer in (1, 2):
+            empty = json.loads((await self.api.bootstrap(request_stub(headers=self.shared_headers(chat="-3", viewer=viewer)))).text)
+            self.assertEqual(empty["selected_chat_id"], "-3")
+            self.assertTrue(all(x["quantity"] == 0 for x in empty["natural_hisopos"]))
+        with self.db._connect() as conn:
+            conn.execute("UPDATE users SET display_name=NULL WHERE user_id='1'")
+        unnamed = json.loads((await self.api.bootstrap(request_stub(headers=headers))).text)
+        self.assertEqual(unnamed["album_owner"]["name"], "Usuario 1")
+
+    async def test_shared_link_never_changes_payment_or_settings_identity(self):
+        headers = self.shared_headers()
+        body = {"kind": "product", "item_key": "mini", "user_id": "1", "owner_id": "1"}
+        await self.api.create_invoice(request_stub(headers=headers, body=body))
+        intent = parse_payment_payload("token", self.bot.create_invoice_link.await_args.kwargs["payload"])
+        self.assertEqual((intent.user_id, intent.recipient_user_id), ("2", "2"))
+        with self.assertRaises(web.HTTPBadRequest):
+            await self.api.create_invoice(request_stub(headers=headers, body={**body, "source_chat_id": "-1"}))
+        await self.api.donor_visibility(request_stub(headers=headers, body={"public": True, "user_id": "1"}))
+        self.assertTrue(self.db.is_donor_display_public("2"))
+        self.assertFalse(self.db.is_donor_display_public("1"))
 
     async def test_real_bootstrap_selects_direct_query_fallback_and_empty_albums(self) -> None:
         direct_context = create_album_context("token", chat_id="-1", user_id="1")

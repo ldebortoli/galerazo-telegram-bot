@@ -6,13 +6,13 @@ cubre y debe pasar de `borrador` a `aprobado` antes de publicar una imagen. Una 
 vacía con estado `omitido` registra una excepción explícitamente solicitada por el usuario:
 el runtime avanza el cursor sin enviar un broadcast ni acumularla para otro release.
 
-## [0.64] desde=[0.63] estado=borrador
+## [0.65] desde=[0.63] estado=borrador
 
-Novedades de Galerazo Bot v0.64
+Novedades de Galerazo Bot v0.65
 
 /coleccionhisopos muestra los Hisopos del grupo y, debajo, tus cosméticos globales con sus cantidades. En privado con el bot muestra solo tus cosméticos.
 
-Desde el botón abrís tu álbum en la Mini App de galerazo.com: podés cambiar entre tus grupos, verlos todos juntos, visitar la tienda, regalar cosméticos y apoyar el proyecto. Cada persona accede con su propia cuenta de Telegram.
+Desde el botón abrís tu álbum en la Mini App de galerazo.com: podés cambiar entre tus grupos, verlos todos juntos, visitar la tienda, regalar cosméticos y apoyar el proyecto. Cada persona accede con su propia cuenta de Telegram. Los nuevos botones de grupo también permiten visitar el álbum de quien aparece en la respuesta: sus cosméticos y la colección de ese grupo, sin mostrar sus otros grupos. Incluyen «Ver mi álbum» para volver al tuyo.
 
 El Club del Hisopo entrega 1 Estelar permanente al completar cada 90 días consecutivos pagos. El primero llega recién al terminar los tres períodos. Si vence y hay una interrupción, el progreso incompleto empieza de cero. Sigue costando 100 Stars cada 30 días y no da puntos ni ventajas.
 

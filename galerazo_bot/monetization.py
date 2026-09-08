@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import hmac
+import re
 from dataclasses import dataclass
 from datetime import timedelta
 
@@ -328,6 +329,23 @@ def parse_album_context(bot_token: str, value: str, *, expected_user_id: str) ->
     if version != ("a2" if separator == "_" else "a1") or user_id != expected_user_id or not signature.isascii() or not hmac.compare_digest(signature, expected):
         raise ValueError("El contexto del álbum no es válido.")
     return chat_id
+
+
+def create_shared_album_context(bot_token: str, *, chat_id: str, user_id: str) -> str:
+    """A shareable capability for one owner's cosmetics and one group only."""
+    unsigned = f"s1_{chat_id}_{user_id}"
+    return f"{unsigned}_{_signature(bot_token, 'shared-album', unsigned)}"
+
+
+def parse_shared_album_context(bot_token: str, value: str) -> tuple[str, str]:
+    match = re.fullmatch(r"s1_(-[1-9][0-9]{0,19})_([1-9][0-9]{0,19})_([0-9a-f]{24})", value)
+    if match is None:
+        raise ValueError("El enlace compartido no es válido.")
+    chat_id, owner_id, signature = match.groups()
+    unsigned = value.rsplit("_", 1)[0]
+    if not hmac.compare_digest(signature, _signature(bot_token, "shared-album", unsigned)):
+        raise ValueError("El enlace compartido no es válido.")
+    return chat_id, owner_id
 
 
 def _signature(bot_token: str, domain: str, value: str) -> str:

@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.65] - 2026-09-07
+
+- Los nuevos botones de álbum de `/coleccionhisopos` en grupos permiten visitar la colección de la persona que aparece en la respuesta. Comparten sus cosméticos globales y solo los Hisopos del grupo del enlace, con cantidades actuales, también al reenviarlo. La vista indica el titular e incluye «Ver mi álbum».
+- Correcciones y mejoras: el visitante no recibe otros grupos, totales naturales globales ni datos de membresía o aportes del titular. Los enlaces personales anteriores conservan su acceso restringido y los pagos y ajustes siguen vinculados a la cuenta autenticada.
+
 ## [0.64] - 2026-09-07
 
 - `/coleccionhisopos` también funciona en privado: muestra únicamente los cosméticos globales del solicitante y abre la Mini App. En grupos conserva la colección del chat y los cosméticos. Los menús de comandos privados incluyen este acceso.
