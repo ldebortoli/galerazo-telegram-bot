@@ -158,6 +158,7 @@ HISOPO_MESSAGE_DELETE_BATCH_SIZE = 100
 RESTART_CALLBACK_PREFIX = "restart"
 SHUTDOWN_CALLBACK_PREFIX = "shutdown"
 UPDATE_DRAIN_TIMEOUT_SECONDS = 60
+POLLING_CONFLICT_NOTICE_INTERVAL = timedelta(minutes=15)
 DISABLED_LINK_PREVIEW_OPTIONS = LinkPreviewOptions(is_disabled=True)
 POLLING_OPTIONS = {
     "allowed_updates": Update.ALL_TYPES,
@@ -2313,6 +2314,26 @@ async def _handle_error(update: object, context: ContextTypes.DEFAULT_TYPE) -> N
         )
         return
 
+    if update is None and isinstance(context.error, Conflict):
+        now = datetime.now(timezone.utc)
+        last_notice = context.application.bot_data.get("polling_conflict_notice_at")
+        if last_notice is None or now - last_notice >= POLLING_CONFLICT_NOTICE_INTERVAL:
+            context.application.bot_data["polling_conflict_notice_at"] = now
+            logger.warning(
+                "Telegram rechazo temporalmente getUpdates; python-telegram-bot reintentara: %s",
+                context.error,
+            )
+            settings = context.application.bot_data.get("settings")
+            if settings is not None:
+                await _send_log_event(
+                    context.bot,
+                    settings.telegram_log_chat_id,
+                    "Telegram rechazo temporalmente getUpdates por una consulta superpuesta. "
+                    "El bot sigue activo y reintenta automaticamente. "
+                    "Si persiste, se avisara de nuevo en 15 minutos.",
+                )
+        return
+
     if context.error is not None and _is_stale_callback_query_error(context.error):
         logger.debug("Callback query vencida ignorada: %s", context.error)
         return
@@ -2323,12 +2344,6 @@ async def _handle_error(update: object, context: ContextTypes.DEFAULT_TYPE) -> N
         f" en {chat_context}" if chat_context else "",
         exc_info=context.error,
     )
-    if isinstance(context.error, Conflict):
-        logger.error(
-            "Telegram rechazo el polling porque otra instancia externa usa este token. "
-            "Revisar otros equipos, servicios o deploys activos."
-        )
-        context.application.stop_running()
     settings = context.application.bot_data.get("settings")
     if settings is None or context.error is None:
         return

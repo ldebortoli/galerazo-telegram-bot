@@ -841,8 +841,25 @@ class CommandAndCallbackEntrypointTests(unittest.IsolatedAsyncioTestCase):
         error_context = SimpleNamespace(error=None, application=application, bot=MagicMock())
         await tb._handle_error(None, error_context)
         error_context.error = Conflict("conflict")
-        await tb._handle_error(None, error_context)
-        application.stop_running.assert_called_once()
+        with patch.object(tb, "_send_log_event", AsyncMock(return_value=True)) as send_log, patch.object(
+            tb, "_send_unhandled_error_event", AsyncMock()
+        ) as send_unhandled:
+            await tb._handle_error(None, error_context)
+            send_log.assert_not_awaited()
+            application.bot_data["settings"] = settings()
+            application.bot_data["polling_conflict_notice_at"] = (
+                datetime.now(timezone.utc) - tb.POLLING_CONFLICT_NOTICE_INTERVAL
+            )
+            await tb._handle_error(None, error_context)
+            await tb._handle_error(None, error_context)
+            send_log.assert_awaited_once()
+            application.bot_data["polling_conflict_notice_at"] = (
+                datetime.now(timezone.utc) - tb.POLLING_CONFLICT_NOTICE_INTERVAL
+            )
+            await tb._handle_error(None, error_context)
+            self.assertEqual(send_log.await_count, 2)
+            send_unhandled.assert_not_awaited()
+        application.stop_running.assert_not_called()
         application.bot_data["settings"] = settings()
         error_context.error = RuntimeError("failure")
         with patch.object(tb, "_send_unhandled_error_event", AsyncMock()) as send:

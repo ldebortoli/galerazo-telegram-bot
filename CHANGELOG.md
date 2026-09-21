@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.68] - 2026-09-21
+
+- Correcciones y mejoras: el bot recupera automáticamente la recepción de mensajes tras un conflicto temporal con Telegram, sin reiniciarse por el primer intento fallido.
+
 ## [0.67] - 2026-09-21
 
 - Correcciones y mejoras: se reparó la configuración del contenedor de producción tras retirar la integración con Google Sheets.
