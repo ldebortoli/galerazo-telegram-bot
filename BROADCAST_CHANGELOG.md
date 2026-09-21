@@ -6,9 +6,9 @@ cubre y debe pasar de `borrador` a `aprobado` antes de publicar una imagen. Una 
 vacía con estado `omitido` registra una excepción explícitamente solicitada por el usuario:
 el runtime avanza el cursor sin enviar un broadcast ni acumularla para otro release.
 
-## [0.66] desde=[0.63] estado=borrador
+## [0.67] desde=[0.63] estado=borrador
 
-Novedades de Galerazo Bot v0.66
+Novedades de Galerazo Bot v0.67
 
 /coleccionhisopos muestra los Hisopos del grupo y, debajo, tus cosméticos globales con sus cantidades. En privado con el bot muestra solo tus cosméticos.
 

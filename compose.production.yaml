@@ -18,9 +18,6 @@ services:
       - type: bind
         source: /srv/galerazo/backups
         target: /app/backups
-      - type: bind
-        target: /app/secrets
-        read_only: true
     tmpfs:
       - /tmp:size=256m,mode=1777
     read_only: true

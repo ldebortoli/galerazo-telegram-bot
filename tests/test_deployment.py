@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import os
+import shutil
 import sqlite3
+import subprocess
 import tempfile
 import unittest
 from contextlib import closing
@@ -108,6 +110,23 @@ class ContainerRuntimeTests(unittest.TestCase):
         self.assertIn("no-new-privileges:true", compose)
         self.assertNotIn("ports:", compose)
         self.assertNotIn("/var/run/docker.sock", compose)
+
+    def test_production_compose_can_be_rendered(self) -> None:
+        if shutil.which("docker") is None:
+            self.skipTest("Docker Compose CLI no disponible")
+        environment = os.environ.copy()
+        environment["GALERAZO_IMAGE"] = "galerazobot:validation-only"
+        result = subprocess.run(
+            ["docker", "compose", "-f", str(PROJECT_ROOT / "compose.production.yaml"),
+             "config", "--no-env-resolution", "--quiet"],
+            cwd=PROJECT_ROOT,
+            env=environment,
+            capture_output=True,
+            text=True,
+            timeout=30,
+            check=False,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
 
     def test_remote_log_shortcut_uses_read_only_iap_following(self) -> None:
         watcher = (PROJECT_ROOT / "scripts" / "Watch-GceBotLogs.ps1").read_text(encoding="utf-8")

@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.67] - 2026-09-21
+
+- Correcciones y mejoras: se reparó la configuración del contenedor de producción tras retirar la integración con Google Sheets.
+
 ## [0.66] - 2026-09-21
 
 - Correcciones y mejoras: los triggers multimedia se agregan sin analisis automatico de contenido ni requisitos de una clave de moderacion.
