@@ -24,9 +24,6 @@ def settings(**overrides) -> Settings:
         "telegram_log_chat_id": None,
         "telegram_announcements_chat_id": None,
         "database_path": Path("db.sqlite3"),
-        "google_sheets_credentials_json_path": None,
-        "google_sheets_spreadsheet_id": None,
-        "google_sheets_worksheet_name": "Gastos",
     }
     values.update(overrides)
     return Settings(**values)
@@ -38,8 +35,6 @@ def state(current_settings: Settings | None = None) -> tb.BotState:
         settings=current_settings or settings(),
         bot_user_id="99",
         bot_username="galerazo_bot",
-        expense_sheet_writer=MagicMock(),
-        media_moderator=MagicMock(),
     )
 
 

@@ -200,7 +200,6 @@ class DeploymentAutomationTests(unittest.TestCase):
             "/srv/galerazo/data",
             "/srv/galerazo/backups",
             "/etc/galerazo",
-            "/etc/galerazo/secrets",
             "/etc/galerazo/bot.env",
         ):
             self.assertIn(protected_path, verifier)

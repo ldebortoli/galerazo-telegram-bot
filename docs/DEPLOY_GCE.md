@@ -261,7 +261,6 @@ repositorios oficiales. Luego crea estas rutas protegidas:
 - `/srv/galerazo/data`: base persistente, UID/GID 10001;
 - `/srv/galerazo/backups`: backups persistentes;
 - `/etc/galerazo/bot.env`: variables secretas, modo `0600`;
-- `/etc/galerazo/secrets`: credenciales opcionales, modo `0700`.
 
 Al final ejecuta `deploy/gce/verify-host.sh` para comprobar versiones, servicio
 Docker y permisos sin imprimir secretos. Tambien se puede ejecutar manualmente
@@ -320,15 +319,6 @@ Nunca pasar el token como argumento de `gcloud`, copiar el `.env` completo de
 forma indiscriminada ni guardarlo en GitHub. Como alternativa de emergencia se
 puede entrar por IAP y usar `sudo nano /etc/galerazo/bot.env`.
 
-Para Google Sheets, si la variable local
-`GOOGLE_SHEETS_CREDENTIALS_JSON_PATH` apunta a un JSON valido, el mismo script
-lo copia a `/etc/galerazo/secrets/google-service-account.json` y configura
-automaticamente dentro de `bot.env`:
-
-```env
-GOOGLE_SHEETS_CREDENTIALS_JSON_PATH=/app/secrets/google-service-account.json
-```
-
 ### Reporte diario de Cloud Billing
 
 Para informar el gasto mensual en `TELEGRAM_LOG_CHAT_ID`, habilitar primero la
@@ -371,8 +361,7 @@ sobre ese dataset y esperar a que Google cree la tabla antes de completar
 Bot Control Center ya dispone de una vista separada de credenciales. Consulta
 `Get-GceBotSecretStatus.ps1`, que devuelve solamente presencia/ausencia, y
 aplica parches parciales con `Patch-GceBotSecrets.ps1`. Los valores omitidos se
-preservan; el token principal no se puede borrar; el JSON opcional de Sheets se
-instala como archivo root `0600`. El parche viaja por IAP en temporales privados,
+preservan; el token principal no se puede borrar. El parche viaja por IAP en temporales privados,
 se limpia en ambos extremos y nunca aparece en argumentos, respuesta o logs.
 La edicion no reinicia el bot: los cambios se toman en el proximo deploy o
 reinicio. Deploy y credenciales siguen siendo acciones separadas y auditables.
@@ -562,7 +551,6 @@ modo 0600. Si ya existiera una base, primero crea un backup consistente en
 - Limpiar tags viejos de Artifact Registry despues de verificar una release.
 - No agregar puertos al Compose ni montar `/var/run/docker.sock`.
 - No ejecutar dos replicas: polling y SQLite estan preparados para una sola.
-- En `e2-micro`, moderar un video por vez hasta medir el pico real de PyAV.
 - Probar un rollback voluntario antes de considerar automatico el deploy.
 
 ## Referencias oficiales

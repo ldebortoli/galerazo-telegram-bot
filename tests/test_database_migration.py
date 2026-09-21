@@ -64,7 +64,6 @@ class DatabaseMigrationTests(unittest.TestCase):
                 "1",
                 '{"test": true}',
             )
-            db.add_expense("-1", "2", 1234, "ARS", "efectivo", "kiosco", "agua")
             db.play_russian_roulette("-1", "2", bullet_position=5)
             db.register_chat("-1001", "supergroup", "Supergroup", "1")
             db.try_award_daily_galeraza("-1001", "2026-07-10", "1", "999")
@@ -149,7 +148,6 @@ class DatabaseMigrationTests(unittest.TestCase):
             self.assertEqual(report["chat_id"], "-1001")
             self.assertEqual(db.list_triggers("-1001")[0].display_name, "Saludo")
             self.assertEqual(db.list_triggers("-1001")[0].payload_json, '{"test": true}')
-            self.assertEqual(db.list_recent_expenses("-1001")[0].description, "agua")
             self.assertEqual(
                 db.play_russian_roulette("-1001", "2"),
                 RussianRouletteShot(False, 4),

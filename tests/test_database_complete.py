@@ -146,7 +146,7 @@ class DatabaseCompleteTests(unittest.TestCase):
         self.db.delete_galeraza_message_state("-1", "20")
         self.assertIsNone(self.db.get_galeraza_message_state("-1", "20"))
 
-    def test_triggers_roulette_and_expenses(self) -> None:
+    def test_triggers_and_roulette(self) -> None:
         self.db.register_chat("-1", "group", "G")
         self.assertTrue(self.db.add_trigger("-1", "name", "Name", "text", None, None, None, "1", "{}"))
         self.assertFalse(self.db.add_trigger("-1", "name", "Name", "text", None, None, None, "1"))
@@ -159,30 +159,6 @@ class DatabaseCompleteTests(unittest.TestCase):
             self.db.play_russian_roulette("-1", "1", bullet_position=6)
         with patch("galerazo_bot.database.secrets.randbelow", return_value=5):
             self.assertFalse(self.db.play_russian_roulette("-1", "1").hit)
-
-        expense = self.db.add_expense("-1", "1", 100, "ARS", "cash", "box", "food")
-        self.assertEqual(expense.sheet_status, "pending")
-        self.assertEqual(self.db.count_pending_expenses("-1"), 1)
-        self.assertEqual(len(self.db.list_pending_expenses("-1", 1)), 1)
-        self.db.mark_expense_failed(expense.expense_id, "network")
-        self.assertEqual(self.db.list_recent_expenses("-1", 1)[0].sheet_error, "network")
-        self.db.mark_expense_synced(expense.expense_id)
-        self.assertEqual(self.db.count_pending_expenses("-1"), 0)
-        self.assertEqual(self.db.list_pending_expenses("-1"), [])
-        self.assertEqual(self.db.list_recent_expenses("-1")[0].sheet_status, "synced")
-
-    def test_count_pending_defensive_none_row(self) -> None:
-        connection = MagicMock()
-        connection.execute.return_value.fetchone.return_value = None
-
-        @contextmanager
-        def fake_connect():
-            yield connection
-
-        with patch.object(self.db, "_connect", fake_connect), patch.object(
-            self.db, "resolve_chat_id", return_value="-1"
-        ):
-            self.assertEqual(self.db.count_pending_expenses("-1"), 0)
 
     def test_legacy_tables_are_upgraded_and_migrated(self) -> None:
         path = self.root / "legacy.sqlite3"

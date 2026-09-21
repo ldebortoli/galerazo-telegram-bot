@@ -62,7 +62,6 @@ check_path /opt/galerazo 755 0:0
 check_path /srv/galerazo/data 755 10001:10001
 check_path /srv/galerazo/backups 755 10001:10001
 check_path /etc/galerazo 700 0:0
-check_path /etc/galerazo/secrets 700 0:0
 check_path /etc/galerazo/bot.env 600 0:0
 
 token_line_count="$(grep -c '^TELEGRAM_BOT_TOKEN=' /etc/galerazo/bot.env || true)"

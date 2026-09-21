@@ -14,12 +14,6 @@ Base para un bot de Telegram con una version estable y reproducible de Python, `
 - `listanegra` / `bloqueados`: muestra los usuarios bloqueados. Solo devs.
 - `novedad`: envia una noticia al canal de anuncios. Solo devs.
 - `reportar`: envia un reporte de bug al canal de logging. Maximo 1 por usuario por dia.
-- `habilitargastos`: habilita el sistema de gastos en el chat actual. Solo admines del chat, quien agrego el bot o devs.
-- `deshabilitargastos`: deshabilita el sistema de gastos en el chat actual. Solo admines del chat, quien agrego el bot o devs.
-- `gasto`: registra un gasto en el chat actual si el sistema de gastos esta habilitado.
-- `ultimosgastos`: lista los ultimos gastos del chat actual.
-- `estadogastos`: muestra el estado de gastos y de Google Sheets. Solo admines del chat, quien agrego el bot o devs.
-- `sincronizargastos`: intenta sincronizar gastos pendientes con Google Sheets. Solo admines del chat, quien agrego el bot o devs.
 - `restringir`: restringe un usuario en el grupo actual. Solo admines del chat, quien agrego el bot o devs.
 - `habilitar`: vuelve a habilitar un usuario restringido en el grupo actual. Solo admines del chat, quien agrego el bot o devs.
 - `restringidos`: lista usuarios restringidos en el grupo actual. Solo admines del chat, quien agrego el bot o devs.
@@ -194,15 +188,6 @@ Si hay mas de un dev, separalos por coma:
 TELEGRAM_DEV_USER_IDS=<tu-user-id>,<otro-user-id>
 ```
 
-Configura por separado al propietario. Solo esa persona vera las herramientas
-de gastos dentro de `/help`, y unicamente cuando lo abra en el chat privado del
-bot. El propietario tambien debe estar incluido en `TELEGRAM_DEV_USER_IDS` para
-poder ejecutarlas:
-
-```env
-TELEGRAM_OWNER_USER_ID=<tu-user-id>
-```
-
 Para conseguir tu user id podes usar `/debug` una vez que el bot este corriendo, o usar un bot externo de Telegram que muestre tu id.
 
 ### 3. Configurar canal de logging
@@ -254,10 +239,7 @@ Ejemplo:
 
 ```env
 TELEGRAM_BOT_TOKEN=token-de-botfather
-OPENAI_API_KEY=clave-restringida-de-moderacion
 TELEGRAM_DEV_USER_IDS=
-TELEGRAM_EXPENSE_USER_IDS=
-TELEGRAM_OWNER_USER_ID=
 TELEGRAM_LOG_CHAT_ID=
 TELEGRAM_ANNOUNCEMENTS_CHAT_ID=
 TELEGRAM_HISOPO_COMMON_FILE_ID=file-id-del-hisopo-comun
@@ -280,10 +262,6 @@ TELEGRAM_HISOPO_TWIN_FILE_ID=file-id-del-hisopo-gemelo
 TELEGRAM_HISOPO_GIANT_FILE_ID=file-id-del-hisopo-gigante
 TELEGRAM_HISOPO_MIRACLE_FILE_ID=file-id-del-hisopo-milagroso
 DATABASE_PATH=data/galerazo.sqlite3
-GOOGLE_SHEETS_CREDENTIALS_JSON_PATH=secrets/google-service-account.json
-GOOGLE_SHEETS_SPREADSHEET_ID=replace-with-spreadsheet-id
-GOOGLE_SHEETS_WORKSHEET_NAME=Gastos y compras
-GOOGLE_SHEETS_CASHFLOW_SHEET_PREFIX=Gastos
 GOOGLE_CLOUD_BILLING_PROJECT_ID=bot-fleet-production
 GOOGLE_CLOUD_BILLING_TABLE=bot-fleet-production.billing_export.gcp_billing_export_v1_XXXXXX_XXXXXX_XXXXXX
 GOOGLE_CLOUD_BILLING_REPORT_TIME=09:00
@@ -291,36 +269,7 @@ GOOGLE_CLOUD_BILLING_REPORT_TIME=09:00
 
 El archivo `.env` no se sube al repo.
 
-### 7. Configurar Google Sheets para gastos
-
-El sistema de gastos usa estas variables:
-
-```env
-GOOGLE_SHEETS_CREDENTIALS_JSON_PATH=secrets/google-service-account.json
-GOOGLE_SHEETS_SPREADSHEET_ID=replace-with-spreadsheet-id
-GOOGLE_SHEETS_WORKSHEET_NAME=Gastos y compras
-GOOGLE_SHEETS_CASHFLOW_SHEET_PREFIX=Gastos
-```
-
-Si faltan credenciales o `GOOGLE_SHEETS_SPREADSHEET_ID`, el bot igual guarda los gastos en SQLite y los deja pendientes de sincronizacion para subirlos despues.
-
-### 8. Configurar moderacion de triggers
-
-La moderacion es opcional y usa el endpoint gratuito de OpenAI Moderation. Crea una API key de proyecto restringida, concede permiso de escritura solamente a `/v1/moderations` y cargala en la pestana `Configuracion` del panel, en `Clave de moderacion OpenAI`. Tambien se puede configurar directamente:
-
-```env
-OPENAI_API_KEY=clave-restringida-de-moderacion
-```
-
-La clave se guarda exclusivamente en `.env`, que esta ignorado por Git. Reinicia el bot despues de agregarla. Sin clave, el bot no escanea ni bloquea media y conserva el comportamiento anterior.
-
-La moderacion se ejecuta una sola vez al agregar el trigger. Fotos, documentos de imagen y stickers se analizan como imagen. Videos, documentos de video y videomensajes se analizan mediante cuatro frames ubicados al 20%, 40%, 60% y 80% de la duracion. El contenido descargado, las imagenes normalizadas y los frames viven solo en memoria y se liberan tanto ante exito como ante error; nunca se guardan en SQLite ni en archivos locales. Al reproducir un trigger no se vuelve a consultar la API.
-
-Esta capa detecta contenido sexual general. No es un detector especializado ni una garantia de deteccion de material de abuso sexual infantil.
-
-El Bot API oficial de Telegram limita `getFile` a 20 MB. Con moderacion activa, un archivo mayor se rechaza con un mensaje especifico porque el bot no puede descargarlo para analizarlo. Sin moderacion activa, ese limite no altera el guardado por `file_id`.
-
-### 9. Configurar el reporte diario de gasto de Google Cloud
+### 7. Configurar el reporte diario de gasto de Google Cloud
 
 El bot usa `JobQueue.run_daily` de `python-telegram-bot` y la exportacion estandar de Cloud Billing a BigQuery. La API de Billing no expone el gasto mensual actual directamente.
 
@@ -697,7 +646,7 @@ Tipos soportados:
 
 Si el mensaje tiene caption, el bot tambien guarda esa caption. Para media, se guarda el `file_id` de Telegram y el tipo interno de media para saber que metodo usar al enviarlo.
 
-Cuando `OPENAI_API_KEY` esta configurada, el bot modera la media antes de escribir el trigger. Una imagen marcada como sexual se rechaza. En videos y videomensajes se moderan cuatro frames equidistantes. Si la descarga, extraccion o consulta falla, ese intento no se guarda y se puede reintentar mas tarde. La reproduccion de triggers aceptados no agrega consultas ni latencia de moderacion.
+Los triggers multimedia se guardan por referencia de Telegram, sin descargar ni analizar su contenido y sin consultas a servicios de moderacion.
 
 Los eventos de servicio, como el ingreso de un usuario, no se pueden agregar porque el bot no puede recrearlos. Tampoco se aceptan mensajes que requieren configuración externa no portable, como facturas, pagos o juegos registrados por otro bot.
 
@@ -732,57 +681,6 @@ La ruleta rusa funciona solo en grupos y supergrupos y viene deshabilitada por d
 - El bot, los admines y los devs son inmunes al efecto de expulsión.
 - Antes de cada jugada, el bot verifica que sea administrador y tenga permiso para restringir usuarios.
 - El estado se migra al nuevo `chat_id` cuando un grupo pasa a supergrupo.
-
-## Gastos
-
-El subsistema de gastos queda reservado a los IDs incluidos simultaneamente en
-`TELEGRAM_DEV_USER_IDS` y `TELEGRAM_EXPENSE_USER_IDS`. Sus comandos no se
-publican en las sugerencias nativas de Telegram, solo aparecen en `/help` para
-esas personas por privado y solo pueden ejecutarse en un chat privado con el bot.
-
-El registro usa este formato:
-
-```powershell
-/gasto monto | categoria | forma de pago | descripcion
-```
-
-Ejemplo:
-
-```powershell
-/gasto 18500 | sal | mpl | pizzas de la juntada
-```
-
-El bot guarda monto, moneda, categoria, autor, forma de pago, descripcion,
-fecha, cuotas, cotizacion y estado de sincronizacion. Los alias y formatos
-vigentes se consultan con `/ayudagastos`.
-
-Comandos utiles:
-
-```powershell
-/pagoresumen
-/cierre
-/ayudagastos
-/ultimosgastos
-/estadogastos
-/sincronizargastos
-```
-
-`/gasto` registra compras; las de tarjeta de credito van solo a `Gastos y
-compras`, mientras que las inmediatas tambien van a la hoja anual. Una compra
-de tarjeta atrasada nunca abre un mes. `/pagoresumen` registra la salida real
-en la hoja anual sin abrir un mes inexistente. `/cierre` agrega una fecha a la
-columna `Cierres`; `/ultimosgastos` muestra el historial compartido,
-`/estadogastos` informa la conexion y `/sincronizargastos` reintenta pendientes.
-La cotizacion ARS/USD usa la venta (`bid`) de USDT en Binance informada por
-CriptoYa, no Binance P2P. Las compras directas en USD siempre se registran en un
-solo pago.
-
-Las escrituras son anexadas: el bot continúa después de la última fila usada y
-no completa huecos anteriores. Antes de enviar vuelve a comprobar la celda de
-fecha; si otra escritura ocupó la fila objetivo, recalcula una fila nueva o deja
-el gasto pendiente sin sobrescribirla.
-
-Si Google Sheets no esta configurado todavia, `/gasto` guarda igual en SQLite y lo deja pendiente. Si Telegram convierte el grupo en supergrupo, los gastos guardados migran al nuevo `chat_id`.
 
 ## Salir de un grupo
 
@@ -900,7 +798,6 @@ no forma parte del camino recomendado actual.
 - Copiar `.env.example` a `.env`.
 - Completar `TELEGRAM_BOT_TOKEN`.
 - Completar `TELEGRAM_DEV_USER_IDS`.
-- Completar `TELEGRAM_OWNER_USER_ID` con el propietario incluido entre los devs.
 - Agregar el bot al canal/grupo de logging y configurar `TELEGRAM_LOG_CHAT_ID`.
 - Agregar el bot al canal/grupo de anuncios y configurar `TELEGRAM_ANNOUNCEMENTS_CHAT_ID`.
 - Ejecutar `python app.py`.

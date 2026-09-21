@@ -17,7 +17,7 @@ from unittest.mock import MagicMock, patch
 from google.cloud import bigquery
 
 from galerazo_bot import chat_config, cli, cloud_billing, commands, config, deploy_backup
-from galerazo_bot import expenses, google_sheets, healthcheck, integration_status, logging_utils
+from galerazo_bot import healthcheck, integration_status, logging_utils
 from galerazo_bot import pagination, roles, runtime, user_display
 from galerazo_bot.command_handlers import help as help_handler
 from galerazo_bot.command_handlers import nivel, ruletarusa
@@ -177,32 +177,7 @@ class CommandCoreCompleteTests(unittest.IsolatedAsyncioTestCase):
             self.assertTrue(await ruletarusa.ruletarusa(context, db))
 
 
-class ExpenseAndDisplayCompleteTests(unittest.TestCase):
-    def test_expense_parsing_formatting_and_labels(self) -> None:
-        for raw, expected in (
-            ("", None),
-            ("ARS | cash | box | desc", None),
-            ("0 | cash | box | desc", None),
-            ("$ 1.234,56", 123456),
-            ("1,234.56", 123456),
-            ("12,5", 1250),
-            ("1.25", 125),
-            ("bad", None),
-        ):
-            self.assertEqual(expenses.parse_amount_to_cents(raw), expected)
-        self.assertIsNone(expenses.parse_expense_command_args("1 | | x | y"))
-        self.assertIsNone(expenses.parse_expense_command_args("bad | cash | x | y"))
-        parsed = expenses.parse_expense_command_args("1 | sal | ef | y")
-        self.assertIsNotNone(parsed)
-        self.assertEqual(parsed.category, "Salidas")
-        self.assertEqual(expenses.format_amount(-123456), "ARS -1.234,56")
-        self.assertIn("#1", expenses.build_expense_line(1, 1, "USD", "m", "s", "d", "u", "ok"))
-        self.assertIn("sincronizado", expenses.sync_status_label("es", True))
-        self.assertIn("pendiente", expenses.sync_status_label("es", False))
-        self.assertIn("configurado", expenses.fallback_sheet_detail("es", False, False))
-        self.assertIn("faltan", expenses.fallback_sheet_detail("es", True, False))
-        self.assertIn("listo", expenses.fallback_sheet_detail("es", True, True))
-        self.assertIn("/gasto", expenses.expense_usage_example())
+class DisplayCompleteTests(unittest.TestCase):
 
     def test_user_resolution_and_format_fallbacks(self) -> None:
         db = MagicMock()
@@ -224,8 +199,6 @@ class ConfigurationAndEntrypointTests(unittest.TestCase):
         environment = {
             "TELEGRAM_BOT_TOKEN": "token",
             "TELEGRAM_DEV_USER_IDS": " 1, ,2 ",
-            "TELEGRAM_EXPENSE_USER_IDS": "1,2",
-            "TELEGRAM_OWNER_USER_ID": "1",
             "TELEGRAM_LOG_CHAT_ID": "-1",
             "TELEGRAM_ANNOUNCEMENTS_CHAT_ID": "-2",
             "TELEGRAM_HISOPO_COMMON_FILE_ID": "common",
@@ -248,11 +221,6 @@ class ConfigurationAndEntrypointTests(unittest.TestCase):
             "TELEGRAM_HISOPO_GIANT_FILE_ID": "giant",
             "TELEGRAM_HISOPO_MIRACLE_FILE_ID": "miracle",
             "DATABASE_PATH": "db.sqlite3",
-            "GOOGLE_SHEETS_CREDENTIALS_JSON_PATH": "key.json",
-            "GOOGLE_SHEETS_SPREADSHEET_ID": "sheet",
-            "GOOGLE_SHEETS_WORKSHEET_NAME": "Tab",
-            "GOOGLE_SHEETS_CASHFLOW_SHEET_PREFIX": "Egresos",
-            "OPENAI_API_KEY": "openai",
             "GOOGLE_CLOUD_BILLING_PROJECT_ID": "project",
             "GOOGLE_CLOUD_BILLING_TABLE": "project1.dataset.table",
             "GOOGLE_CLOUD_BILLING_REPORT_TIME": "10:30",
@@ -260,10 +228,6 @@ class ConfigurationAndEntrypointTests(unittest.TestCase):
         with patch.dict("os.environ", environment, clear=True):
             settings = config.load_settings()
         self.assertEqual(settings.telegram_dev_user_ids, frozenset({"1", "2"}))
-        self.assertEqual(settings.telegram_expense_user_ids, frozenset({"1", "2"}))
-        self.assertEqual(settings.telegram_owner_user_id, "1")
-        self.assertEqual(settings.google_sheets_credentials_json_path, Path("key.json"))
-        self.assertEqual(settings.google_sheets_cashflow_sheet_prefix, "Egresos")
         self.assertEqual(settings.telegram_hisopo_common_file_id, "common")
         self.assertEqual(settings.telegram_hisopo_silver_file_id, "silver")
         self.assertEqual(settings.telegram_hisopo_gold_file_id, "gold")
@@ -283,13 +247,9 @@ class ConfigurationAndEntrypointTests(unittest.TestCase):
         self.assertEqual(settings.telegram_hisopo_twin_file_id, "twin")
         self.assertEqual(settings.telegram_hisopo_giant_file_id, "giant")
         self.assertEqual(settings.telegram_hisopo_miracle_file_id, "miracle")
-        self.assertIsNone(config._optional_path(None))
-        self.assertEqual(config._optional_path("x"), Path("x"))
 
     def test_blank_optional_configuration_uses_safe_defaults(self) -> None:
         environment = {
-            "GOOGLE_SHEETS_WORKSHEET_NAME": "",
-            "GOOGLE_SHEETS_CASHFLOW_SHEET_PREFIX": "  ",
             "GOOGLE_CLOUD_BILLING_REPORT_TIME": "",
             "TELEGRAM_MINI_APP_SHORT_NAME": "",
             "MINI_APP_BIND_HOST": " ",
@@ -298,8 +258,6 @@ class ConfigurationAndEntrypointTests(unittest.TestCase):
         with patch.dict("os.environ", environment, clear=True):
             settings = config.load_settings()
 
-        self.assertEqual(settings.google_sheets_worksheet_name, "Gastos y compras")
-        self.assertEqual(settings.google_sheets_cashflow_sheet_prefix, "Gastos")
         self.assertEqual(settings.google_cloud_billing_report_time, "09:00")
         self.assertEqual(settings.telegram_mini_app_short_name, "hisopos")
         self.assertEqual(settings.mini_app_bind_host, "127.0.0.1")
@@ -393,37 +351,6 @@ class BillingSheetsHealthAndStatusTests(unittest.IsolatedAsyncioTestCase):
         with self.assertRaises(RuntimeError):
             reader._query("202601")
 
-    def test_google_sheets_all_paths(self) -> None:
-        with tempfile.TemporaryDirectory() as directory:
-            key = Path(directory) / "key.json"
-            configured = google_sheets.GoogleSheetsExpenseWriter(
-                google_sheets.GoogleSheetsConfig(key, "sheet", "Tab")
-            )
-            missing = google_sheets.GoogleSheetsExpenseWriter(
-                google_sheets.GoogleSheetsConfig(None, None, "Tab")
-            )
-            self.assertEqual(configured.worksheet_name, "Tab")
-            self.assertFalse(missing.is_configured())
-            self.assertFalse(missing.is_ready())
-            expense = MagicMock()
-            self.assertEqual(missing.write_expense(expense).error, "sheet_not_configured")
-            self.assertEqual(configured.write_expense(expense).error, "sheet_not_ready")
-            key.write_text("{}", encoding="utf-8")
-            spreadsheet = MagicMock()
-            client = MagicMock()
-            client.open_by_key.return_value = spreadsheet
-            fake_gspread = MagicMock()
-            fake_gspread.service_account.return_value = client
-            with patch.object(google_sheets, "gspread", fake_gspread), patch.object(
-                configured, "_write_expense", return_value=google_sheets.ExpenseSheetWriteResult(True)
-            ):
-                self.assertTrue(configured.is_ready())
-                self.assertTrue(configured.write_expense(expense).success)
-            fake_gspread.service_account.side_effect = RuntimeError("api")
-            with patch.object(google_sheets, "gspread", fake_gspread):
-                self.assertEqual(configured.write_expense(expense).error, "api")
-            with patch.object(google_sheets, "gspread", None):
-                self.assertFalse(configured.is_ready())
 
     def test_healthcheck_success_missing_and_bad_result(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

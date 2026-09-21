@@ -13,14 +13,12 @@ REQUIREMENTS_IN = ROOT / "requirements.in"
 REQUIREMENTS_LOCK = ROOT / "requirements.txt"
 DIRECT_DEPENDENCIES = {
     "aiohttp",
-    "av",
     "colorama",
     "coverage",
     "pytest",
     "pytest-asyncio",
     "google-auth",
     "google-cloud-bigquery",
-    "gspread",
     "httpx",
     "pillow",
     "python-dotenv",

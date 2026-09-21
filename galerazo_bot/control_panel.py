@@ -28,10 +28,7 @@ WINDOWS_APP_ID = "GalerazoBot.ControlPanel"
 
 FIELDS = (
     ("TELEGRAM_BOT_TOKEN", "Token del bot", True),
-    ("OPENAI_API_KEY", "Clave de moderacion OpenAI", True),
     ("TELEGRAM_DEV_USER_IDS", "IDs de desarrolladores", False),
-    ("TELEGRAM_EXPENSE_USER_IDS", "IDs autorizados para gastos", False),
-    ("TELEGRAM_OWNER_USER_ID", "ID del propietario", False),
     ("TELEGRAM_LOG_CHAT_ID", "ID del canal de logs", False),
     ("TELEGRAM_ANNOUNCEMENTS_CHAT_ID", "ID del canal de anuncios", False),
     ("TELEGRAM_HISOPO_COMMON_FILE_ID", "File ID del hisopo comun", False),
@@ -54,10 +51,6 @@ FIELDS = (
     ("TELEGRAM_HISOPO_GIANT_FILE_ID", "File ID del hisopo gigante", False),
     ("TELEGRAM_HISOPO_MIRACLE_FILE_ID", "File ID del hisopo milagroso", False),
     ("DATABASE_PATH", "Base de datos", False),
-    ("GOOGLE_SHEETS_CREDENTIALS_JSON_PATH", "Credenciales de Google", False),
-    ("GOOGLE_SHEETS_SPREADSHEET_ID", "ID de Google Sheet", False),
-    ("GOOGLE_SHEETS_WORKSHEET_NAME", "Hoja de compras", False),
-    ("GOOGLE_SHEETS_CASHFLOW_SHEET_PREFIX", "Prefijo de hojas de gastos", False),
     ("GOOGLE_CLOUD_BILLING_PROJECT_ID", "Proyecto de Google Billing", False),
     ("GOOGLE_CLOUD_BILLING_TABLE", "Tabla de Google Billing", False),
     ("GOOGLE_CLOUD_BILLING_REPORT_TIME", "Hora diaria de Billing", False),
@@ -348,8 +341,6 @@ class ControlPanel(tk.Tk):
         values = _read_env()
         defaults = {
             "DATABASE_PATH": "data/galerazo.sqlite3",
-            "GOOGLE_SHEETS_WORKSHEET_NAME": "Gastos y compras",
-            "GOOGLE_SHEETS_CASHFLOW_SHEET_PREFIX": "Gastos",
             "GOOGLE_CLOUD_BILLING_REPORT_TIME": "09:00",
         }
         for key, variable in self.variables.items():

@@ -50,10 +50,7 @@ try {
     $parsed = $jsonLine | ConvertFrom-Json
     foreach ($name in @(
         "TELEGRAM_BOT_TOKEN",
-        "OPENAI_API_KEY",
         "TELEGRAM_DEV_USER_IDS",
-        "TELEGRAM_EXPENSE_USER_IDS",
-        "TELEGRAM_OWNER_USER_ID",
         "TELEGRAM_LOG_CHAT_ID",
         "TELEGRAM_ANNOUNCEMENTS_CHAT_ID",
         "TELEGRAM_HISOPO_COMMON_FILE_ID",
@@ -80,13 +77,9 @@ try {
         "MINI_APP_BIND_HOST",
         "MINI_APP_PORT",
     "MINI_APP_PROXY_SECRET",
-        "GOOGLE_SHEETS_SPREADSHEET_ID",
-        "GOOGLE_SHEETS_WORKSHEET_NAME",
-        "GOOGLE_SHEETS_CASHFLOW_SHEET_PREFIX",
         "GOOGLE_CLOUD_BILLING_PROJECT_ID",
         "GOOGLE_CLOUD_BILLING_TABLE",
-        "GOOGLE_CLOUD_BILLING_REPORT_TIME",
-        "GOOGLE_SHEETS_CREDENTIALS_JSON"
+        "GOOGLE_CLOUD_BILLING_REPORT_TIME"
     )) {
         $property = $parsed.PSObject.Properties[$name]
         if ($null -eq $property -or $property.Value -isnot [bool]) {

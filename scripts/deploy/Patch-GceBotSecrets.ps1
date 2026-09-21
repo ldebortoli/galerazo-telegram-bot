@@ -4,7 +4,6 @@ param(
     [Parameter(Mandatory = $true)][string]$Zone,
     [Parameter(Mandatory = $true)][string]$Instance,
     [Parameter(Mandatory = $true)][string]$PatchFile,
-    [string]$GoogleSheetsCredentialsFile,
     [switch]$AcknowledgeSecretUpdate
 )
 
@@ -27,10 +26,7 @@ if ($patchInfo.Length -gt 32768) {
 }
 $allowedKeys = @(
     "TELEGRAM_BOT_TOKEN",
-    "OPENAI_API_KEY",
     "TELEGRAM_DEV_USER_IDS",
-    "TELEGRAM_EXPENSE_USER_IDS",
-    "TELEGRAM_OWNER_USER_ID",
     "TELEGRAM_LOG_CHAT_ID",
     "TELEGRAM_ANNOUNCEMENTS_CHAT_ID",
     "TELEGRAM_HISOPO_COMMON_FILE_ID",
@@ -57,13 +53,9 @@ $allowedKeys = @(
     "MINI_APP_BIND_HOST",
     "MINI_APP_PORT",
     "MINI_APP_PROXY_SECRET",
-    "GOOGLE_SHEETS_SPREADSHEET_ID",
-    "GOOGLE_SHEETS_WORKSHEET_NAME",
-    "GOOGLE_SHEETS_CASHFLOW_SHEET_PREFIX",
     "GOOGLE_CLOUD_BILLING_PROJECT_ID",
     "GOOGLE_CLOUD_BILLING_TABLE",
-    "GOOGLE_CLOUD_BILLING_REPORT_TIME",
-    "GOOGLE_SHEETS_CREDENTIALS_JSON"
+    "GOOGLE_CLOUD_BILLING_REPORT_TIME"
 )
 try {
     $patch = [System.IO.File]::ReadAllText($resolvedPatch) | ConvertFrom-Json
@@ -82,17 +74,6 @@ if ($null -eq $updates -or $updates -isnot [PSCustomObject]) {
 }
 if ($null -ne $clearProperty -and $clearProperty.Value -isnot [System.Array]) {
     throw "clear debe ser una lista JSON."
-}
-if ($GoogleSheetsCredentialsFile) {
-    $resolvedCredentials = (Resolve-Path -LiteralPath $GoogleSheetsCredentialsFile).Path
-    try {
-        $credentials = [System.IO.File]::ReadAllText($resolvedCredentials) | ConvertFrom-Json
-    }
-    catch {
-        throw "La credencial de Google Sheets no contiene JSON valido."
-    }
-    $updates | Add-Member -NotePropertyName "GOOGLE_SHEETS_CREDENTIALS_JSON" `
-        -NotePropertyValue $credentials -Force
 }
 [object[]]$updateKeys = @($updates.PSObject.Properties | ForEach-Object { $_.Name })
 [object[]]$clearKeys = if ($null -eq $clearProperty) { @() } else { @($clearProperty.Value) }
@@ -137,20 +118,6 @@ function Invoke-Gcloud {
 
 $uploadId = [Guid]::NewGuid().ToString("N")
 $remoteDirectory = ".galerazo-secret-patch-$uploadId"
-$temporaryPatch = $null
-if ($GoogleSheetsCredentialsFile) {
-    $temporaryPatch = Join-Path ([System.IO.Path]::GetTempPath()) "galerazo-secret-patch-$uploadId.json"
-    [System.IO.File]::WriteAllText(
-        $temporaryPatch,
-        ($patch | ConvertTo-Json -Compress -Depth 20),
-        [System.Text.UTF8Encoding]::new($false)
-    )
-    if ((Get-Item -LiteralPath $temporaryPatch).Length -gt 32768) {
-        [System.IO.File]::Delete($temporaryPatch)
-        throw "El parche de credenciales supera 32 KiB."
-    }
-}
-$effectivePatch = if ($temporaryPatch) { $temporaryPatch } else { $resolvedPatch }
 $installer = (Resolve-Path (Join-Path $PSScriptRoot "..\..\deploy\gce\patch-config.sh")).Path
 $verifier = (Resolve-Path (Join-Path $PSScriptRoot "..\..\deploy\gce\verify-host.sh")).Path
 $inspector = (Resolve-Path (Join-Path $PSScriptRoot "..\..\deploy\gce\inspect-secrets.sh")).Path
@@ -168,7 +135,7 @@ try {
     )
     $remoteCreated = $true
     Invoke-Gcloud -Arguments @(
-        "compute", "scp", $effectivePatch, "${Instance}:$remoteDirectory/secret-patch.json",
+        "compute", "scp", $resolvedPatch, "${Instance}:$remoteDirectory/secret-patch.json",
         "--project", $ProjectId, "--zone", $Zone, "--tunnel-through-iap", "--quiet"
     )
     $remoteInstall = 'bash /tmp/patch-config.sh "$HOME/' + $remoteDirectory + '"'
@@ -191,8 +158,5 @@ finally {
         finally {
             $ErrorActionPreference = $previousPreference
         }
-    }
-    if ($temporaryPatch -and [System.IO.File]::Exists($temporaryPatch)) {
-        [System.IO.File]::Delete($temporaryPatch)
     }
 }

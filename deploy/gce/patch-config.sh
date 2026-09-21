@@ -19,9 +19,7 @@ fi
 chmod 0600 "${patch_upload}"
 
 bot_env=/etc/galerazo/bot.env
-credentials=/etc/galerazo/secrets/google-service-account.json
 had_previous_env=no
-had_previous_credentials=no
 configuration_installed=no
 
 rollback_configuration() {
@@ -34,39 +32,25 @@ rollback_configuration() {
   else
     sudo rm -f "${bot_env}"
   fi
-  if [[ "${had_previous_credentials}" == yes ]]; then
-    sudo install -o root -g root -m 0600 "${credentials}.previous" "${credentials}"
-  else
-    sudo rm -f "${credentials}"
-  fi
 }
 trap rollback_configuration ERR
 
-sudo install -d -o root -g root -m 0700 /etc/galerazo /etc/galerazo/secrets
+sudo install -d -o root -g root -m 0700 /etc/galerazo
 if sudo test -f "${bot_env}"; then
   sudo install -o root -g root -m 0600 "${bot_env}" "${bot_env}.previous"
   had_previous_env=yes
 fi
-if sudo test -f "${credentials}"; then
-  sudo install -o root -g root -m 0600 "${credentials}" "${credentials}.previous"
-  had_previous_credentials=yes
-fi
-
-sudo python3 - "${bot_env}" "${credentials}" "${patch_upload}" <<'PY'
+sudo python3 - "${bot_env}" "${patch_upload}" <<'PY'
 import json
 import os
 from pathlib import Path
 import sys
 
 env_path = Path(sys.argv[1])
-credentials_path = Path(sys.argv[2])
-patch_path = Path(sys.argv[3])
+patch_path = Path(sys.argv[2])
 env_keys = (
     "TELEGRAM_BOT_TOKEN",
-    "OPENAI_API_KEY",
     "TELEGRAM_DEV_USER_IDS",
-    "TELEGRAM_EXPENSE_USER_IDS",
-    "TELEGRAM_OWNER_USER_ID",
     "TELEGRAM_LOG_CHAT_ID",
     "TELEGRAM_ANNOUNCEMENTS_CHAT_ID",
     "TELEGRAM_HISOPO_COMMON_FILE_ID",
@@ -94,20 +78,11 @@ env_keys = (
     "MINI_APP_PORT",
     "MINI_APP_PROXY_SECRET",
     "DATABASE_PATH",
-    "GOOGLE_SHEETS_CREDENTIALS_JSON_PATH",
-    "GOOGLE_SHEETS_SPREADSHEET_ID",
-    "GOOGLE_SHEETS_WORKSHEET_NAME",
-    "GOOGLE_SHEETS_CASHFLOW_SHEET_PREFIX",
     "GOOGLE_CLOUD_BILLING_PROJECT_ID",
     "GOOGLE_CLOUD_BILLING_TABLE",
     "GOOGLE_CLOUD_BILLING_REPORT_TIME",
 )
-editable_keys = set(env_keys) - {
-    "DATABASE_PATH",
-    "GOOGLE_SHEETS_CREDENTIALS_JSON_PATH",
-}
-credentials_key = "GOOGLE_SHEETS_CREDENTIALS_JSON"
-allowed_keys = editable_keys | {credentials_key}
+allowed_keys = set(env_keys) - {"DATABASE_PATH"}
 
 patch = json.loads(patch_path.read_text(encoding="utf-8"))
 if not isinstance(patch, dict):
@@ -138,8 +113,6 @@ for key in env_keys:
     values.setdefault(key, "")
 
 for key, value in updates.items():
-    if key == credentials_key:
-        continue
     if not isinstance(value, str) or not value.strip():
         raise SystemExit("Los reemplazos deben ser textos no vacios")
     normalized = value.strip()
@@ -149,27 +122,7 @@ for key, value in updates.items():
         raise SystemExit("TELEGRAM_BOT_TOKEN conserva el placeholder")
     values[key] = normalized
 for key in clear:
-    if key != credentials_key:
-        values[key] = ""
-
-if credentials_key in updates:
-    credentials_value = updates[credentials_key]
-    if not isinstance(credentials_value, dict):
-        raise SystemExit("La credencial de Google Sheets debe ser un objeto JSON")
-    for required in ("type", "client_email", "private_key"):
-        if not isinstance(credentials_value.get(required), str) or not credentials_value[required].strip():
-            raise SystemExit("La credencial de Google Sheets esta incompleta")
-    temporary_credentials = credentials_path.with_suffix(".json.next")
-    temporary_credentials.write_text(
-        json.dumps(credentials_value, separators=(",", ":")),
-        encoding="utf-8",
-    )
-    os.chmod(temporary_credentials, 0o600)
-    os.replace(temporary_credentials, credentials_path)
-    values["GOOGLE_SHEETS_CREDENTIALS_JSON_PATH"] = "/app/secrets/google-service-account.json"
-elif credentials_key in clear:
-    credentials_path.unlink(missing_ok=True)
-    values["GOOGLE_SHEETS_CREDENTIALS_JSON_PATH"] = ""
+    values[key] = ""
 
 values["DATABASE_PATH"] = "/app/data/galerazo.sqlite3"
 token = values.get("TELEGRAM_BOT_TOKEN", "")
@@ -187,10 +140,6 @@ PY
 
 sudo chown root:root "${bot_env}"
 sudo chmod 0600 "${bot_env}"
-if sudo test -f "${credentials}"; then
-  sudo chown root:root "${credentials}"
-  sudo chmod 0600 "${credentials}"
-fi
 sudo bash /tmp/verify-host.sh --expect-configured >/dev/null
 configuration_installed=yes
 trap - ERR

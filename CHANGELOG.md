@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.66] - 2026-09-21
+
+- Correcciones y mejoras: los triggers multimedia se agregan sin analisis automatico de contenido ni requisitos de una clave de moderacion.
+
 ## [0.65] - 2026-09-07
 
 - Los nuevos botones de álbum de `/coleccionhisopos` en grupos permiten visitar la colección de la persona que aparece en la respuesta. Comparten sus cosméticos globales y solo los Hisopos del grupo del enlace, con cantidades actuales, también al reenviarlo. La vista indica el titular e incluye «Ver mi álbum».

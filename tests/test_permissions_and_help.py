@@ -46,42 +46,6 @@ class PermissionsAndHelpTests(unittest.TestCase):
             self.assertEqual(response, "No tenés permisos suficientes para usar este comando.")
             self.assertFalse(db.is_user_blocked("2"))
 
-    def test_only_developers_can_use_expense_commands(self) -> None:
-        with tempfile.TemporaryDirectory() as directory:
-            db = Database(Path(directory) / "test.sqlite3")
-            db.get_or_create_user("1", "Common")
-            db.register_chat("-1", "group", "Group")
-
-            for command in (
-                "/gasto ARS 100 | tarjeta | supermercado | compras",
-                "/ultimosgastos",
-                "/estadogastos",
-                "/sincronizargastos",
-            ):
-                with self.subTest(command=command):
-                    response = asyncio.run(
-                        handle_command_async(
-                            command,
-                            "1",
-                            db,
-                            chat_id="-1",
-                            chat_type="group",
-                        )
-                    )
-                    self.assertEqual(response, "No tenés permisos suficientes para usar este comando.")
-
-            response = asyncio.run(
-                handle_command_async(
-                    "/gasto 100 | sup | ef | compras",
-                    "1",
-                    db,
-                    chat_id="1",
-                    chat_type="private",
-                    user_level=UserLevel.DEV,
-                    expense_user_ids=frozenset({"1", "2"}),
-                )
-            )
-            self.assertIn("No hay mecanismo configurado", response)
 
     def test_bot_cannot_be_blacklisted(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -174,90 +138,6 @@ class PermissionsAndHelpTests(unittest.TestCase):
                 )
             )
 
-    def test_expense_help_is_visible_only_to_expense_allowlist_in_private(self) -> None:
-        with tempfile.TemporaryDirectory() as directory:
-            db = Database(Path(directory) / "test.sqlite3")
-            expense_commands = (
-                "/gasto:",
-                "/pagoresumen:",
-                "/cierre:",
-                "/ayudagastos:",
-                "/ultimosgastos:",
-                "/estadogastos:",
-                "/sincronizargastos:",
-            )
-
-            owner_private = asyncio.run(
-                handle_command_async(
-                    "/help",
-                    "1",
-                    db,
-                    chat_id="1",
-                    chat_type="private",
-                    user_level=UserLevel.DEV,
-                    owner_user_id="1",
-                    expense_user_ids=frozenset({"1", "2"}),
-                )
-            )
-            owner_group = asyncio.run(
-                handle_command_async(
-                    "/help",
-                    "1",
-                    db,
-                    chat_id="-1",
-                    chat_type="group",
-                    user_level=UserLevel.DEV,
-                    owner_user_id="1",
-                    expense_user_ids=frozenset({"1", "2"}),
-                )
-            )
-            other_dev_private = asyncio.run(
-                handle_command_async(
-                    "/help",
-                    "3",
-                    db,
-                    chat_id="3",
-                    chat_type="private",
-                    user_level=UserLevel.DEV,
-                    owner_user_id="1",
-                    expense_user_ids=frozenset({"1", "2"}),
-                )
-            )
-            jo_private = asyncio.run(
-                handle_command_async(
-                    "/help",
-                    "2",
-                    db,
-                    chat_id="2",
-                    chat_type="private",
-                    user_level=UserLevel.DEV,
-                    owner_user_id="1",
-                    expense_user_ids=frozenset({"1", "2"}),
-                )
-            )
-            unconfigured_owner = asyncio.run(
-                handle_command_async(
-                    "/help",
-                    "1",
-                    db,
-                    chat_id="1",
-                    chat_type="private",
-                    user_level=UserLevel.DEV,
-                    expense_user_ids=frozenset(),
-                )
-            )
-
-            self.assertIn("Comandos de gastos:", owner_private)
-            for command in expense_commands:
-                with self.subTest(command=command):
-                    self.assertIn(command, owner_private)
-                    self.assertIn(command, jo_private)
-                    self.assertNotIn(command, owner_group)
-                    self.assertNotIn(command, other_dev_private)
-                    self.assertNotIn(command, unconfigured_owner)
-            self.assertNotIn("Comandos de gastos:", owner_group)
-            self.assertNotIn("Comandos de gastos:", other_dev_private)
-            self.assertNotIn("Comandos de gastos:", unconfigured_owner)
 
     def test_help_lists_aliases_and_disabled_configurable_commands(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

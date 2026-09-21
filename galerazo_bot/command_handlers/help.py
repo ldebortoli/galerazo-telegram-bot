@@ -12,11 +12,7 @@ HELP_GROUPS = (
     ("galeraza", {"galeraza", "galerazas"}),
     ("triggers", {"agregartrigger", "agrtrigger", "borrartrigger", "eliminartrigger", "eltrigger", "triggers"}),
     ("games", {"hisopos", "coleccionhisopos", "reglashisopo", "ruletarusa"}),
-    ("expenses", {"gasto", "pagoresumen", "cierre", "ayudagastos", "ultimosgastos", "estadogastos", "sincronizargastos"}),
     ("dev", {"anuncio", "novedad", "backup", "reiniciarbot", "apagar"}),
-)
-EXPENSE_COMMAND_KEYS = frozenset(
-    {"gasto", "pagoresumen", "cierre", "ayudagastos", "ultimosgastos", "estadogastos", "sincronizargastos"}
 )
 
 
@@ -28,8 +24,6 @@ def handle(context: CommandContext, _db: Database) -> str:
         if command.hidden or context.user_level < command.min_level:
             continue
         if command.min_level == UserLevel.DEV and context.chat_type != "private":
-            continue
-        if command.command_key in EXPENSE_COMMAND_KEYS and not _can_show_expenses(context):
             continue
         available.append(command)
 
@@ -52,10 +46,6 @@ def handle(context: CommandContext, _db: Database) -> str:
     if context.user_level >= UserLevel.DEV and context.chat_type != "private":
         lines.extend(("", context.t("help.dev_private_hint")))
     return "\n".join(lines)
-
-
-def _can_show_expenses(context: CommandContext) -> bool:
-    return context.chat_type == "private" and context.sender_id in context.expense_user_ids
 
 
 COMMANDS = {

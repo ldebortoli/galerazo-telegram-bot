@@ -5,7 +5,7 @@ import sqlite3
 from telegram import Message
 
 from . import pagination
-from .command_handlers import config, galerazas, gastos, hisopos, reiniciarbot, reportar, restrictions, ruletarusa, triggers
+from .command_handlers import config, galerazas, hisopos, reiniciarbot, reportar, restrictions, ruletarusa, triggers
 
 
 def chat_migration_ids(message: Message) -> tuple[int, int] | None:
@@ -29,7 +29,6 @@ def migrate_command_data(conn: sqlite3.Connection, old_chat_id: str, new_chat_id
         hisopos.migrate_chat_data,
         pagination.migrate_chat_data,
         reiniciarbot.migrate_chat_data,
-        gastos.migrate_chat_data,
         triggers.migrate_chat_data,
         ruletarusa.migrate_chat_data,
     ):

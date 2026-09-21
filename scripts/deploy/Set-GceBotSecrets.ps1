@@ -57,10 +57,7 @@ function ConvertFrom-EnvValue {
 $resolvedEnvFile = (Resolve-Path -LiteralPath $EnvFile).Path
 $expectedKeys = @(
     "TELEGRAM_BOT_TOKEN",
-    "OPENAI_API_KEY",
     "TELEGRAM_DEV_USER_IDS",
-    "TELEGRAM_EXPENSE_USER_IDS",
-    "TELEGRAM_OWNER_USER_ID",
     "TELEGRAM_LOG_CHAT_ID",
     "TELEGRAM_ANNOUNCEMENTS_CHAT_ID",
     "TELEGRAM_HISOPO_COMMON_FILE_ID",
@@ -88,10 +85,6 @@ $expectedKeys = @(
     "MINI_APP_PORT",
     "MINI_APP_PROXY_SECRET",
     "DATABASE_PATH",
-    "GOOGLE_SHEETS_CREDENTIALS_JSON_PATH",
-    "GOOGLE_SHEETS_SPREADSHEET_ID",
-    "GOOGLE_SHEETS_WORKSHEET_NAME",
-    "GOOGLE_SHEETS_CASHFLOW_SHEET_PREFIX",
     "GOOGLE_CLOUD_BILLING_PROJECT_ID",
     "GOOGLE_CLOUD_BILLING_TABLE",
     "GOOGLE_CLOUD_BILLING_REPORT_TIME"
@@ -130,22 +123,6 @@ if ([string]::IsNullOrWhiteSpace($token) -or $token -eq "replace-me") {
 }
 $values["DATABASE_PATH"] = "/app/data/galerazo.sqlite3"
 
-$credentialsSource = $null
-if (-not [string]::IsNullOrWhiteSpace($values["GOOGLE_SHEETS_CREDENTIALS_JSON_PATH"])) {
-    $candidate = $values["GOOGLE_SHEETS_CREDENTIALS_JSON_PATH"]
-    if (-not [System.IO.Path]::IsPathRooted($candidate)) {
-        $candidate = Join-Path (Split-Path -Parent $resolvedEnvFile) $candidate
-    }
-    $credentialsSource = (Resolve-Path -LiteralPath $candidate).Path
-    try {
-        [void]([System.IO.File]::ReadAllText($credentialsSource) | ConvertFrom-Json)
-    }
-    catch {
-        throw "El archivo configurado para Google Sheets no contiene JSON valido."
-    }
-    $values["GOOGLE_SHEETS_CREDENTIALS_JSON_PATH"] = "/app/secrets/google-service-account.json"
-}
-
 $uploadId = [Guid]::NewGuid().ToString("N")
 $remoteDirectory = ".galerazo-upload-$uploadId"
 $temporaryDirectory = Join-Path ([System.IO.Path]::GetTempPath()) "galerazo-secrets-$uploadId"
@@ -179,14 +156,6 @@ try {
         "compute", "scp", $temporaryEnv, "${Instance}:$remoteDirectory/bot.env",
         "--project", $ProjectId, "--zone", $Zone, "--tunnel-through-iap", "--quiet"
     )
-    if ($credentialsSource) {
-        Invoke-Gcloud -Arguments @(
-            "compute", "scp", $credentialsSource,
-            "${Instance}:$remoteDirectory/google-service-account.json",
-            "--project", $ProjectId, "--zone", $Zone, "--tunnel-through-iap", "--quiet"
-        )
-    }
-
     $remoteInstall = 'bash /tmp/install-config.sh "$HOME/' + $remoteDirectory + '"'
     Invoke-Gcloud -Arguments @(
         "compute", "ssh", $Instance,
@@ -194,12 +163,10 @@ try {
         "--command", $remoteInstall
     )
     Write-Host "Secretos configurados en la VM sin mostrar sus valores." -ForegroundColor Green
-    Write-Host "OpenAI: $(if ($values['OPENAI_API_KEY']) { 'configurado' } else { 'omitido' })."
-    Write-Host "Google Sheets: $(if ($credentialsSource) { 'credencial copiada' } else { 'omitido' })."
 }
 finally {
     if ($remoteCreated) {
-        $cleanup = "rm -f '$remoteDirectory/bot.env' '$remoteDirectory/google-service-account.json'; rmdir '$remoteDirectory' 2>/dev/null || true"
+        $cleanup = "rm -f '$remoteDirectory/bot.env'; rmdir '$remoteDirectory' 2>/dev/null || true"
         $previousPreference = $ErrorActionPreference
         try {
             $ErrorActionPreference = "Continue"

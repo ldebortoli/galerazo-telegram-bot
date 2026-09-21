@@ -6,19 +6,15 @@ if [[ ${EUID} -ne 0 ]]; then
   exit 1
 fi
 
-python3 - /etc/galerazo/bot.env /etc/galerazo/secrets/google-service-account.json <<'PY'
+python3 - /etc/galerazo/bot.env <<'PY'
 import json
 from pathlib import Path
 import sys
 
 env_path = Path(sys.argv[1])
-credentials_path = Path(sys.argv[2])
 keys = (
     "TELEGRAM_BOT_TOKEN",
-    "OPENAI_API_KEY",
     "TELEGRAM_DEV_USER_IDS",
-    "TELEGRAM_EXPENSE_USER_IDS",
-    "TELEGRAM_OWNER_USER_ID",
     "TELEGRAM_LOG_CHAT_ID",
     "TELEGRAM_ANNOUNCEMENTS_CHAT_ID",
     "TELEGRAM_HISOPO_COMMON_FILE_ID",
@@ -45,9 +41,6 @@ keys = (
     "MINI_APP_BIND_HOST",
     "MINI_APP_PORT",
     "MINI_APP_PROXY_SECRET",
-    "GOOGLE_SHEETS_SPREADSHEET_ID",
-    "GOOGLE_SHEETS_WORKSHEET_NAME",
-    "GOOGLE_SHEETS_CASHFLOW_SHEET_PREFIX",
     "GOOGLE_CLOUD_BILLING_PROJECT_ID",
     "GOOGLE_CLOUD_BILLING_TABLE",
     "GOOGLE_CLOUD_BILLING_REPORT_TIME",
@@ -65,8 +58,5 @@ fields = {
     key: bool(values.get(key)) and values.get(key) != "replace-me"
     for key in keys
 }
-fields["GOOGLE_SHEETS_CREDENTIALS_JSON"] = (
-    credentials_path.is_file() and credentials_path.stat().st_size > 0
-)
 print(json.dumps(fields, separators=(",", ":"), sort_keys=True))
 PY

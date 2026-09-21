@@ -53,7 +53,6 @@ if ! docker run --rm --network none --read-only \
     -e BACKUPS_PATH=/app/backups \
     -v /srv/galerazo/data:/app/data:ro \
     -v /srv/galerazo/backups:/app/backups:ro \
-    -v /etc/galerazo/secrets:/app/secrets:ro \
     "${new_image}" python -m galerazo_bot.healthcheck; then
   echo "The new image failed its isolated healthcheck; production was not changed." >&2
   exit 1

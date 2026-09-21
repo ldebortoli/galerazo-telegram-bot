@@ -1,19 +1,11 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import date
 from enum import IntEnum, StrEnum
 from pathlib import Path
 from typing import Awaitable, Callable
 
 from .announcements import AnnouncementBroadcastResult
-from .expenses import (
-    CardClosingResult,
-    ExpenseDraft,
-    ExpenseSheetStatus,
-    ExpenseSubmissionResult,
-    ExpenseSyncResult,
-)
 from .i18n import DEFAULT_LANGUAGE, t
 
 
@@ -39,14 +31,6 @@ class RussianRouletteHitResult(StrEnum):
     FAILED = "failed"
 
 
-class TriggerModerationResult(StrEnum):
-    SKIPPED = "skipped"
-    SAFE = "safe"
-    BLOCKED = "blocked"
-    TOO_LARGE = "too_large"
-    ERROR = "error"
-
-
 @dataclass(frozen=True)
 class BackupResult:
     path: Path
@@ -62,9 +46,6 @@ class TriggerPayload:
     file_id: str | None = None
     caption: str | None = None
     data: dict[str, object] | None = None
-    mime_type: str | None = None
-    moderation_file_id: str | None = None
-    moderation_file_size: int | None = None
 
 
 @dataclass(frozen=True)
@@ -76,18 +57,12 @@ class CommandContext:
     raw_text: str
     args: str
     language: str = DEFAULT_LANGUAGE
-    owner_user_id: str | None = None
-    expense_user_ids: frozenset[str] = frozenset()
     bot_user_id: str | None = None
     sender_username: str | None = None
     sender_display_name: str | None = None
     send_announcement: Callable[[str], Awaitable[bool]] | None = None
     broadcast_announcement: Callable[[str], Awaitable[AnnouncementBroadcastResult]] | None = None
     send_report: Callable[[str], Awaitable[bool]] | None = None
-    submit_expense: Callable[[ExpenseDraft], Awaitable[ExpenseSubmissionResult]] | None = None
-    sync_expenses: Callable[[], Awaitable[ExpenseSyncResult]] | None = None
-    get_expense_sheet_status: Callable[[], ExpenseSheetStatus] | None = None
-    add_card_closing: Callable[[date], Awaitable[CardClosingResult]] | None = None
     create_backup: Callable[[], Awaitable[BackupResult]] | None = None
     send_debug_update: Callable[[], Awaitable[bool]] | None = None
     send_galerazas: Callable[[], Awaitable[bool]] | None = None
@@ -100,7 +75,6 @@ class CommandContext:
     leave_chat: Callable[[], Awaitable[bool]] | None = None
     can_run_russian_roulette: Callable[[], Awaitable[bool]] | None = None
     resolve_russian_roulette_hit: Callable[[str], Awaitable[RussianRouletteHitResult]] | None = None
-    moderate_trigger_payload: Callable[[TriggerPayload], Awaitable[TriggerModerationResult]] | None = None
     reply_to_user_id: str | None = None
     reply_to_username: str | None = None
     reply_to_display_name: str | None = None

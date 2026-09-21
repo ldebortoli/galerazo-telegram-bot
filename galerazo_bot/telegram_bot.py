@@ -7,7 +7,7 @@ import os
 import secrets
 import sys
 import traceback
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from io import BytesIO
 from pathlib import Path
@@ -74,15 +74,6 @@ from .commands import (
 )
 from .config import Settings, load_settings
 from .database import Database, HisopoMessageCleanup, HisopoSchedule, HisopoSpawn, Trigger
-from .expenses import (
-    CardClosingResult,
-    ExpenseDraft,
-    ExpenseSheetStatus,
-    ExpenseSubmissionResult,
-    ExpenseSyncResult,
-    fallback_sheet_detail,
-)
-from .exchange_rates import CriptoYaRateProvider, ExchangeRateError
 from .command_handlers.galerazas import (
     ARGENTINA_TIMEZONE as _ARGENTINA_TIMEZONE,
     galeraza_game_date as _galeraza_game_date,
@@ -120,12 +111,10 @@ from .hisopos import (
     select_hisopo_spawn,
     should_spawn_hisopo,
 )
-from .google_sheets import GoogleSheetsConfig, GoogleSheetsExpenseWriter
 from .i18n import DEFAULT_LANGUAGE, t
 from .instance_lock import SingleInstance
 from .integration_status import save_logging_status
 from .logging_utils import configure_logging, exception_summary, redact_secrets
-from .media_moderation import OpenAIMediaModerator, trigger_media_kind
 from .mini_app import MiniAppService, direct_mini_app_url, start_mini_app, validate_mini_app_runtime
 from .pagination import (
     BUTTON_PREFIX,
@@ -135,7 +124,7 @@ from .pagination import (
     render_page,
     render_prebuilt_pages,
 )
-from .roles import BackupResult, RussianRouletteHitResult, TriggerModerationResult, TriggerPayload, UserLevel
+from .roles import BackupResult, RussianRouletteHitResult, TriggerPayload, UserLevel
 from .runtime import ensure_python_version
 from .release_broadcast import release_broadcast_notes
 from .telegram_payments import (
@@ -151,7 +140,6 @@ from .versioning import CURRENT_VERSION
 
 logger = logging.getLogger(__name__)
 TELEGRAM_DOCUMENT_UPLOAD_LIMIT_BYTES = 50 * 1024 * 1024
-TELEGRAM_FILE_DOWNLOAD_LIMIT_BYTES = 20 * 1024 * 1024
 TELEGRAM_MESSAGE_LIMIT_CHARS = 4096
 TELEGRAM_DOCUMENT_TIMEOUT_SECONDS = 30
 TELEGRAM_REQUEST_TIMEOUT_SECONDS = 30
@@ -171,19 +159,6 @@ RESTART_CALLBACK_PREFIX = "restart"
 SHUTDOWN_CALLBACK_PREFIX = "shutdown"
 UPDATE_DRAIN_TIMEOUT_SECONDS = 60
 DISABLED_LINK_PREVIEW_OPTIONS = LinkPreviewOptions(is_disabled=True)
-BOTFATHER_HIDDEN_COMMANDS = frozenset(
-    {
-        "habilitargastos",
-        "deshabilitargastos",
-        "gasto",
-        "pagoresumen",
-        "cierre",
-        "ayudagastos",
-        "ultimosgastos",
-        "estadogastos",
-        "sincronizargastos",
-    }
-)
 POLLING_OPTIONS = {
     "allowed_updates": Update.ALL_TYPES,
     "drop_pending_updates": False,
@@ -198,9 +173,6 @@ class BotState:
     db: Database
     settings: Settings
     bot_user_id: str
-    expense_sheet_writer: GoogleSheetsExpenseWriter
-    media_moderator: OpenAIMediaModerator
-    exchange_rate_provider: CriptoYaRateProvider = field(default_factory=CriptoYaRateProvider)
     bot_username: str = ""
 
 
@@ -350,16 +322,6 @@ async def _post_init(application: Application) -> None:
         settings=settings,
         bot_user_id=str(bot_user.id),
         bot_username=getattr(bot_user, "username", None) or "",
-        expense_sheet_writer=GoogleSheetsExpenseWriter(
-            GoogleSheetsConfig(
-                credentials_json_path=settings.google_sheets_credentials_json_path,
-                spreadsheet_id=settings.google_sheets_spreadsheet_id,
-                worksheet_name=settings.google_sheets_worksheet_name,
-                cashflow_sheet_prefix=settings.google_sheets_cashflow_sheet_prefix,
-            )
-        ),
-        exchange_rate_provider=CriptoYaRateProvider(),
-        media_moderator=OpenAIMediaModerator(settings.openai_api_key),
     )
 
     await _sync_botfather_commands(application.bot)
@@ -526,7 +488,7 @@ def _suggested_bot_commands(
 ) -> tuple[BotCommand, ...]:
     commands = []
     for command in COMMANDS.values():
-        if command.min_level > max_level or command.hidden or command.name in BOTFATHER_HIDDEN_COMMANDS:
+        if command.min_level > max_level or command.hidden:
             continue
         if command.name == "config" and include_group_commands and max_level < UserLevel.ADMIN:
             continue
@@ -2055,8 +2017,6 @@ async def _handle_command_update(update: Update, context: ContextTypes.DEFAULT_T
         db=state.db,
         chat_id=str(chat.id),
         user_level=user_level,
-        owner_user_id=state.settings.telegram_owner_user_id,
-        expense_user_ids=state.settings.telegram_expense_user_ids,
         sender_username=user.username,
         sender_display_name=_display_name(user),
         reply_to_user_id=str(reply_to_user.id) if reply_to_user is not None else None,
@@ -2086,28 +2046,6 @@ async def _handle_command_update(update: Update, context: ContextTypes.DEFAULT_T
             message=message,
             user=user,
             report_text=text,
-        ),
-        submit_expense=lambda draft: _submit_expense(
-            db=state.db,
-            writer=state.expense_sheet_writer,
-            rate_provider=state.exchange_rate_provider,
-            message=message,
-            user=user,
-            draft=draft,
-        ),
-        sync_expenses=lambda: _sync_pending_expenses(
-            db=state.db,
-            writer=state.expense_sheet_writer,
-            message=message,
-        ),
-        get_expense_sheet_status=lambda: _build_expense_sheet_status(
-            db=state.db,
-            writer=state.expense_sheet_writer,
-            chat_id=str(chat.id),
-        ),
-        add_card_closing=lambda closing_date: _add_card_closing(
-            state.expense_sheet_writer,
-            closing_date,
         ),
         create_backup=lambda: _create_and_send_backup(state.db, message),
         send_debug_update=lambda: _send_debug_update(state.db, message, update),
@@ -2153,11 +2091,6 @@ async def _handle_command_update(update: Update, context: ContextTypes.DEFAULT_T
             target_user_id,
             state.bot_user_id,
             state.settings.telegram_dev_user_ids,
-        ),
-        moderate_trigger_payload=lambda payload: _moderate_trigger_payload(
-            context.bot,
-            state.media_moderator,
-            payload,
         ),
     )
     if response is None:
@@ -2316,11 +2249,6 @@ async def _config_callback_entrypoint(update: Update, context: ContextTypes.DEFA
         return
 
     parsed = parse_config_callback(callback_query.data or "")
-    if _is_legacy_expense_config_callback(parsed):
-        await message.delete()
-        await callback_query.answer(t(language, "pagination.deleted"))
-        return
-
     if state.db.is_user_blocked(str(user.id)):
         await callback_query.answer()
         return
@@ -2345,10 +2273,6 @@ async def _config_callback_entrypoint(update: Update, context: ContextTypes.DEFA
 
     popup_text = await _handle_config_callback(state.db, message, parsed)
     await callback_query.answer(text=popup_text)
-
-
-def _is_legacy_expense_config_callback(parsed: tuple[str, ...] | None) -> bool:
-    return parsed is not None and len(parsed) >= 2 and parsed[0] in {"command", "set"} and parsed[1] == "gastos"
 
 
 async def _my_chat_member_entrypoint(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -2446,16 +2370,12 @@ def _trigger_payload_from_message(message: Message | None) -> TriggerPayload | N
             media_type="photo",
             file_id=photo.file_id,
             caption=message.caption,
-            mime_type="image/jpeg",
-            moderation_file_size=getattr(photo, "file_size", None),
         )
     if message.video:
         return TriggerPayload(
             media_type="video",
             file_id=message.video.file_id,
             caption=message.caption,
-            mime_type=getattr(message.video, "mime_type", None) or "video/mp4",
-            moderation_file_size=getattr(message.video, "file_size", None),
         )
     if message.animation:
         return TriggerPayload(media_type="animation", file_id=message.animation.file_id, caption=message.caption)
@@ -2468,28 +2388,16 @@ def _trigger_payload_from_message(message: Message | None) -> TriggerPayload | N
             media_type="document",
             file_id=message.document.file_id,
             caption=message.caption,
-            mime_type=getattr(message.document, "mime_type", None),
-            moderation_file_size=getattr(message.document, "file_size", None),
         )
     if message.video_note:
         return TriggerPayload(
             media_type="video_note",
             file_id=message.video_note.file_id,
-            mime_type="video/mp4",
-            moderation_file_size=getattr(message.video_note, "file_size", None),
         )
     if message.sticker:
-        thumbnail = getattr(message.sticker, "thumbnail", None)
         return TriggerPayload(
             media_type="sticker",
             file_id=message.sticker.file_id,
-            mime_type="image/jpeg" if thumbnail is not None else "image/webp",
-            moderation_file_id=getattr(thumbnail, "file_id", None),
-            moderation_file_size=(
-                getattr(thumbnail, "file_size", None)
-                if thumbnail is not None
-                else getattr(message.sticker, "file_size", None)
-            ),
         )
     if message.dice:
         return TriggerPayload(text=message.dice.emoji, media_type="dice")
@@ -2552,46 +2460,6 @@ def _trigger_payload_from_message(message: Message | None) -> TriggerPayload | N
             poll_data["explanation"] = message.poll.explanation
         return TriggerPayload(media_type="poll", data=poll_data)
     return None
-
-
-async def _moderate_trigger_payload(
-    bot: Bot,
-    moderator: OpenAIMediaModerator,
-    payload: TriggerPayload,
-) -> TriggerModerationResult:
-    if not moderator.enabled:
-        return TriggerModerationResult.SKIPPED
-
-    media_kind = trigger_media_kind(payload.media_type, payload.mime_type)
-    if media_kind is None:
-        return TriggerModerationResult.SKIPPED
-    if (
-        payload.moderation_file_size is not None
-        and payload.moderation_file_size > TELEGRAM_FILE_DOWNLOAD_LIMIT_BYTES
-    ):
-        return TriggerModerationResult.TOO_LARGE
-
-    file_id = payload.moderation_file_id or payload.file_id
-    if not file_id:
-        return TriggerModerationResult.ERROR
-
-    downloaded: bytearray | None = None
-    try:
-        telegram_file = await bot.get_file(file_id)
-        downloaded = await telegram_file.download_as_bytearray()
-        if media_kind == "image":
-            return await moderator.moderate_image(downloaded)
-        return await moderator.moderate_video(downloaded)
-    except TelegramError as exc:
-        logger.warning(
-            "No se pudo descargar media de Telegram para moderacion (%s).",
-            type(exc).__name__,
-        )
-        return TriggerModerationResult.ERROR
-    finally:
-        if downloaded is not None:
-            downloaded[:] = b"\x00" * len(downloaded)
-            downloaded.clear()
 
 
 async def _send_text_response(
@@ -2692,151 +2560,6 @@ async def _send_report(
         log_text,
         t(language, "long_message.truncated_log"),
     )
-
-
-async def _submit_expense(
-    db: Database,
-    writer: GoogleSheetsExpenseWriter,
-    rate_provider: CriptoYaRateProvider,
-    message: Message,
-    user: User,
-    draft: ExpenseDraft,
-) -> ExpenseSubmissionResult:
-    rate = draft.usd_rate_override
-    rate_source = "Cotización manual"
-    rate_quoted_at = None
-    if draft.currency == "ARS" and rate is None:
-        message_date = _telegram_message_datetime(message).astimezone(_ARGENTINA_TIMEZONE).date()
-        if draft.occurred_on != message_date:
-            return ExpenseSubmissionResult(
-                expense_id=0,
-                synced=False,
-                configured=writer.is_configured(),
-                error="historical_rate_required",
-            )
-        try:
-            quote = await asyncio.to_thread(rate_provider.binance_usdt_sell_rate)
-        except ExchangeRateError:
-            return ExpenseSubmissionResult(
-                expense_id=0,
-                synced=False,
-                configured=writer.is_configured(),
-                error="exchange_rate_unavailable",
-            )
-        rate = quote.ars_per_usdt
-        rate_source = quote.source
-        rate_quoted_at = quote.quoted_at.isoformat()
-    elif draft.currency == "USD":
-        rate_source = None
-
-    expense = db.add_expense(
-        chat_id=str(message.chat.id),
-        user_id=str(user.id),
-        amount_cents=draft.amount_cents,
-        currency=draft.currency,
-        payment_method=draft.payment_method,
-        source=draft.category,
-        description=draft.description,
-        occurred_on=draft.occurred_on.isoformat(),
-        movement_type=draft.movement_type,
-        category=draft.category,
-        author=draft.author,
-        installments=draft.installments,
-        usd_rate=str(rate) if rate is not None else None,
-        usd_rate_source=rate_source,
-        usd_rate_quoted_at=rate_quoted_at,
-        include_cashflow=draft.include_cashflow,
-        opens_cashflow_month=draft.opens_cashflow_month,
-    )
-    write_result = await asyncio.to_thread(writer.write_expense, expense)
-    if write_result.success:
-        db.mark_expense_synced(
-            expense.expense_id,
-            write_result.purchase_sheet_row,
-            write_result.cashflow_sheet_name,
-            write_result.cashflow_sheet_row,
-        )
-        if write_result.month_created and draft.opens_cashflow_month:
-            await _sync_pending_expenses(db, writer, message)
-        return ExpenseSubmissionResult(expense_id=expense.expense_id, synced=True, configured=True)
-
-    db.mark_expense_failed(
-        expense.expense_id,
-        write_result.error,
-        write_result.purchase_sheet_row,
-        write_result.cashflow_sheet_name,
-        write_result.cashflow_sheet_row,
-    )
-    return ExpenseSubmissionResult(
-        expense_id=expense.expense_id,
-        synced=False,
-        configured=writer.is_configured(),
-        error=write_result.error,
-    )
-
-
-def _build_expense_sheet_status(
-    db: Database,
-    writer: GoogleSheetsExpenseWriter,
-    chat_id: str,
-) -> ExpenseSheetStatus:
-    configured = writer.is_configured()
-    ready = writer.is_ready()
-    return ExpenseSheetStatus(
-        configured=configured,
-        ready=ready,
-        worksheet_name=writer.worksheet_name if configured else None,
-        pending_count=db.count_pending_expenses(None),
-        detail=fallback_sheet_detail(_chat_language(db, chat_id), configured, ready),
-    )
-
-
-async def _sync_pending_expenses(
-    db: Database,
-    writer: GoogleSheetsExpenseWriter,
-    message: Message,
-) -> ExpenseSyncResult:
-    if not writer.is_configured():
-        return ExpenseSyncResult(configured=False, synced_count=0, failed_count=0)
-
-    pending_expenses = db.list_pending_expenses(None)
-    synced_count = 0
-    failed_count = 0
-    last_error = None
-    for expense in pending_expenses:
-        write_result = await asyncio.to_thread(writer.write_expense, expense)
-        if write_result.success:
-            db.mark_expense_synced(
-                expense.expense_id,
-                write_result.purchase_sheet_row,
-                write_result.cashflow_sheet_name,
-                write_result.cashflow_sheet_row,
-            )
-            synced_count += 1
-            continue
-        db.mark_expense_failed(
-            expense.expense_id,
-            write_result.error,
-            write_result.purchase_sheet_row,
-            write_result.cashflow_sheet_name,
-            write_result.cashflow_sheet_row,
-        )
-        failed_count += 1
-        last_error = write_result.error
-
-    return ExpenseSyncResult(
-        configured=True,
-        synced_count=synced_count,
-        failed_count=failed_count,
-        last_error=last_error,
-    )
-
-
-async def _add_card_closing(
-    writer: GoogleSheetsExpenseWriter,
-    closing_date,
-) -> CardClosingResult:
-    return await asyncio.to_thread(writer.add_card_closing, closing_date)
 
 
 async def _send_config_menu(db: Database, message: Message) -> bool:
@@ -3665,8 +3388,6 @@ def _chat_language(db: Database, chat_id: int | str | None) -> str:
     if chat_id is None:
         return DEFAULT_LANGUAGE
     return db.get_chat_settings(str(chat_id)).language
-
-
 
 
 def _is_bot_removed_error(exc: TelegramError) -> bool:

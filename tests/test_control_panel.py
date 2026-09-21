@@ -52,7 +52,7 @@ class ControlPanelTests(unittest.TestCase):
 
         self.assertEqual(calls, ["stop_bot", "destroy"])
 
-    def test_openai_key_is_a_secret_configuration_field(self) -> None:
+    def test_configuration_has_no_retired_integration_fields(self) -> None:
         module = ast.parse(
             (PROJECT_ROOT / "galerazo_bot" / "control_panel.py").read_text(encoding="utf-8")
         )
@@ -64,10 +64,12 @@ class ControlPanelTests(unittest.TestCase):
         )
         fields = ast.literal_eval(fields_assignment.value)
 
-        self.assertIn(
-            ("OPENAI_API_KEY", "Clave de moderacion OpenAI", True),
-            fields,
-        )
+        field_names = {field[0] for field in fields}
+        self.assertFalse(field_names & {
+            "OPENAI_API_KEY", "TELEGRAM_OWNER_USER_ID", "TELEGRAM_EXPENSE_USER_IDS",
+            "GOOGLE_SHEETS_CREDENTIALS_JSON_PATH", "GOOGLE_SHEETS_SPREADSHEET_ID",
+            "GOOGLE_SHEETS_WORKSHEET_NAME", "GOOGLE_SHEETS_CASHFLOW_SHEET_PREFIX",
+        })
 
 
 if __name__ == "__main__":

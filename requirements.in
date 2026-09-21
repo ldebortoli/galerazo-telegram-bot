@@ -1,4 +1,3 @@
-av
 aiohttp
 colorama
 coverage
@@ -9,6 +8,5 @@ httpx
 Pillow
 python-telegram-bot[job-queue,rate-limiter]
 python-dotenv
-gspread
 google-auth
 tzdata

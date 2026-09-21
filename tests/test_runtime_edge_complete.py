@@ -11,21 +11,9 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, mock_open, patch
 
-import av
-import httpx
 
 from galerazo_bot import log_checkpoint
 from galerazo_bot.instance_lock import SingleInstance
-from galerazo_bot.media_moderation import (
-    OpenAIMediaModerator,
-    _clear_bytearray,
-    _extract_frame_at,
-    _extract_video_frames,
-    _uniform_video_frame_times,
-    _video_duration_seconds,
-    trigger_media_kind,
-)
-from galerazo_bot.roles import TriggerModerationResult
 from galerazo_bot.update_processor import PerChatUpdateProcessor
 
 
@@ -226,104 +214,6 @@ class UpdateProcessorCompleteTests(unittest.IsolatedAsyncioTestCase):
         )
         update_without_message = Update(2)
         self.assertIsNone(processor._migration_chat_ids(update_without_message))
-
-
-class MediaModerationCompleteTests(unittest.IsolatedAsyncioTestCase):
-    async def test_image_and_video_preparation_errors_and_disabled_video(self) -> None:
-        moderator = OpenAIMediaModerator("key")
-        with patch("galerazo_bot.media_moderation._normalize_image", side_effect=ValueError):
-            self.assertEqual(await moderator.moderate_image(b"bad"), TriggerModerationResult.ERROR)
-        with patch("galerazo_bot.media_moderation._extract_video_frames", side_effect=ValueError):
-            self.assertEqual(await moderator.moderate_video(b"bad"), TriggerModerationResult.ERROR)
-        self.assertEqual(
-            await OpenAIMediaModerator(" ").moderate_video(b"bad"), TriggerModerationResult.SKIPPED
-        )
-
-    async def test_invalid_api_payloads_minor_and_safe_categories(self) -> None:
-        responses = [
-            {},
-            {"results": ["bad"]},
-            {"results": [{"categories": {"sexual/minors": True}}]},
-            {"results": [{"categories": {"sexual": False, "sexual/minors": False}}]},
-        ]
-        expected = [
-            TriggerModerationResult.ERROR,
-            TriggerModerationResult.ERROR,
-            TriggerModerationResult.BLOCKED,
-            TriggerModerationResult.SAFE,
-        ]
-        for payload, result in zip(responses, expected, strict=True):
-            transport = httpx.MockTransport(lambda _request, payload=payload: httpx.Response(200, json=payload))
-            moderator = OpenAIMediaModerator("key", transport=transport)
-            self.assertEqual(await moderator._moderate_jpegs([b"jpeg"]), result)
-
-    def test_media_kind_time_and_clear_edge_cases(self) -> None:
-        self.assertIsNone(trigger_media_kind("document", None))
-        self.assertIsNone(trigger_media_kind("document", "application/pdf"))
-        with self.assertRaises(ValueError):
-            _uniform_video_frame_times(0)
-        _clear_bytearray(None)
-        data = bytearray(b"secret")
-        _clear_bytearray(data)
-        self.assertFalse(data)
-
-    def test_video_duration_fallbacks_and_failures(self) -> None:
-        stream = SimpleNamespace(duration=10, time_base=0.5, frames=0, average_rate=None)
-        self.assertEqual(_video_duration_seconds(SimpleNamespace(duration=None), stream), 5.0)
-        stream.duration = 0
-        container = SimpleNamespace(duration=2 * av.time_base)
-        self.assertEqual(_video_duration_seconds(container, stream), 2.0)
-        container.duration = 0
-        stream.frames = 30
-        stream.average_rate = 10
-        self.assertEqual(_video_duration_seconds(container, stream), 3.0)
-        stream.frames = 0
-        with self.assertRaises(ValueError):
-            _video_duration_seconds(container, stream)
-        stream.duration = -1
-        stream.time_base = 1
-        container.duration = None
-        stream.frames = 10
-        stream.average_rate = None
-        with self.assertRaises(ValueError):
-            _video_duration_seconds(container, stream)
-        stream.duration = None
-        container.duration = -av.time_base
-        stream.average_rate = -10
-        with self.assertRaises(ValueError):
-            _video_duration_seconds(container, stream)
-
-    def test_extract_frame_errors_and_extraction_cleanup(self) -> None:
-        stream = SimpleNamespace(time_base=None)
-        with self.assertRaises(ValueError):
-            _extract_frame_at(MagicMock(), stream, 1)
-        stream.time_base = 0.5
-        container = MagicMock()
-        container.decode.return_value = []
-        with self.assertRaises(ValueError):
-            _extract_frame_at(container, stream, 1)
-
-        fake_container = MagicMock()
-        fake_container.__enter__.return_value = fake_container
-        fake_container.streams.video = []
-        with patch("galerazo_bot.media_moderation.av.open", return_value=fake_container):
-            with self.assertRaises(ValueError):
-                _extract_video_frames(b"not-video")
-
-        partial = bytearray(b"frame")
-        fake_container.streams.video = [SimpleNamespace()]
-        with (
-            patch("galerazo_bot.media_moderation.av.open", return_value=fake_container),
-            patch("galerazo_bot.media_moderation._video_duration_seconds", return_value=10),
-            patch("galerazo_bot.media_moderation._uniform_video_frame_times", return_value=(1, 2)),
-            patch(
-                "galerazo_bot.media_moderation._extract_frame_at",
-                side_effect=[partial, ValueError("frame")],
-            ),
-        ):
-            with self.assertRaises(ValueError):
-                _extract_video_frames(b"video")
-        self.assertFalse(partial)
 
 
 if __name__ == "__main__":

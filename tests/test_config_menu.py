@@ -126,16 +126,22 @@ class ConfigMenuTests(unittest.IsolatedAsyncioTestCase):
                 message.delete.assert_awaited_once_with()
                 update.callback_query.answer.assert_awaited_once_with(text="mensaje eliminado")
 
-    async def test_legacy_expense_config_button_deletes_its_message_for_any_user(self) -> None:
-        update, context, state, message = _callback_fixture()
-        update.callback_query.data = "config:command:gastos"
-        state.db.is_user_blocked.return_value = True
-
-        with patch("galerazo_bot.telegram_bot._state", return_value=state):
-            await _config_callback_entrypoint(update, context)
-
-        message.delete.assert_awaited_once_with()
-        update.callback_query.answer.assert_awaited_once_with("mensaje eliminado")
+    async def test_legacy_expense_config_button_does_not_mutate_messages(self) -> None:
+        for data in ("config:command:gastos", "config:set:gastos:1", "config:set:gastos:0"):
+            for level in UserLevel:
+                with self.subTest(data=data, level=level):
+                    update, context, state, message = _callback_fixture()
+                    update.callback_query.data = data
+                    message.edit_text = AsyncMock()
+                    with (
+                        patch("galerazo_bot.telegram_bot._state", return_value=state),
+                        patch("galerazo_bot.telegram_bot._resolve_user_level", AsyncMock(return_value=level)),
+                    ):
+                        await _config_callback_entrypoint(update, context)
+                    message.delete.assert_not_awaited()
+                    message.edit_text.assert_not_awaited()
+                    state.db.set_command_group_enabled.assert_not_called()
+                    update.callback_query.answer.assert_awaited_once()
 
     async def test_hisopo_config_open_toggle_and_intensity_paths(self) -> None:
         db = MagicMock()

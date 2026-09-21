@@ -19,7 +19,6 @@ services:
         source: /srv/galerazo/backups
         target: /app/backups
       - type: bind
-        source: /etc/galerazo/secrets
         target: /app/secrets
         read_only: true
     tmpfs:

@@ -26,7 +26,6 @@ from galerazo_bot.cloud_billing import GoogleCloudBillingReader, GoogleCloudBill
 from galerazo_bot.config import Settings
 from galerazo_bot.database import (
     Database,
-    Expense,
     HisopoCaptureResult,
     HisopoBombResult,
     HisopoExpirationResult,
@@ -39,11 +38,7 @@ from galerazo_bot.database import (
     RestartConfirmation,
     Trigger,
 )
-from galerazo_bot.google_sheets import GoogleSheetsConfig, GoogleSheetsExpenseWriter
-from galerazo_bot.google_sheets import ExpenseSheetWriteResult
-from galerazo_bot.exchange_rates import ExchangeRateError, ExchangeRateQuote
-from galerazo_bot.expenses import ExpenseDraft, ExpenseMovement
-from galerazo_bot.roles import TriggerModerationResult, TriggerPayload, UserLevel
+from galerazo_bot.roles import TriggerPayload, UserLevel
 from galerazo_bot import telegram_bot as tb
 from galerazo_bot.command_handlers import galerazas as galeraza_handlers
 
@@ -52,14 +47,9 @@ def settings(**overrides) -> Settings:
     values = dict(
         telegram_bot_token="token",
         telegram_dev_user_ids=frozenset({"1"}),
-        telegram_owner_user_id="1",
         telegram_log_chat_id="-10",
         telegram_announcements_chat_id="-11",
         database_path=Path("db.sqlite3"),
-        google_sheets_credentials_json_path=None,
-        google_sheets_spreadsheet_id=None,
-        google_sheets_worksheet_name="Gastos",
-        openai_api_key=None,
         google_cloud_billing_project_id=None,
         google_cloud_billing_table=None,
         google_cloud_billing_report_time="09:00",
@@ -73,8 +63,6 @@ def state(db=None, **setting_overrides) -> tb.BotState:
         db=db or MagicMock(),
         settings=settings(**setting_overrides),
         bot_user_id="99",
-        expense_sheet_writer=MagicMock(spec=GoogleSheetsExpenseWriter),
-        media_moderator=SimpleNamespace(enabled=False),
     )
 
 
@@ -569,6 +557,56 @@ class PreprocessAndTriggerTests(unittest.IsolatedAsyncioTestCase):
 
 
 class CommandAndCallbackEntrypointTests(unittest.IsolatedAsyncioTestCase):
+    async def test_media_triggers_save_and_replay_without_downloading_or_scanning(self) -> None:
+        from galerazo_bot.config import load_settings
+
+        media_cases = (
+            ("photo", {"photo": [SimpleNamespace(file_id="photo-id", file_size=25 * 1024 * 1024)]}),
+            ("video", {"video": SimpleNamespace(file_id="video-id", file_size=25 * 1024 * 1024)}),
+            ("animation", {"animation": SimpleNamespace(file_id="animation-id")}),
+            ("document", {"document": SimpleNamespace(file_id="document-id", mime_type="image/png")}),
+            ("video_note", {"video_note": SimpleNamespace(file_id="video_note-id")}),
+            ("sticker", {"sticker": SimpleNamespace(file_id="sticker-id", thumbnail=SimpleNamespace(file_id="thumb"))}),
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            db = Database(Path(directory) / "triggers.sqlite3")
+            db.register_chat("-1", "group", "Group")
+            bot = SimpleNamespace(
+                get_file=AsyncMock(side_effect=AssertionError("Triggers must not download media")),
+                **{f"send_{kind}": AsyncMock() for kind, _ in media_cases},
+            )
+            user = SimpleNamespace(id=1, full_name="User", username=None)
+            for legacy_key in ("", "unused-legacy-key"):
+                with (
+                    patch.dict("os.environ", {
+                        "TELEGRAM_BOT_TOKEN": "test-token",
+                        "TELEGRAM_DEV_USER_IDS": "1",
+                        "OPENAI_API_KEY": legacy_key,
+                    }, clear=True),
+                    patch("galerazo_bot.config.load_dotenv"),
+                    patch("httpx.AsyncClient", side_effect=AssertionError("Triggers must not call scanners")),
+                    patch.object(tb, "_send_text_response", new_callable=AsyncMock) as respond,
+                ):
+                    bot_state = replace(state(db), settings=load_settings())
+                    for kind, media in media_cases:
+                        with self.subTest(kind=kind, legacy_key_present=bool(legacy_key)):
+                            name = f"media {kind} {bool(legacy_key)}".lower()
+                            reply = message_stub(caption="Original caption", **media)
+                            message = message_stub(text=f"/agregartrigger {name}", reply_to_message=reply)
+                            update = SimpleNamespace(effective_message=message, effective_user=user, effective_chat=message.chat)
+                            await tb._handle_command_update(update, context_for(bot_state, bot))
+                            trigger = db.get_trigger("-1", name)
+                            self.assertIsNotNone(trigger)
+                            self.assertEqual(trigger.media_type, kind)
+                            self.assertEqual(trigger.file_id, f"{kind}-id")
+                            if kind in {"photo", "video", "animation", "document"}:
+                                self.assertEqual(trigger.caption, "Original caption")
+                            await tb._send_trigger_message(bot, -1, trigger)
+                            sent = getattr(bot, f"send_{kind}").await_args.kwargs
+                            self.assertEqual(sent[kind], f"{kind}-id")
+                    self.assertEqual(respond.await_count, len(media_cases))
+            bot.get_file.assert_not_awaited()
+
     async def test_handle_command_guards_blocking_and_disabled_group(self) -> None:
         db = MagicMock()
         bot_state = state(db)
@@ -629,7 +667,6 @@ class CommandAndCallbackEntrypointTests(unittest.IsolatedAsyncioTestCase):
             await tb._handle_command_update(update, context)
         kwargs = handle.await_args.kwargs
         self.assertEqual(kwargs["reply_to_user_id"], "2")
-        self.assertEqual(kwargs["owner_user_id"], "1")
         self.assertTrue(callable(kwargs["send_debug_update"]))
         send.assert_awaited_once()
         self.assertEqual(send.await_args.kwargs["response_parse_mode"], "HTML")
@@ -851,7 +888,7 @@ class CommandAndCallbackEntrypointTests(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(tb._is_user_restricted_in_callback_chat(db, SimpleNamespace(message=message_stub()), "1"))
 
 
-class PayloadAndModerationCompleteTests(unittest.IsolatedAsyncioTestCase):
+class PayloadCompleteTests(unittest.IsolatedAsyncioTestCase):
     def test_trigger_payload_all_remaining_types_and_optional_fields(self) -> None:
         self.assertIsNone(tb._trigger_payload_from_message(None))
         self.assertEqual(tb._trigger_payload_from_message(message_stub(text="text")), TriggerPayload(text="text"))
@@ -888,26 +925,8 @@ class PayloadAndModerationCompleteTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(payload.data["correct_option_id"], 0)
         self.assertEqual(payload.data["explanation"], "Because")
 
-    async def test_moderation_all_guards_video_and_download_error(self) -> None:
-        disabled = SimpleNamespace(enabled=False)
-        self.assertEqual(await tb._moderate_trigger_payload(MagicMock(), disabled, TriggerPayload()), TriggerModerationResult.SKIPPED)
-        moderator = SimpleNamespace(enabled=True, moderate_image=AsyncMock(), moderate_video=AsyncMock(return_value=TriggerModerationResult.SAFE))
-        self.assertEqual(await tb._moderate_trigger_payload(MagicMock(), moderator, TriggerPayload(media_type="audio")), TriggerModerationResult.SKIPPED)
-        self.assertEqual(await tb._moderate_trigger_payload(MagicMock(), moderator, TriggerPayload(media_type="video", mime_type="video/mp4")), TriggerModerationResult.ERROR)
-        downloaded = bytearray(b"video")
-        bot = SimpleNamespace(get_file=AsyncMock(return_value=SimpleNamespace(download_as_bytearray=AsyncMock(return_value=downloaded))))
-        result = await tb._moderate_trigger_payload(bot, moderator, TriggerPayload(media_type="video", mime_type="video/mp4", file_id="f"))
-        self.assertEqual(result, TriggerModerationResult.SAFE)
-        self.assertFalse(downloaded)
-        moderator.moderate_video.assert_awaited_once()
-        bot.get_file.side_effect = BadRequest("file")
-        self.assertEqual(
-            await tb._moderate_trigger_payload(bot, moderator, TriggerPayload(media_type="photo", mime_type="image/jpeg", file_id="f")),
-            TriggerModerationResult.ERROR,
-        )
 
-
-class GalerazaExpenseAndConfigTests(unittest.IsolatedAsyncioTestCase):
+class GalerazaAndConfigTests(unittest.IsolatedAsyncioTestCase):
     async def test_award_galeraza_all_paths(self) -> None:
         db = MagicMock()
         private = message_stub(chat=SimpleNamespace(id=1, type="private"))
@@ -1015,7 +1034,7 @@ class GalerazaExpenseAndConfigTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(message.reply_text.await_args.kwargs["parse_mode"], "HTML")
         self.assertEqual(result.edit_text.await_args.kwargs["parse_mode"], "HTML")
 
-    async def test_report_submit_status_and_sync_expenses(self) -> None:
+    async def test_report_delivery(self) -> None:
         db = MagicMock()
         db.get_chat_settings.return_value = SimpleNamespace(language="es")
         message = message_stub(chat=SimpleNamespace(id=-1, type="group", title=None))
@@ -1024,106 +1043,6 @@ class GalerazaExpenseAndConfigTests(unittest.IsolatedAsyncioTestCase):
         with patch.object(tb, "_send_log_text_with_truncation", AsyncMock(return_value=True)) as send:
             self.assertTrue(await tb._send_report(db, MagicMock(), "-10", message, user, "bug"))
         self.assertIn("username=-", send.await_args.args[2])
-
-        expense = Expense(1, "-1", "1", None, None, 100, "ARS", "cash", "box", "food", "pending", None, "now", None)
-        db.add_expense.return_value = expense
-        writer = MagicMock()
-        writer.write_expense.return_value = ExpenseSheetWriteResult(True)
-        provider = MagicMock()
-        provider.binance_usdt_sell_rate.return_value = ExchangeRateQuote(
-            Decimal("1600"), datetime(2026, 7, 22, tzinfo=timezone.utc)
-        )
-        draft = ExpenseDraft(
-            100,
-            "ARS",
-            "Efectivo",
-            "Otros",
-            "Lucas",
-            "food",
-            date(2026, 7, 22),
-            0,
-            ExpenseMovement.PURCHASE,
-            True,
-            True,
-        )
-        result = await tb._submit_expense(db, writer, provider, message, user, draft)
-        self.assertTrue(result.synced)
-        db.mark_expense_synced.assert_called_with(1, None, None, None)
-        writer.write_expense.return_value = ExpenseSheetWriteResult(False, "api")
-        writer.is_configured.return_value = False
-        result = await tb._submit_expense(db, writer, provider, message, user, draft)
-        self.assertFalse(result.synced)
-        self.assertFalse(result.configured)
-        db.mark_expense_failed.assert_called_with(1, "api", None, None, None)
-
-        historical = replace(draft, occurred_on=date(2026, 7, 21))
-        self.assertEqual(
-            (await tb._submit_expense(db, writer, provider, message, user, historical)).error,
-            "historical_rate_required",
-        )
-        provider.binance_usdt_sell_rate.side_effect = ExchangeRateError("offline")
-        self.assertEqual(
-            (await tb._submit_expense(db, writer, provider, message, user, draft)).error,
-            "exchange_rate_unavailable",
-        )
-        provider.binance_usdt_sell_rate.side_effect = None
-
-        late_utc_message = message_stub(
-            chat=message.chat,
-            date=datetime(2026, 7, 22, 2, tzinfo=timezone.utc),
-        )
-        local_date_draft = replace(draft, occurred_on=date(2026, 7, 21))
-        writer.is_configured.return_value = True
-        writer.write_expense.return_value = ExpenseSheetWriteResult(True)
-        self.assertTrue(
-            (
-                await tb._submit_expense(
-                    db, writer, provider, late_utc_message, user, local_date_draft
-                )
-            ).synced
-        )
-
-        writer.is_configured.return_value = True
-        writer.write_expense.return_value = ExpenseSheetWriteResult(True)
-        provider.binance_usdt_sell_rate.reset_mock()
-        usd = replace(draft, currency="USD", installments=1, usd_rate_override=None)
-        self.assertTrue((await tb._submit_expense(db, writer, provider, message, user, usd)).synced)
-        provider.binance_usdt_sell_rate.assert_not_called()
-        manual = replace(draft, usd_rate_override=Decimal("1599.25"))
-        self.assertTrue((await tb._submit_expense(db, writer, provider, message, user, manual)).synced)
-        provider.binance_usdt_sell_rate.assert_not_called()
-
-        writer.write_expense.return_value = ExpenseSheetWriteResult(True, month_created=True)
-        with patch.object(tb, "_sync_pending_expenses", AsyncMock()) as sync:
-            self.assertTrue((await tb._submit_expense(db, writer, provider, message, user, draft)).synced)
-        sync.assert_awaited_once()
-        no_open = replace(draft, opens_cashflow_month=False)
-        with patch.object(tb, "_sync_pending_expenses", AsyncMock()) as sync:
-            self.assertTrue((await tb._submit_expense(db, writer, provider, message, user, no_open)).synced)
-        sync.assert_not_awaited()
-
-        writer.is_configured.return_value = False
-        writer.is_ready.return_value = False
-        db.count_pending_expenses.return_value = 2
-        status = tb._build_expense_sheet_status(db, writer, "-1")
-        self.assertIsNone(status.worksheet_name)
-        writer.is_configured.return_value = True
-        writer.worksheet_name = "Tab"
-        self.assertEqual(tb._build_expense_sheet_status(db, writer, "-1").worksheet_name, "Tab")
-
-        writer.is_configured.return_value = False
-        self.assertFalse((await tb._sync_pending_expenses(db, writer, message)).configured)
-        writer.is_configured.return_value = True
-        expense2 = replace(expense, expense_id=2, username="alias", display_name="Name")
-        db.list_pending_expenses.return_value = [expense, expense2]
-        writer.write_expense.side_effect = [
-            ExpenseSheetWriteResult(True),
-            ExpenseSheetWriteResult(False, "fail"),
-        ]
-        result = await tb._sync_pending_expenses(db, writer, message)
-        self.assertEqual((result.synced_count, result.failed_count, result.last_error), (1, 1, "fail"))
-        writer.add_card_closing.return_value = SimpleNamespace(added=True)
-        self.assertTrue((await tb._add_card_closing(writer, date(2026, 8, 28))).added)
 
     async def test_send_config_menu_and_every_config_action(self) -> None:
         db = MagicMock()
