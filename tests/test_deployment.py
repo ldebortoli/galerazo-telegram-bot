@@ -116,16 +116,28 @@ class ContainerRuntimeTests(unittest.TestCase):
             self.skipTest("Docker Compose CLI no disponible")
         environment = os.environ.copy()
         environment["GALERAZO_IMAGE"] = "galerazobot:validation-only"
-        result = subprocess.run(
-            ["docker", "compose", "-f", str(PROJECT_ROOT / "compose.production.yaml"),
-             "config", "--no-env-resolution", "--quiet"],
-            cwd=PROJECT_ROOT,
-            env=environment,
-            capture_output=True,
-            text=True,
-            timeout=30,
-            check=False,
-        )
+        compose = (PROJECT_ROOT / "compose.production.yaml").read_text(encoding="utf-8")
+        production_env_path = "/etc/galerazo/bot.env"
+        self.assertEqual(compose.count(production_env_path), 1)
+        with tempfile.TemporaryDirectory() as temp_dir:
+            fixture_root = Path(temp_dir)
+            fixture_env = fixture_root / "bot.env"
+            fixture_env.write_text("", encoding="utf-8")
+            fixture_compose = fixture_root / "compose.production.yaml"
+            fixture_compose.write_text(
+                compose.replace(production_env_path, fixture_env.as_posix()),
+                encoding="utf-8",
+            )
+            result = subprocess.run(
+                ["docker", "compose", "-f", str(fixture_compose),
+                 "config", "--no-env-resolution", "--quiet"],
+                cwd=PROJECT_ROOT,
+                env=environment,
+                capture_output=True,
+                text=True,
+                timeout=30,
+                check=False,
+            )
         self.assertEqual(result.returncode, 0, result.stderr)
 
     def test_remote_log_shortcut_uses_read_only_iap_following(self) -> None:
