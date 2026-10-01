@@ -29,6 +29,8 @@ function Invoke-Native {
 }
 
 Assert-Command -Name "docker"
+. (Join-Path $PSScriptRoot "Ensure-DockerEngine.ps1")
+Wait-DockerLinuxEngine
 
 if (-not $Tag) {
     Assert-Command -Name "git"

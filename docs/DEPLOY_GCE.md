@@ -564,3 +564,19 @@ modo 0600. Si ya existiera una base, primero crea un backup consistente en
 - [Workload Identity Federation para pipelines](https://docs.cloud.google.com/iam/docs/workload-identity-federation-with-deployment-pipelines)
 - [Docker Compose en produccion](https://docs.docker.com/compose/how-tos/production/)
 - [Facturacion de GitHub Actions](https://docs.github.com/en/billing/concepts/product-billing/github-actions)
+
+
+### Docker Desktop en el release mensual
+
+`Update-Dependencies.ps1` y `Build-DockerImage.ps1` comprueban el motor con
+`docker info --format "{{.OSType}}"`. Si no responde, el helper versionado
+`Ensure-DockerEngine.ps1` inicia Docker Desktop con `docker desktop start --detach`
+y espera hasta 180 segundos a que Linux este disponible. Si falla el arranque,
+vence la espera o hay un motor Windows, el release falla antes del build; nunca
+cambia el motor ni omite pruebas. El comando de inicio esta documentado en
+https://docs.docker.com/reference/cli/docker/desktop/start/.
+
+La tarea existente de Bot Control Center conserva el dia 1 a las 03:00 y los
+reintentos horarios. Un reintento manual usa esa misma tarea, sin publicar o
+desplegar por un camino paralelo. Sus avisos de fallo descartan la salida
+informativa `Wrote JSON report ...` al elegir la primera causa de stderr.

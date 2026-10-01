@@ -77,6 +77,8 @@ try {
 
     Write-Host "Se detectaron nuevas versiones estables; validando el lock..." -ForegroundColor Cyan
     Assert-Command -Name "docker"
+    . (Join-Path $PSScriptRoot "Ensure-DockerEngine.ps1")
+    Wait-DockerLinuxEngine
     Invoke-Native -Command $environmentPython -Arguments @("scripts/runtime_versions.py")
     Invoke-Native -Command $environmentPython -Arguments @("-m", "coverage", "run", "-m", "pytest")
     Invoke-Native -Command $environmentPython -Arguments @("-m", "coverage", "json")

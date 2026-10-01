@@ -458,5 +458,54 @@ class DeploymentAutomationTests(unittest.TestCase):
         self.assertIn("previous-image.env", rollback)
 
 
+class DockerStartupTests(unittest.TestCase):
+    def test_docker_startup_preserves_linux_requirement_and_times_out(self) -> None:
+        powershell = shutil.which("powershell.exe")
+        if powershell is None:
+            self.skipTest("Docker Desktop startup is Windows-specific")
+        helper = PROJECT_ROOT / "scripts/deploy/Ensure-DockerEngine.ps1"
+        scenarios = (
+            ("ready", "OK calls=1 starts=0"),
+            ("starts", "OK calls=2 starts=1"),
+            ("delayed", "OK calls=3 starts=1"),
+            ("timeout", "ERROR Docker Desktop no habilito el motor Linux en 0 segundos"),
+            ("start-fails", "ERROR No se pudo iniciar Docker Desktop (codigo 1)"),
+            ("windows", "ERROR Docker usa 'windows'; se requieren contenedores Linux"),
+        )
+        for mode, expected in scenarios:
+            with self.subTest(mode=mode), tempfile.TemporaryDirectory() as temporary:
+                script = Path(temporary) / "docker-fixture.ps1"
+                script.write_text(
+                    "param([string]$Helper, [string]$Mode)\n"
+                    "$ErrorActionPreference='Stop'\n"
+                    "$global:calls=0; $global:starts=0\n"
+                    "function docker {\n"
+                    "  $global:LASTEXITCODE=0\n"
+                    "  if ($args[0] -eq 'desktop') {\n"
+                    "    if (($args -join ' ') -ne 'desktop start --detach') { throw 'unexpected mutation' }\n"
+                    "    $global:starts++\n"
+                    "    if ($Mode -eq 'start-fails') { $global:LASTEXITCODE=1 }; return\n"
+                    "  }\n"
+                    "  if (($args -join ' ') -ne 'info --format {{.OSType}}') { throw 'unexpected command' }\n"
+                    "  $global:calls++\n"
+                    "  if ($Mode -eq 'windows') { 'windows'; return }\n"
+                    "  if ($Mode -eq 'ready' -or ($Mode -eq 'starts' -and $global:calls -gt 1) -or ($Mode -eq 'delayed' -and $global:calls -gt 2)) { 'linux'; return }\n"
+                    "  $global:LASTEXITCODE=1\n"
+                    "}\n"
+                    "function Start-Sleep { param([int]$Seconds); if ($Seconds -ne 2) { throw 'unexpected delay' } }\n"
+                    ". $Helper\n"
+                    "$wait = if ($Mode -eq 'delayed') { 2 } else { 0 }\n"
+                    "try { Wait-DockerLinuxEngine -TimeoutSeconds $wait; Write-Output \"OK calls=$global:calls starts=$global:starts\" }\n"
+                    "catch { Write-Output \"ERROR $($_.Exception.Message)\" }\n",
+                    encoding="utf-8",
+                )
+                result = subprocess.run(
+                    [powershell, "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(script), str(helper), mode],
+                    capture_output=True, text=True, timeout=30, check=False,
+                )
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertIn(expected, result.stdout)
+
+
 if __name__ == "__main__":
     unittest.main()
