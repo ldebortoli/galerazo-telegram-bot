@@ -313,13 +313,14 @@ class HisopoRulesTests(unittest.TestCase):
         rolls = iter((15, 14))
         self.assertEqual(select_bomb_slots(lambda _limit: next(rolls)), (15, 14))
 
-    def test_giant_helper_threshold_uses_every_small_chat_member_and_caps_at_fifteen(self) -> None:
+    def test_giant_helper_threshold_uses_verified_humans_and_caps_at_fifteen(self) -> None:
+        self.assertEqual(giant_required_helpers(0), 1)
         self.assertEqual(giant_required_helpers(1), 1)
-        self.assertEqual(giant_required_helpers(6), 5)
+        self.assertEqual(giant_required_helpers(6), 6)
         self.assertEqual(giant_required_helpers(16), 15)
         self.assertEqual(giant_required_helpers(500), 15)
-        with self.assertRaisesRegex(ValueError, "miembros"):
-            giant_required_helpers(0)
+        with self.assertRaisesRegex(ValueError, "personas"):
+            giant_required_helpers(-1)
 
     def test_radioactive_published_rules_match_all_time_bands_in_every_language(self) -> None:
         for language, catalog in HISOPO_TRANSLATIONS.items():
@@ -1772,8 +1773,9 @@ class HisopoCommandTests(unittest.IsolatedAsyncioTestCase):
         self.assertIn("<b>Usado:</b> 5 %", response)
         self.assertIn("<b>Diamante:</b> 1 %", response)
         self.assertIn("<b>Gigante cooperativo:</b> 0,25 %", response)
-        self.assertIn("total de miembros que informa Telegram menos Galerazo", response)
-        self.assertIn("otros bots", response)
+        self.assertIn("Meta del Gigante: entre 1 y 15 personas", response)
+        self.assertIn("No cuenta bots ni cuentas eliminadas", response)
+        self.assertIn("Si no puede confirmar la meta, no aparece", response)
         self.assertIn("<b>Milagroso:</b> 0,10 %", response)
         self.assertIn("mitad del puntaje del líder", response)
         self.assertIn("máximo de 1000", response)

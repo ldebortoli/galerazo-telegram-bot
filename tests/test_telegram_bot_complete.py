@@ -24,6 +24,7 @@ from telegram.error import BadRequest, Conflict, Forbidden, NetworkError, Telegr
 
 from galerazo_bot.cloud_billing import GoogleCloudBillingReader, GoogleCloudBillingReport
 from galerazo_bot.config import Settings
+from galerazo_bot.hisopos import MYSTERY_HISOPO
 from galerazo_bot.database import (
     Database,
     HisopoCaptureResult,
@@ -1800,13 +1801,18 @@ class HisopoTelegramTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(fleeting_spawn.hisopo_type, "fleeting")
         self.assertEqual(fleeting_spawn.expires_at, "2026-08-20T12:01:00+00:00")
 
-        giant_app, _, giant_bot, _ = self._application(
+        giant_app, giant_state, giant_bot, _ = self._application(
             db,
             telegram_hisopo_giant_file_id="giant-id",
         )
-        giant_bot.get_chat_member_count.return_value = 12
-        with patch.object(tb.secrets, "randbelow", return_value=9965):
+        giant_counter = SimpleNamespace(count=AsyncMock(return_value=11))
+        with patch.object(tb.secrets, "randbelow", return_value=9965), patch.object(
+            tb, "GiantParticipantCounter", return_value=giant_counter,
+        ) as counter_factory:
             giant_spawn = await tb._spawn_hisopo(giant_app, "-1", "message")
+        counter_factory.assert_called_once_with(giant_state.settings, giant_state.bot_user_id)
+        self.assertIs(giant_app.bot_data["giant_participant_counter"], giant_counter)
+        giant_counter.count.assert_awaited_once_with("-1")
         self.assertEqual(giant_spawn.hisopo_type, "giant")
         self.assertEqual(giant_spawn.required_helpers, 11)
         self.assertEqual(
@@ -1818,14 +1824,41 @@ class HisopoTelegramTests(unittest.IsolatedAsyncioTestCase):
             giant_bot.send_photo.await_args.kwargs["reply_markup"].inline_keyboard[0][0].text,
             "Ayudar a capturarlo (0/11)",
         )
-        giant_bot.get_chat_member_count.side_effect = BadRequest("members")
-        with self.assertLogs(tb.logger, level="WARNING"), patch.object(
+        giant_counter.count.side_effect = tb.GiantParticipantCountError("listado incompleto")
+        sent_before = giant_bot.send_photo.await_count
+        saved_before = db.save_hisopo_spawn.call_count
+        with self.assertRaisesRegex(tb.HisopoSpawnError, "listado incompleto"), patch.object(
             tb.secrets,
             "randbelow",
             return_value=9965,
         ):
-            fallback_giant = await tb._spawn_hisopo(giant_app, "-1", "message")
-        self.assertEqual(fallback_giant.required_helpers, 15)
+            await tb._spawn_hisopo(giant_app, "-1", "message")
+        self.assertEqual(giant_bot.send_photo.await_count, sent_before)
+        self.assertEqual(db.save_hisopo_spawn.call_count, saved_before)
+        giant_bot.get_chat_member_count.assert_not_awaited()
+
+        giant_counter.count.side_effect = None
+        giant_counter.count.return_value = 1
+        with patch.object(tb.secrets, "randbelow", return_value=9965):
+            smallest_giant = await tb._spawn_hisopo(giant_app, "-1", "message")
+        self.assertEqual(smallest_giant.required_helpers, 1)
+        self.assertIn("0/1", giant_bot.send_photo.await_args.kwargs["caption"])
+
+        hidden_app, _, hidden_bot, _ = self._application(
+            db, telegram_hisopo_giant_file_id="giant-id",
+            telegram_hisopo_mystery_file_id="mystery-id",
+        )
+        hidden_counter = SimpleNamespace(count=AsyncMock(return_value=7))
+        hidden_app.bot_data["giant_participant_counter"] = hidden_counter
+        with patch.object(tb, "select_hisopo_spawn", return_value=SimpleNamespace(
+            actual=tb.GIANT_HISOPO, appearance=MYSTERY_HISOPO,
+        )):
+            hidden_giant = await tb._spawn_hisopo(hidden_app, "-1", "message")
+        self.assertEqual(hidden_giant.required_helpers, 7)
+        self.assertEqual(hidden_giant.appearance_type, "mystery")
+        self.assertEqual(hidden_giant.points, 4)
+        self.assertEqual(hidden_bot.send_photo.await_args.kwargs["photo"], "mystery-id")
+        hidden_counter.count.assert_awaited_once_with("-1")
 
         miracle_app, _, miracle_bot, _ = self._application(
             db,

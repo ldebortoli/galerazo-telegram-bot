@@ -108,6 +108,26 @@ class TelegramBotMonetizationTests(unittest.IsolatedAsyncioTestCase):
         await tb._post_shutdown(app)
         runner.cleanup.assert_awaited_once()
 
+    async def test_shutdown_closes_mtproto_and_always_stops_mini_app(self) -> None:
+        runner = SimpleNamespace(cleanup=AsyncMock())
+        counter = tb.GiantParticipantCounter(settings(), "99")
+        client = AsyncMock()
+        counter._client = client
+        app = SimpleNamespace(bot_data={
+            "mini_app_service": MiniAppService(runner=runner, site=MagicMock()),
+            "giant_participant_counter": counter,
+        })
+        await tb._post_shutdown(app)
+        client.disconnect.assert_awaited_once()
+        runner.cleanup.assert_awaited_once()
+
+        counter._client = client
+        client.disconnect.side_effect = OSError("disconnected")
+        with self.assertRaises(OSError):
+            await tb._post_shutdown(app)
+        self.assertEqual(runner.cleanup.await_count, 2)
+        self.assertIsNone(counter._client)
+
     async def test_configure_mini_app_disabled_invalid_success_and_button_failure(self) -> None:
         bot = SimpleNamespace(set_chat_menu_button=AsyncMock(), get_me=AsyncMock(return_value=SimpleNamespace(username="galerazo_bot")))
         app = SimpleNamespace(bot_data={"state": state(settings())}, bot=bot)

@@ -6,6 +6,12 @@ cubre y debe pasar de `borrador` a `aprobado` antes de publicar una imagen. Una 
 vacía con estado `omitido` registra una excepción explícitamente solicitada por el usuario:
 el runtime avanza el cursor sin enviar un broadcast ni acumularla para otro release.
 
+## [0.69] desde=[0.68] estado=borrador
+
+Novedades de Galerazo Bot v0.69
+
+El Hisopo gigante ahora pide entre 1 y 15 participantes según las cuentas humanas no eliminadas del grupo. Los bots y las cuentas eliminadas no cuentan para la meta. Mantiene su rareza, los 20 minutos y el premio de +4 puntos por participante al completarlo.
+
 ## [0.68] desde=[0.63] estado=aprobado
 
 Novedades de Galerazo Bot v0.68

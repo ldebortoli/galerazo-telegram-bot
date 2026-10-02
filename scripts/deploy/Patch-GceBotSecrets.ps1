@@ -26,6 +26,8 @@ if ($patchInfo.Length -gt 32768) {
 }
 $allowedKeys = @(
     "TELEGRAM_BOT_TOKEN",
+    "TELEGRAM_API_ID",
+    "TELEGRAM_API_HASH",
     "TELEGRAM_DEV_USER_IDS",
     "TELEGRAM_LOG_CHAT_ID",
     "TELEGRAM_ANNOUNCEMENTS_CHAT_ID",

@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.69] - 2026-10-02
+
+- Correcciones y mejoras: el Hisopo gigante calcula su meta con las cuentas humanas no eliminadas del grupo, entre 1 y 15 participantes. Los bots y las cuentas eliminadas no cuentan. Si no puede confirmar la meta, no aparece con una cantidad incierta.
+
 ## [0.68] - 2026-09-21
 
 - Correcciones y mejoras: el bot recupera automáticamente la recepción de mensajes tras un conflicto temporal con Telegram, sin reiniciarse por el primer intento fallido.

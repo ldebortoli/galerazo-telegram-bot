@@ -50,6 +50,8 @@ env_path = Path(sys.argv[1])
 patch_path = Path(sys.argv[2])
 env_keys = (
     "TELEGRAM_BOT_TOKEN",
+    "TELEGRAM_API_ID",
+    "TELEGRAM_API_HASH",
     "TELEGRAM_DEV_USER_IDS",
     "TELEGRAM_LOG_CHAT_ID",
     "TELEGRAM_ANNOUNCEMENTS_CHAT_ID",

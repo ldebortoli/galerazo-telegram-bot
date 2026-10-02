@@ -84,6 +84,7 @@ from .command_handlers.galerazas import (
 )
 from .command_handlers.hisopos import send_hisopos as _send_hisopos
 from .handler_registration import register_handlers
+from .giant_participants import GiantParticipantCounter, GiantParticipantCountError
 from .hisopos import (
     BLACK_HOLE_HISOPO,
     BOMB_HISOPO,
@@ -96,12 +97,10 @@ from .hisopos import (
     HISOPO_BOMB_CALLBACK_PREFIX,
     HISOPO_BOMB_SLOT_COUNT,
     HISOPO_CAPTURE_CALLBACK,
-    HISOPO_GIANT_MAX_HELPERS,
     HISOPO_RACE_CALLBACK,
     HISOPO_RACE_MIN_PRESS_INTERVAL,
     HISOPO_RACE_REQUIRED_PRESSES,
     HISOPO_TYPE_ROLL_MAX,
-    giant_required_helpers,
     hisopo_kind_for_spawn,
     is_fleeting_window_expired,
     radioactive_points_at,
@@ -345,9 +344,14 @@ async def _club_rewards_job(context: ContextTypes.DEFAULT_TYPE) -> None:
 
 
 async def _post_shutdown(application: Application) -> None:
-    service = application.bot_data.get("mini_app_service")
-    if isinstance(service, MiniAppService):
-        await service.stop()
+    try:
+        counter = application.bot_data.get("giant_participant_counter")
+        if isinstance(counter, GiantParticipantCounter):
+            await counter.close()
+    finally:
+        service = application.bot_data.get("mini_app_service")
+        if isinstance(service, MiniAppService):
+            await service.stop()
 
 
 async def _configure_mini_app(application: Application) -> bool:
@@ -749,20 +753,17 @@ async def _spawn_hisopo(
 
     required_helpers = 1
     if actual_kind.key == GIANT_HISOPO.key:
+        counter = application.bot_data.get("giant_participant_counter")
+        if counter is None:
+            counter = GiantParticipantCounter(state.settings, state.bot_user_id)
+            application.bot_data["giant_participant_counter"] = counter
         try:
-            member_count = await application.bot.get_chat_member_count(
-                _parse_chat_id(chat_id)
-            )
-        except TelegramError as exc:
-            member_count = HISOPO_GIANT_MAX_HELPERS + 1
-            logger.warning(
-                "No pude consultar los miembros del chat %s para el Hisopo gigante; "
-                "uso %s participantes: %s",
-                chat_id,
-                HISOPO_GIANT_MAX_HELPERS,
-                exc,
-            )
-        required_helpers = giant_required_helpers(member_count)
+            required_helpers = await counter.count(chat_id)
+        except GiantParticipantCountError as exc:
+            raise HisopoSpawnError(
+                f"No pude confirmar la meta del Hisopo gigante (chat_id={chat_id}, "
+                f"source={source}): {exc}"
+            ) from None
 
     language = _chat_language(state.db, chat_id)
     type_label = t(language, f"hisopos.type.{appearance_kind.key}")

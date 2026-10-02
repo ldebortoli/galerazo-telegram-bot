@@ -306,6 +306,8 @@ class DeploymentAutomationTests(unittest.TestCase):
         self.assertIn("secret-patch.json", patch_script)
         self.assertIn('$null -ne $_ -and $_ -ne ""', patch_script)
         for key in (
+            "TELEGRAM_API_ID",
+            "TELEGRAM_API_HASH",
             "TELEGRAM_HISOPO_COMMON_FILE_ID",
             "TELEGRAM_HISOPO_SILVER_FILE_ID",
             "TELEGRAM_HISOPO_GOLD_FILE_ID",

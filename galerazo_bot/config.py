@@ -41,6 +41,8 @@ class Settings:
     mini_app_bind_host: str = "127.0.0.1"
     mini_app_port: int = 8080
     mini_app_proxy_secret: str | None = field(default=None, repr=False)
+    telegram_api_id: int | None = None
+    telegram_api_hash: str | None = field(default=None, repr=False)
 
 
 def load_settings() -> Settings:
@@ -94,6 +96,8 @@ def load_settings() -> Settings:
         mini_app_bind_host=_env_or_default("MINI_APP_BIND_HOST", "127.0.0.1"),
         mini_app_port=int(_env_or_default("MINI_APP_PORT", "8080")),
         mini_app_proxy_secret=os.getenv("MINI_APP_PROXY_SECRET") or None,
+        telegram_api_id=_optional_api_id(os.getenv("TELEGRAM_API_ID", "")),
+        telegram_api_hash=os.getenv("TELEGRAM_API_HASH") or None,
     )
 
 
@@ -104,3 +108,15 @@ def _parse_id_list(raw_value: str) -> frozenset[str]:
 def _env_or_default(name: str, default: str) -> str:
     value = os.getenv(name)
     return value if value and value.strip() else default
+
+
+def _optional_api_id(raw_value: str) -> int | None:
+    if not raw_value.strip():
+        return None
+    try:
+        value = int(raw_value)
+    except ValueError:
+        raise ValueError("TELEGRAM_API_ID debe ser un entero positivo.") from None
+    if not 0 < value <= 2_147_483_647:
+        raise ValueError("TELEGRAM_API_ID debe ser un entero positivo.")
+    return value

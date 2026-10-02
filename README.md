@@ -239,6 +239,8 @@ Ejemplo:
 
 ```env
 TELEGRAM_BOT_TOKEN=token-de-botfather
+TELEGRAM_API_ID=
+TELEGRAM_API_HASH=
 TELEGRAM_DEV_USER_IDS=
 TELEGRAM_LOG_CHAT_ID=
 TELEGRAM_ANNOUNCEMENTS_CHAT_ID=
@@ -464,7 +466,7 @@ El Frenético dura 20 minutos. Cada callback nuevo incrementa en uno el contador
 
 El Agujero negro usa la misma carrera a 20. Si la persona ganadora fue la única participante, suma 10 puntos. Si hubo rivales, cada perdedor pierde tantos puntos como pulsaciones válidas hizo y el ganador recibe el menor valor entre 10 y la suma transferida; por ejemplo, rivales con 3 y 2 pulsaciones pierden 3 y 2, y el ganador suma 5. Todo el cierre se realiza en una sola transacción y admite puntajes negativos.
 
-El Gigante cooperativo dura 20 minutos y requiere `min(15, miembros del chat - Galerazo)` participaciones únicas. En un chat con al menos 16 miembros pide 15 ayudas; en uno más pequeño usa el total que informa Telegram menos el propio Galerazo. Esa consulta entrega una cantidad, no una lista filtrada de personas, por lo que otros bots también pueden quedar incluidos en la meta de los chats pequeños. Cada usuario puede ayudar una sola vez, la foto y el botón muestran el progreso y nadie recibe puntos parcialmente. Si alcanza el objetivo, cada participante gana 4 puntos y se programa una sola aparición total para el día siguiente; si se vence incompleto, nadie gana ni pierde puntos y no se programa nada.
+El Gigante cooperativo dura 20 minutos y requiere `max(1, min(15, cuentas humanas no eliminadas))` participaciones únicas. Antes de aparecer, consulta por MTProto los miembros del grupo y descarta bots y cuentas eliminadas. Frena al verificar 15 personas; si encuentra menos, exige un listado completo y usa esa cantidad, con mínimo 1. Necesita `TELEGRAM_API_ID` y `TELEGRAM_API_HASH` de una aplicación Telegram y usa el token del propio bot, sin userbot ni cuenta personal. Si faltan credenciales o Telegram no permite confirmar la meta, registra el error y no lanza ese Gigante. La [configuración y las consultas](docs/GIANT_PARTICIPANTS.md) están documentadas. Cada usuario puede ayudar una sola vez, la foto y el botón muestran el progreso y nadie recibe puntos parcialmente. Si alcanza el objetivo, cada participante gana 4 puntos y se programa una sola aparición total para el día siguiente; si se vence incompleto, nadie gana ni pierde puntos y no se programa nada.
 
 El Milagroso dura 20 minutos y calcula su premio al capturarlo: entrega `max(15, min(mitad del líder redondeada hacia arriba, 1000))`. Por ejemplo, con un líder de 31 puntos entrega 16; con un líder de 20, cero o negativo entrega 15; y aunque el líder supere 2000 puntos nunca entrega más de 1000. El cálculo y la captura se realizan en la misma transacción, su valor inicial permanece oculto y programa una aparición para el día siguiente como una captura normal.
 

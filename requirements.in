@@ -10,3 +10,4 @@ python-telegram-bot[job-queue,rate-limiter]
 python-dotenv
 google-auth
 tzdata
+Telethon

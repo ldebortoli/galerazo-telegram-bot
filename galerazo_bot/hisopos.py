@@ -227,11 +227,10 @@ def hisopo_kind_for_spawn(key: str, points: int) -> HisopoKind:
         raise ValueError(f"Tipo de Hisopo desconocido: {key}") from exc
 
 
-def giant_required_helpers(chat_member_count: int) -> int:
-    if chat_member_count < 1:
-        raise ValueError("La cantidad de miembros del chat debe ser positiva.")
-    human_member_count = max(chat_member_count - 1, 1)
-    return min(human_member_count, HISOPO_GIANT_MAX_HELPERS)
+def giant_required_helpers(eligible_human_count: int) -> int:
+    if eligible_human_count < 0:
+        raise ValueError("La cantidad de personas no puede ser negativa.")
+    return max(1, min(eligible_human_count, HISOPO_GIANT_MAX_HELPERS))
 
 
 def random_next_day_datetime(

@@ -24,6 +24,7 @@ DIRECT_DEPENDENCIES = {
     "python-dotenv",
     "python-telegram-bot[job-queue,rate-limiter]",
     "tzdata",
+    "telethon",
 }
 
 

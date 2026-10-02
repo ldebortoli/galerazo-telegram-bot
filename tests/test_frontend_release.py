@@ -5,6 +5,7 @@ import json
 from pathlib import Path
 import tempfile
 import unittest
+from unittest.mock import patch
 
 from scripts.frontend_release import FrontendRelease, PATHS, FEATURES, compatible, version
 
@@ -59,6 +60,17 @@ class Fixture:
 
 
 class FrontendReleaseTests(unittest.TestCase):
+    def setUp(self):
+        toolchain = tempfile.TemporaryDirectory()
+        self.addCleanup(toolchain.cleanup)
+        node = Path(toolchain.name) / "node"
+        npm = node.parent / "node_modules/npm/bin/npm-cli.js"
+        npm.parent.mkdir(parents=True)
+        npm.write_text("// Fixture; subprocesses are simulated by Fixture.run.\n", encoding="utf-8")
+        lookup = patch("scripts.frontend_release.shutil.which", return_value=str(node))
+        lookup.start()
+        self.addCleanup(lookup.stop)
+
     def test_contract_and_invalid_versions(self):
         self.assertIn("release-contract.json", PATHS)
         self.assertEqual(version("0.68"), (0, 68, 0))
@@ -105,6 +117,17 @@ class FrontendReleaseTests(unittest.TestCase):
             with self.assertRaisesRegex(RuntimeError, "build failed"): f.release.sync("0.68")
             self.assertFalse(f.deployed)
             self.assertIn("remove", f.calls[-1])
+
+    def test_missing_node_or_npm_cleans_snapshot_before_any_upload(self):
+        with tempfile.TemporaryDirectory() as root:
+            for node, error in ((None, "Node.js is required"), (str(Path(root) / "missing-node"), "npm CLI is unavailable")):
+                with self.subTest(error=error), patch("scripts.frontend_release.shutil.which", return_value=node):
+                    f = Fixture(root)
+                    with self.assertRaisesRegex(RuntimeError, error):
+                        f.release.sync("0.68")
+                    self.assertFalse(f.deployed)
+                    self.assertFalse(any("deploy" in args for args in f.calls))
+                    self.assertIn("remove", f.calls[-1])
 
     def test_served_asset_mismatch_or_wrong_bot_image_cannot_succeed(self):
         with tempfile.TemporaryDirectory() as root:
