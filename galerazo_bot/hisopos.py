@@ -15,6 +15,7 @@ from .pagination import MESSAGE_LIMIT, PaginatedPage, build_page_line_groups, re
 ARGENTINA_TIMEZONE = ZoneInfo("America/Argentina/Buenos_Aires")
 HISOPO_EXPIRATION = timedelta(minutes=20)
 HISOPO_FLEETING_EXPIRATION = timedelta(minutes=1)
+HISOPO_GIANT_EXPIRATION = timedelta(hours=1)
 HISOPO_CALLBACK_PREFIX = "hisopo"
 HISOPO_CAPTURE_CALLBACK = f"{HISOPO_CALLBACK_PREFIX}:capture"
 HISOPO_BOMB_CALLBACK_PREFIX = f"{HISOPO_CALLBACK_PREFIX}:bomb"
@@ -65,7 +66,7 @@ BLACK_HOLE_HISOPO = HisopoKind("black_hole", 10, hides_points=True)
 FAKE_HISOPO = HisopoKind("fake", 0, next_day_spawns=0)
 TWIN_HISOPO = HisopoKind("twin", 4, immediate_spawns=1)
 DIAMOND_HISOPO = HisopoKind("diamond", 10)
-GIANT_HISOPO = HisopoKind("giant", 4)
+GIANT_HISOPO = HisopoKind("giant", 4, expiration=HISOPO_GIANT_EXPIRATION)
 MIRACLE_HISOPO = HisopoKind("miracle", 15, hides_points=True)
 EXPIRED_HISOPO = HisopoKind("expired", 0, next_day_spawns=0)
 

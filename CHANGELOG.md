@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.70] - 2026-10-02
+
+- Correcciones y mejoras: el Hisopo gigante dura una hora desde su aparición, también si está oculto dentro de un Misterioso. Revelarlo no reinicia el plazo.
+
 ## [0.69] - 2026-10-02
 
 - Correcciones y mejoras: el Hisopo gigante calcula su meta con las cuentas humanas no eliminadas del grupo, entre 1 y 15 participantes. Los bots y las cuentas eliminadas no cuentan. Si no puede confirmar la meta, no aparece con una cantidad incierta.

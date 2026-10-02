@@ -843,7 +843,7 @@ async def _spawn_hisopo(
         points=actual_kind.points,
         source=source,
         spawned_at=spawned_at.isoformat(),
-        expires_at=(spawned_at + appearance_kind.expiration).isoformat(),
+        expires_at=(spawned_at + max(actual_kind.expiration, appearance_kind.expiration)).isoformat(),
         required_helpers=required_helpers,
         bomb_success_slot=bomb_success_slot,
         bomb_explosion_slot=bomb_explosion_slot,

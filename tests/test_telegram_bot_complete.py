@@ -1809,12 +1809,15 @@ class HisopoTelegramTests(unittest.IsolatedAsyncioTestCase):
         with patch.object(tb.secrets, "randbelow", return_value=9965), patch.object(
             tb, "GiantParticipantCounter", return_value=giant_counter,
         ) as counter_factory:
-            giant_spawn = await tb._spawn_hisopo(giant_app, "-1", "message")
+            giant_spawn = await tb._spawn_hisopo(
+                giant_app, "-1", "message", now=datetime(2026, 8, 20, 12, tzinfo=timezone.utc),
+            )
         counter_factory.assert_called_once_with(giant_state.settings, giant_state.bot_user_id)
         self.assertIs(giant_app.bot_data["giant_participant_counter"], giant_counter)
         giant_counter.count.assert_awaited_once_with("-1")
         self.assertEqual(giant_spawn.hisopo_type, "giant")
         self.assertEqual(giant_spawn.required_helpers, 11)
+        self.assertEqual(giant_spawn.expires_at, "2026-08-20T13:00:00+00:00")
         self.assertEqual(
             giant_bot.send_photo.await_args.kwargs["caption"],
             "¡Apareció un Hisopo gigante cooperativo!\n"
@@ -1853,10 +1856,13 @@ class HisopoTelegramTests(unittest.IsolatedAsyncioTestCase):
         with patch.object(tb, "select_hisopo_spawn", return_value=SimpleNamespace(
             actual=tb.GIANT_HISOPO, appearance=MYSTERY_HISOPO,
         )):
-            hidden_giant = await tb._spawn_hisopo(hidden_app, "-1", "message")
+            hidden_giant = await tb._spawn_hisopo(
+                hidden_app, "-1", "message", now=datetime(2026, 8, 20, 12, tzinfo=timezone.utc),
+            )
         self.assertEqual(hidden_giant.required_helpers, 7)
         self.assertEqual(hidden_giant.appearance_type, "mystery")
         self.assertEqual(hidden_giant.points, 4)
+        self.assertEqual(hidden_giant.expires_at, "2026-08-20T13:00:00+00:00")
         self.assertEqual(hidden_bot.send_photo.await_args.kwargs["photo"], "mystery-id")
         hidden_counter.count.assert_awaited_once_with("-1")
 

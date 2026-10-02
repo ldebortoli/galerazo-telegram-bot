@@ -39,6 +39,7 @@ from galerazo_bot.hisopos import (
     HISOPO_DISGUISE_PROBABILITY_RANGES,
     HISOPO_EXPIRATION,
     HISOPO_FLEETING_EXPIRATION,
+    HISOPO_GIANT_EXPIRATION,
     HISOPO_TYPE_ROLL_MAX,
     HISOPO_PROBABILITY_RANGES,
     GIANT_HISOPO,
@@ -314,6 +315,10 @@ class HisopoRulesTests(unittest.TestCase):
         self.assertEqual(select_bomb_slots(lambda _limit: next(rolls)), (15, 14))
 
     def test_giant_helper_threshold_uses_verified_humans_and_caps_at_fifteen(self) -> None:
+        self.assertEqual(GIANT_HISOPO.expiration, timedelta(hours=1))
+        self.assertEqual(GIANT_HISOPO.expiration, HISOPO_GIANT_EXPIRATION)
+        self.assertEqual(MYSTERY_HISOPO.expiration, timedelta(minutes=20))
+        self.assertEqual(FLEETING_HISOPO.expiration, timedelta(minutes=1))
         self.assertEqual(giant_required_helpers(0), 1)
         self.assertEqual(giant_required_helpers(1), 1)
         self.assertEqual(giant_required_helpers(6), 6)
@@ -901,6 +906,32 @@ class HisopoDatabaseTests(unittest.TestCase):
             ).status,
             "taken",
         )
+
+    def test_hour_long_giant_deadline_survives_reveal_and_database_reload(self) -> None:
+        deadline = self.now + GIANT_HISOPO.expiration
+        self.db.save_hisopo_spawn(
+            "-1", "hour-giant", "giant", 4, "message", self.now.isoformat(),
+            deadline.isoformat(), appearance_type="mystery", required_helpers=2,
+        )
+        first = self.db.contribute_to_giant_hisopo(
+            "-1", "hour-giant", "2", self.now + timedelta(minutes=30),
+            self.now + timedelta(days=1),
+        )
+        self.assertEqual(first.status, "joined")
+        self.assertTrue(first.revealed)
+        self.assertEqual(first.spawn.expires_at, deadline.isoformat())
+        restored = Database(self.db.path)
+        last_second = restored.contribute_to_giant_hisopo(
+            "-1", "hour-giant", "2", deadline - timedelta(seconds=1),
+            self.now + timedelta(days=1),
+        )
+        self.assertEqual(last_second.status, "already_joined")
+        expired = restored.contribute_to_giant_hisopo(
+            "-1", "hour-giant", "3", deadline, self.now + timedelta(days=1),
+        )
+        self.assertEqual(expired.status, "rotten")
+        self.assertEqual(restored.get_hisopo_scores("-1"), [])
+        self.assertEqual(restored.list_pending_hisopo_schedules(), [])
 
     def test_bomb_board_is_atomic_persistent_and_scores_terminal_slots(self) -> None:
         with self.assertRaisesRegex(ValueError, "dos casillas"):
