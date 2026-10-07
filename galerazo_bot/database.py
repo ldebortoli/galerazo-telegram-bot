@@ -755,6 +755,9 @@ class Database:
                     """
                 )
             self._apply_schema_migrations(conn)
+            from .final_boss import initialize_schema as initialize_final_boss_schema
+
+            initialize_final_boss_schema(conn)
 
     @staticmethod
     def _apply_schema_migrations(conn: sqlite3.Connection) -> None:
@@ -1734,6 +1737,7 @@ class Database:
                     message_cleanup_last_attempt_at
                 FROM hisopo_spawns
                 WHERE chat_id = ? AND message_cleanup_status = 'pending'
+                  AND hisopo_type != 'final_boss'
                 ORDER BY spawned_at, message_id
                 """,
                 (chat_id,),
@@ -3190,7 +3194,7 @@ class Database:
                     current_page,
                     created_at
                 FROM paginated_message_states
-                WHERE created_at < ?
+                WHERE created_at < ? AND list_type != 'boss_rewards'
                 ORDER BY created_at ASC
                 """,
                 (cutoff,),

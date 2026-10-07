@@ -352,12 +352,15 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
 }
 
 from .extra_translations import EXTRA_TRANSLATIONS
+from .final_boss_translations import FINAL_BOSS_TRANSLATIONS
 from .hisopo_translations import HISOPO_TRANSLATIONS
 from .monetization_translations import MONETIZATION_TRANSLATIONS
 
 
 TRANSLATIONS.update(EXTRA_TRANSLATIONS)
 for _language, _catalog in HISOPO_TRANSLATIONS.items():
+    TRANSLATIONS[_language].update(_catalog)
+for _language, _catalog in FINAL_BOSS_TRANSLATIONS.items():
     TRANSLATIONS[_language].update(_catalog)
 for _language, _catalog in MONETIZATION_TRANSLATIONS.items():
     TRANSLATIONS[_language].update(_catalog)

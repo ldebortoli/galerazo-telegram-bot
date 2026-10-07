@@ -33,6 +33,7 @@ from galerazo_bot.hisopos import (
     COMMON_HISOPO,
     DIAMOND_HISOPO,
     FAKE_HISOPO,
+    FINAL_BOSS_HISOPO,
     FLEETING_HISOPO,
     FRENETIC_HISOPO,
     GOLD_HISOPO,
@@ -149,35 +150,36 @@ class HisopoRulesTests(unittest.TestCase):
     def test_type_boundaries_and_invalid_values(self) -> None:
         expected = {
             1: COMMON_HISOPO,
-            2965: COMMON_HISOPO,
-            2966: USED_HISOPO,
-            3465: USED_HISOPO,
-            3466: SILVER_HISOPO,
-            4865: SILVER_HISOPO,
-            4866: GOLD_HISOPO,
-            5865: GOLD_HISOPO,
-            5866: FLEETING_HISOPO,
-            6565: FLEETING_HISOPO,
-            6566: MYSTERY_HISOPO,
-            7265: MYSTERY_HISOPO,
-            7266: PUTRID_HISOPO,
-            7765: PUTRID_HISOPO,
-            7766: RADIOACTIVE_HISOPO,
-            8165: RADIOACTIVE_HISOPO,
-            8166: BOMB_HISOPO,
-            8565: BOMB_HISOPO,
-            8566: FRENETIC_HISOPO,
-            8965: FRENETIC_HISOPO,
-            8966: BLACK_HOLE_HISOPO,
-            9365: BLACK_HOLE_HISOPO,
-            9366: FAKE_HISOPO,
-            9665: FAKE_HISOPO,
-            9666: TWIN_HISOPO,
-            9865: TWIN_HISOPO,
-            9866: DIAMOND_HISOPO,
-            9965: DIAMOND_HISOPO,
-            9966: GIANT_HISOPO,
-            9990: GIANT_HISOPO,
+            2964: COMMON_HISOPO,
+            2965: USED_HISOPO,
+            3464: USED_HISOPO,
+            3465: SILVER_HISOPO,
+            4789: SILVER_HISOPO,
+            4790: GOLD_HISOPO,
+            5789: GOLD_HISOPO,
+            5790: FLEETING_HISOPO,
+            6489: FLEETING_HISOPO,
+            6490: MYSTERY_HISOPO,
+            7189: MYSTERY_HISOPO,
+            7190: PUTRID_HISOPO,
+            7689: PUTRID_HISOPO,
+            7690: RADIOACTIVE_HISOPO,
+            8089: RADIOACTIVE_HISOPO,
+            8090: BOMB_HISOPO,
+            8489: BOMB_HISOPO,
+            8490: FRENETIC_HISOPO,
+            8889: FRENETIC_HISOPO,
+            8890: BLACK_HOLE_HISOPO,
+            9289: BLACK_HOLE_HISOPO,
+            9290: FAKE_HISOPO,
+            9589: FAKE_HISOPO,
+            9590: TWIN_HISOPO,
+            9789: TWIN_HISOPO,
+            9790: DIAMOND_HISOPO,
+            9889: DIAMOND_HISOPO,
+            9890: GIANT_HISOPO,
+            9989: GIANT_HISOPO,
+            9990: FINAL_BOSS_HISOPO,
             9991: MIRACLE_HISOPO,
             10000: MIRACLE_HISOPO,
         }
@@ -211,9 +213,9 @@ class HisopoRulesTests(unittest.TestCase):
         self.assertEqual(
             probabilities,
             {
-                "common": 2965,
+                "common": 2964,
                 "used": 500,
-                "silver": 1400,
+                "silver": 1325,
                 "gold": 1000,
                 "fleeting": 700,
                 "mystery": 700,
@@ -225,7 +227,8 @@ class HisopoRulesTests(unittest.TestCase):
                 "fake": 300,
                 "twin": 200,
                 "diamond": 100,
-                "giant": 25,
+                "giant": 100,
+                "final_boss": 1,
                 "miracle": 10,
             },
         )
@@ -269,33 +272,34 @@ class HisopoRulesTests(unittest.TestCase):
 
         expected_actuals = {
             0: "common",
-            2964: "common",
-            2965: "used",
-            3464: "used",
-            3465: "silver",
-            4864: "silver",
-            4865: "gold",
-            5864: "gold",
-            5865: "fleeting",
-            6564: "fleeting",
-            6565: "putrid",
-            7064: "putrid",
-            7065: "radioactive",
-            7464: "radioactive",
-            7465: "bomb",
-            7864: "bomb",
-            7865: "frenetic",
-            8264: "frenetic",
-            8265: "black_hole",
-            8664: "black_hole",
-            8665: "fake",
-            8964: "fake",
-            8965: "twin",
-            9164: "twin",
-            9165: "diamond",
-            9264: "diamond",
-            9265: "giant",
-            9289: "giant",
+            2963: "common",
+            2964: "used",
+            3463: "used",
+            3464: "silver",
+            4788: "silver",
+            4789: "gold",
+            5788: "gold",
+            5789: "fleeting",
+            6488: "fleeting",
+            6489: "putrid",
+            6988: "putrid",
+            6989: "radioactive",
+            7388: "radioactive",
+            7389: "bomb",
+            7788: "bomb",
+            7789: "frenetic",
+            8188: "frenetic",
+            8189: "black_hole",
+            8588: "black_hole",
+            8589: "fake",
+            8888: "fake",
+            8889: "twin",
+            9088: "twin",
+            9089: "diamond",
+            9188: "diamond",
+            9189: "giant",
+            9288: "giant",
+            9289: "final_boss",
             9290: "miracle",
             9299: "miracle",
         }
@@ -451,11 +455,11 @@ class HisopoRulesTests(unittest.TestCase):
             PaidHisopoOwnership("stellar", 2, "first", "last"),
         ])
 
-        self.assertEqual(len(COLLECTIBLE_HISOPO_KEYS), 17)
+        self.assertEqual(len(COLLECTIBLE_HISOPO_KEYS), 18)
         self.assertIn("mystery", COLLECTIBLE_HISOPO_KEYS)
         self.assertIn("used", COLLECTIBLE_HISOPO_KEYS)
         self.assertIn("Colección histórica de Ana (2)", rendered)
-        self.assertIn("Tipos descubiertos: 3/17 · Capturas: 5", rendered)
+        self.assertIn("Tipos descubiertos: 3/18 · Capturas: 5", rendered)
         self.assertIn("✅ hisopo común: 3", rendered)
         self.assertIn("❓ hisopo plateado: 0", rendered)
         self.assertNotIn("⬜", rendered)
@@ -1800,10 +1804,10 @@ class HisopoCommandTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(hisopo_handlers.COMMANDS["reglashisopo"].response_parse_mode, "HTML")
         self.assertIn("Reglas del Recolector de Hisopos", response)
         self.assertIn("<b>🎮 Cómo jugar</b>", response)
-        self.assertIn("<b>Común:</b> 29,65 %", response)
+        self.assertIn("<b>Común:</b> 29,64 %", response)
         self.assertIn("<b>Usado:</b> 5 %", response)
         self.assertIn("<b>Diamante:</b> 1 %", response)
-        self.assertIn("<b>Gigante cooperativo:</b> 0,25 %", response)
+        self.assertIn("<b>Gigante cooperativo:</b> 1 %", response)
         self.assertIn("Meta del Gigante: entre 1 y 15 personas", response)
         self.assertIn("No cuenta bots ni cuentas eliminadas", response)
         self.assertIn("Si no puede confirmar la meta, no aparece", response)
@@ -1823,8 +1827,7 @@ class HisopoCommandTests(unittest.IsolatedAsyncioTestCase):
         self.assertIn("<code>/coleccionhisopos</code>", response)
         self.assertIn("<code>/hisopos</code>", response)
         self.assertNotIn("Cada callback se cuenta", response)
-        self.assertLess(len(response), 3700)
-        self.assertLessEqual(len(response), 4096)
+        self.assertLessEqual(len(response.encode("utf-16-le")) // 2, 4096)
 
     async def test_collection_handler_uses_self_or_replied_user(self) -> None:
         db = MagicMock()

@@ -3,6 +3,8 @@ from __future__ import annotations
 from html import escape
 import re
 
+from .final_boss_translations import FINAL_BOSS_TRANSLATIONS
+
 
 HISOPO_TRANSLATIONS: dict[str, dict[str, str]] = {
     "es": {
@@ -811,7 +813,7 @@ HISOPO_RULE_TRANSLATIONS: dict[str, dict[str, str]] = {
             "- Funciona en grupos y supergrupos. Viene habilitado y un admin puede ajustar en /config una intensidad de 1, 5, 10, 15 o 20 % por mensaje válido.\n"
             "- Cuando aparece un Hisopo, la primera persona que toca «Capturar hisopo» se lo queda. Los clics posteriores no suman.\n"
             "- Común: 47 %, +1 pt.\n"
-            "- Plateado: 14 %, +2 pt.\n"
+            "- Plateado: 13,25 %, +2 pt.\n"
             "- Dorado: 10 %, +3 pt.\n"
             "- Fugaz: 7 %, +5 pt y vence al minuto.\n"
             "- Misterioso: 7 %, oculta uno de los otros tipos durante 20 minutos (60 si contiene un Gigante). Si contiene un Fugaz, sus +5 pt vencen al minuto; después revela el Fugaz por 0 pt.\n"
@@ -832,7 +834,7 @@ HISOPO_RULE_TRANSLATIONS: dict[str, dict[str, str]] = {
             "- It works in groups and supergroups. It starts enabled, and an admin can set a 1, 5, 10, 15, or 20% chance per valid message in /config.\n"
             "- When a Swab appears, the first person to press ‘Capture swab’ gets it. Later taps score nothing.\n"
             "- Common: 47%, +1 pt.\n"
-            "- Silver: 14%, +2 pt.\n"
+            "- Silver: 13.25%, +2 pt.\n"
             "- Gold: 10%, +3 pt.\n"
             "- Fleeting: 7%, +5 pt and expires after one minute.\n"
             "- Mystery: 7%, hides one of the other types for 20 minutes (60 if it contains a Giant). If it contains a Fleeting Swab, its +5 pt expire after one minute; it is then revealed for 0 pt.\n"
@@ -852,7 +854,7 @@ HISOPO_RULE_TRANSLATIONS: dict[str, dict[str, str]] = {
             "Reglas del Recolector de Hisopos\n\n"
             "- Funciona en grupos y supergrupos. Viene activado y un administrador puede ajustar en /config una intensidad del 1, 5, 10, 15 o 20 % por mensaje válido.\n"
             "- Cuando aparece un hisopo, se lo queda la primera persona que pulsa «Capturar hisopo». Las pulsaciones posteriores no suman.\n"
-            "- Común: 47 %, +1 pt.\n- Plateado: 14 %, +2 pt.\n- Dorado: 10 %, +3 pt.\n"
+            "- Común: 47 %, +1 pt.\n- Plateado: 13,25 %, +2 pt.\n- Dorado: 10 %, +3 pt.\n"
             "- Fugaz: 7 %, +5 pt y caduca al minuto.\n"
             "- Misterioso: 7 %, oculta uno de los demás tipos durante 20 minutos (60 si contiene un Gigante). Si contiene un Fugaz, sus +5 pt caducan al minuto; después lo revela por 0 pt.\n"
             "- Putrefacto: 5 %, se disfraza de común, plateado, dorado o diamante y resta 2 pt al capturarlo.\n"
@@ -871,7 +873,7 @@ HISOPO_RULE_TRANSLATIONS: dict[str, dict[str, str]] = {
             "Regles del Recol·lector de Bastonets\n\n"
             "- Funciona en grups i supergrups. Ve activat i un administrador pot ajustar a /config una probabilitat de l'1, 5, 10, 15 o 20 % per missatge vàlid.\n"
             "- Quan apareix un bastonet, la primera persona que prem «Captura el bastonet» se'l queda. Els tocs posteriors no puntuen.\n"
-            "- Comú: 47 %, +1 pt.\n- Platejat: 14 %, +2 pt.\n- Daurat: 10 %, +3 pt.\n"
+            "- Comú: 47 %, +1 pt.\n- Platejat: 13,25 %, +2 pt.\n- Daurat: 10 %, +3 pt.\n"
             "- Fugaç: 7 %, +5 pt i caduca al cap d'un minut.\n"
             "- Misteriós: 7 %, amaga un dels altres tipus durant 20 minuts (60 si conté un Gegant). Si conté un Fugaç, els +5 pt caduquen al minut; després es revela per 0 pt.\n"
             "- Putrefacte: 5 %, es disfressa de comú, platejat, daurat o diamant i resta 2 pt quan es captura.\n"
@@ -890,7 +892,7 @@ HISOPO_RULE_TRANSLATIONS: dict[str, dict[str, str]] = {
             "Regeln des Wattestäbchen-Sammlers\n\n"
             "- Das Spiel läuft in Gruppen und Supergruppen und ist standardmäßig aktiv. Ein Admin stellt in /config eine Chance von 1, 5, 10, 15 oder 20 % pro gültiger Nachricht ein.\n"
             "- Wer zuerst auf „Wattestäbchen fangen“ tippt, erhält es. Spätere Klicks geben keine Punkte.\n"
-            "- Gewöhnlich: 47 %, +1 Pkt.\n- Silber: 14 %, +2 Pkt.\n- Gold: 10 %, +3 Pkt.\n"
+            "- Gewöhnlich: 47 %, +1 Pkt.\n- Silber: 13,25 %, +2 Pkt.\n- Gold: 10 %, +3 Pkt.\n"
             "- Flüchtig: 7 %, +5 Pkt. und verfällt nach einer Minute.\n"
             "- Mysteriös: 7 %, verbirgt 20 Minuten (60 bei einem Riesen) lang einen anderen Typ. Enthält es ein Flüchtiges, verfallen dessen +5 Pkt. nach einer Minute; danach wird es für 0 Pkt. enthüllt.\n"
             "- Verrottet: 5 %, tarnt sich als gewöhnlich, silbern, golden oder diamant und zieht beim Fangen 2 Pkt. ab.\n"
@@ -909,7 +911,7 @@ HISOPO_RULE_TRANSLATIONS: dict[str, dict[str, str]] = {
             "Kotoi Biltzailearen arauak\n\n"
             "- Talde eta supertaldeetan dabil eta lehenetsita aktibo dago. Administratzaileak /config bidez % 1, 5, 10, 15 edo 20ko aukera ezar dezake baliozko mezu bakoitzeko.\n"
             "- «Harrapatu kotoi-zotza» lehenengo sakatzen duenak irabazten du; ondorengoek ez dute punturik.\n"
-            "- Arrunta: % 47, +1 puntu.\n- Zilarrezkoa: % 14, +2.\n- Urrezkoa: % 10, +3.\n"
+            "- Arrunta: % 47, +1 puntu.\n- Zilarrezkoa: % 13,25, +2.\n- Urrezkoa: % 10, +3.\n"
             "- Iheskorra: % 7, +5 eta minutu batean iraungitzen da.\n"
             "- Misteriotsua: % 7, beste mota bat ezkutatzen du 20 minutuz (60 Erraldoia bada). Iheskorra bada, +5 puntuak minutu batean iraungitzen dira; gero 0 punturekin agertzen da.\n"
             "- Ustela: % 5, arrunt, zilar, urre edo diamante gisa mozorrotzen da eta harrapatzean 2 puntu kentzen ditu.\n"
@@ -928,7 +930,7 @@ HISOPO_RULE_TRANSLATIONS: dict[str, dict[str, str]] = {
             "Règles du Collectionneur de Cotons-tiges\n\n"
             "- Il fonctionne dans les groupes et supergroupes et est activé par défaut. Un admin règle dans /config une chance de 1, 5, 10, 15 ou 20 % par message valide.\n"
             "- La première personne qui appuie sur « Capturer le coton-tige » le gagne. Les suivantes ne marquent rien.\n"
-            "- Commun : 47 %, +1 pt.\n- Argent : 14 %, +2 pt.\n- Or : 10 %, +3 pt.\n"
+            "- Commun : 47 %, +1 pt.\n- Argent : 13,25 %, +2 pt.\n- Or : 10 %, +3 pt.\n"
             "- Fugace : 7 %, +5 pt et expire après une minute.\n"
             "- Mystérieux : 7 %, cache un autre type pendant 20 minutes (60 s'il contient un Géant). S'il contient un Fugace, ses +5 pt expirent après une minute ; il est ensuite révélé pour 0 pt.\n"
             "- Putride : 5 %, se déguise en commun, argent, or ou diamant et retire 2 pt à la capture.\n"
@@ -947,7 +949,7 @@ HISOPO_RULE_TRANSLATIONS: dict[str, dict[str, str]] = {
             "Hisopo Ñembyatýha mbojojaha\n\n"
             "- Omba'apo aty ha supergrupo-pe ha oñemyendy ijeheguiete. Admin omoĩkuaa /config-pe 1, 5, 10, 15 térã 20 % opa ñe'ẽmondo oikóvare.\n"
             "- Pe ojopy raẽva «Ejapyhy hisopo» ogueraha; umi ojopy upe rire ndohupytýi kyta.\n"
-            "- Jepivegua: 47 %, +1 kyta.\n- Plata: 14 %, +2.\n- Oro: 10 %, +3.\n"
+            "- Jepivegua: 47 %, +1 kyta.\n- Plata: 13,25 %, +2.\n- Oro: 10 %, +3.\n"
             "- Pya'e: 7 %, +5 ha oñembyai peteĩ minúto rire.\n"
             "- Ñemigua: 7 %, oñomi ambueichagua 20 minúto (Tuichaitéva ramo, 60 minúto) aja. Pya'e ramo, +5 opa peteĩ minúto rire; upéi ojekuaa 0 kytáre.\n"
             "- Tujúva: 5 %, oñemonde jepivegua, plata, oro térã diamánteramo ha ojehape'ã 2 kyta ojejapyhývo.\n"
@@ -966,7 +968,7 @@ HISOPO_RULE_TRANSLATIONS: dict[str, dict[str, str]] = {
             "Regole del Raccoglitore di Cotton Fioc\n\n"
             "- Funziona in gruppi e supergruppi ed è attivo per impostazione predefinita. Un admin imposta in /config una probabilità dell'1, 5, 10, 15 o 20 % per messaggio valido.\n"
             "- La prima persona che preme «Cattura cotton fioc» lo ottiene; i tocchi successivi non danno punti.\n"
-            "- Comune: 47 %, +1 pt.\n- Argento: 14 %, +2 pt.\n- Oro: 10 %, +3 pt.\n"
+            "- Comune: 47 %, +1 pt.\n- Argento: 13,25 %, +2 pt.\n- Oro: 10 %, +3 pt.\n"
             "- Fugace: 7 %, +5 pt e scade dopo un minuto.\n"
             "- Misterioso: 7 %, nasconde un altro tipo per 20 minuti (60 se contiene un Gigante). Se contiene un Fugace, i suoi +5 pt scadono dopo un minuto; poi viene rivelato per 0 pt.\n"
             "- Putrefatto: 5 %, si traveste da comune, argento, oro o diamante e sottrae 2 pt alla cattura.\n"
@@ -985,7 +987,7 @@ HISOPO_RULE_TRANSLATIONS: dict[str, dict[str, str]] = {
             "綿棒コレクターのルール\n\n"
             "- グループとスーパーグループで動作し、初期状態で有効です。管理者は /config で有効なメッセージごとの出現率を1、5、10、15、20%に設定できます。\n"
             "- 「綿棒を捕獲」を最初に押した人が獲得し、それ以降のタップには得点がありません。\n"
-            "- 通常：47%、+1点。\n- 銀：14%、+2点。\n- 金：10%、+3点。\n"
+            "- 通常：47%、+1点。\n- 銀：13.25%、+2点。\n- 金：10%、+3点。\n"
             "- 一瞬：7%、+5点、1分で期限切れ。\n"
             "- ミステリー：7%、他の種類を20分間（巨大の場合は60分間）隠します。一瞬の綿棒なら+5点は1分で失効し、その後は0点として正体が分かります。\n"
             "- 腐敗：5%、通常・銀・金・ダイヤに変装し、捕獲すると2点減ります。\n"
@@ -1004,7 +1006,7 @@ HISOPO_RULE_TRANSLATIONS: dict[str, dict[str, str]] = {
             "Regulae Collectoris Bacillorum\n\n"
             "- In gregibus et supergregibus operatur atque initio activum est. Administrator in /config probabilitatem 1, 5, 10, 15 aut 20 % pro nuntio valido statuit.\n"
             "- Qui primus «Bacillum cape» premit id accipit; posteriores nulla puncta capiunt.\n"
-            "- Commune: 47 %, +1 punctum.\n- Argenteum: 14 %, +2.\n- Aureum: 10 %, +3.\n"
+            "- Commune: 47 %, +1 punctum.\n- Argenteum: 13,25 %, +2.\n- Aureum: 10 %, +3.\n"
             "- Fugax: 7 %, +5 et post unum minutum perit.\n"
             "- Arcanum: 7 %, aliud genus per 20 minuta (60 si Gigas inest) celat. Si Fugax inest, +5 post minutum pereunt; deinde pro 0 punctis revelatur.\n"
             "- Putridum: 5 %, commune, argenteum, aureum aut adamantinum simulat et captum 2 puncta aufert.\n"
@@ -1023,7 +1025,7 @@ HISOPO_RULE_TRANSLATIONS: dict[str, dict[str, str]] = {
             "Regels van de Wattenstaafjesverzamelaar\n\n"
             "- Werkt in groepen en supergroepen en staat standaard aan. Een beheerder stelt in /config een kans van 1, 5, 10, 15 of 20% per geldig bericht in.\n"
             "- Wie het eerst op ‘Wattenstaafje vangen’ tikt, krijgt het. Latere tikken leveren niets op.\n"
-            "- Gewoon: 47%, +1 pt.\n- Zilver: 14%, +2 pt.\n- Goud: 10%, +3 pt.\n"
+            "- Gewoon: 47%, +1 pt.\n- Zilver: 13,25%, +2 pt.\n- Goud: 10%, +3 pt.\n"
             "- Vluchtig: 7%, +5 pt en verloopt na één minuut.\n"
             "- Mysterieus: 7%, verbergt 20 minuten (60 bij een Reus) een ander type. Bevat het Vluchtig, dan vervalt +5 pt na één minuut; daarna wordt het voor 0 pt onthuld.\n"
             "- Verrot: 5%, vermomt zich als gewoon, zilver, goud of diamant en trekt bij vangst 2 pt af.\n"
@@ -1042,7 +1044,7 @@ HISOPO_RULE_TRANSLATIONS: dict[str, dict[str, str]] = {
             "Regras do Coletor de Cotonetes\n\n"
             "- Funciona em grupos e supergrupos e vem ativado. Um admin configura em /config uma chance de 1, 5, 10, 15 ou 20% por mensagem válida.\n"
             "- A primeira pessoa que tocar em “Capturar cotonete” fica com ele. Toques posteriores não pontuam.\n"
-            "- Comum: 47%, +1 pt.\n- Prateado: 14%, +2 pt.\n- Dourado: 10%, +3 pt.\n"
+            "- Comum: 47%, +1 pt.\n- Prateado: 13,25%, +2 pt.\n- Dourado: 10%, +3 pt.\n"
             "- Fugaz: 7%, +5 pt e expira em um minuto.\n"
             "- Misterioso: 7%, esconde outro tipo por 20 minutos (60 se contiver um Gigante). Se contiver um Fugaz, os +5 pt expiram em um minuto; depois ele é revelado por 0 pt.\n"
             "- Pútrido: 5%, se disfarça de comum, prateado, dourado ou diamante e tira 2 pt quando capturado.\n"
@@ -1061,7 +1063,7 @@ HISOPO_RULE_TRANSLATIONS: dict[str, dict[str, str]] = {
             "Regras do Coletor de Cotonetes\n\n"
             "- Funciona em grupos e supergrupos e vem ativado. Um administrador configura em /config uma probabilidade de 1, 5, 10, 15 ou 20 % por mensagem válida.\n"
             "- A primeira pessoa que carregar em «Capturar cotonete» fica com ele. Os toques seguintes não pontuam.\n"
-            "- Comum: 47 %, +1 pt.\n- Prateado: 14 %, +2 pt.\n- Dourado: 10 %, +3 pt.\n"
+            "- Comum: 47 %, +1 pt.\n- Prateado: 13,25 %, +2 pt.\n- Dourado: 10 %, +3 pt.\n"
             "- Fugaz: 7 %, +5 pt e expira num minuto.\n"
             "- Misterioso: 7 %, esconde outro tipo durante 20 minutos (60 se contiver um Gigante). Se contiver um Fugaz, os +5 pt expiram num minuto; depois é revelado por 0 pt.\n"
             "- Pútrido: 5 %, disfarça-se de comum, prateado, dourado ou diamante e retira 2 pt ao ser capturado.\n"
@@ -1080,7 +1082,7 @@ HISOPO_RULE_TRANSLATIONS: dict[str, dict[str, str]] = {
             "Hisopo Huñuqpa kamachinkuna\n\n"
             "- Huñunakuykunapi, supergrupokunapipas llamk'an, qallariypitaq hap'ichisqa. Admin /config nisqapi 1, 5, 10, 15 utaq 20 % chaylla churayta atin allin willakuypaq.\n"
             "- «Hisopota hap'iy» ñawpaq ñit'iqmi hap'in; qhipapi ñit'iqkuna mana puntuta chaskinkuchu.\n"
-            "- Sapsi: 47 %, +1 puntu.\n- Qullqi: 14 %, +2.\n- Quri: 10 %, +3.\n"
+            "- Sapsi: 47 %, +1 puntu.\n- Qullqi: 13,25 %, +2.\n- Quri: 10 %, +3.\n"
             "- Utqay: 7 %, +5, huk minutupi tukukun.\n"
             "- Pakasqa: 7 %, huk rikch'aqta 20 minututa (Hatun kaptin, 60 minututa) pakan. Utqay kaptinqa +5 puntun huk minutupi tukukun; chaymanta 0 puntuwan rikuchikun.\n"
             "- Ismuq: 5 %, sapsi, qullqi, quri utaq diamante hina rikuchikun, hap'iptintaq 2 puntuta qichun.\n"
@@ -1099,7 +1101,7 @@ HISOPO_RULE_TRANSLATIONS: dict[str, dict[str, str]] = {
             "Правила Собирателя ватных палочек\n\n"
             "- Игра работает в группах и супергруппах и включена по умолчанию. Администратор задаёт в /config шанс 1, 5, 10, 15 или 20 % на допустимое сообщение.\n"
             "- Палочку получает тот, кто первым нажал «Поймать палочку». Последующие нажатия очков не дают.\n"
-            "- Обычная: 47 %, +1 очко.\n- Серебряная: 14 %, +2.\n- Золотая: 10 %, +3.\n"
+            "- Обычная: 47 %, +1 очко.\n- Серебряная: 13,25 %, +2.\n- Золотая: 10 %, +3.\n"
             "- Мимолётная: 7 %, +5 и исчезает через минуту.\n"
             "- Таинственная: 7 %, скрывает другой вид 20 минут (60 для Гигантской). Если внутри Мимолётная, её +5 сгорают через минуту; затем она раскрывается за 0 очков.\n"
             "- Гнилая: 5 %, маскируется под обычную, серебряную, золотую или алмазную и отнимает 2 очка при поимке.\n"
@@ -1118,7 +1120,7 @@ HISOPO_RULE_TRANSLATIONS: dict[str, dict[str, str]] = {
             "棉签收集者规则\n\n"
             "- 游戏用于群组和超级群组，默认开启。管理员可在 /config 中把每条有效消息的出现概率设为1%、5%、10%、15%或20%。\n"
             "- 最先点击“捕获棉签”的人获得棉签；之后的点击不得分。\n"
-            "- 普通：47%，+1分。\n- 银：14%，+2分。\n- 金：10%，+3分。\n"
+            "- 普通：47%，+1分。\n- 银：13.25%，+2分。\n- 金：10%，+3分。\n"
             "- 瞬逝：7%，+5分，一分钟后失效。\n"
             "- 神秘：7%，将其他一种类型隐藏20分钟（巨型为60分钟）。若其中是瞬逝棉签，+5分在一分钟后失效；之后以0分揭晓。\n"
             "- 腐烂：5%，伪装成普通、银、金或钻石，捕获时扣2分。\n"
@@ -1137,7 +1139,7 @@ HISOPO_RULE_TRANSLATIONS: dict[str, dict[str, str]] = {
             "棉花棒收集者規則\n\n"
             "- 遊戲用於群組和超級群組，預設開啟。管理員可在 /config 將每則有效訊息的出現機率設為1%、5%、10%、15%或20%。\n"
             "- 最先點擊「捕獲棉花棒」的人獲得棉花棒；之後的點擊不得分。\n"
-            "- 普通：47%，+1分。\n- 銀：14%，+2分。\n- 金：10%，+3分。\n"
+            "- 普通：47%，+1分。\n- 銀：13.25%，+2分。\n- 金：10%，+3分。\n"
             "- 瞬逝：7%，+5分，一分鐘後失效。\n"
             "- 神秘：7%，將其他一種類型隱藏20分鐘（巨型為60分鐘）。若其中是瞬逝棉花棒，+5分在一分鐘後失效；之後以0分揭曉。\n"
             "- 腐爛：5%，偽裝成普通、銀、金或鑽石，捕獲時扣2分。\n"
@@ -1375,109 +1377,109 @@ HISOPO_COOPERATIVE_RULE_UPDATES: dict[str, tuple[str, str, str]] = {
     "es": (
         "Común: 47 %",
         "Común: 46,65 %",
-        "- Gigante cooperativo: 0,25 %, necesita hasta 15 participantes; en chats más pequeños necesita a todos los miembros disponibles. Cada persona ayuda una sola vez y, si lo completan dentro de 60 minutos, todos ganan +4 pt. Muestra el progreso; si estaba oculto por un Misterioso, la primera ayuda lo revela y cuenta.\n"
+        "- Gigante cooperativo: 1 %, necesita hasta 15 participantes; en chats más pequeños necesita a todos los miembros disponibles. Cada persona ayuda una sola vez y, si lo completan dentro de 60 minutos, todos ganan +4 pt. Muestra el progreso; si estaba oculto por un Misterioso, la primera ayuda lo revela y cuenta.\n"
         "- Milagroso: 0,10 %, al capturarlo suma el mayor valor entre 15 pt y la mitad del puntaje del líder actual, redondeada hacia arriba, con un máximo de 1000 pt.",
     ),
     "en": (
         "Common: 47%",
         "Common: 46.65%",
-        "- Cooperative Giant: 0.25%, requires up to 15 participants; smaller chats require every available member. Each person helps once and, if completed within 60 minutes, everyone earns +4 pt. Progress is shown; if hidden by a Mystery Swab, the first helper reveals it and counts.\n"
+        "- Cooperative Giant: 1%, requires up to 15 participants; smaller chats require every available member. Each person helps once and, if completed within 60 minutes, everyone earns +4 pt. Progress is shown; if hidden by a Mystery Swab, the first helper reveals it and counts.\n"
         "- Miracle: 0.10%; when captured, it awards the greater of 15 pt or half the current leader's score, rounded up, capped at 1000 pt.",
     ),
     "es_ES": (
         "Común: 47 %",
         "Común: 46,65 %",
-        "- Gigante cooperativo: 0,25 %, necesita hasta 15 participantes; en chats más pequeños necesita a todos los miembros disponibles. Cada persona ayuda una sola vez y, si lo completan en 60 minutos, todos ganan +4 pt. Muestra el progreso; si estaba oculto por un Misterioso, la primera ayuda lo revela y cuenta.\n"
+        "- Gigante cooperativo: 1 %, necesita hasta 15 participantes; en chats más pequeños necesita a todos los miembros disponibles. Cada persona ayuda una sola vez y, si lo completan en 60 minutos, todos ganan +4 pt. Muestra el progreso; si estaba oculto por un Misterioso, la primera ayuda lo revela y cuenta.\n"
         "- Milagroso: 0,10 %; al capturarlo suma el mayor valor entre 15 pt y la mitad de la puntuación del líder actual, redondeada hacia arriba, con un máximo de 1000 pt.",
     ),
     "ca": (
         "Comú: 47 %",
         "Comú: 46,65 %",
-        "- Gegant cooperatiu: 0,25 %, necessita fins a 15 participants; als xats més petits necessita tots els membres disponibles. Cada persona ajuda una sola vegada i, si el completen en 60 minuts, tothom guanya +4 pt. Mostra el progrés; si l'amagava un Misteriós, la primera ajuda el revela i compta.\n"
+        "- Gegant cooperatiu: 1 %, necessita fins a 15 participants; als xats més petits necessita tots els membres disponibles. Cada persona ajuda una sola vegada i, si el completen en 60 minuts, tothom guanya +4 pt. Mostra el progrés; si l'amagava un Misteriós, la primera ajuda el revela i compta.\n"
         "- Miraculós: 0,10 %; en capturar-lo dona el valor més alt entre 15 pt i la meitat de la puntuació del líder actual, arrodonida cap amunt, amb un màxim de 1000 pt.",
     ),
     "de": (
         "Gewöhnlich: 47 %",
         "Gewöhnlich: 46,65 %",
-        "- Kooperativ riesig: 0,25 %, benötigt bis zu 15 Teilnehmende; in kleineren Chats alle verfügbaren Mitglieder. Jede Person hilft einmal. Bei Abschluss innerhalb von 60 Minuten erhalten alle +4 Pkt. Der Fortschritt ist sichtbar; war es im Mysteriösen verborgen, enthüllt und zählt die erste Hilfe.\n"
+        "- Kooperativ riesig: 1 %, benötigt bis zu 15 Teilnehmende; in kleineren Chats alle verfügbaren Mitglieder. Jede Person hilft einmal. Bei Abschluss innerhalb von 60 Minuten erhalten alle +4 Pkt. Der Fortschritt ist sichtbar; war es im Mysteriösen verborgen, enthüllt und zählt die erste Hilfe.\n"
         "- Wunder: 0,10 %; beim Fangen gibt es den höheren Wert aus 15 Pkt. und der aufgerundeten Hälfte der aktuellen Führungspunktzahl, höchstens 1000 Pkt.",
     ),
     "eu": (
         "Arrunta: % 47",
         "Arrunta: % 46,65",
-        "- Erraldoi kooperatiboa: % 0,25, gehienez 15 parte-hartzaile behar ditu; txat txikiagoetan, kide erabilgarri guztiak. Pertsona bakoitzak behin laguntzen du eta 60 minutuan osatuz gero denek +4 puntu lortzen dituzte. Aurrerapena ikusgai dago; Misteriotsu batek ezkutatzen bazuen, lehen laguntzak agerian uzten du eta zenbatzen du.\n"
+        "- Erraldoi kooperatiboa: % 1, gehienez 15 parte-hartzaile behar ditu; txat txikiagoetan, kide erabilgarri guztiak. Pertsona bakoitzak behin laguntzen du eta 60 minutuan osatuz gero denek +4 puntu lortzen dituzte. Aurrerapena ikusgai dago; Misteriotsu batek ezkutatzen bazuen, lehen laguntzak agerian uzten du eta zenbatzen du.\n"
         "- Miragarria: % 0,10; harrapatzean 15 puntu edo uneko liderraren puntuen erdia gorantz biribilduta ematen du, bietan handiena, gehienez 1000 puntu.",
     ),
     "fr": (
         "Commun : 47 %",
         "Commun : 46,65 %",
-        "- Géant coopératif : 0,25 %, demande jusqu'à 15 participants ; dans les petits groupes, tous les membres disponibles. Chaque personne aide une fois et, s'il est terminé en 60 minutes, tous gagnent +4 pt. La progression est affichée ; s'il était caché par un Mystérieux, la première aide le révèle et compte.\n"
+        "- Géant coopératif : 1 %, demande jusqu'à 15 participants ; dans les petits groupes, tous les membres disponibles. Chaque personne aide une fois et, s'il est terminé en 60 minutes, tous gagnent +4 pt. La progression est affichée ; s'il était caché par un Mystérieux, la première aide le révèle et compte.\n"
         "- Miraculeux : 0,10 % ; à la capture, rapporte le maximum entre 15 pt et la moitié arrondie au supérieur du score du leader actuel, dans la limite de 1000 pt.",
     ),
     "gn": (
         "Jepivegua: 47 %",
         "Jepivegua: 46,65 %",
-        "- Tuichaitéva oñondive: 0,25 %, oikotevẽ 15 peve tapicha; aty michĩvape, opa tapicha oĩva. Peteĩteĩ oipytyvõ peteĩ jevy ha, ojapopa ramo 60 aravo'i ryepýpe, opavave ohupyty +4 kyta. Ojehechauka mba'éichapa oho; Ojekuaa'ỹva omokañýrõ, pe pytyvõ peteĩha ohechauka ha oñeipapa.\n"
+        "- Tuichaitéva oñondive: 1 %, oikotevẽ 15 peve tapicha; aty michĩvape, opa tapicha oĩva. Peteĩteĩ oipytyvõ peteĩ jevy ha, ojapopa ramo 60 aravo'i ryepýpe, opavave ohupyty +4 kyta. Ojehechauka mba'éichapa oho; Ojekuaa'ỹva omokañýrõ, pe pytyvõ peteĩha ohechauka ha oñeipapa.\n"
         "- Marangatu: 0,10 %; ojejapyhy jave ome'ẽ pe tuichavéva 15 kyta térã mburuvicha ag̃agua kytakuéra mbyte, ojere yvate gotyo, ha 1000 kyta peve.",
     ),
     "it": (
         "Comune: 47 %",
         "Comune: 46,65 %",
-        "- Gigante cooperativo: 0,25 %, richiede fino a 15 partecipanti; nelle chat più piccole servono tutti i membri disponibili. Ogni persona aiuta una volta e, se viene completato entro 60 minuti, tutti guadagnano +4 pt. Mostra i progressi; se era nascosto da un Misterioso, il primo aiuto lo rivela e conta.\n"
+        "- Gigante cooperativo: 1 %, richiede fino a 15 partecipanti; nelle chat più piccole servono tutti i membri disponibili. Ogni persona aiuta una volta e, se viene completato entro 60 minuti, tutti guadagnano +4 pt. Mostra i progressi; se era nascosto da un Misterioso, il primo aiuto lo rivela e conta.\n"
         "- Miracoloso: 0,10 %; alla cattura assegna il maggiore tra 15 pt e metà, arrotondata per eccesso, del punteggio del leader attuale, fino a un massimo di 1000 pt.",
     ),
     "ja": (
         "通常：47%",
         "通常：46.65%",
-        "- 協力型巨大：0.25%。最大15人が必要で、より小さいチャットでは参加可能な全メンバーが必要です。各自1回だけ協力でき、60分以内に完成すると全員が+4点を獲得します。進捗を表示し、ミステリーに隠れていた場合は最初の協力で正体が明かされ、その1人も数えます。\n"
+        "- 協力型巨大：1%。最大15人が必要で、より小さいチャットでは参加可能な全メンバーが必要です。各自1回だけ協力でき、60分以内に完成すると全員が+4点を獲得します。進捗を表示し、ミステリーに隠れていた場合は最初の協力で正体が明かされ、その1人も数えます。\n"
         "- 奇跡：0.10%。捕獲時に15点と、現在の首位得点の半分を切り上げた値のうち、大きい方を獲得し、上限は1000点です。",
     ),
     "la": (
         "Commune: 47 %",
         "Commune: 46,65 %",
-        "- Gigante cooperativum: 0,25 %, usque ad 15 participes requirit; in gregibus minoribus omnes sodales praesentes. Quisque semel adiuvat et, si intra 60 minuta completur, omnes +4 puncta accipiunt. Progressus ostenditur; si a Mysterioso celabatur, primum auxilium id revelat et numeratur.\n"
+        "- Gigante cooperativum: 1 %, usque ad 15 participes requirit; in gregibus minoribus omnes sodales praesentes. Quisque semel adiuvat et, si intra 60 minuta completur, omnes +4 puncta accipiunt. Progressus ostenditur; si a Mysterioso celabatur, primum auxilium id revelat et numeratur.\n"
         "- Miraculosum: 0,10 %; captum maius praemium dat inter 15 puncta et dimidiam partem, sursum rotundatam, punctorum ducis praesentis, summo 1000 punctorum.",
     ),
     "nl": (
         "Gewoon: 47%",
         "Gewoon: 46,65%",
-        "- Coöperatieve reus: 0,25%, vereist maximaal 15 deelnemers; in kleinere chats alle beschikbare leden. Iedereen helpt één keer en als hij binnen 60 minuten voltooid wordt, krijgt iedereen +4 pt. De voortgang is zichtbaar; zat hij in een Mysterieus wattenstaafje, dan onthult en telt de eerste hulp.\n"
+        "- Coöperatieve reus: 1%, vereist maximaal 15 deelnemers; in kleinere chats alle beschikbare leden. Iedereen helpt één keer en als hij binnen 60 minuten voltooid wordt, krijgt iedereen +4 pt. De voortgang is zichtbaar; zat hij in een Mysterieus wattenstaafje, dan onthult en telt de eerste hulp.\n"
         "- Wonderbaarlijk: 0,10%; bij vangst geeft het de hoogste waarde van 15 pt of de naar boven afgeronde helft van de score van de huidige leider, tot maximaal 1000 pt.",
     ),
     "pt_BR": (
         "Comum: 47%",
         "Comum: 46,65%",
-        "- Gigante cooperativo: 0,25%, exige até 15 participantes; em chats menores, todos os membros disponíveis. Cada pessoa ajuda uma vez e, se concluírem em 60 minutos, todos ganham +4 pt. O progresso aparece; se estava oculto por um Misterioso, a primeira ajuda o revela e conta.\n"
+        "- Gigante cooperativo: 1%, exige até 15 participantes; em chats menores, todos os membros disponíveis. Cada pessoa ajuda uma vez e, se concluírem em 60 minutos, todos ganham +4 pt. O progresso aparece; se estava oculto por um Misterioso, a primeira ajuda o revela e conta.\n"
         "- Milagroso: 0,10%; ao capturar, concede o maior valor entre 15 pt e metade, arredondada para cima, da pontuação do líder atual, limitado a 1000 pt.",
     ),
     "pt_PT": (
         "Comum: 47 %",
         "Comum: 46,65 %",
-        "- Gigante cooperativo: 0,25 %, exige até 15 participantes; em chats menores, todos os membros disponíveis. Cada pessoa ajuda uma vez e, se o concluírem em 60 minutos, todos ganham +4 pt. O progresso é mostrado; se estava oculto por um Misterioso, a primeira ajuda revela-o e conta.\n"
+        "- Gigante cooperativo: 1 %, exige até 15 participantes; em chats menores, todos os membros disponíveis. Cada pessoa ajuda uma vez e, se o concluírem em 60 minutos, todos ganham +4 pt. O progresso é mostrado; se estava oculto por um Misterioso, a primeira ajuda revela-o e conta.\n"
         "- Milagroso: 0,10 %; ao capturar, concede o maior valor entre 15 pt e metade, arredondada para cima, da pontuação do líder atual, limitado a 1000 pt.",
     ),
     "quz": (
         "Sapsi: 47 %",
         "Sapsi: 46,65 %",
-        "- Hatun yanapanakuy: 0,25 %, 15 kama runakunata munan; aswan uchuy huñunakuykunapi, llapan tarikuq runakunata. Sapa runa huk kutilla yanapan, 60 minutopi tukuchiptinku llapanku +4 puntu chaskinku. Ñawpaqman riyta rikuchin; Pakasqa ukhunpi kashaptin, ñawpaq yanapakuq rikurichin hinaspa yupakun.\n"
+        "- Hatun yanapanakuy: 1 %, 15 kama runakunata munan; aswan uchuy huñunakuykunapi, llapan tarikuq runakunata. Sapa runa huk kutilla yanapan, 60 minutopi tukuchiptinku llapanku +4 puntu chaskinku. Ñawpaqman riyta rikuchin; Pakasqa ukhunpi kashaptin, ñawpaq yanapakuq rikurichin hinaspa yupakun.\n"
         "- Milagroso: 0,10 %; hap'iptin 15 puntuwan kunan ñawpaq kaqpa puntunpa kuskanmanta wichayman muyuchisqawan tupachin, aswan hatunta qun, 1000 puntu kama.",
     ),
     "ru": (
         "Обычная: 47 %",
         "Обычная: 46,65 %",
-        "- Кооперативная гигантская: 0,25 %, требует до 15 участников; в меньших чатах — всех доступных участников. Каждый помогает один раз. Если завершить за 60 минут, все получают +4 очка. Прогресс виден; если она скрыта в Таинственной, первая помощь раскрывает её и засчитывается.\n"
+        "- Кооперативная гигантская: 1 %, требует до 15 участников; в меньших чатах — всех доступных участников. Каждый помогает один раз. Если завершить за 60 минут, все получают +4 очка. Прогресс виден; если она скрыта в Таинственной, первая помощь раскрывает её и засчитывается.\n"
         "- Чудесная: 0,10 %; при поимке даёт большее из 15 очков и половины текущего счёта лидера с округлением вверх, но не более 1000 очков.",
     ),
     "zh_Hans": (
         "普通：47%",
         "普通：46.65%",
-        "- 合作巨型：0.25%，最多需要15人；较小的群组需要所有可参与成员。每人只能协助一次，若在60分钟内完成，所有人各得+4分。消息会显示进度；若藏在神秘棉签中，首次协助会揭晓并计入人数。\n"
+        "- 合作巨型：1%，最多需要15人；较小的群组需要所有可参与成员。每人只能协助一次，若在60分钟内完成，所有人各得+4分。消息会显示进度；若藏在神秘棉签中，首次协助会揭晓并计入人数。\n"
         "- 奇迹：0.10%，捕获时获得15分与当前领先者分数一半向上取整两者中的较大值，上限为1000分。",
     ),
     "zh_Hant": (
         "普通：47%",
         "普通：46.65%",
-        "- 合作巨型：0.25%，最多需要15人；較小的群組需要所有可參與成員。每人只能協助一次，若在60分鐘內完成，所有人各得+4分。訊息會顯示進度；若藏在神秘棉花棒中，首次協助會揭曉並計入人數。\n"
+        "- 合作巨型：1%，最多需要15人；較小的群組需要所有可參與成員。每人只能協助一次，若在60分鐘內完成，所有人各得+4分。訊息會顯示進度；若藏在神秘棉花棒中，首次協助會揭曉並計入人數。\n"
         "- 奇蹟：0.10%，捕獲時獲得15分與目前領先者分數一半無條件進位兩者中的較大值，上限為1000分。",
     ),
 }
@@ -2317,8 +2319,8 @@ for _language, _schedule_rule in HISOPO_SCHEDULE_CAP_RULES.items():
         "hisopos.rules"
     ].replace("\n- /hisopos", f"\n{_schedule_rule}\n- /hisopos", 1)
 for _language, _collection_rule in HISOPO_COLLECTION_RULES.items():
-    _collection_rule = _collection_rule.replace("12", "17", 1).replace(
-        "duodecim", "septendecim", 1
+    _collection_rule = _collection_rule.replace("12", "18", 1).replace(
+        "duodecim", "duodeviginti", 1
     )
     _mystery_giant_note = HISOPO_MYSTERY_GIANT_COLLECTION_NOTES[_language]
     _collection_rule = f"{_collection_rule} {_mystery_giant_note}"
@@ -2333,24 +2335,24 @@ for _language, _collection_rule in HISOPO_COLLECTION_RULES.items():
 
 
 HISOPO_USED_RULES: dict[str, tuple[str, str]] = {
-    "es": ("- Común: 29,65 %, +1 pt.", "- Usado: 5 %, se disfraza de común, plateado, dorado o diamante y resta 2 pt al capturarlo."),
-    "en": ("- Common: 29.65%, +1 pt.", "- Used: 5%, disguised as common, silver, gold or diamond, and subtracts 2 pt when captured."),
-    "es_ES": ("- Común: 29,65 %, +1 pt.", "- Usado: 5 %, se disfraza de común, plateado, dorado o diamante y resta 2 pt al capturarlo."),
-    "ca": ("- Comú: 29,65 %, +1 pt.", "- Usat: 5 %, es disfressa de comú, plata, or o diamant i resta 2 pt en capturar-lo."),
-    "de": ("- Gewöhnlich: 29,65 %, +1 Pkt.", "- Benutzt: 5 %, tarnt sich als gewöhnlich, silbern, golden oder Diamant und zieht beim Fangen 2 Pkt. ab."),
-    "eu": ("- Arrunta: % 29,65, +1 puntu.", "- Erabilia: % 5, arrunt, zilar, urre edo diamante gisa mozorrotzen da eta harrapatzean 2 puntu kentzen ditu."),
-    "fr": ("- Commun : 29,65 %, +1 pt.", "- Usagé : 5 %, se déguise en commun, argenté, doré ou diamant et retire 2 pt à la capture."),
-    "gn": ("- Jepivegua: 29,65 %, +1 kyta.", "- Ojeporúva: 5 %, oñemo'ã jepivegua, plata, óro térã diamánteramo ha ojapyhývo oipe'a 2 kyta."),
-    "it": ("- Comune: 29,65 %, +1 pt.", "- Usato: 5 %, si maschera da comune, argento, oro o diamante e sottrae 2 pt alla cattura."),
-    "ja": ("- 通常：29.65%、+1点。", "- 使用済み：5%。通常、銀、金、ダイヤに変装し、捕獲すると2点減ります。"),
-    "la": ("- Commune: 29,65 %, +1 punctum.", "- Usitatum: 5 %, commune, argenteum, aureum vel adamantinum simulans, captum 2 puncta detrahit."),
-    "nl": ("- Gewoon: 29,65%, +1 pt.", "- Gebruikt: 5%, vermomd als gewoon, zilver, goud of diamant en trekt bij vangst 2 pt af."),
-    "pt_BR": ("- Comum: 29,65%, +1 pt.", "- Usado: 5%, aparece disfarçado de comum, prata, ouro ou diamante e tira 2 pt ao ser capturado."),
-    "pt_PT": ("- Comum: 29,65 %, +1 pt.", "- Usado: 5 %, aparece disfarçado de comum, prata, ouro ou diamante e retira 2 pt quando é capturado."),
-    "quz": ("- Sapsi: 29,65 %, +1 puntu.", "- Llamk'achisqa: 5 %, sapsi, qullqi, quri utaq qhapaq rumi hina pakakun, hap'iptin 2 puntuta qichun."),
-    "ru": ("- Обычная: 29,65 %, +1 очко.", "- Использованная: 5 %, маскируется под обычную, серебряную, золотую или алмазную и при поимке снимает 2 очка."),
-    "zh_Hans": ("- 普通：29.65%，+1分。", "- 用过：5%，伪装成普通、银、金或钻石棉签，捕获时扣2分。"),
-    "zh_Hant": ("- 普通：29.65%，+1分。", "- 用過：5%，偽裝成普通、銀、金或鑽石棉花棒，捕獲時扣2分。"),
+    "es": ("- Común: 29,64 %, +1 pt.", "- Usado: 5 %, se disfraza de común, plateado, dorado o diamante y resta 2 pt al capturarlo."),
+    "en": ("- Common: 29.64%, +1 pt.", "- Used: 5%, disguised as common, silver, gold or diamond, and subtracts 2 pt when captured."),
+    "es_ES": ("- Común: 29,64 %, +1 pt.", "- Usado: 5 %, se disfraza de común, plateado, dorado o diamante y resta 2 pt al capturarlo."),
+    "ca": ("- Comú: 29,64 %, +1 pt.", "- Usat: 5 %, es disfressa de comú, plata, or o diamant i resta 2 pt en capturar-lo."),
+    "de": ("- Gewöhnlich: 29,64 %, +1 Pkt.", "- Benutzt: 5 %, tarnt sich als gewöhnlich, silbern, golden oder Diamant und zieht beim Fangen 2 Pkt. ab."),
+    "eu": ("- Arrunta: % 29,64, +1 puntu.", "- Erabilia: % 5, arrunt, zilar, urre edo diamante gisa mozorrotzen da eta harrapatzean 2 puntu kentzen ditu."),
+    "fr": ("- Commun : 29,64 %, +1 pt.", "- Usagé : 5 %, se déguise en commun, argenté, doré ou diamant et retire 2 pt à la capture."),
+    "gn": ("- Jepivegua: 29,64 %, +1 kyta.", "- Ojeporúva: 5 %, oñemo'ã jepivegua, plata, óro térã diamánteramo ha ojapyhývo oipe'a 2 kyta."),
+    "it": ("- Comune: 29,64 %, +1 pt.", "- Usato: 5 %, si maschera da comune, argento, oro o diamante e sottrae 2 pt alla cattura."),
+    "ja": ("- 通常：29.64%、+1点。", "- 使用済み：5%。通常、銀、金、ダイヤに変装し、捕獲すると2点減ります。"),
+    "la": ("- Commune: 29,64 %, +1 punctum.", "- Usitatum: 5 %, commune, argenteum, aureum vel adamantinum simulans, captum 2 puncta detrahit."),
+    "nl": ("- Gewoon: 29,64%, +1 pt.", "- Gebruikt: 5%, vermomd als gewoon, zilver, goud of diamant en trekt bij vangst 2 pt af."),
+    "pt_BR": ("- Comum: 29,64%, +1 pt.", "- Usado: 5%, aparece disfarçado de comum, prata, ouro ou diamante e tira 2 pt ao ser capturado."),
+    "pt_PT": ("- Comum: 29,64 %, +1 pt.", "- Usado: 5 %, aparece disfarçado de comum, prata, ouro ou diamante e retira 2 pt quando é capturado."),
+    "quz": ("- Sapsi: 29,64 %, +1 puntu.", "- Llamk'achisqa: 5 %, sapsi, qullqi, quri utaq qhapaq rumi hina pakakun, hap'iptin 2 puntuta qichun."),
+    "ru": ("- Обычная: 29,64 %, +1 очко.", "- Использованная: 5 %, маскируется под обычную, серебряную, золотую или алмазную и при поимке снимает 2 очка."),
+    "zh_Hans": ("- 普通：29.64%，+1分。", "- 用过：5%，伪装成普通、银、金或钻石棉签，捕获时扣2分。"),
+    "zh_Hant": ("- 普通：29.64%，+1分。", "- 用過：5%，偽裝成普通、銀、金或鑽石棉花棒，捕獲時扣2分。"),
 }
 
 for _language, (_common_rule, _used_rule) in HISOPO_USED_RULES.items():
@@ -2444,8 +2446,41 @@ def _compact_hisopo_rules(rules: str, headings: tuple[str, str, str, str, str]) 
     return "\n".join(rendered)
 
 
+# These exceptions belong to the general rules, whose ordinary expiration and
+# Mystery deadlines otherwise contradict the Final Boss's four-phase battle.
+_FINAL_BOSS_RULE_EDITS: dict[str, tuple[str, str, str]] = {
+    "es": ("60 si contiene un Gigante", "60 si contiene un Gigante o un Jefe Final", "Excepto el Jefe Final, que tiene reglas propias."),
+    "en": ("60 if it contains a Giant", "60 if it contains a Giant or Final Boss", "Except the Final Boss, which has its own rules."),
+    "es_ES": ("60 si contiene un Gigante", "60 si contiene un Gigante o un Jefe Final", "Excepto el Jefe Final, que tiene reglas propias."),
+    "ca": ("60 si conté un Gegant", "60 si conté un Gegant o Cap Final", "Excepte el Cap Final, que té regles pròpies."),
+    "de": ("60 bei einem Riesen", "60 bei einem Riesen oder Endboss", "Ausgenommen ist der Endboss mit eigenen Regeln."),
+    "eu": ("60 Erraldoia bada", "60 Erraldoia edo Azken Nagusia bada", "Azken Nagusia salbu, bere arauak baititu."),
+    "fr": ("60 s'il contient un Géant", "60 s'il contient un Géant ou Boss final", "Sauf le Boss final, qui a ses propres règles."),
+    "gn": ("Tuichaitéva ramo, 60 minúto", "Tuichaitéva térã Mburuvicha Paha ramo, 60 minúto", "Ndaha'éi Mburuvicha Paha: ha'e oguereko heko ambue."),
+    "it": ("60 se contiene un Gigante", "60 se contiene un Gigante o Boss finale", "Escluso il Boss finale, che ha regole proprie."),
+    "ja": ("巨大の場合は60分間", "巨大・ラスボスの場合は60分間", "独自ルールのあるラスボスは除きます。"),
+    "la": ("60 si Gigas inest", "60 si Gigas aut Dux Ultimus inest", "Praeter Ducem Ultimum, qui regulas proprias habet."),
+    "nl": ("60 bij een Reus", "60 bij een Reus of Eindbaas", "Behalve de Eindbaas, die eigen regels heeft."),
+    "pt_BR": ("60 se contiver um Gigante", "60 se contiver um Gigante ou Chefe Final", "Exceto o Chefe Final, que tem regras próprias."),
+    "pt_PT": ("60 se contiver um Gigante", "60 se contiver um Gigante ou Chefe Final", "Exceto o Chefe Final, que tem regras próprias."),
+    "quz": ("Hatun kaptin, 60 minututa", "Hatun utaq Tukukuq Apu kaptin, 60 minututa", "Tukukuq Aputa mana yupaspa: payqa kikin kamachiyuqmi."),
+    "ru": ("60 для Гигантской", "60 для Гигантской или Финального босса", "Кроме Финального босса: у него свои правила."),
+    "zh_Hans": ("巨型为60分钟", "巨型或最终首领为60分钟", "最终首领除外，它有独立规则。"),
+    "zh_Hant": ("巨型為60分鐘", "巨型或最終首領為60分鐘", "最終首領除外，它有獨立規則。"),
+}
+
+for _language, (_old_mystery, _new_mystery, _boss_exception) in _FINAL_BOSS_RULE_EDITS.items():
+    _lines = HISOPO_TRANSLATIONS[_language]["hisopos.rules"].splitlines()
+    _lines[8] = _lines[8].replace(_old_mystery, _new_mystery)
+    _lines[15] = f"- {_boss_exception} {_lines[15].removeprefix('- ')}"
+    _lines[22] = f"{_lines[22]} {_boss_exception}"
+    HISOPO_TRANSLATIONS[_language]["hisopos.rules"] = "\n".join(_lines)
+
 for _language, _headings in _HISOPO_RULE_HEADINGS.items():
     HISOPO_TRANSLATIONS[_language]["hisopos.rules"] = _compact_hisopo_rules(
         HISOPO_TRANSLATIONS[_language]["hisopos.rules"],
         _headings,
+    )
+    HISOPO_TRANSLATIONS[_language]["hisopos.rules"] += (
+        "\n\n" + FINAL_BOSS_TRANSLATIONS[_language]["boss.rules_summary"]
     )

@@ -6,11 +6,13 @@ cubre y debe pasar de `borrador` a `aprobado` antes de publicar una imagen. Una 
 vacía con estado `omitido` registra una excepción explícitamente solicitada por el usuario:
 el runtime avanza el cursor sin enviar un broadcast ni acumularla para otro release.
 
-## [0.71] desde=[0.68] estado=borrador
+## [0.72] desde=[0.68] estado=borrador
 
-Novedades de Galerazo Bot v0.71
+Novedades de Galerazo Bot v0.72
 
-El Hisopo gigante ahora dura una hora desde su aparición, también si está oculto en un Misterioso. Pide entre 1 y 15 participantes según las cuentas humanas no eliminadas del grupo; los bots y las cuentas eliminadas no cuentan para la meta. Mantiene su rareza y el premio de +4 puntos por participante al completarlo.
+Llega el Jefe Final: un evento muy raro con cuatro fases de cooperación, velocidad, coordinación y un acertijo. Ganar las cuatro desbloquea el Jefe para quienes ayudaron y reparte puntos según su aporte. Si pierden, se aplican las reglas de esa fase. Su imagen queda en el chat como recuerdo; el resultado explica los puntos y, si llegaron a la última fase, la solución al perder. /reglashisopo incluye las reglas completas.
+
+El Hisopo gigante sube al 1 %, dura una hora y pide entre 1 y 15 personas, sin contar bots ni cuentas eliminadas. Conserva el premio de +4 puntos por participante al completarlo. El Plateado queda en 13,25 %, el Jefe Final en 0,01 % y el Común en 29,64 %.
 
 Correcciones y mejoras: al reintentar una carga en la Mini App se conserva el grupo elegido después de volver a tu álbum desde una visita compartida.
 

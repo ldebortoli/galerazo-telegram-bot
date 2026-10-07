@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.72] - 2026-10-07
+
+- Nuevo Hisopo Jefe Final: cuatro fases cooperativas, imágenes propias, plazos de 60/30/30/10 minutos, acertijo final y colección compartida al ganar. Los premios se calculan por participación y se acreditan juntos únicamente tras completar las cuatro fases; las derrotas aplican las penalizaciones o premios consuelo de cada fase.
+- El mensaje del Jefe se conserva al ganar, perder o vencer. Un mensaje posterior explica el resultado y el reparto; al perder en la fase final también revela la solución del acertijo. El avance y la acreditación sobreviven a reinicios y rechazan callbacks duplicados.
+- Correcciones y mejoras: Gigante sube al 1 % y Plateado baja al 13,25 %; Jefe Final tiene 0,01 % y Común baja al 29,64 %. Reglas y colección actualizadas en los 18 idiomas.
+
 ## [0.71] - 2026-10-07
 
 - Correcciones y mejoras para la integración de los álbumes compartidos con la web.

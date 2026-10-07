@@ -237,6 +237,9 @@ def migrate_chat_data(conn: sqlite3.Connection, old_chat_id: str, new_chat_id: s
         "DELETE FROM hisopo_race_presses WHERE chat_id = ?",
         (old_chat_id,),
     )
+    from ..final_boss import migrate_chat_data as migrate_final_boss_data
+
+    migrate_final_boss_data(conn, old_chat_id, new_chat_id)
     conn.execute("DELETE FROM hisopo_spawns WHERE chat_id = ?", (old_chat_id,))
     conn.execute(
         "UPDATE hisopo_schedules SET chat_id = ? WHERE chat_id = ?",

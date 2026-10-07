@@ -67,6 +67,7 @@ FAKE_HISOPO = HisopoKind("fake", 0, next_day_spawns=0)
 TWIN_HISOPO = HisopoKind("twin", 4, immediate_spawns=1)
 DIAMOND_HISOPO = HisopoKind("diamond", 10)
 GIANT_HISOPO = HisopoKind("giant", 4, expiration=HISOPO_GIANT_EXPIRATION)
+FINAL_BOSS_HISOPO = HisopoKind("final_boss", 0, expiration=HISOPO_GIANT_EXPIRATION, hides_points=True)
 MIRACLE_HISOPO = HisopoKind("miracle", 15, hides_points=True)
 EXPIRED_HISOPO = HisopoKind("expired", 0, next_day_spawns=0)
 
@@ -88,27 +89,29 @@ HISOPO_KINDS = {
         TWIN_HISOPO,
         DIAMOND_HISOPO,
         GIANT_HISOPO,
+        FINAL_BOSS_HISOPO,
         MIRACLE_HISOPO,
         EXPIRED_HISOPO,
     )
 }
 COLLECTIBLE_HISOPO_KEYS = tuple(HISOPO_KINDS)
 HISOPO_PROBABILITY_RANGES = {
-    "common": (1, 2965),
-    "used": (2966, 3465),
-    "silver": (3466, 4865),
-    "gold": (4866, 5865),
-    "fleeting": (5866, 6565),
-    "mystery": (6566, 7265),
-    "putrid": (7266, 7765),
-    "radioactive": (7766, 8165),
-    "bomb": (8166, 8565),
-    "frenetic": (8566, 8965),
-    "black_hole": (8966, 9365),
-    "fake": (9366, 9665),
-    "twin": (9666, 9865),
-    "diamond": (9866, 9965),
-    "giant": (9966, 9990),
+    "common": (1, 2964),
+    "used": (2965, 3464),
+    "silver": (3465, 4789),
+    "gold": (4790, 5789),
+    "fleeting": (5790, 6489),
+    "mystery": (6490, 7189),
+    "putrid": (7190, 7689),
+    "radioactive": (7690, 8089),
+    "bomb": (8090, 8489),
+    "frenetic": (8490, 8889),
+    "black_hole": (8890, 9289),
+    "fake": (9290, 9589),
+    "twin": (9590, 9789),
+    "diamond": (9790, 9889),
+    "giant": (9890, 9989),
+    "final_boss": (9990, 9990),
     "miracle": (9991, 10_000),
 }
 RADIOACTIVE_POINT_VALUES = (-3, -1, 2, 4, 6)

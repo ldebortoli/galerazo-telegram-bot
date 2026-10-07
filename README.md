@@ -437,22 +437,25 @@ Una segunda y única tirada de `1` a `10.000` define la rareza, pero se hace sol
 
 | Tirada | Aparición | Tipo sorteado | Qué muestra al aparecer | Efecto al capturarlo |
 | --- | ---: | --- | --- | --- |
-| 1-2965 | 29,65 % | común | imagen y valor del común | suma 1 punto |
-| 2966-3465 | 5 % | usado | se disfraza de común, plateado, dorado o diamante | revela el usado, resta 2 puntos y puede dejar puntaje negativo |
-| 3466-4865 | 14 % | plateado | imagen y valor del plateado | suma 2 puntos |
-| 4866-5865 | 10 % | dorado | imagen y valor del dorado | suma 3 puntos |
-| 5866-6565 | 7 % | fugaz | imagen y valor del fugaz | suma 5 puntos; se vence en 1 minuto |
-| 6566-7265 | 7 % | misterioso | imagen de misterioso y valor oculto | contiene uno de los otros quince tipos sorteables y aplica su efecto |
-| 7266-7765 | 5 % | putrefacto | se disfraza de común, plateado, dorado o diamante | revela el putrefacto, resta 2 puntos y puede dejar puntaje negativo |
-| 7766-8165 | 4 % | radiactivo | imagen de radiactivo y valor oculto | calcula al capturarlo `-3`, `-1`, `2`, `4` o `6` según el tiempo transcurrido |
-| 8166-8565 | 4 % | bomba | imagen de bomba y tablero 4x4 | una casilla da +10, otra resta 10 y catorce son neutras |
-| 8566-8965 | 4 % | frenético | imagen del frenético y botón de carrera | la primera persona que llega a 20 pulsaciones suma 3 puntos |
-| 8966-9365 | 4 % | agujero negro | imagen del agujero negro y botón de carrera | carrera a 20 con transferencia de puntos de quienes pierden |
-| 9366-9665 | 3 % | falso | se disfraza de común, plateado, dorado o diamante | revela el falso, vale 0 y no agenda para el día siguiente |
-| 9666-9865 | 2 % | gemelo | imagen y valor del gemelo | suma 4 puntos, lanza otro hisopo en el momento y agenda uno para el día siguiente |
-| 9866-9965 | 1 % | diamante | imagen y valor del diamante | suma 10 puntos |
-| 9966-9990 | 0,25 % | gigante cooperativo | imagen, premio y progreso del gigante | requiere cooperación; cada participante gana 4 puntos si se completa |
+| 1-2964 | 29,64 % | común | imagen y valor del común | suma 1 punto |
+| 2965-3464 | 5 % | usado | se disfraza de común, plateado, dorado o diamante | revela el usado, resta 2 puntos y puede dejar puntaje negativo |
+| 3465-4789 | 13,25 % | plateado | imagen y valor del plateado | suma 2 puntos |
+| 4790-5789 | 10 % | dorado | imagen y valor del dorado | suma 3 puntos |
+| 5790-6489 | 7 % | fugaz | imagen y valor del fugaz | suma 5 puntos; se vence en 1 minuto |
+| 6490-7189 | 7 % | misterioso | imagen de misterioso y valor oculto | contiene uno de los otros quince tipos sorteables y aplica su efecto |
+| 7190-7689 | 5 % | putrefacto | se disfraza de común, plateado, dorado o diamante | revela el putrefacto, resta 2 puntos y puede dejar puntaje negativo |
+| 7690-8089 | 4 % | radiactivo | imagen de radiactivo y valor oculto | calcula al capturarlo `-3`, `-1`, `2`, `4` o `6` según el tiempo transcurrido |
+| 8090-8489 | 4 % | bomba | imagen de bomba y tablero 4x4 | una casilla da +10, otra resta 10 y catorce son neutras |
+| 8490-8889 | 4 % | frenético | imagen del frenético y botón de carrera | la primera persona que llega a 20 pulsaciones suma 3 puntos |
+| 8890-9289 | 4 % | agujero negro | imagen del agujero negro y botón de carrera | carrera a 20 con transferencia de puntos de quienes pierden |
+| 9290-9589 | 3 % | falso | se disfraza de común, plateado, dorado o diamante | revela el falso, vale 0 y no agenda para el día siguiente |
+| 9590-9789 | 2 % | gemelo | imagen y valor del gemelo | suma 4 puntos, lanza otro hisopo en el momento y agenda uno para el día siguiente |
+| 9790-9889 | 1 % | diamante | imagen y valor del diamante | suma 10 puntos |
+| 9890-9989 | 1 % | gigante cooperativo | imagen, premio y progreso del gigante | requiere cooperación; cada participante gana 4 puntos si se completa |
+| 9990 | 0,01 % | jefe final | cuatro fases cooperativas | premios por contribución al ganar todas las fases |
 | 9991-10000 | 0,10 % | milagroso | imagen del milagroso y valor oculto | suma el máximo entre 15 puntos y la mitad del puntaje del líder actual, con un tope de 1000 puntos |
+
+El [Jefe Final](docs/FINAL_BOSS.md) tiene cuatro fases, plazos propios de 60/30/30/10 minutos y premios que se acreditan juntos al ganar. Su foto se conserva también al perder o vencer; el resultado posterior explica los puntos y solo revela la solución del acertijo si llegaron a la fase final. `/reglashisopo` envía sus reglas en un segundo mensaje.
 
 Falso, Putrefacto y Usado eligen una segunda apariencia: común 75 %, plateado 14 %, dorado 10 % y diamante 1 %. Antes del clic se muestran la foto y el valor aparente de esa máscara; al capturarlos revelan su foto, tipo y resultado reales. Putrefacto y Usado restan 2 puntos; Falso vale 0.
 

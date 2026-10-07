@@ -1,12 +1,12 @@
 # Giant participant census
 
-The Giant keeps its 0.25% direct type probability and +4 reward. From version 0.70,
+The Giant has a 1% direct type probability from version 0.72 and keeps its +4 reward. From version 0.70,
 new Giants last one hour from their appearance, including when hidden by a
 Mystery. Revealing them does not restart the clock. Existing persisted deadlines
 are preserved. Other types retain their existing lifetimes.
 Its target is now `max(1, min(15, verified human accounts that are not deleted))`.
 The target is fixed before sending the appearance, including a Giant hidden by a
-Mystery. Other Hisopos do not invoke the census.
+Mystery. The Final Boss uses the same census for its first phase; other Hisopos do not invoke it.
 
 ## Configuration
 

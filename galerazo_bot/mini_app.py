@@ -89,6 +89,7 @@ NATURAL_HISOPO_IMAGES = {
     "fake": "hisopo-falso.png",
     "twin": "hisopo-gemelo.png",
     "giant": "hisopo-gigante.png",
+    "final_boss": "hisopo-jefe-final-derrotado.png",
     "miracle": "hisopo-milagroso.png",
     "bomb": "hisopo-bomba.png",
     "frenetic": "hisopo-frenetico.png",

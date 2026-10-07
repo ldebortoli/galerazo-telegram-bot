@@ -283,6 +283,7 @@ class LifecycleAndBillingTests(unittest.IsolatedAsyncioTestCase):
         db = MagicMock()
         app = SimpleNamespace(
             bot_data={"settings": settings(), "db": db},
+            job_queue=MagicMock(),
             bot=SimpleNamespace(
                 get_me=AsyncMock(return_value=SimpleNamespace(id=99, username="galerazo_bot"))
             ),

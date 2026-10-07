@@ -85,12 +85,18 @@ from .command_handlers.galerazas import (
 from .command_handlers.hisopos import send_hisopos as _send_hisopos
 from .handler_registration import register_handlers
 from .giant_participants import GiantParticipantCounter, GiantParticipantCountError
+from .final_boss import FinalBossStore
+from .final_boss_telegram import (
+    boss_asset, boss_keyboard, handle_boss_callback, parse_boss_callback,
+    queue_boss_refresh, schedule_boss_recovery,
+)
 from .hisopos import (
     BLACK_HOLE_HISOPO,
     BOMB_HISOPO,
     COMMON_HISOPO,
     EXPIRED_HISOPO,
     FAKE_HISOPO,
+    FINAL_BOSS_HISOPO,
     FRENETIC_HISOPO,
     GIANT_HISOPO,
     HISOPO_CALLBACK_PREFIX,
@@ -752,7 +758,7 @@ async def _spawn_hisopo(
         )
 
     required_helpers = 1
-    if actual_kind.key == GIANT_HISOPO.key:
+    if actual_kind.key in {GIANT_HISOPO.key, FINAL_BOSS_HISOPO.key}:
         counter = application.bot_data.get("giant_participant_counter")
         if counter is None:
             counter = GiantParticipantCounter(state.settings, state.bot_user_id)
@@ -767,7 +773,9 @@ async def _spawn_hisopo(
 
     language = _chat_language(state.db, chat_id)
     type_label = t(language, f"hisopos.type.{appearance_kind.key}")
-    if appearance_kind.key == BOMB_HISOPO.key:
+    if appearance_kind.key == FINAL_BOSS_HISOPO.key:
+        keyboard = boss_keyboard(language, 1, required=required_helpers)
+    elif appearance_kind.key == BOMB_HISOPO.key:
         keyboard = _build_bomb_keyboard(0)
     elif appearance_kind.key in {FRENETIC_HISOPO.key, BLACK_HOLE_HISOPO.key}:
         keyboard = _build_hisopo_race_keyboard(language)
@@ -800,7 +808,9 @@ async def _spawn_hisopo(
             exc,
         )
     try:
-        if appearance_kind.key == GIANT_HISOPO.key:
+        if appearance_kind.key == FINAL_BOSS_HISOPO.key:
+            caption_key = "boss.phase1_caption"  # gitleaks:allow -- Translation identifier.
+        elif appearance_kind.key == GIANT_HISOPO.key:
             caption_key = "hisopos.appeared_giant"
         elif appearance_kind.key == BOMB_HISOPO.key:
             caption_key = "hisopos.appeared_bomb"
@@ -821,6 +831,7 @@ async def _spawn_hisopo(
                 current=0,
                 required=required_helpers,
                 target=HISOPO_RACE_REQUIRED_PRESSES,
+                minutes=60,
             ),
             reply_markup=keyboard,
         )
@@ -848,6 +859,8 @@ async def _spawn_hisopo(
         bomb_success_slot=bomb_success_slot,
         bomb_explosion_slot=bomb_explosion_slot,
     )
+    if spawn.hisopo_type == FINAL_BOSS_HISOPO.key:
+        FinalBossStore(state.db).create(chat_id, spawn.message_id, spawned_at, secrets.randbelow(20))
     _schedule_hisopo_expiration(application, spawn)
     return spawn
 
@@ -940,6 +953,8 @@ async def _cleanup_old_hisopo_messages(
 
 
 def _hisopo_file_id(settings: Settings, hisopo_type: str) -> str | None:
+    if hisopo_type == FINAL_BOSS_HISOPO.key:
+        return str(boss_asset())
     return {
         "common": settings.telegram_hisopo_common_file_id,
         "silver": settings.telegram_hisopo_silver_file_id,
@@ -965,9 +980,13 @@ def _restore_hisopo_jobs(application: Application) -> None:
     state = application.bot_data["state"]
     state.db.reset_processing_hisopo_schedules()
     for spawn in state.db.list_active_hisopo_spawns():
+        if spawn.hisopo_type == FINAL_BOSS_HISOPO.key:
+            FinalBossStore(state.db).create(spawn.chat_id, spawn.message_id, datetime.now(timezone.utc), secrets.randbelow(20))
+            queue_boss_refresh(application, spawn.chat_id, spawn.message_id, immediate=True)
         _schedule_hisopo_expiration(application, spawn)
     for schedule in state.db.list_pending_hisopo_schedules():
         _schedule_hisopo_appearance(application, schedule)
+    schedule_boss_recovery(application)
 
 
 def _schedule_hisopo_expiration(application: Application, spawn: HisopoSpawn) -> None:
@@ -1000,6 +1019,12 @@ async def _expire_hisopo_job(context: ContextTypes.DEFAULT_TYPE) -> None:
     data = context.job.data
     chat_id = state.db.resolve_chat_id(str(data["chat_id"]))
     message_id = str(data["message_id"])
+    spawn = state.db.get_hisopo_spawn(chat_id, message_id)
+    if spawn is not None and spawn.hisopo_type == FINAL_BOSS_HISOPO.key:
+        result = FinalBossStore(state.db).expire(chat_id, message_id, datetime.now(timezone.utc))
+        if result.status == "lost":
+            queue_boss_refresh(context.application, chat_id, message_id, immediate=True)
+        return
     state.db.mark_hisopo_expired_waiting(
         chat_id,
         message_id,
@@ -1052,15 +1077,24 @@ async def _hisopo_callback_entrypoint(
         await callback_query.answer()
         return
     bomb_slot = _parse_bomb_slot(callback_data)
+    boss_action = parse_boss_callback(callback_data)
     if (
         callback_data not in {HISOPO_CAPTURE_CALLBACK, HISOPO_RACE_CALLBACK}
         and bomb_slot is None
+        and boss_action is None
     ):
         await callback_query.answer(t(language, "hisopos.unavailable_alert"), show_alert=True)
         return
 
     now = datetime.now(timezone.utc)
     spawn = state.db.get_hisopo_spawn(str(message.chat.id), str(message.message_id))
+    if spawn is not None and spawn.hisopo_type == FINAL_BOSS_HISOPO.key:
+        await handle_boss_callback(context.application, callback_query, str(user.id), spawn, language, now,
+                                   _schedule_hisopo_expiration, _schedule_hisopo_appearance)
+        return
+    if boss_action is not None:
+        await callback_query.answer(t(language, "hisopos.unavailable_alert"), show_alert=True)
+        return
     if spawn is not None and (
         spawn.status == "expired_waiting"
         or now >= datetime.fromisoformat(spawn.expires_at)
@@ -2112,6 +2146,9 @@ async def _handle_command_update(update: Update, context: ContextTypes.DEFAULT_T
                 getattr(command, "response_parse_mode", None) if command is not None else None
             ),
         )
+        language = _chat_language(state.db, chat.id)
+        if response == t(language, "hisopos.rules"):
+            await message.reply_text(t(language, "boss.rules"), do_quote=True)
     except TelegramError as exc:
         if _is_bot_removed_error(exc):
             state.db.mark_chat_inactive(str(chat.id), "send_message_failed")
@@ -2747,7 +2784,7 @@ async def _handle_paginated_callback(
         await _delete_paginated_message(db, message, message_id)
         return t(language, "pagination.deleted")
 
-    if _is_paginated_state_expired(state.created_at):
+    if state.list_type != "boss_rewards" and _is_paginated_state_expired(state.created_at):
         await _delete_paginated_message(db, message, message_id)
         return t(language, "pagination.deleted")
 
@@ -2961,7 +2998,7 @@ async def _edit_paginated_message(
         return
 
     content = json.loads(state.content_json)
-    if state.list_type in {"galeraza", "hisopos"} and "pages" in content:
+    if state.list_type in {"galeraza", "hisopos", "boss_rewards"} and "pages" in content:
         rendered = render_prebuilt_pages(content["pages"], page=page)
     else:
         rendered = render_page(content["header"], content["lines"], page=page)
