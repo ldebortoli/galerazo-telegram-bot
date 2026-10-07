@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 import unittest
+import re
 from html import unescape
 from string import Formatter
 
 from galerazo_bot.final_boss_translations import FINAL_BOSS_TRANSLATIONS
 from galerazo_bot.hisopo_translations import (
     HISOPO_COOPERATIVE_RULE_UPDATES,
+    HISOPO_RULE_TRANSLATIONS,
     HISOPO_TRANSLATIONS,
 )
 from galerazo_bot.i18n import TRANSLATIONS, t
@@ -105,8 +107,8 @@ class FinalBossTranslationsTests(unittest.TestCase):
                 giant_rule = HISOPO_COOPERATIVE_RULE_UPDATES[language][2].splitlines()[0]
                 self.assertRegex(giant_rule, r"(?:1\s*%|%\s*1)")
                 self.assertIn("18", rules)
-                # Both the Mystery deadline and ordinary expiry now explicitly
-                # acknowledge the Boss exception in every locale.
+                # Ordinary expiry acknowledges Boss exceptions, while Mystery
+                # retains the Giant-only extended deadline.
                 self.assertIn("60", rules)
                 self.assertIn("60", t(language, "boss.rules_phases"))
                 for value in ("1000", "20", "5", "4", "30", "10"):
@@ -115,6 +117,26 @@ class FinalBossTranslationsTests(unittest.TestCase):
                     self.assertIn(value, t(language, "boss.rules_win"))
                 for value in ("−10", "−2", "+1", "+2"):
                     self.assertIn(value, t(language, "boss.rules_loss"))
+
+    def test_boss_rules_explicitly_forbid_mystery_disguise_in_all_languages(self) -> None:
+        markers = {
+            "es": "Nunca se oculta", "es_ES": "Nunca se oculta",
+            "en": "never hidden", "ca": "Mai no s'amaga", "de": "niemals",
+            "eu": "Ez da inoiz", "fr": "jamais caché", "gn": "Araka'eve nokañýi",
+            "it": "Non si nasconde mai", "ja": "ミステリーには隠れません",
+            "la": "Numquam", "nl": "nooit verborgen",
+            "pt_BR": "Nunca fica escondido", "pt_PT": "Nunca fica escondido",
+            "quz": "Mana hayk'aqpas", "ru": "никогда не скрывается",
+            "zh_Hans": "绝不会藏在", "zh_Hant": "絕不會藏在",
+        }
+        self.assertEqual(set(markers), set(FINAL_BOSS_TRANSLATIONS))
+        for language, marker in markers.items():
+            with self.subTest(language=language):
+                self.assertIn(marker, t(language, "boss.rules_intro"))
+                self.assertIn(marker, t(language, "boss.rules"))
+                original_mystery = HISOPO_RULE_TRANSLATIONS[language]["hisopos.rules"].splitlines()[8]
+                plain_rules = re.sub(r"<[^>]+>", "", unescape(t(language, "hisopos.rules")))
+                self.assertIn(original_mystery.removeprefix("- "), plain_rules)
 
     def test_solution_is_separate_from_active_phase_and_reports_signed_scores(self) -> None:
         for language in FINAL_BOSS_TRANSLATIONS:

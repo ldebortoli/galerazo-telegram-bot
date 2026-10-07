@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import tempfile
 import unittest
+from collections import Counter
 from datetime import datetime, timedelta, timezone
+from fractions import Fraction
 from html import unescape
 from pathlib import Path
 from types import SimpleNamespace
@@ -299,9 +301,9 @@ class HisopoRulesTests(unittest.TestCase):
             9188: "diamond",
             9189: "giant",
             9288: "giant",
-            9289: "final_boss",
+            9289: "miracle",
             9290: "miracle",
-            9299: "miracle",
+            9298: "miracle",
         }
         for weighted_roll, expected_key in expected_actuals.items():
             with self.subTest(weighted_roll=weighted_roll):
@@ -312,6 +314,36 @@ class HisopoRulesTests(unittest.TestCase):
                 self.assertEqual(selected.actual.key, expected_key)
         with self.assertRaisesRegex(RuntimeError, "seleccionar"):
             hisopo_rules._select_weighted_non_mystery_kind(lambda limit: limit)
+
+    def test_mystery_exhaustively_excludes_final_boss_and_keeps_exact_weighted_probabilities(self) -> None:
+        counts: Counter[str] = Counter()
+        limits: set[int] = set()
+        for draw in range(9299):
+            def randbelow(limit: int, value: int = draw) -> int:
+                limits.add(limit)
+                return value
+
+            selected = select_hisopo_spawn(6490, randbelow=randbelow)
+            self.assertEqual(selected.appearance, MYSTERY_HISOPO)
+            counts[selected.actual.key] += 1
+
+        self.assertEqual(limits, {9299})
+        self.assertNotIn("final_boss", counts)
+        self.assertEqual(counts, {
+            "common": 2964, "used": 500, "silver": 1325, "gold": 1000,
+            "fleeting": 700, "putrid": 500, "radioactive": 400, "bomb": 400,
+            "frenetic": 400, "black_hole": 400, "fake": 300, "twin": 200,
+            "diamond": 100, "giant": 100, "miracle": 10,
+        })
+        direct = Counter(select_hisopo_kind(draw).key for draw in range(1, 10001))
+        boss_probability = Fraction(direct["final_boss"], 10000) + Fraction(
+            direct["mystery"], 10000
+        ) * Fraction(counts["final_boss"], 9299)
+        self.assertEqual(boss_probability, Fraction(1, 10000))
+        self.assertEqual(
+            Fraction(direct["giant"], 10000) + Fraction(direct["mystery"], 10000) * Fraction(counts["giant"], 9299),
+            Fraction(9999, 929900),
+        )
 
     def test_bomb_slots_are_distinct_and_cover_all_positions(self) -> None:
         self.assertEqual(select_bomb_slots(lambda _limit: 0), (0, 1))

@@ -6,13 +6,13 @@ Implementado para la versión 0.72. Su publicación y despliegue requieren el fl
 
 La tabla de 10.000 resultados reserva uno al Jefe Final (0,01 %, descontado del Común: 29,64 %). El Gigante ocupa 100 resultados (1 %, descontado del Plateado: 13,25 %). Los demás pesos se conservan y la suma es 100 %.
 
-Como los otros tipos naturales, el Jefe también puede estar oculto en un Misterioso. Esa selección conserva los pesos relativos sin el Misterioso: su probabilidad total, contando ambas vías, es 1/9.300, aproximadamente 0,01075 %. Su primera ayuda lo revela y cuenta para la fase 1; el coleccionable Misterioso del revelador se entrega solamente si finalmente ganan.
+El Jefe siempre aparece visible como Jefe Final: nunca puede salir de un Misterioso. Su probabilidad total es exactamente 1/10.000 (0,01 %). El Misterioso redistribuye los pesos de los demás tipos sobre 9.299 resultados, excluyendo al propio Misterioso y al Jefe.
 
 ## Fases
 
 | Fase | Objetivo | Plazo propio |
 | --- | --- | --- |
-| 1: cooperación | Misma meta del Gigante: entre 1 y 15 humanos no bots ni cuentas eliminadas; una ayuda por persona. | 60 minutos desde la aparición, incluso oculto. |
+| 1: cooperación | Misma meta del Gigante: entre 1 y 15 humanos no bots ni cuentas eliminadas; una ayuda por persona. | 60 minutos desde la aparición. |
 | 2: frenesí colectivo | 1.000 toques válidos sumados entre todos. Cada cuenta debe espaciar sus toques al menos 100 ms. | 30 minutos desde que superan la fase 1. |
 | 3: coordinación | 20 botones, cada uno una sola vez y máximo 5 por persona. Repetir un botón o intentar un sexto provoca derrota. Los botones usados quedan marcados, pero siguen siendo una infracción si alguien los pulsa. | 30 minutos desde que superan la fase 2. |
 | 4: acertijo | 20 botones numerados; 19 explotan y uno gana. El acertijo indica un único número: «Mi triple, más siete, da N». | 10 minutos desde que superan la fase 3. |
@@ -51,13 +51,24 @@ Un mensaje nuevo explica el resultado y los puntos por persona. En fase 3 identi
 
 `final_boss_states` conserva la fase, el botón seguro, el resultado y el anuncio; `final_boss_events` registra callbacks aceptados y rechazados. SQLite serializa las acciones con `BEGIN IMMEDIATE`; ganar, perder y repartir puntos son operaciones idempotentes.
 
-El mensaje de la imagen queda excluido del borrado automático desde su creación, incluso si aparece como Misterioso, vence o el grupo pierde. Una victoria reemplaza la foto por la imagen del Jefe derrotado; una derrota conserva la imagen de la fase alcanzada con la explicación y sin botones de juego.
+El mensaje de la imagen queda excluido del borrado automático desde su creación, incluso si vence o el grupo pierde. Una victoria reemplaza la foto por la imagen del Jefe derrotado; una derrota muestra al Jefe victorioso con la explicación y sin botones de juego, incluso si venció el tiempo antes de la primera ayuda. El vencimiento del Jefe es automático: no requiere un toque; cada callback también verifica la fecha para rechazar jugadas tardías.
 
-La fase 2 agrupa actualizaciones visuales cada tres segundos para evitar una edición de mensaje por cada toque. Cada callback válido se registra inmediatamente. Las transiciones, derrotas y victoria solicitan actualización inmediata. Una revisión cada minuto recupera resultados pendientes, vistas activas y vencimientos tras errores de envío; los reinicios restauran los trabajos con la fecha persistida.
+La fase 2 agrupa actualizaciones visuales cada tres segundos para evitar una edición de mensaje por cada toque. Cada callback válido se registra inmediatamente. Las transiciones, derrotas y victoria solicitan actualización inmediata. Una revisión cada minuto recupera resultados pendientes, vistas activas y vencimientos tras errores de envío. Ese trabajo se inicia únicamente cuando aparece un Jefe o se restaura uno activo/con resultado pendiente, y se elimina cuando no queda trabajo del Jefe. Los reinicios conservan la fecha persistida. Los demás Hisopos mantienen su comportamiento anterior de vencimiento.
 
 El anuncio persiste el identificador confirmado antes de montar su paginación. Si falla ese montaje, se repara el mismo mensaje. Telegram no ofrece una clave idempotente para `sendMessage`: un corte exacto entre la confirmación remota y su registro local puede duplicar un aviso, pero nunca duplica puntos ni desbloqueos.
 
-Las cinco imágenes se incluyen en la imagen Docker desde `assets/hisopos/`; no necesitan nuevos secretos ni configurar manualmente `file_id`. La Mini App usa el arte derrotado y el nombre localizado enviados por la API. Prompts y revisión visual: [FINAL_BOSS_ART_PROMPTS.md](FINAL_BOSS_ART_PROMPTS.md).
+Desde 0.73, el bot usa seis `file_id` configurados manualmente; nunca sube de nuevo las imágenes durante la batalla. Se obtienen enviando o reenviando cada foto al mismo bot que jugará el evento y consultando su `file_id` con `/debug` (no `file_unique_id`). Telegram asigna referencias por bot: las del bot de prueba no sirven para Galerazo Bot.
+
+```dotenv
+TELEGRAM_HISOPO_FINAL_BOSS_PHASE_1_FILE_ID=
+TELEGRAM_HISOPO_FINAL_BOSS_PHASE_2_FILE_ID=
+TELEGRAM_HISOPO_FINAL_BOSS_PHASE_3_FILE_ID=
+TELEGRAM_HISOPO_FINAL_BOSS_PHASE_4_FILE_ID=
+TELEGRAM_HISOPO_FINAL_BOSS_DEFEATED_FILE_ID=
+TELEGRAM_HISOPO_FINAL_BOSS_VICTORIOUS_FILE_ID=
+```
+
+Si falta alguna de las seis referencias, el sorteo usa un Común en lugar de iniciar un Jefe incompleto. Cambiar una ilustración requiere reemplazar su referencia manualmente. Los archivos fuente se conservan en `assets/hisopos/`. La Mini App ya incorpora el Jefe bloqueado, conseguido y en álbumes compartidos; usa el arte derrotado y el nombre localizado enviados por la API. Prompts y revisión visual: [FINAL_BOSS_ART_PROMPTS.md](FINAL_BOSS_ART_PROMPTS.md).
 
 ## Validación local
 

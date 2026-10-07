@@ -35,6 +35,12 @@ class Settings:
     telegram_hisopo_fake_file_id: str | None = None
     telegram_hisopo_twin_file_id: str | None = None
     telegram_hisopo_giant_file_id: str | None = None
+    telegram_hisopo_final_boss_phase_1_file_id: str | None = None
+    telegram_hisopo_final_boss_phase_2_file_id: str | None = None
+    telegram_hisopo_final_boss_phase_3_file_id: str | None = None
+    telegram_hisopo_final_boss_phase_4_file_id: str | None = None
+    telegram_hisopo_final_boss_defeated_file_id: str | None = None
+    telegram_hisopo_final_boss_victorious_file_id: str | None = None
     telegram_hisopo_miracle_file_id: str | None = None
     telegram_mini_app_url: str | None = None
     telegram_mini_app_short_name: str = "hisopos"
@@ -88,6 +94,24 @@ def load_settings() -> Settings:
         telegram_hisopo_fake_file_id=os.getenv("TELEGRAM_HISOPO_FAKE_FILE_ID") or None,
         telegram_hisopo_twin_file_id=os.getenv("TELEGRAM_HISOPO_TWIN_FILE_ID") or None,
         telegram_hisopo_giant_file_id=os.getenv("TELEGRAM_HISOPO_GIANT_FILE_ID") or None,
+        telegram_hisopo_final_boss_phase_1_file_id=os.getenv(
+            "TELEGRAM_HISOPO_FINAL_BOSS_PHASE_1_FILE_ID"
+        ) or None,
+        telegram_hisopo_final_boss_phase_2_file_id=os.getenv(
+            "TELEGRAM_HISOPO_FINAL_BOSS_PHASE_2_FILE_ID"
+        ) or None,
+        telegram_hisopo_final_boss_phase_3_file_id=os.getenv(
+            "TELEGRAM_HISOPO_FINAL_BOSS_PHASE_3_FILE_ID"
+        ) or None,
+        telegram_hisopo_final_boss_phase_4_file_id=os.getenv(
+            "TELEGRAM_HISOPO_FINAL_BOSS_PHASE_4_FILE_ID"
+        ) or None,
+        telegram_hisopo_final_boss_defeated_file_id=os.getenv(
+            "TELEGRAM_HISOPO_FINAL_BOSS_DEFEATED_FILE_ID"
+        ) or None,
+        telegram_hisopo_final_boss_victorious_file_id=os.getenv(
+            "TELEGRAM_HISOPO_FINAL_BOSS_VICTORIOUS_FILE_ID"
+        ) or None,
         telegram_hisopo_miracle_file_id=os.getenv("TELEGRAM_HISOPO_MIRACLE_FILE_ID") or None,
         telegram_mini_app_url=os.getenv("TELEGRAM_MINI_APP_URL") or None,
         telegram_mini_app_short_name=_env_or_default(

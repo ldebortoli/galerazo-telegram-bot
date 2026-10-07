@@ -455,7 +455,10 @@ Una segunda y única tirada de `1` a `10.000` define la rareza, pero se hace sol
 | 9990 | 0,01 % | jefe final | cuatro fases cooperativas | premios por contribución al ganar todas las fases |
 | 9991-10000 | 0,10 % | milagroso | imagen del milagroso y valor oculto | suma el máximo entre 15 puntos y la mitad del puntaje del líder actual, con un tope de 1000 puntos |
 
-El [Jefe Final](docs/FINAL_BOSS.md) tiene cuatro fases, plazos propios de 60/30/30/10 minutos y premios que se acreditan juntos al ganar. Su foto se conserva también al perder o vencer; el resultado posterior explica los puntos y solo revela la solución del acertijo si llegaron a la fase final. `/reglashisopo` envía sus reglas en un segundo mensaje.
+El [Jefe Final](docs/FINAL_BOSS.md) aparece siempre visible, nunca dentro de un Misterioso, y tiene cuatro fases, plazos propios de 60/30/30/10 minutos y premios que se acreditan juntos al ganar. Su foto se conserva también al perder o vencer; el resultado posterior explica los puntos y solo revela la solución del acertijo si llegaron a la fase final. `/reglashisopo` envía sus reglas en un segundo mensaje.
+
+El Jefe usa seis `file_id` del mismo bot: cuatro fases, derrotado y victorioso. Se configuran en `TELEGRAM_HISOPO_FINAL_BOSS_PHASE_1_FILE_ID` a `PHASE_4_FILE_ID`, `TELEGRAM_HISOPO_FINAL_BOSS_DEFEATED_FILE_ID` y `TELEGRAM_HISOPO_FINAL_BOSS_VICTORIOUS_FILE_ID`; no se suben archivos durante la batalla. Si falta alguno, se sortea un Común en su lugar.
+
 
 Falso, Putrefacto y Usado eligen una segunda apariencia: común 75 %, plateado 14 %, dorado 10 % y diamante 1 %. Antes del clic se muestran la foto y el valor aparente de esa máscara; al capturarlos revelan su foto, tipo y resultado reales. Putrefacto y Usado restan 2 puntos; Falso vale 0.
 

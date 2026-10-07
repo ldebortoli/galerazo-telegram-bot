@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.73] - 2026-10-07
+
+- El Jefe Final aparece siempre visible y nunca dentro de un Misterioso. Su vencimiento automático se programa al aparecer; el control de recuperación se detiene cuando no quedan Jefes ni resultados pendientes. Los demás Hisopos conservan sus reglas de vencimiento.
+- El Jefe Final muestra una imagen victoriosa cuando el grupo pierde, incluso si el tiempo vence antes de la primera ayuda. La imagen derrotada se reserva para las victorias del grupo.
+- Correcciones y mejoras: las seis imágenes del Jefe Final se configuran con sus `file_id` de Telegram y se reutilizan en cada aparición y fase, sin subir archivos de nuevo. El Jefe solo puede aparecer cuando están configuradas todas sus imágenes.
+
 ## [0.72] - 2026-10-07
 
 - Nuevo Hisopo Jefe Final: cuatro fases cooperativas, imágenes propias, plazos de 60/30/30/10 minutos, acertijo final y colección compartida al ganar. Los premios se calculan por participación y se acreditan juntos únicamente tras completar las cuatro fases; las derrotas aplican las penalizaciones o premios consuelo de cada fase.

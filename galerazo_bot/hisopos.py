@@ -188,7 +188,7 @@ def _select_weighted_non_mystery_kind(
     weighted_kinds = [
         (HISOPO_KINDS[key], upper - lower + 1)
         for key, (lower, upper) in HISOPO_PROBABILITY_RANGES.items()
-        if key != MYSTERY_HISOPO.key
+        if key not in {MYSTERY_HISOPO.key, FINAL_BOSS_HISOPO.key}
     ]
     roll = randbelow(sum(weight for _kind, weight in weighted_kinds)) + 1
     cumulative = 0

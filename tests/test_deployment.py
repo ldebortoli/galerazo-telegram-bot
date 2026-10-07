@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+import json
 import os
 import shutil
 import sqlite3
 import subprocess
+import sys
 import tempfile
 import unittest
 from contextlib import closing
@@ -326,6 +328,12 @@ class DeploymentAutomationTests(unittest.TestCase):
             "TELEGRAM_HISOPO_FAKE_FILE_ID",
             "TELEGRAM_HISOPO_TWIN_FILE_ID",
             "TELEGRAM_HISOPO_GIANT_FILE_ID",
+            "TELEGRAM_HISOPO_FINAL_BOSS_PHASE_1_FILE_ID",
+            "TELEGRAM_HISOPO_FINAL_BOSS_PHASE_2_FILE_ID",
+            "TELEGRAM_HISOPO_FINAL_BOSS_PHASE_3_FILE_ID",
+            "TELEGRAM_HISOPO_FINAL_BOSS_PHASE_4_FILE_ID",
+            "TELEGRAM_HISOPO_FINAL_BOSS_DEFEATED_FILE_ID",
+            "TELEGRAM_HISOPO_FINAL_BOSS_VICTORIOUS_FILE_ID",
             "TELEGRAM_HISOPO_MIRACLE_FILE_ID",
             "TELEGRAM_MINI_APP_URL",
             "TELEGRAM_MINI_APP_SHORT_NAME",
@@ -343,6 +351,62 @@ class DeploymentAutomationTests(unittest.TestCase):
         self.assertIn("bot_env}.previous", installer)
         self.assertIn("--expect-configured", installer)
         self.assertNotIn("cat \"${patch_upload}\"", installer)
+
+    def test_final_boss_file_ids_can_be_patched_without_replacing_existing_bot_token(self) -> None:
+        keys = tuple(
+            f"TELEGRAM_HISOPO_FINAL_BOSS_PHASE_{phase}_FILE_ID" for phase in range(1, 5)
+        ) + ("TELEGRAM_HISOPO_FINAL_BOSS_DEFEATED_FILE_ID", "TELEGRAM_HISOPO_FINAL_BOSS_VICTORIOUS_FILE_ID")
+        for relative in (
+            "scripts/deploy/Set-GceBotSecrets.ps1",
+            "deploy/gce/bootstrap.sh",
+            ".env.example",
+        ):
+            source = (PROJECT_ROOT / relative).read_text(encoding="utf-8")
+            for key in keys:
+                self.assertEqual(source.count(key), 1, (relative, key))
+
+        def embedded_python(name: str) -> str:
+            source = (PROJECT_ROOT / "deploy" / "gce" / name).read_text(encoding="utf-8")
+            return source.split("<<'PY'\n", 1)[1].split("\nPY", 1)[0]
+
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            env_path = root / "bot.env"
+            patch_path = root / "patch.json"
+            env_path.write_text(
+                "TELEGRAM_BOT_TOKEN=fixture-token-preserved\nTELEGRAM_DEV_USER_IDS=123\n",
+                encoding="utf-8",
+            )
+            updates = {key: f"fixture-photo-{index}" for index, key in enumerate(keys)}
+            patch_path.write_text(json.dumps({"updates": updates}), encoding="utf-8")
+            applied = subprocess.run(
+                [sys.executable, "-c", embedded_python("patch-config.sh"), str(env_path), str(patch_path)],
+                check=True, capture_output=True, text=True,
+            )
+            self.assertEqual(applied.stdout, "")
+            values = dict(line.split("=", 1) for line in env_path.read_text(encoding="utf-8").splitlines())
+            self.assertEqual(values["TELEGRAM_BOT_TOKEN"], "fixture-token-preserved")
+            self.assertEqual(values["TELEGRAM_DEV_USER_IDS"], "123")
+            self.assertEqual({key: values[key] for key in keys}, updates)
+            self.assertEqual(values["DATABASE_PATH"], "/app/data/galerazo.sqlite3")
+
+            patch_path.write_text(json.dumps({"clear": [keys[1]]}), encoding="utf-8")
+            subprocess.run(
+                [sys.executable, "-c", embedded_python("patch-config.sh"), str(env_path), str(patch_path)],
+                check=True, capture_output=True, text=True,
+            )
+            inspected = subprocess.run(
+                [sys.executable, "-c", embedded_python("inspect-secrets.sh"), str(env_path)],
+                check=True, capture_output=True, text=True,
+            )
+            status = json.loads(inspected.stdout)
+            self.assertTrue(status["TELEGRAM_BOT_TOKEN"])
+            self.assertFalse(status[keys[1]])
+            self.assertTrue(all(status[key] for key in keys if key != keys[1]))
+            self.assertNotIn("fixture-", inspected.stdout)
+            values = dict(line.split("=", 1) for line in env_path.read_text(encoding="utf-8").splitlines())
+            self.assertEqual(values["TELEGRAM_BOT_TOKEN"], "fixture-token-preserved")
+            self.assertEqual(values[keys[1]], "")
 
     def test_gcp_bot_foundation_is_idempotent_scoped_and_keyless(self) -> None:
         foundation = (

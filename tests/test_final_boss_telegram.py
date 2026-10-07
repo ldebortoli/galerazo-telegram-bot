@@ -24,8 +24,16 @@ class FinalBossTelegramTests(unittest.IsolatedAsyncioTestCase):
         self.db.register_chat("-1", "group", "Fixture")
         self.store = FinalBossStore(self.db)
         self.now = datetime(2026, 10, 7, 12, tzinfo=timezone.utc)
+        self.settings = SimpleNamespace(
+            telegram_hisopo_final_boss_phase_1_file_id="boss-phase-1",
+            telegram_hisopo_final_boss_phase_2_file_id="boss-phase-2",
+            telegram_hisopo_final_boss_phase_3_file_id="boss-phase-3",
+            telegram_hisopo_final_boss_phase_4_file_id="boss-phase-4",
+            telegram_hisopo_final_boss_defeated_file_id="boss-defeated",
+            telegram_hisopo_final_boss_victorious_file_id="boss-victorious",
+        )
         self.application = SimpleNamespace(
-            bot_data={"state": SimpleNamespace(db=self.db)},
+            bot_data={"state": SimpleNamespace(db=self.db, settings=self.settings)},
             job_queue=MagicMock(),
             bot=SimpleNamespace(
                 send_message=AsyncMock(return_value=SimpleNamespace(message_id=500)),
@@ -62,8 +70,11 @@ class FinalBossTelegramTests(unittest.IsolatedAsyncioTestCase):
             self.assertIsNone(ui.parse_boss_callback(data), data)
         for data, expected in (("hisopo:boss:1", (1, None)), ("hisopo:boss:2", (2, None)), ("hisopo:boss:3:0", (3, 0)), ("hisopo:boss:4:19", (4, 19))):
             self.assertEqual(ui.parse_boss_callback(data), expected)
-        self.assertEqual(ui.boss_asset().name, "hisopo-jefe-final-fase-1.png")
-        self.assertEqual(ui.boss_asset(4, True).name, "hisopo-jefe-final-derrotado.png")
+        self.assertEqual(ui.boss_file_id(self.settings), "boss-phase-1")
+        for phase in range(1, 5):
+            self.assertEqual(ui.boss_file_id(self.settings, phase), f"boss-phase-{phase}")
+        self.assertEqual(ui.boss_file_id(self.settings, 4, True), "boss-defeated")
+        self.assertEqual(ui.boss_file_id(self.settings, 1, lost=True), "boss-victorious")
         _, state = self.spawn()
         for phase, fragment, count in ((1, "1/2", 1), (2, "10/1000", 10), (3, "1/20", 1), (4, "31", 0)):
             boss = replace(state, phase=phase, phase1_users=("1",), phase2_counts=(("1", 10),), phase3_slots=((0, "1"),))
@@ -97,6 +108,7 @@ class FinalBossTelegramTests(unittest.IsolatedAsyncioTestCase):
         job.schedule_removal.assert_called_once()
         self.assertEqual(self.application.job_queue.run_once.call_args.kwargs["when"], 0)
         self.assertEqual(self.application.bot_data["boss_refresh_pending"], {("-1", "10")})
+        self.application.job_queue.get_jobs_by_name.return_value = ()
         ui.schedule_boss_recovery(self.application)
         self.application.job_queue.run_repeating.assert_called_once_with(ui.recover_boss_results, interval=60, first=1, name="boss-results")
 
@@ -162,10 +174,96 @@ class FinalBossTelegramTests(unittest.IsolatedAsyncioTestCase):
         await ui.refresh_boss_job(self.context)
         self.assertEqual(self.application.bot_data["boss_refresh_pending"], set())
         self.application.bot.edit_message_media.assert_awaited_once()
+        self.assertEqual(self.application.bot.edit_message_media.call_args.kwargs["media"].media, "boss-phase-1")
         self.assertIn("1/2", self.application.bot.edit_message_media.call_args.kwargs["media"].caption)
         await ui.refresh_boss_job(self.context)
         self.application.bot.edit_message_caption.assert_awaited_once()
         self.application.bot.send_message.assert_not_awaited()
+
+    async def test_every_phase_and_defeated_frame_use_configured_file_ids(self):
+        self.spawn()
+        for phase in range(1, 5):
+            self.set_phase(phase)
+            await ui.refresh_boss_job(self.context)
+            media = self.application.bot.edit_message_media.await_args.kwargs["media"]
+            self.assertEqual(media.media, f"boss-phase-{phase}")
+            self.assertIsInstance(media.media, str)
+        self.assertEqual(self.store.contribute("-1", "10", "1", "final", 4, self.now, 7).status, "won")
+        await ui.refresh_boss_job(self.context)
+        self.assertEqual(self.application.bot.edit_message_media.await_args.kwargs["media"].media, "boss-defeated")
+        self.assertEqual(self.application.bot.edit_message_media.await_count, 5)
+
+    async def test_missing_manual_file_id_stops_edit_instead_of_uploading_local_image(self):
+        self.spawn()
+        self.set_phase(2)
+        self.settings.telegram_hisopo_final_boss_phase_2_file_id = None
+        with self.assertRaisesRegex(ValueError, "TELEGRAM_HISOPO_FINAL_BOSS_PHASE_2_FILE_ID"):
+            await ui.refresh_boss_job(self.context)
+        self.application.bot.edit_message_media.assert_not_awaited()
+        self.application.bot.edit_message_caption.assert_not_awaited()
+        self.assertEqual(self.application.bot_data["boss_rendered_media"], {})
+        self.settings.telegram_hisopo_final_boss_defeated_file_id = ""
+        with self.assertRaisesRegex(ValueError, "TELEGRAM_HISOPO_FINAL_BOSS_DEFEATED_FILE_ID"):
+            ui.boss_file_id(self.settings, won=True)
+        self.settings.telegram_hisopo_final_boss_victorious_file_id = None
+        with self.assertRaisesRegex(ValueError, "TELEGRAM_HISOPO_FINAL_BOSS_VICTORIOUS_FILE_ID"):
+            ui.boss_file_id(self.settings, lost=True)
+
+    async def test_every_defeat_replaces_active_frame_with_victorious_boss_and_correct_cause(self):
+        scenarios = (
+            (1, "abandoned", "sin ninguna ayuda"),
+            (1, "timeout", "Se terminó el tiempo"),
+            (2, "timeout", "Se terminó el tiempo"),
+            (3, "duplicate_slot", "ya estaba usado"),
+            (3, "user_limit", "sexto botón"),
+            (3, "timeout", "Se terminó el tiempo"),
+            (4, "exploded", "explotó"),
+            (4, "timeout", "Se terminó el tiempo"),
+        )
+        for index, (phase, reason, expected_text) in enumerate(scenarios, 20):
+            with self.subTest(phase=phase, reason=reason):
+                message_id = str(index)
+                self.db.save_hisopo_spawn(
+                    "-1", message_id, "final_boss", 0, "message", self.now.isoformat(),
+                    (self.now + timedelta(hours=1)).isoformat(), required_helpers=2,
+                )
+                self.store.create("-1", message_id, self.now, 7)
+                with self.db._connect() as conn:
+                    conn.execute("UPDATE final_boss_states SET phase=? WHERE message_id=?", (phase, message_id))
+                context = SimpleNamespace(
+                    application=self.application,
+                    job=SimpleNamespace(data={"chat_id": "-1", "message_id": message_id}),
+                )
+                await ui.refresh_boss_job(context)
+                self.assertEqual(self.application.bot.edit_message_media.await_args.kwargs["media"].media, f"boss-phase-{phase}")
+                if phase == 1 and reason == "timeout":
+                    self.store.contribute("-1", message_id, "1", f"start-{index}", 1, self.now)
+                if reason == "duplicate_slot":
+                    self.store.contribute("-1", message_id, "1", f"slot-{index}", 3, self.now, 0)
+                    result = self.store.contribute("-1", message_id, "2", f"repeat-{index}", 3, self.now, 0)
+                elif reason == "user_limit":
+                    for slot in range(5):
+                        self.store.contribute("-1", message_id, "1", f"slot-{index}-{slot}", 3, self.now, slot)
+                    result = self.store.contribute("-1", message_id, "1", f"sixth-{index}", 3, self.now, 5)
+                elif reason == "exploded":
+                    result = self.store.contribute("-1", message_id, "1", f"wrong-{index}", 4, self.now, 0)
+                else:
+                    result = self.store.expire("-1", message_id, self.now + timedelta(hours=1))
+                self.assertEqual((result.status, result.state.reason), ("lost", reason))
+                previous_edits = self.application.bot.edit_message_media.await_count
+                await ui.refresh_boss_job(context)
+                self.assertEqual(self.application.bot.edit_message_media.await_count, previous_edits + 1)
+                media = self.application.bot.edit_message_media.await_args.kwargs["media"]
+                self.assertEqual(media.media, "boss-victorious")
+                self.assertIn(expected_text, media.caption)
+                self.assertIn(f"{phase}/4", media.caption)
+                self.assertIsNone(self.application.bot.edit_message_media.await_args.kwargs["reply_markup"])
+                announcement = self.application.bot.send_message.await_args.kwargs["text"]
+                self.assertIn(expected_text, announcement)
+                self.assertEqual("Solución:" in announcement, phase == 4)
+                with self.db._connect() as conn:
+                    status = conn.execute("SELECT message_cleanup_status FROM hisopo_spawns WHERE message_id=?", (message_id,)).fetchone()[0]
+                self.assertEqual(status, "preserved")
 
     async def test_refresh_ignores_not_modified_but_keeps_other_errors_retryable(self):
         self.spawn()

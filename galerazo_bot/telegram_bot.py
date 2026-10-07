@@ -87,7 +87,7 @@ from .handler_registration import register_handlers
 from .giant_participants import GiantParticipantCounter, GiantParticipantCountError
 from .final_boss import FinalBossStore
 from .final_boss_telegram import (
-    boss_asset, boss_keyboard, handle_boss_callback, parse_boss_callback,
+    boss_keyboard, handle_boss_callback, parse_boss_callback,
     queue_boss_refresh, schedule_boss_recovery,
 )
 from .hisopos import (
@@ -740,6 +740,12 @@ async def _spawn_hisopo(
         missing_types.extend(
             key for key, file_id in bomb_state_ids.items() if not file_id
         )
+    if actual_kind.key == FINAL_BOSS_HISOPO.key:
+        missing_types.extend(
+            f"final_boss_{suffix}"
+            for suffix in ("phase_1", "phase_2", "phase_3", "phase_4", "defeated", "victorious")
+            if not getattr(state.settings, f"telegram_hisopo_final_boss_{suffix}_file_id")
+        )
     if missing_types:
         logger.info(
             "El Hisopo %s aun no tiene todos sus file_id (%s); "
@@ -820,9 +826,8 @@ async def _spawn_hisopo(
             caption_key = "hisopos.appeared_mystery"
         else:
             caption_key = "hisopos.appeared"
-        message = await application.bot.send_photo(
+        photo_options = dict(
             chat_id=_parse_chat_id(chat_id),
-            photo=file_id,
             caption=t(
                 language,
                 caption_key,
@@ -835,6 +840,9 @@ async def _spawn_hisopo(
             ),
             reply_markup=keyboard,
         )
+        message = await application.bot.send_photo(photo=file_id, **photo_options)
+        if appearance_kind.key == FINAL_BOSS_HISOPO.key:
+            application.bot_data.setdefault("boss_rendered_media", {})[(chat_id, str(message.message_id))] = (1, "active")
     except TelegramError as exc:
         raise HisopoSpawnError(
             "No pude enviar la aparicion de un Hisopo "
@@ -861,6 +869,7 @@ async def _spawn_hisopo(
     )
     if spawn.hisopo_type == FINAL_BOSS_HISOPO.key:
         FinalBossStore(state.db).create(chat_id, spawn.message_id, spawned_at, secrets.randbelow(20))
+        schedule_boss_recovery(application)
     _schedule_hisopo_expiration(application, spawn)
     return spawn
 
@@ -954,7 +963,7 @@ async def _cleanup_old_hisopo_messages(
 
 def _hisopo_file_id(settings: Settings, hisopo_type: str) -> str | None:
     if hisopo_type == FINAL_BOSS_HISOPO.key:
-        return str(boss_asset())
+        return settings.telegram_hisopo_final_boss_phase_1_file_id
     return {
         "common": settings.telegram_hisopo_common_file_id,
         "silver": settings.telegram_hisopo_silver_file_id,
@@ -979,14 +988,17 @@ def _hisopo_file_id(settings: Settings, hisopo_type: str) -> str | None:
 def _restore_hisopo_jobs(application: Application) -> None:
     state = application.bot_data["state"]
     state.db.reset_processing_hisopo_schedules()
+    restore_boss_recovery = bool(FinalBossStore(state.db).get_pending_results())
     for spawn in state.db.list_active_hisopo_spawns():
         if spawn.hisopo_type == FINAL_BOSS_HISOPO.key:
+            restore_boss_recovery = True
             FinalBossStore(state.db).create(spawn.chat_id, spawn.message_id, datetime.now(timezone.utc), secrets.randbelow(20))
             queue_boss_refresh(application, spawn.chat_id, spawn.message_id, immediate=True)
         _schedule_hisopo_expiration(application, spawn)
     for schedule in state.db.list_pending_hisopo_schedules():
         _schedule_hisopo_appearance(application, schedule)
-    schedule_boss_recovery(application)
+    if restore_boss_recovery:
+        schedule_boss_recovery(application)
 
 
 def _schedule_hisopo_expiration(application: Application, spawn: HisopoSpawn) -> None:

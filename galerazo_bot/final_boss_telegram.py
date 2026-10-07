@@ -5,7 +5,6 @@ from __future__ import annotations
 import asyncio
 import json
 from datetime import datetime, timezone
-from pathlib import Path
 
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, InputMediaPhoto
 from telegram.error import BadRequest
@@ -17,13 +16,15 @@ from .pagination import build_keyboard, build_pages
 
 
 BOSS_PREFIX = "hisopo:boss"
-ASSET_DIRECTORY = Path(__file__).resolve().parent.parent / "assets" / "hisopos"
 REFRESH_SECONDS = 3
 
 
-def boss_asset(phase: int = 1, won: bool = False) -> Path:
-    suffix = "derrotado" if won else f"fase-{phase}"
-    return ASSET_DIRECTORY / f"hisopo-jefe-final-{suffix}.png"
+def boss_file_id(settings, phase: int = 1, won: bool = False, lost: bool = False) -> str:
+    suffix = "victorious" if lost else "defeated" if won else f"phase_{phase}"
+    value = getattr(settings, f"telegram_hisopo_final_boss_{suffix}_file_id")
+    if not value:
+        raise ValueError(f"Falta configurar TELEGRAM_HISOPO_FINAL_BOSS_{suffix.upper()}_FILE_ID.")
+    return value
 
 
 def parse_boss_callback(data: str) -> tuple[int, int | None] | None:
@@ -201,12 +202,12 @@ async def refresh_boss_job(context) -> None:
         language = state.db.get_chat_settings(chat_id).language
         caption, keyboard = boss_presentation(boss, language)
         cache = application.bot_data.setdefault("boss_rendered_media", {})
-        media_key = (boss.phase, boss.status == "won")
+        media_key = (boss.phase, boss.status)
         try:
             if cache.get((chat_id, message_id)) != media_key:
                 await application.bot.edit_message_media(
                     chat_id=int(chat_id), message_id=int(message_id),
-                    media=InputMediaPhoto(media=boss_asset(boss.phase, boss.status == "won"), caption=caption),
+                    media=InputMediaPhoto(media=boss_file_id(state.settings, boss.phase, boss.status == "won", boss.status == "lost"), caption=caption),
                     reply_markup=keyboard,
                 )
                 cache[(chat_id, message_id)] = media_key
@@ -225,13 +226,20 @@ async def recover_boss_results(context) -> None:
     application = context.application
     db = application.bot_data["state"].db
     store = FinalBossStore(db)
+    has_work = False
     for spawn in db.list_active_hisopo_spawns():
         if spawn.hisopo_type == "final_boss":
+            has_work = True
             store.expire(spawn.chat_id, spawn.message_id, datetime.now(timezone.utc))
             queue_boss_refresh(application, spawn.chat_id, spawn.message_id, immediate=True)
     for boss in store.get_pending_results():
+        has_work = True
         queue_boss_refresh(application, boss.chat_id, boss.message_id, immediate=True)
+    if not has_work:
+        for job in application.job_queue.get_jobs_by_name("boss-results"):
+            job.schedule_removal()
 
 
 def schedule_boss_recovery(application) -> None:
-    application.job_queue.run_repeating(recover_boss_results, interval=60, first=1, name="boss-results")
+    if not application.job_queue.get_jobs_by_name("boss-results"):
+        application.job_queue.run_repeating(recover_boss_results, interval=60, first=1, name="boss-results")

@@ -70,6 +70,16 @@ class ControlPanelTests(unittest.TestCase):
             "GOOGLE_SHEETS_CREDENTIALS_JSON_PATH", "GOOGLE_SHEETS_SPREADSHEET_ID",
             "GOOGLE_SHEETS_WORKSHEET_NAME", "GOOGLE_SHEETS_CASHFLOW_SHEET_PREFIX",
         })
+        boss_keys = {
+            *(f"TELEGRAM_HISOPO_FINAL_BOSS_PHASE_{phase}_FILE_ID" for phase in range(1, 5)),
+            "TELEGRAM_HISOPO_FINAL_BOSS_DEFEATED_FILE_ID",
+            "TELEGRAM_HISOPO_FINAL_BOSS_VICTORIOUS_FILE_ID",
+        }
+        self.assertTrue(boss_keys <= field_names)
+        for key, label, sensitive in fields:
+            if key in boss_keys:
+                self.assertIn("Jefe Final", label)
+                self.assertFalse(sensitive)
 
 
 if __name__ == "__main__":

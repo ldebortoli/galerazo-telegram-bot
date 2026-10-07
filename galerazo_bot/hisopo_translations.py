@@ -2446,32 +2446,31 @@ def _compact_hisopo_rules(rules: str, headings: tuple[str, str, str, str, str]) 
     return "\n".join(rendered)
 
 
-# These exceptions belong to the general rules, whose ordinary expiration and
-# Mystery deadlines otherwise contradict the Final Boss's four-phase battle.
-_FINAL_BOSS_RULE_EDITS: dict[str, tuple[str, str, str]] = {
-    "es": ("60 si contiene un Gigante", "60 si contiene un Gigante o un Jefe Final", "Excepto el Jefe Final, que tiene reglas propias."),
-    "en": ("60 if it contains a Giant", "60 if it contains a Giant or Final Boss", "Except the Final Boss, which has its own rules."),
-    "es_ES": ("60 si contiene un Gigante", "60 si contiene un Gigante o un Jefe Final", "Excepto el Jefe Final, que tiene reglas propias."),
-    "ca": ("60 si conté un Gegant", "60 si conté un Gegant o Cap Final", "Excepte el Cap Final, que té regles pròpies."),
-    "de": ("60 bei einem Riesen", "60 bei einem Riesen oder Endboss", "Ausgenommen ist der Endboss mit eigenen Regeln."),
-    "eu": ("60 Erraldoia bada", "60 Erraldoia edo Azken Nagusia bada", "Azken Nagusia salbu, bere arauak baititu."),
-    "fr": ("60 s'il contient un Géant", "60 s'il contient un Géant ou Boss final", "Sauf le Boss final, qui a ses propres règles."),
-    "gn": ("Tuichaitéva ramo, 60 minúto", "Tuichaitéva térã Mburuvicha Paha ramo, 60 minúto", "Ndaha'éi Mburuvicha Paha: ha'e oguereko heko ambue."),
-    "it": ("60 se contiene un Gigante", "60 se contiene un Gigante o Boss finale", "Escluso il Boss finale, che ha regole proprie."),
-    "ja": ("巨大の場合は60分間", "巨大・ラスボスの場合は60分間", "独自ルールのあるラスボスは除きます。"),
-    "la": ("60 si Gigas inest", "60 si Gigas aut Dux Ultimus inest", "Praeter Ducem Ultimum, qui regulas proprias habet."),
-    "nl": ("60 bij een Reus", "60 bij een Reus of Eindbaas", "Behalve de Eindbaas, die eigen regels heeft."),
-    "pt_BR": ("60 se contiver um Gigante", "60 se contiver um Gigante ou Chefe Final", "Exceto o Chefe Final, que tem regras próprias."),
-    "pt_PT": ("60 se contiver um Gigante", "60 se contiver um Gigante ou Chefe Final", "Exceto o Chefe Final, que tem regras próprias."),
-    "quz": ("Hatun kaptin, 60 minututa", "Hatun utaq Tukukuq Apu kaptin, 60 minututa", "Tukukuq Aputa mana yupaspa: payqa kikin kamachiyuqmi."),
-    "ru": ("60 для Гигантской", "60 для Гигантской или Финального босса", "Кроме Финального босса: у него свои правила."),
-    "zh_Hans": ("巨型为60分钟", "巨型或最终首领为60分钟", "最终首领除外，它有独立规则。"),
-    "zh_Hant": ("巨型為60分鐘", "巨型或最終首領為60分鐘", "最終首領除外，它有獨立規則。"),
+# Ordinary expiration rules do not apply to the Final Boss's four-phase battle.
+# Mystery keeps its usual deadlines because new Bosses are always visible.
+_FINAL_BOSS_RULE_EXCEPTIONS: dict[str, str] = {
+    "es": "Excepto el Jefe Final, que tiene reglas propias.",
+    "en": "Except the Final Boss, which has its own rules.",
+    "es_ES": "Excepto el Jefe Final, que tiene reglas propias.",
+    "ca": "Excepte el Cap Final, que té regles pròpies.",
+    "de": "Ausgenommen ist der Endboss mit eigenen Regeln.",
+    "eu": "Azken Nagusia salbu, bere arauak baititu.",
+    "fr": "Sauf le Boss final, qui a ses propres règles.",
+    "gn": "Ndaha'éi Mburuvicha Paha: ha'e oguereko heko ambue.",
+    "it": "Escluso il Boss finale, che ha regole proprie.",
+    "ja": "独自ルールのあるラスボスは除きます。",
+    "la": "Praeter Ducem Ultimum, qui regulas proprias habet.",
+    "nl": "Behalve de Eindbaas, die eigen regels heeft.",
+    "pt_BR": "Exceto o Chefe Final, que tem regras próprias.",
+    "pt_PT": "Exceto o Chefe Final, que tem regras próprias.",
+    "quz": "Tukukuq Aputa mana yupaspa: payqa kikin kamachiyuqmi.",
+    "ru": "Кроме Финального босса: у него свои правила.",
+    "zh_Hans": "最终首领除外，它有独立规则。",
+    "zh_Hant": "最終首領除外，它有獨立規則。",
 }
 
-for _language, (_old_mystery, _new_mystery, _boss_exception) in _FINAL_BOSS_RULE_EDITS.items():
+for _language, _boss_exception in _FINAL_BOSS_RULE_EXCEPTIONS.items():
     _lines = HISOPO_TRANSLATIONS[_language]["hisopos.rules"].splitlines()
-    _lines[8] = _lines[8].replace(_old_mystery, _new_mystery)
     _lines[15] = f"- {_boss_exception} {_lines[15].removeprefix('- ')}"
     _lines[22] = f"{_lines[22]} {_boss_exception}"
     HISOPO_TRANSLATIONS[_language]["hisopos.rules"] = "\n".join(_lines)
