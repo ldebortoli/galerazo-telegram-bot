@@ -6,6 +6,7 @@ import asyncio
 from datetime import datetime, timedelta, timezone
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, patch
+from urllib.parse import parse_qs, urlsplit
 
 import pytest
 from aiohttp.test_utils import TestClient, TestServer
@@ -14,9 +15,9 @@ from galerazo_bot import config, telegram_bot as tb
 from galerazo_bot.database import Database
 from galerazo_bot.mini_app import (
     InitDataError, PRODUCTION_MINI_APP_URL, PROXY_SECRET_HEADER,
-    build_mini_app, start_mini_app, validate_init_data, validate_mini_app_runtime,
+    build_mini_app, direct_mini_app_url, start_mini_app, validate_init_data, validate_mini_app_runtime,
 )
-from galerazo_bot.monetization import create_album_context, parse_album_context, parse_payment_payload, _signature
+from galerazo_bot.monetization import create_album_context, create_shared_album_context, parse_album_context, parse_payment_payload, _signature
 from galerazo_bot.telegram_payments import answer_pre_checkout_query, process_successful_payment
 from tests.test_mini_app import signed_init_data
 from tests.test_telegram_bot_monetization import settings, state
@@ -102,6 +103,99 @@ async def test_signed_album_can_switch_to_another_owned_album(client):
         assert {x["chat_id"] for x in data["albums"]} == {"all", "-1", "-2"}
         assert len(data["paid_hisopos"]) == 21
         assert not data.get("preview")
+
+
+async def test_forwarded_shared_link_returns_live_origin_and_then_viewers_own_albums(client, backend):
+    db, bot = backend
+    db.grant_paid_hisopo(gifted_by_user_id="2", recipient_user_id="1", hisopo_key="pico", gifted_at="2026-10-01")
+    db.grant_paid_hisopo(gifted_by_user_id="1", recipient_user_id="2", hisopo_key="mini", gifted_at="2026-10-01")
+    db.set_donor_display_public("1", True)
+    link = direct_mini_app_url("token", bot_username="galerazo_bot", short_name="hisopos", chat_id="-1", user_id="1")
+    context = parse_qs(urlsplit(link).query)["startapp"][0]
+    visitor_headers = headers(init_data=signed_init_data(user={"id": 2, "first_name": "Bob"}, start_param=context))
+
+    response = await client.get("/api/bootstrap", headers=visitor_headers)
+    assert response.status == 200
+    assert response.headers["Cache-Control"] == "no-store"
+    shared = await response.json()
+    assert shared["user"] == {"id": "2", "name": "Bob"}
+    assert shared["album_owner"] == {"id": "1", "name": "Alice"}
+    assert shared["view"] == "shared"
+    assert shared["albums"] == [{"chat_id": "-1", "title": "Album -1", "discovered": 1, "captures": 3}]
+    assert set(shared) == {"user", "view", "album_owner", "albums", "selected_chat_id", "natural_hisopos", "paid_hisopos"}
+    assert next(item["quantity"] for item in shared["paid_hisopos"] if item["key"] == "pico") == 1
+    assert next(item["quantity"] for item in shared["paid_hisopos"] if item["key"] == "mini") == 0
+
+    # A forwarded link also works for a new viewer without any group membership.
+    newcomer_headers = headers(init_data=signed_init_data(user={"id": 3, "first_name": "Visitor"}, start_param=context))
+    forwarded_response = await client.get("/api/bootstrap", headers=newcomer_headers)
+    assert forwarded_response.status == 200
+    forwarded = await forwarded_response.json()
+    assert forwarded["album_owner"] == shared["album_owner"]
+    assert forwarded["albums"] == shared["albums"]
+    newcomer_response = await client.get("/api/bootstrap?view=mine", headers=newcomer_headers)
+    assert newcomer_response.status == 200
+    newcomer = await newcomer_response.json()
+    assert newcomer["view"] == "own" and newcomer["album_owner"]["id"] == "3"
+    assert newcomer["albums"] == [] and newcomer["selected_chat_id"] is None
+
+    # The same signed launch data can return home and navigate only the viewer's groups.
+    for query, selected in (("?view=mine", "all"), ("?view=mine&chat_id=-3", "-3")):
+        own_response = await client.get("/api/bootstrap" + query, headers=visitor_headers)
+        assert own_response.status == 200
+        own = await own_response.json()
+        assert own["view"] == "own" and own["album_owner"] == {"id": "2", "name": "Bob"}
+        assert own["selected_chat_id"] == selected
+        assert {album["chat_id"] for album in own["albums"]} == {"all", "-3"}
+        assert next(item["quantity"] for item in own["natural_hisopos"] if item["key"] == "common") == 9
+        assert next(item["quantity"] for item in own["paid_hisopos"] if item["key"] == "pico") == 0
+        assert next(item["quantity"] for item in own["paid_hisopos"] if item["key"] == "mini") == 1
+        assert own["donor_public"] is False
+
+    with db._connect() as conn:
+        conn.execute("UPDATE hisopo_collections SET capture_count=4 WHERE chat_id='-1' AND user_id='1'")
+    reopened_response = await client.get("/api/bootstrap", headers=visitor_headers)
+    assert reopened_response.status == 200
+    reopened = await reopened_response.json()
+    assert reopened["view"] == "shared" and reopened["albums"][0]["captures"] == 4
+    assert next(item["quantity"] for item in reopened["natural_hisopos"] if item["key"] == "common") == 4
+    bot.create_invoice_link.assert_not_called()
+
+
+@pytest.mark.parametrize("query,status", [
+    ("?chat_id=all", 403), ("?chat_id=-2", 403), ("?chat_id=-3", 403),
+    ("?view=mine&chat_id=-1", 403), ("?owner_id=1", 400), ("?view=shared", 400),
+    ("?view=mine&view=mine", 400), ("?chat_id=-1&chat_id=-2", 400),
+])
+async def test_shared_http_scope_rejects_expansion_and_ambiguous_queries(client, backend, query, status):
+    context = create_shared_album_context("token", chat_id="-1", user_id="1")
+    init = signed_init_data(user={"id": 2, "first_name": "Bob"}, start_param=context)
+    response = await client.get("/api/bootstrap" + query, headers=headers(init_data=init))
+    assert response.status == status
+    assert await response.json() == {"error": f"http_{status}"}
+    assert response.headers["Cache-Control"] == "no-store"
+    assert "Access-Control-Allow-Origin" not in response.headers
+    assert context not in await response.text() and init not in await response.text()
+    backend[1].create_invoice_link.assert_not_called()
+
+
+async def test_shared_http_launch_never_impersonates_owner_for_invoice_or_privacy(client, backend):
+    db, bot = backend
+    context = create_shared_album_context("token", chat_id="-1", user_id="1")
+    visitor_headers = headers(init_data=signed_init_data(user={"id": 2, "first_name": "Bob"}, start_param=context))
+    body = {"kind": "product", "item_key": "mini", "user_id": "1", "owner_id": "1"}
+    response = await client.post("/api/invoice", headers=visitor_headers, json={**body, "source_chat_id": "-1"})
+    assert response.status == 400
+    bot.create_invoice_link.assert_not_called()
+    response = await client.post("/api/invoice", headers=visitor_headers, json={**body, "source_chat_id": "-3"})
+    assert response.status == 200 and (await response.json())["recipient_user_id"] == "2"
+    intent = parse_payment_payload("token", bot.create_invoice_link.await_args.kwargs["payload"])
+    assert (intent.user_id, intent.recipient_user_id, intent.source_chat_id) == ("2", "2", "-3")
+    response = await client.post("/api/donor-visibility", headers=visitor_headers, json={"public": True, "user_id": "1", "owner_id": "1"})
+    assert response.status == 200 and await response.json() == {"public": True}
+    assert db.is_donor_display_public("2") is True
+    assert db.is_donor_display_public("1") is False
+    assert not db.get_paid_hisopo_ownership("1") and not db.get_paid_hisopo_ownership("2")
 
 
 async def test_foreign_tampered_and_replayed_album_contexts_are_rejected(client):

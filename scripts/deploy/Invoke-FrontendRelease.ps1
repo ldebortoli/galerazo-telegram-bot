@@ -21,7 +21,7 @@ $versionSource = Get-Content -LiteralPath (Join-Path $BotSourceRoot "galerazo_bo
 if ($versionSource -notmatch 'CURRENT_VERSION\s*=\s*"([0-9.]+)"') { throw "Version del bot no disponible." }
 $targetVersion = $Matches[1]
 $arguments = @(
-    (Join-Path $RuntimeRepositoryPath "scripts\frontend_release.py"),
+    (Join-Path $BotSourceRoot "scripts\frontend_release.py"),
     "--stage", $Stage, "--repository", $FrontendRepositoryPath,
     "--project", $ProjectId, "--zone", $Zone, "--instance", $Instance,
     "--result", $ResultFile, "--target-bot-version", $targetVersion

@@ -1,6 +1,8 @@
 [run]
 branch = True
-source = galerazo_bot
+source =
+    galerazo_bot
+    scripts.frontend_release
 omit =
     galerazo_bot/control_panel.py
 

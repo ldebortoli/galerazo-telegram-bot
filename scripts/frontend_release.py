@@ -173,7 +173,8 @@ class FrontendRelease:
                     if match:
                         print("Cloudflare Worker version: " + match[1], flush=True)
                 # Allow bounded propagation only; every subsequent run reads reality.
-                for attempt in range(6):
+                # The sixth attempt always breaks on success or raises; natural exhaustion is unreachable.
+                for attempt in range(6):  # pragma: no branch
                     try:
                         evidence = self.verify(plan)
                         break

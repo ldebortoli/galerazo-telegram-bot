@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.71] - 2026-10-07
+
+- Correcciones y mejoras para la integración de los álbumes compartidos con la web.
+
 ## [0.70] - 2026-10-02
 
 - Correcciones y mejoras: el Hisopo gigante dura una hora desde su aparición, también si está oculto dentro de un Misterioso. Revelarlo no reinicia el plazo.

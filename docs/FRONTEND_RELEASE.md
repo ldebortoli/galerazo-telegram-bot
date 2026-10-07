@@ -4,7 +4,9 @@ Bot Control Center integra el frontend configurado mediante `frontendRepositoryP
 en la misma operacion manual (`release` o `deploy`) y la misma tarea mensual existente.
 No crea otra tarea ni cambia calendario, reintentos, permisos, recursos o credenciales.
 El puente fijo es `scripts/deploy/Invoke-FrontendRelease.ps1`, usando `.venv` del
-checkout real y `scripts/frontend_release.py`. `frontend-release` es una accion
+checkout real. Tanto ese wrapper como `scripts/frontend_release.py` se ejecutan
+desde el snapshot del bot seleccionado para el release; una actualizacion del
+checkout durante la ejecucion no sustituye el puente validado. `frontend-release` es una accion
 interna del manager para publicar solo web, por ejemplo tras un bot ya desplegado.
 
 ## Seleccion y deteccion
@@ -59,6 +61,14 @@ se retiran en finally. La tarea Windows y sus reintentos no se reinstalan.
 ## Validacion
 
 `python -m pytest tests/test_frontend_release.py` prueba fixtures sin red/credenciales.
+El comando habitual de cobertura del bot incluye `scripts.frontend_release` y exige
+100% de sentencias y ramas. La unica rama excluida en ese puente es la salida natural
+del bucle de propagacion: el sexto intento siempre termina mediante `break` o `raise`,
+por lo que agotar el bucle sin esas acciones es estructuralmente imposible. Las
+pruebas verifican exito, recuperacion transitoria, los seis fallos consecutivos y la
+limpieza del snapshot. En Windows tambien ejecutan el wrapper con un script inocuo
+en un snapshot temporal y la `.venv` existente, para comprobar que usa el origen
+seleccionado y conserva los argumentos de version e imagen.
 La suite de BCC cubre web-only/no-op, orden conjunto, fallo/resultado invalido,
 acciones manuales y lock; conserva cobertura 100% del agente. Web conserva check,
 build, tests y cobertura del alcance definido. No ampliar CI remota ni ejecutar

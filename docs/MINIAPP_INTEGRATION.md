@@ -163,6 +163,18 @@ confirmaciones y respuestas de Telegram son fixtures sin movimientos reales.
 La suite existente cubre tambien renovaciones del Club y reembolsos. Docker
 debe validar la imagen runtime sin `mini_app/` ni servidor estatico.
 
+La prueba opcional de navegador del repositorio hermano Galerazo web se ejecuta
+con `npm run test:shared-visits -- <ruta-al-checkout-del-bot>` y `QA_NODE_MODULES`
+apuntando a una instalacion local de Playwright. Usa `.venv` de este repositorio
+para arrancar `tests.miniapp_browser_fixture` en loopback/puerto efimero, con
+SQLite temporal y firmas de prueba. Recorre HTML/JS reales, gateway web real y
+API Python real: visita reenviada, cosmeticos del titular, vuelta a cuenta propia,
+cambio de grupo y reintento tras error, album vacio, sesion vencida/enlace invalido
+y limites de acceso. El controlador elimina sus procesos y datos temporales.
+No carga `.env`, no llama Telegram ni publica recursos. Telegram WebApp, el
+limitador de Cloudflare y la facturacion usan fixtures: este harness no sustituye
+la validacion en Telegram Android/iOS/Desktop. Es opt-in, fuera de la CI rapida.
+
 Tras el corte: sin secreto la API debe dar 403; con secreto correcto y sin
 initData debe dar 401; desde Telegram abrir menu, enlace de grupo, cambiar
 album y comprobar propiedad y privacidad. Probar tambien otro usuario y una
