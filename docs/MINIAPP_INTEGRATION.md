@@ -191,6 +191,23 @@ Retirar/restaurar el menu privado segun corresponda. Nunca exponer 0.59 por el
 tunel aun si el Worker parece funcionar. Estos pasos pertenecen al rollback
 autorizado, no a las validaciones locales.
 
+### Colección de muestra y precisión de cantidades
+
+Desde bot 0.74 y web 0.1.19, responder a un mensaje de la propia identidad del
+bot con `/coleccionhisopos` muestra todos los naturales y cosméticos con
+9223372036854775807 unidades de cada uno, el máximo `INTEGER` de SQLite.
+Es una vista calculada: no crea inventario, compras, recompensas ni puntajes.
+El enlace compartido mantiene el mismo grupo y titular, con «Ver mi álbum»
+para regresar a la identidad del visitante. Las respuestas sin autor personal
+válido, incluidas las publicaciones como canal, usan al solicitante. En privado
+se conserva la colección propia de cosméticos.
+
+`quantity` y `captures` conservan el formato JSON numérico hasta `2^53-1`.
+Por encima se entregan como strings decimales para evitar redondeos al leer
+JSON en JavaScript. Los consumidores deben aceptar `int | string`; el frontend
+suma con `BigInt` y muestra cada dígito. Los totales pueden superar el máximo
+de una fila individual porque Python los calcula sin un límite fijo de entero.
+
 Fuentes: [Telegram Mini Apps](https://core.telegram.org/bots/webapps),
 [edicion de apps mediante BotFather](https://core.telegram.org/api/bots/webapps),
 [Cloudflare Tunnel](https://developers.cloudflare.com/tunnel/),

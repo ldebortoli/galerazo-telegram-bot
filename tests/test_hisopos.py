@@ -512,7 +512,7 @@ class HisopoRulesTests(unittest.TestCase):
         self.assertIn("✅ Hisopo Mini: 10", cosmetics)
         self.assertIn("❓ Hisopo Pico: 0", cosmetics)
         self.assertIn("✅ Hisopo Estelar: 2", cosmetics)
-        self.assertIn("❓ Hisopo mosquito: 0", cosmetics)
+        self.assertIn("❓ Hisopo Mosquito: 0", cosmetics)
         self.assertNotIn("Hisopo Dengue", cosmetics)
         self.assertNotIn("Capturas:", cosmetics)
 

@@ -27,6 +27,8 @@ HISOPO_RACE_REQUIRED_PRESSES = 20
 HISOPO_RACE_MIN_PRESS_INTERVAL = timedelta(milliseconds=100)
 HISOPO_TYPE_ROLL_MAX = 10_000
 HISOPO_GIANT_MAX_HELPERS = 15
+# SQLite INTEGER is signed 64-bit; Python can also sum these quantities exactly.
+MAX_HISOPO_QUANTITY = 2**63 - 1
 HISOPO_INTENSITIES = {
     "very_low": 1,
     "low": 5,
@@ -312,8 +314,11 @@ def render_hisopo_collection(
     language: str = DEFAULT_LANGUAGE,
     ownership: Iterable[PaidHisopoOwnership] = (),
     include_chat: bool = True,
+    showcase: bool = False,
 ) -> str:
     counts = {entry.hisopo_type: entry.capture_count for entry in entries}
+    if showcase:
+        counts = dict.fromkeys(COLLECTIBLE_HISOPO_KEYS, MAX_HISOPO_QUANTITY)
     discovered = sum(counts.get(key, 0) > 0 for key in COLLECTIBLE_HISOPO_KEYS)
     captures = sum(counts.get(key, 0) for key in COLLECTIBLE_HISOPO_KEYS)
     lines = [
@@ -341,6 +346,8 @@ def render_hisopo_collection(
             )
             lines.append(f"{marker} {t(language, type_key)}: {count}")
     cosmetic_counts = {entry.hisopo_key: entry.quantity for entry in ownership}
+    if showcase:
+        cosmetic_counts = {product.key: MAX_HISOPO_QUANTITY for product in (*PAID_HISOPOS, CLUB_HISOPO)}
     lines.extend(("", t(language, "hisopos.collection.cosmetics")))
     for product in (*PAID_HISOPOS, CLUB_HISOPO):
         count = cosmetic_counts.get(product.key, 0)

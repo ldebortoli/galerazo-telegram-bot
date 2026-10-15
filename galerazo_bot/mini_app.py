@@ -15,7 +15,7 @@ from telegram import LabeledPrice
 
 from .database import Database
 from .club_rewards import CLUB_REWARD_INTERVAL
-from .hisopos import COLLECTIBLE_HISOPO_KEYS
+from .hisopos import COLLECTIBLE_HISOPO_KEYS, MAX_HISOPO_QUANTITY
 from .i18n import t
 from .monetization import (
     CLUB_HISOPO,
@@ -403,13 +403,20 @@ class MiniAppApi:
     def _shared_bootstrap(self, viewer: MiniAppUser, owner: Any, album: Any) -> dict[str, Any]:
         collection = self.db.get_hisopo_collection(album.chat_id, owner.user_id)
         self.db.reconcile_club_rewards(user_id=owner.user_id)
+        counts = {entry.hisopo_type: entry.capture_count for entry in collection}
+        ownership = {entry.hisopo_key: entry.quantity for entry in self.db.get_paid_hisopo_ownership(owner.user_id)}
+        if owner.user_id == self.bot_token.partition(":")[0]:
+            # The bot's showcase is virtual: no paid inventory, awards or SQLite sums.
+            counts = dict.fromkeys(COLLECTIBLE_HISOPO_KEYS, MAX_HISOPO_QUANTITY)
+            ownership = {product.key: MAX_HISOPO_QUANTITY for product in (*PAID_HISOPOS, CLUB_HISOPO)}
+            album = replace(album, discovered_count=len(counts), capture_count=sum(counts.values()))
         return self._bootstrap_payload(
             user=viewer,
             albums=[album],
             selected_chat_id=album.chat_id,
-            counts={entry.hisopo_type: entry.capture_count for entry in collection},
+            counts=counts,
             aggregate_counts={},
-            ownership={entry.hisopo_key: entry.quantity for entry in self.db.get_paid_hisopo_ownership(owner.user_id)},
+            ownership=ownership,
             club_periods=0,
             club_active_until=None,
             donor_public=False,
@@ -438,7 +445,7 @@ class MiniAppApi:
                     "key": key,
                     "name": t("es", translation_key).capitalize(),
                     "image": f"/assets/hisopos/{NATURAL_HISOPO_IMAGES[key]}",
-                    "quantity": counts.get(key, 0),
+                    "quantity": _json_count(counts.get(key, 0)),
                 }
             )
         paid = [self._paid_product_payload(product, ownership) for product in PAID_HISOPOS]
@@ -448,7 +455,7 @@ class MiniAppApi:
                 "chat_id": album.chat_id,
                 "title": album.title or f"Grupo {album.chat_id}",
                 "discovered": album.discovered_count,
-                "captures": album.capture_count,
+                "captures": _json_count(album.capture_count),
             }
             for album in albums
         ]
@@ -459,7 +466,7 @@ class MiniAppApi:
                     "chat_id": ALL_GROUPS_CHAT_ID,
                     "title": "Todos los grupos",
                     "discovered": sum(count > 0 for count in aggregate_counts.values()),
-                    "captures": sum(album.capture_count for album in albums),
+                    "captures": _json_count(sum(album.capture_count for album in albums)),
                 },
             )
         payload = {
@@ -502,15 +509,20 @@ class MiniAppApi:
     def _paid_product_payload(product: Any, ownership: dict[str, int], *, club_only: bool = False) -> dict[str, Any]:
         return {
             "key": product.key,
-            "name": product.name,
+            "name": product.public_name,
             "description": product.description,
             "price_stars": product.price_stars,
             "image": f"/assets/hisopos/{product.image_name}",
             "accent": product.accent,
-            "quantity": ownership.get(product.key, 0),
+            "quantity": _json_count(ownership.get(product.key, 0)),
             "club_only": club_only,
         }
 
+
+
+def _json_count(value: int) -> int | str:
+    """Keep existing numeric payloads, using decimal strings above JS's exact range."""
+    return str(value) if value > 2**53 - 1 else value
 
 
 MINI_APP_API_KEY = web.AppKey("mini_app_api", MiniAppApi)

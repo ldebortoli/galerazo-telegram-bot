@@ -2103,9 +2103,10 @@ async def _handle_command_update(update: Update, context: ContextTypes.DEFAULT_T
             db=state.db,
             message=message,
             requester=user,
-            target_user=reply_to_user or user,
+            target_user=_collection_target_user(message, user),
             settings=state.settings,
             bot_username=state.bot_username,
+            bot_user_id=state.bot_user_id,
         ),
         send_donation_menu=lambda: _send_donation_menu(
             bot=context.bot,
@@ -2168,6 +2169,13 @@ async def _handle_command_update(update: Update, context: ContextTypes.DEFAULT_T
         raise
 
 
+def _collection_target_user(message: Message, requester: User) -> User:
+    reply = message.reply_to_message
+    if reply is not None and reply.sender_chat is None and reply.from_user is not None and reply.from_user.id > 0:
+        return reply.from_user
+    return requester
+
+
 async def _send_hisopo_collection(
     *,
     db: Database,
@@ -2176,6 +2184,7 @@ async def _send_hisopo_collection(
     target_user: User,
     settings: Settings,
     bot_username: str,
+    bot_user_id: str | None = None,
 ) -> bool:
     chat_id = str(message.chat.id)
     language = _chat_language(db, chat_id)
@@ -2192,6 +2201,7 @@ async def _send_hisopo_collection(
         language=language,
         ownership=db.get_paid_hisopo_ownership(str(target_user.id)),
         include_chat=not private,
+        showcase=str(target_user.id) == bot_user_id,
     )
     reply_markup = None
     mini_app_url = _available_mini_app_url(settings, bot_username)

@@ -23,7 +23,7 @@ class PaidHisopo:
 
     @property
     def public_name(self) -> str:
-        return "Hisopo mosquito" if self.key == "dengue" else self.name
+        return "Hisopo Mosquito" if self.key == "dengue" else self.name
 
 
 @dataclass(frozen=True)

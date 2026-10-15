@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.74] - 2026-10-15
+
+- Correcciones y mejoras: Hisopo Mosquito usa mayúscula también en la Mini App. Al responder con /coleccionhisopos se muestra la colección del autor válido; las publicaciones sin usuario propio muestran la del solicitante.
+- La colección de Galerazo Bot muestra todos los Hisopos y cosméticos con 9223372036854775807 unidades de cada uno en cualquier grupo. El álbum compartido conserva las cantidades y totales exactos, sin alterar inventarios, pagos ni puntajes.
+
 ## [0.73] - 2026-10-07
 
 - El Jefe Final aparece siempre visible y nunca dentro de un Misterioso. Su vencimiento automático se programa al aparecer; el control de recuperación se detiene cuando no quedan Jefes ni resultados pendientes. Los demás Hisopos conservan sus reglas de vencimiento.

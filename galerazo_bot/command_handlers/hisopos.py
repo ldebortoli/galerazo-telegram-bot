@@ -54,6 +54,7 @@ def handle_collection(context: CommandContext, db: Database):
         language=context.language,
         ownership=db.get_paid_hisopo_ownership(target_user_id),
         include_chat=not private,
+        showcase=target_user_id == context.bot_user_id,
     )
 
 
