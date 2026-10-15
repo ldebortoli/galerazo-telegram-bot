@@ -6,9 +6,9 @@ cubre y debe pasar de `borrador` a `aprobado` antes de publicar una imagen. Una 
 vacía con estado `omitido` registra una excepción explícitamente solicitada por el usuario:
 el runtime avanza el cursor sin enviar un broadcast ni acumularla para otro release.
 
-## [0.74] desde=[0.68] estado=borrador
+## [0.75] desde=[0.68] estado=borrador
 
-Novedades de Galerazo Bot v0.74
+Novedades de Galerazo Bot v0.75
 
 Llega el Jefe Final: siempre visible, nunca dentro de un Misterioso. Es un evento muy raro con cuatro fases de cooperación, velocidad, coordinación y un acertijo. Ganar las cuatro desbloquea el Jefe para quienes ayudaron y reparte puntos según su aporte. Si pierden, se aplican las reglas de esa fase. Su imagen queda en el chat como recuerdo; el resultado explica los puntos y, si llegaron a la última fase, la solución al perder. /reglashisopo incluye las reglas completas.
 

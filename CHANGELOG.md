@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.75] - 2026-10-15
+
+- Correcciones y mejoras: retención automática del registro Docker con protección de producción, rollback y contenedores existentes. Cada deploy protege primero la imagen candidata y, al confirmarse saludable, actualiza las referencias conservadas; las versiones obsoletas se eliminan mediante la política diaria de Google después de 24 horas.
+- Reintentar el deploy de la misma imagen conserva la verdadera versión anterior para rollback. Una lectura incompleta o un cambio concurrente bloquea la actualización; una verificación final fallida pausa las eliminaciones.
+- El contexto Docker excluye también el bytecode y las cachés de Python de carpetas anidadas para evitar empaquetar archivos generados en otra plataforma.
+
 ## [0.74] - 2026-10-15
 
 - Correcciones y mejoras: Hisopo Mosquito usa mayúscula también en la Mini App. Al responder con /coleccionhisopos se muestra la colección del autor válido; las publicaciones sin usuario propio muestran la del solicitante.

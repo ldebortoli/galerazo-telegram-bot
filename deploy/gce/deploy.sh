@@ -69,7 +69,10 @@ if [[ -n "${old_image}" ]]; then
     docker compose --env-file "${image_env}" -f "${compose_file}" \
       exec -T bot python -m galerazo_bot.deploy_backup
   fi
-  cp "${image_env}" "${previous_env}"
+  # Retrying the same release must not overwrite the real rollback image.
+  if [[ "${old_image}" != "${new_image}" ]]; then
+    cp "${image_env}" "${previous_env}"
+  fi
 fi
 
 printf 'GALERAZO_IMAGE=%s\n' "${new_image}" > "${image_env}"

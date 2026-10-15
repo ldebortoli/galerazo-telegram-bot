@@ -483,6 +483,14 @@ la misma transaccion. Esto permite agregar columnas o retirar tablas obsoletas s
 reemplazar la base remota; el backup del paso 3 permite restaurar la imagen y los
 datos anteriores si la validacion del deploy falla.
 
+## Retención automática del registro
+
+El flujo de deploy protege producción, rollback, imágenes de contenedores
+existentes y la candidata antes de cambiar el runtime. Tras confirmar salud,
+actualiza las políticas diarias para eliminar las versiones obsoletas después
+de 24 horas. No borrar todas las imágenes sin etiqueta ni conservar simplemente
+las dos más recientes por fecha. Ver [retención y recuperación](REGISTRY_RETENTION.md).
+
 ## 7. Comprobaciones y rollback
 
 ```powershell

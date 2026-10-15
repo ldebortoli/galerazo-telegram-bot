@@ -3,6 +3,7 @@ branch = True
 source =
     galerazo_bot
     scripts.frontend_release
+    scripts.registry_retention
 omit =
     galerazo_bot/control_panel.py
 

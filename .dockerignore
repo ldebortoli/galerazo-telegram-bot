@@ -17,6 +17,8 @@ coverage-report.json
 .update-venv
 __pycache__/
 *.pyc
+**/__pycache__/
+**/*.pyc
 bin/
 data/
 backups/

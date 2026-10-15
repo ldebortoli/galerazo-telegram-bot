@@ -21,6 +21,16 @@ if ($Image -notmatch '^[A-Za-z0-9][A-Za-z0-9._/:@-]+$') {
     throw "Referencia de imagen invalida: $Image"
 }
 
+if ($Image -notmatch '^(?<Location>[a-z][a-z0-9-]*)-docker\.pkg\.dev/(?<Project>[a-z][a-z0-9-]*)/(?<Repository>[a-z][a-z0-9-]*)/galerazobot:[A-Za-z0-9_][A-Za-z0-9_.-]{0,127}$' -or $Matches.Project -ne $ProjectId) {
+    throw "La retencion requiere una imagen del paquete galerazobot en el proyecto indicado."
+}
+$registryLocation = $Matches.Location
+$registryRepository = $Matches.Repository
+$retention = Join-Path $PSScriptRoot "Sync-GceRegistryRetention.ps1"
+# Protect the candidate before touching production, even if it was built days ago.
+& $retention -ProjectId $ProjectId -Zone $Zone -Instance $Instance `
+    -Location $registryLocation -Repository $registryRepository -CandidateImage $Image
+
 $compose = (Resolve-Path (Join-Path $PSScriptRoot "..\..\compose.production.yaml")).Path
 $deploy = (Resolve-Path (Join-Path $PSScriptRoot "..\..\deploy\gce\deploy.sh")).Path
 $rollback = (Resolve-Path (Join-Path $PSScriptRoot "..\..\deploy\gce\rollback.sh")).Path
@@ -45,4 +55,7 @@ if ($LASTEXITCODE -ne 0) {
     throw "El deploy fallo. Revisa la salida anterior: el script remoto restauro la imagen previa cuando existia o detuvo el contenedor fallido."
 }
 
-Write-Host "Deploy completado con $Image" -ForegroundColor Green
+Write-Host "Deploy saludable con $Image; actualizando retencion..." -ForegroundColor Green
+& $retention -ProjectId $ProjectId -Zone $Zone -Instance $Instance `
+    -Location $registryLocation -Repository $registryRepository
+Write-Host "Deploy y retencion completados con $Image" -ForegroundColor Green
