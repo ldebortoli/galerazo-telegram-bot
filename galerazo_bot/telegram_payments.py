@@ -10,6 +10,7 @@ from telegram.error import TelegramError
 
 from .database import Database
 from .i18n import t
+from .commerce_i18n import commerce_text, localized_invoice_spec, payment_language, cosmetic_name, commerce_language
 from .monetization import (
     CLUB_HISOPO,
     DONATION_TIERS,
@@ -19,6 +20,7 @@ from .monetization import (
     PaymentPayloadError,
     create_payment_payload,
     invoice_spec,
+    PAID_HISOPO_BY_KEY,
     parse_payment_payload,
 )
 
@@ -37,8 +39,9 @@ async def create_invoice_url(
     user_id: str,
     source_chat_id: str | None,
     recipient_user_id: str | None = None,
+    language: str = "es",
 ) -> str:
-    spec = invoice_spec(kind, item_key)
+    spec = localized_invoice_spec(kind, item_key, language)
     payload = create_payment_payload(
         bot_token,
         kind=kind,
@@ -68,6 +71,7 @@ async def send_donation_menu(
     user_id: str,
     language: str,
     mini_app_url: str | None,
+    db: Database | None = None,
 ) -> bool:
     try:
         donation_urls = [
@@ -78,6 +82,7 @@ async def send_donation_menu(
                 item_key=str(amount),
                 user_id=user_id,
                 source_chat_id=str(message.chat.id),
+                language=language,
             )
             for amount in DONATION_TIERS
         ]
@@ -88,6 +93,7 @@ async def send_donation_menu(
             item_key="club",
             user_id=user_id,
             source_chat_id=str(message.chat.id),
+            language=language,
         )
         rows = [
             [
@@ -111,6 +117,8 @@ async def send_donation_menu(
             reply_markup=InlineKeyboardMarkup(rows),
             do_quote=True,
         )
+        if db is not None:
+            db.set_payment_language(user_id, commerce_language(language))
         return True
     except TelegramError as exc:
         logger.warning("No pude crear el menú de aportes con Stars: %s", exc)
@@ -123,6 +131,7 @@ async def answer_pre_checkout_query(
     db: Database,
     bot_token: str,
 ) -> None:
+    language = payment_language(db, str(query.from_user.id), str(query.from_user.id))
     try:
         intent = parse_payment_payload(
             bot_token,
@@ -133,7 +142,7 @@ async def answer_pre_checkout_query(
         if query.currency != STARS_CURRENCY or query.total_amount != spec.amount_stars:
             raise PaymentPayloadError("El importe del pago no coincide con el producto.")
     except PaymentPayloadError as exc:
-        await query.answer(ok=False, error_message=str(exc)[:200])
+        await query.answer(ok=False, error_message=(str(exc) if language in {"es", "es_ES"} else commerce_text(language, "invalid"))[:200])
         return
     await query.answer(ok=True)
 
@@ -149,6 +158,7 @@ async def process_successful_payment(
     user = message.from_user
     if payment is None or user is None:
         return False
+    language = payment_language(db, str(user.id), str(message.chat.id))
     try:
         intent = parse_payment_payload(
             bot_token,
@@ -160,7 +170,7 @@ async def process_successful_payment(
             raise PaymentPayloadError("El pago confirmado no coincide con el producto.")
     except PaymentPayloadError as exc:
         logger.error("Pago de Stars confirmado con payload inválido: %s", exc)
-        await message.reply_text("Recibí el pago, pero no pude acreditarlo. Usá /paysupport.")
+        await message.reply_text(commerce_text(language, "uncredited"))
         return False
     paid_at = _message_datetime(message).isoformat()
     expiration = payment.subscription_expiration_date
@@ -201,17 +211,13 @@ async def process_successful_payment(
                 payment.telegram_payment_charge_id,
             )
     if intent.kind == "donation":
-        response = f"¡Gracias por aportar ⭐ {payment.total_amount}! Tu apoyo no compra puntos ni ventajas."
+        response = commerce_text(language, "donation", amount=payment.total_amount)
     elif intent.kind == "subscription":
-        response = (
-            "¡Gracias por sumarte al Club del Hisopo! Tu membresía quedó activa. "
-            "Recibís un Estelar permanente al completar cada 90 días consecutivos pagos; "
-            "el primero recién al día 90, no al pagar la tercera cuota."
-        )
+        response = commerce_text(language, "subscription")
     elif intent.recipient_user_id != intent.user_id:
-        response = f"¡Regalo confirmado! {spec.title} fue acreditado al usuario {intent.recipient_user_id}."
+        response = commerce_text(language, "gift", title=cosmetic_name(PAID_HISOPO_BY_KEY[intent.item_key], language), recipient=intent.recipient_user_id)
     else:
-        response = f"¡Compra confirmada! {spec.title} sumó una unidad a tu colección."
+        response = commerce_text(language, "product", title=cosmetic_name(PAID_HISOPO_BY_KEY[intent.item_key], language))
     await message.reply_text(response)
     return True
 
@@ -225,8 +231,9 @@ async def process_refunded_payment(*, message: Message, db: Database) -> bool:
         refunded_at=_message_datetime(message).isoformat(),
     )
     if refunded:
+        language = payment_language(db, str(message.from_user.id), str(message.chat.id))
         await message.reply_text(
-            "El reembolso de Stars quedó registrado y el beneficio asociado fue retirado."
+            commerce_text(language, "refund")
         )
     return refunded
 

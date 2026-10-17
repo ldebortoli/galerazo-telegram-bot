@@ -17,6 +17,7 @@ from .database import Database
 from .club_rewards import CLUB_REWARD_INTERVAL
 from .hisopos import COLLECTIBLE_HISOPO_KEYS, MAX_HISOPO_QUANTITY
 from .i18n import t
+from .commerce_i18n import commerce_language, commerce_text, is_commerce_language, localized_invoice_spec
 from .monetization import (
     CLUB_HISOPO,
     DONATION_TIERS,
@@ -277,7 +278,10 @@ class MiniAppApi:
                 raise ValueError("Invalid request")
             kind = str(body["kind"])
             item_key = str(body["item_key"])
-            spec = invoice_spec(kind, item_key)
+            language = body.get("language", "es")
+            if not is_commerce_language(language):
+                raise ValueError("Unsupported invoice language")
+            spec = localized_invoice_spec(kind, item_key, language)
         except InitDataError as exc:
             raise web.HTTPUnauthorized(text=str(exc)) from exc
         except (KeyError, TypeError, ValueError, json.JSONDecodeError) as exc:
@@ -302,7 +306,7 @@ class MiniAppApi:
             kwargs["subscription_period"] = spec.subscription_period
         description = spec.description
         if recipient_label:
-            description = f"Regalo para {recipient_label}. {description}"
+            description = commerce_text(language, "gift_description", recipient=recipient_label, description=description)
         invoice_url = await self.bot.create_invoice_link(
             title=spec.title,
             description=description,
@@ -311,6 +315,7 @@ class MiniAppApi:
             prices=[LabeledPrice(spec.title, spec.amount_stars)],
             **kwargs,
         )
+        self.db.set_payment_language(user.user_id, commerce_language(language))
         return web.json_response(
             {"invoice_url": invoice_url, "recipient_user_id": recipient_user_id}
         )

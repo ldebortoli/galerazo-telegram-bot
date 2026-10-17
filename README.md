@@ -1,5 +1,11 @@
 # Galerazo Bot
 
+La expansión de idiomas preparada en 0.76 admite 112 opciones (18 previas y 94 nuevas)
+y agrega paginación al selector del bot. El inventario de 176 referencias, las 64
+exclusiones y la validación están en [docs/PRIVATE_LANGUAGES.md](docs/PRIVATE_LANGUAGES.md).
+El frontend hermano prepara 140 opciones. Son catálogos locales automáticos, sin
+certificación nativa; esta entrega de código no publica ni reinicia producción.
+
 Base para un bot de Telegram con una version estable y reproducible de Python, `python-telegram-bot` y SQLite.
 
 ## Comandos

@@ -393,6 +393,12 @@ _DEV_PRIVATE_HINTS = {
 for _language, _hint in _DEV_PRIVATE_HINTS.items():
     TRANSLATIONS[_language]["help.dev_private_hint"] = _hint
 
+from .language_catalogs import CATALOGS
+
+for _language, _navigation in CATALOGS["navigation"].items():
+    TRANSLATIONS[_language].update(_navigation)
+TRANSLATIONS.update(CATALOGS["translations"])
+
 
 def t(language: str | None, key: str, **kwargs) -> str:
     normalized_language = language if language in TRANSLATIONS else DEFAULT_LANGUAGE

@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.76] - 2026-10-17
+
+- Agrega 94 catálogos locales completos de mensajes, ayuda, juegos, errores y pagos (112 opciones en total); 64 variantes incompletas se excluyen con un recibo preciso, sin catálogos de relleno ni traducción remota de usuarios.
+- Selector bilingüe de idiomas paginado, con 12 opciones por página, flechas localizadas e indicador de página. Navegar conserva la selección; los callbacks obsoletos, índices inválidos y opciones ajenas a la página no modifican preferencias.
+- Correcciones y mejoras: dirección de lectura, aviso de traducción automática y nombres de cosméticos localizados. Facturas, confirmaciones y reembolsos usan catálogos locales y una preferencia de pago independiente, conservando SKU, cantidades, permisos y firmas.
+
 ## [0.75] - 2026-10-15
 
 - Correcciones y mejoras: retención automática del registro Docker con protección de producción, rollback y contenedores existentes. Cada deploy protege primero la imagen candidata y, al confirmarse saludable, actualiza las referencias conservadas; las versiones obsoletas se eliminan mediante la política diaria de Google después de 24 horas.

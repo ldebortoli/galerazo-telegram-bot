@@ -1,14 +1,17 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from hashlib import sha256
 
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 
 from .i18n import t
+from .language_catalogs import LANGUAGE_NAMES, LANGUAGE_OPTIONS
 
 
 CONFIG_PREFIX = "config"
-LANGUAGES_PER_ROW = 4
+LANGUAGES_PER_ROW = 2
+LANGUAGES_PER_PAGE = 12
 
 
 @dataclass(frozen=True)
@@ -23,26 +26,9 @@ class CommandGroupOption:
     label: str
 
 
-LANGUAGES = (
-    LanguageOption("es", "Espa\u00f1ol"),
-    LanguageOption("es_ES", "Espa\u00f1ol (Espa\u00f1a)"),
-    LanguageOption("en", "English"),
-    LanguageOption("ru", "\u0420\u0443\u0441\u0441\u043a\u0438\u0439"),
-    LanguageOption("la", "Latine"),
-    LanguageOption("ja", "\u65e5\u672c\u8a9e"),
-    LanguageOption("it", "Italiano"),
-    LanguageOption("fr", "Fran\u00e7ais"),
-    LanguageOption("de", "Deutsch"),
-    LanguageOption("nl", "Nederlands"),
-    LanguageOption("zh_Hans", "\u4e2d\u6587 (\u7b80\u4f53)"),
-    LanguageOption("zh_Hant", "\u4e2d\u6587 (\u7e41\u9ad4)"),
-    LanguageOption("pt_BR", "Portugu\u00eas (Brasil)"),
-    LanguageOption("pt_PT", "Portugu\u00eas (Portugal)"),
-    LanguageOption("ca", "Catal\u00e0"),
-    LanguageOption("eu", "Euskara"),
-    LanguageOption("gn", "Ava\u00f1e'\u1ebd"),
-    LanguageOption("quz", "Runa Simi"),
-)
+LANGUAGES = tuple(LanguageOption(option["code"], option["native"]) for option in LANGUAGE_OPTIONS)
+LANGUAGE_MENU_REVISION = sha256(repr(LANGUAGE_OPTIONS).encode()).hexdigest()[:8]
+_LANGUAGE_METADATA = {option["code"]: option for option in LANGUAGE_OPTIONS}
 COMMAND_GROUPS = (
     CommandGroupOption("galeraza", "Galeraza"),
     CommandGroupOption("hisopos", "Recolector de Hisopos"),
@@ -60,15 +46,63 @@ def build_main_menu(language: str, include_command_groups: bool = True) -> Inlin
     return InlineKeyboardMarkup(rows)
 
 
-def build_language_menu(current_language: str) -> InlineKeyboardMarkup:
+def language_page_count() -> int:
+    return (len(LANGUAGES) + LANGUAGES_PER_PAGE - 1) // LANGUAGES_PER_PAGE
+
+
+def selected_language_page(current_language: str) -> int:
+    return next((i // LANGUAGES_PER_PAGE for i, option in enumerate(LANGUAGES) if option.code == current_language), 0)
+
+
+def parse_language_action(parsed: tuple[str, ...], current_language: str) -> tuple[int, str | None] | None:
+    if parsed == ("language",):
+        return selected_language_page(current_language), None
+    if not ((parsed[0] == "langpage" and len(parsed) == 4) or (parsed[0] == "lang" and len(parsed) == 5)):
+        return None
+    page_text, previous_language, revision = parsed[-3:]
+    if previous_language != current_language or revision != LANGUAGE_MENU_REVISION:
+        return None
+    if not page_text.isascii() or not page_text.isdecimal() or len(page_text) > 3:
+        return None
+    page = int(page_text)
+    if page >= language_page_count():
+        return None
+    selected = parsed[1] if parsed[0] == "lang" else None
+    if selected is not None and selected not in {option.code for option in LANGUAGES[page * LANGUAGES_PER_PAGE:(page + 1) * LANGUAGES_PER_PAGE]}:
+        return None
+    return page, selected
+
+
+def language_menu_text(language: str) -> str:
+    text = t(language, "config.language")
+    if _LANGUAGE_METADATA.get(language, _LANGUAGE_METADATA["es"])["machine"]:
+        text += "\n\n" + t(language, "config.translation_notice")
+    return text
+
+
+def build_language_menu(current_language: str, page: int | None = None) -> InlineKeyboardMarkup:
+    if page is None:
+        page = selected_language_page(current_language)
+    if type(page) is not int or not 0 <= page < language_page_count():
+        raise ValueError("Invalid language page")
+    names = LANGUAGE_NAMES.get(current_language, LANGUAGE_NAMES["es"])
+    state = f"{page}:{current_language}:{LANGUAGE_MENU_REVISION}"
     buttons = [
         InlineKeyboardButton(
-            _selected_label(language.label, language.code == current_language),
-            callback_data=f"{CONFIG_PREFIX}:lang:{language.code}",
+            _selected_label(f"\u2068{language.label}\u2069 (\u2068{names[language.code]}\u2069)", language.code == current_language),
+            callback_data=f"{CONFIG_PREFIX}:lang:{language.code}:{state}",
         )
-        for language in LANGUAGES
+        for language in LANGUAGES[page * LANGUAGES_PER_PAGE:(page + 1) * LANGUAGES_PER_PAGE]
     ]
     rows = [buttons[index : index + LANGUAGES_PER_ROW] for index in range(0, len(buttons), LANGUAGES_PER_ROW)]
+    rtl = _LANGUAGE_METADATA.get(current_language, _LANGUAGE_METADATA["es"])["direction"] == "rtl"
+    navigation = []
+    if page > 0:
+        navigation.append(InlineKeyboardButton(f"{'→' if rtl else '←'} {t(current_language, 'config.previous_page')}", callback_data=f"{CONFIG_PREFIX}:langpage:{page - 1}:{current_language}:{LANGUAGE_MENU_REVISION}"))
+    navigation.append(InlineKeyboardButton(t(current_language, "config.language_page", page=page + 1, pages=language_page_count()), callback_data=f"{CONFIG_PREFIX}:langinfo"))
+    if page + 1 < language_page_count():
+        navigation.append(InlineKeyboardButton(f"{t(current_language, 'config.next_page')} {'←' if rtl else '→'}", callback_data=f"{CONFIG_PREFIX}:langpage:{page + 1}:{current_language}:{LANGUAGE_MENU_REVISION}"))
+    rows.append(navigation)
     rows.append(_navigation_row(current_language, f"{CONFIG_PREFIX}:main"))
     return InlineKeyboardMarkup(rows)
 

@@ -340,6 +340,12 @@ class Database:
             )
             _ensure_column(conn, "chat_settings", "announcements_enabled", "INTEGER NOT NULL DEFAULT 1")
             conn.execute(
+                """CREATE TABLE IF NOT EXISTS payment_language_preferences (
+                    user_id TEXT PRIMARY KEY,
+                    language TEXT NOT NULL
+                )"""
+            )
+            conn.execute(
                 """
                 CREATE TABLE IF NOT EXISTS chat_command_settings (
                     chat_id TEXT NOT NULL,
@@ -1255,6 +1261,19 @@ class Database:
             language=row["language"],
             announcements_enabled=bool(row["announcements_enabled"]),
         )
+
+    def get_payment_language(self, user_id: str, default: str) -> str:
+        with self._connect() as conn:
+            row = conn.execute("SELECT language FROM payment_language_preferences WHERE user_id = ?", (user_id,)).fetchone()
+        return row["language"] if row else default
+
+    def set_payment_language(self, user_id: str, language: str) -> None:
+        with self._connect() as conn:
+            conn.execute(
+                "INSERT INTO payment_language_preferences (user_id, language) VALUES (?, ?) "
+                "ON CONFLICT(user_id) DO UPDATE SET language = excluded.language",
+                (user_id, language),
+            )
 
     def set_chat_language(self, chat_id: str, language: str) -> None:
         chat_id = self.resolve_chat_id(chat_id)

@@ -49,7 +49,8 @@ from .chat_config import (
     build_main_menu,
     command_group_label,
     is_valid_command_group,
-    is_valid_language,
+    language_menu_text,
+    parse_language_action,
     parse_config_callback,
 )
 from .chat_migration import chat_migration_ids
@@ -2115,6 +2116,7 @@ async def _handle_command_update(update: Update, context: ContextTypes.DEFAULT_T
             user_id=str(user.id),
             language=_chat_language(state.db, chat.id),
             mini_app_url=_available_mini_app_url(state.settings, state.bot_username),
+            db=state.db,
         ),
         send_config_menu=lambda: _send_config_menu(state.db, message),
         create_restart_confirmation=lambda: _create_restart_confirmation(
@@ -2332,8 +2334,11 @@ async def _config_callback_entrypoint(update: Update, context: ContextTypes.DEFA
         await callback_query.answer()
         return
 
-    popup_text = await _handle_config_callback(state.db, message, parsed)
-    await callback_query.answer(text=popup_text)
+    popup_text = None
+    try:
+        popup_text = await _handle_config_callback(state.db, message, parsed)
+    finally:
+        await callback_query.answer(text=popup_text)
 
 
 async def _my_chat_member_entrypoint(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -2668,10 +2673,22 @@ async def _handle_config_callback(db: Database, message: Message, parsed: tuple[
         )
         return None
 
-    if action == "language":
-        settings = db.get_chat_settings(chat_id)
-        await message.edit_text(t(settings.language, "config.language"), reply_markup=build_language_menu(settings.language))
-        return None
+    if action in {"language", "langpage", "lang"}:
+        selection = parse_language_action(parsed, language)
+        if selection is None:
+            return None
+        page, selected = selection
+        if selected == language:
+            return None
+        if selected is not None:
+            db.set_chat_language(chat_id, selected)
+            language = selected
+        try:
+            await message.edit_text(language_menu_text(language), reply_markup=build_language_menu(language, page))
+        except BadRequest as exc:
+            if "message is not modified" not in str(exc).lower():
+                raise
+        return t(language, "config.language_updated") if selected is not None else None
 
     if action == "announcements":
         settings = db.get_chat_settings(chat_id)
@@ -2692,17 +2709,6 @@ async def _handle_config_callback(db: Database, message: Message, parsed: tuple[
             reply_markup=build_announcements_menu(enabled, language),
         )
         return t(language, "config.updated")
-
-    if action == "lang" and len(parsed) == 2:
-        language = parsed[1]
-        if not is_valid_language(language):
-            return None
-        settings = db.get_chat_settings(chat_id)
-        if settings.language == language:
-            return None
-        db.set_chat_language(chat_id, language)
-        await message.edit_text(t(language, "config.language"), reply_markup=build_language_menu(language))
-        return t(language, "config.language_updated")
 
     if action == "commands":
         if not _chat_supports_command_groups(message.chat.type):

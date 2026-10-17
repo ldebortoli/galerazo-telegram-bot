@@ -1080,7 +1080,9 @@ class GalerazaAndConfigTests(unittest.IsolatedAsyncioTestCase):
         self.assertIsNone(await tb._handle_config_callback(db, message, ("lang", "xx")))
         self.assertIsNone(await tb._handle_config_callback(db, message, ("lang", "es")))
         db.get_chat_settings.return_value = SimpleNamespace(language="es")
-        self.assertIn("updated", (await tb._handle_config_callback(db, message, ("lang", "en"))).lower())
+        from galerazo_bot.chat_config import build_language_menu
+        choice = next(button.callback_data for row in build_language_menu('es', 0).inline_keyboard for button in row if button.callback_data.startswith('config:lang:en:'))
+        self.assertIn("updated", (await tb._handle_config_callback(db, message, tuple(choice.split(':')[1:]))).lower())
         db.get_chat_settings.return_value = SimpleNamespace(language="es", announcements_enabled=True)
         self.assertIsNone(await tb._handle_config_callback(db, message, ("announcements",)))
         self.assertIsNone(await tb._handle_config_callback(db, message, ("setannouncements", "1")))

@@ -7,6 +7,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 from galerazo_bot.chat_config import (
     LANGUAGES,
     LANGUAGES_PER_ROW,
+    LANGUAGES_PER_PAGE,
     build_announcements_menu,
     build_command_group_menu,
     build_command_groups_menu,
@@ -66,10 +67,10 @@ class ConfigMenuTests(unittest.IsolatedAsyncioTestCase):
 
     def test_language_menu_compacts_language_buttons_into_rows(self) -> None:
         menu = build_language_menu("es")
-        language_rows = menu.inline_keyboard[:-1]
+        language_rows = menu.inline_keyboard[:-2]
 
-        self.assertEqual(LANGUAGES_PER_ROW, 4)
-        self.assertEqual(sum(len(row) for row in language_rows), len(LANGUAGES))
+        self.assertEqual(LANGUAGES_PER_ROW, 2)
+        self.assertEqual(sum(len(row) for row in language_rows), min(LANGUAGES_PER_PAGE, len(LANGUAGES)))
         self.assertTrue(all(1 <= len(row) <= LANGUAGES_PER_ROW for row in language_rows))
         self.assertTrue(any(len(row) == LANGUAGES_PER_ROW for row in language_rows))
 

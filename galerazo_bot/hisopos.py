@@ -9,6 +9,7 @@ from zoneinfo import ZoneInfo
 from .database import HisopoCollectionEntry, HisopoScore, PaidHisopoOwnership
 from .i18n import DEFAULT_LANGUAGE, t
 from .monetization import CLUB_HISOPO, PAID_HISOPOS
+from .commerce_i18n import cosmetic_name
 from .pagination import MESSAGE_LIMIT, PaginatedPage, build_page_line_groups, render_prebuilt_pages
 
 
@@ -352,7 +353,7 @@ def render_hisopo_collection(
     for product in (*PAID_HISOPOS, CLUB_HISOPO):
         count = cosmetic_counts.get(product.key, 0)
         marker = "✅" if count else "❓"
-        lines.append(f"{marker} {product.public_name}: {count}")
+        lines.append(f"{marker} {cosmetic_name(product, language)}: {count}")
     return "\n".join(lines)
 
 

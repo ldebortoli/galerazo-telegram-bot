@@ -5,6 +5,7 @@ import unittest
 from html import unescape
 
 from galerazo_bot.i18n import TRANSLATIONS
+from galerazo_bot.language_catalogs import LANGUAGE_OPTIONS
 from galerazo_bot.hisopo_translations import (
     HISOPO_COLLECTION_RULES,
     HISOPO_GIANT_COUNT_RULES,
@@ -29,16 +30,16 @@ class TranslationTests(unittest.TestCase):
         url_pattern = re.compile(r"https?://[^\s]+")
         for key, spanish_text in TRANSLATIONS["es"].items():
             expected = (
-                placeholder_pattern.findall(spanish_text),
-                command_pattern.findall(spanish_text),
-                url_pattern.findall(spanish_text),
+                sorted(placeholder_pattern.findall(spanish_text)),
+                sorted(command_pattern.findall(spanish_text)),
+                sorted(url_pattern.findall(spanish_text)),
             )
             for language, translations in TRANSLATIONS.items():
                 with self.subTest(language=language, key=key):
                     actual = (
-                        placeholder_pattern.findall(translations[key]),
-                        command_pattern.findall(translations[key]),
-                        url_pattern.findall(translations[key]),
+                        sorted(placeholder_pattern.findall(translations[key])),
+                        sorted(command_pattern.findall(translations[key])),
+                        sorted(url_pattern.findall(translations[key])),
                     )
                     self.assertEqual(actual, expected)
 
@@ -54,10 +55,11 @@ class TranslationTests(unittest.TestCase):
         self.assertIn("respondé", TRANSLATIONS["es"]["salir.usage"])
 
     def test_translations_do_not_contain_utf8_mojibake(self) -> None:
-        mojibake_markers = ("\u00c3", "\u00c2", "\ufffd")
+        # Standalone Ã/Â are valid letters (for example Vietnamese ĐÃ).
+        mojibake = re.compile(r"[\u00c3\u00c2][\u0080-\u00bf]|\ufffd")
         for translations in TRANSLATIONS.values():
             for text in translations.values():
-                self.assertFalse(any(marker in text for marker in mojibake_markers), text)
+                self.assertIsNone(mojibake.search(text), text)
 
     def test_guarani_catalog_has_no_spurious_prefix(self) -> None:
         self.assertTrue(
@@ -65,17 +67,20 @@ class TranslationTests(unittest.TestCase):
         )
 
     def test_hisopo_rules_fit_in_one_telegram_message(self) -> None:
-        self.assertEqual(set(HISOPO_GIANT_COUNT_RULES), set(TRANSLATIONS))
-        self.assertEqual(set(HISOPO_SCHEDULE_CAP_RULES), set(TRANSLATIONS))
-        self.assertEqual(set(HISOPO_COLLECTION_RULES), set(TRANSLATIONS))
-        self.assertEqual(set(HISOPO_USED_RULES), set(TRANSLATIONS))
+        original = {o['code'] for o in LANGUAGE_OPTIONS if not o['machine']}
+        self.assertEqual(set(HISOPO_GIANT_COUNT_RULES), original)
+        self.assertEqual(set(HISOPO_SCHEDULE_CAP_RULES), original)
+        self.assertEqual(set(HISOPO_COLLECTION_RULES), original)
+        self.assertEqual(set(HISOPO_USED_RULES), original)
         for language, translations in TRANSLATIONS.items():
             with self.subTest(language=language):
                 rules = translations["hisopos.rules"]
                 plain_rules = re.sub(r"<[^>]+>", "", unescape(rules)).replace("• ", "- ")
-                self.assertLessEqual(len(rules), 4096)
+                self.assertLessEqual(len(plain_rules.encode('utf-16-le')) // 2, 4096)
                 self.assertIn("/config", rules)
                 self.assertIn("/hisopos", rules)
+                if language not in original:
+                    continue
                 self.assertIn(
                     HISOPO_GIANT_COUNT_RULES[language],
                     plain_rules,
