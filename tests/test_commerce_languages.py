@@ -91,3 +91,6 @@ class CommerceLanguageTests(unittest.IsolatedAsyncioTestCase):
         message=payment_message(SimpleNamespace(telegram_payment_charge_id='fixture'))
         self.assertTrue(await process_refunded_payment(message=message,db=db))
         message.reply_text.assert_awaited_once_with(commerce_text('ar','refund'))
+        senderless=payment_message(SimpleNamespace(telegram_payment_charge_id='fixture'),user_id=None)
+        self.assertTrue(await process_refunded_payment(message=senderless,db=db))
+        senderless.reply_text.assert_awaited_once_with(commerce_text('ar','refund'))

@@ -231,7 +231,7 @@ async def process_refunded_payment(*, message: Message, db: Database) -> bool:
         refunded_at=_message_datetime(message).isoformat(),
     )
     if refunded:
-        language = payment_language(db, str(message.from_user.id), str(message.chat.id))
+        language = payment_language(db, str(getattr(message.from_user, "id", message.chat.id)), str(message.chat.id))
         await message.reply_text(
             commerce_text(language, "refund")
         )

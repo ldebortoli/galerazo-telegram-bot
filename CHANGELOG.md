@@ -5,6 +5,7 @@
 - Agrega 94 catálogos locales completos de mensajes, ayuda, juegos, errores y pagos (112 opciones en total); 64 variantes incompletas se excluyen con un recibo preciso, sin catálogos de relleno ni traducción remota de usuarios.
 - Selector bilingüe de idiomas paginado, con 12 opciones por página, flechas localizadas e indicador de página. Navegar conserva la selección; los callbacks obsoletos, índices inválidos y opciones ajenas a la página no modifican preferencias.
 - Correcciones y mejoras: dirección de lectura, aviso de traducción automática y nombres de cosméticos localizados. Facturas, confirmaciones y reembolsos usan catálogos locales y una preferencia de pago independiente, conservando SKU, cantidades, permisos y firmas.
+- Las notificaciones de reembolso sin remitente visible usan el contexto del chat para elegir el idioma y confirmar la operación.
 
 ## [0.75] - 2026-10-15
 
