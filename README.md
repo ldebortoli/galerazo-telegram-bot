@@ -7,6 +7,10 @@ El frontend hermano admite 140 opciones. Son catálogos locales automáticos, si
 certificación nativa. La operación actual en Contabo está documentada en
 [docs/DEPLOY_VPS.md](docs/DEPLOY_VPS.md); nuevas publicaciones requieren autorización.
 
+Cada adición o modificación debe contemplar todos los idiomas habilitados y
+actualizar y validar los textos afectados en la misma entrega. La regla y las
+pruebas están en [docs/PRIVATE_LANGUAGES.md](docs/PRIVATE_LANGUAGES.md#required-language-review-for-every-change).
+
 Base para un bot de Telegram con una version estable y reproducible de Python, `python-telegram-bot` y SQLite.
 
 ## Comandos

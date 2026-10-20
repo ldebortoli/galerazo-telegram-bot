@@ -15,6 +15,34 @@ untranslated prose, damaged variables/literals, incomplete payment text or Teleg
 message/invoice size limits. The receipts list exact missing fields and reasons.
 No Spanish placeholder catalogs are added. Existing locales are preserved.
 
+## Required language review for every change
+
+Standing request from Lucas, 2026-10-20: every addition or modification must
+consider every language enabled in Galerazobot. Read the current
+`galerazo_bot.language_catalogs.LANGUAGE_OPTIONS` inventory (112 options today),
+not a fixed Spanish/English subset or the global nine-language default. If the
+change touches the Mini App, review its complete current inventory too (140
+options today), in the sibling frontend project.
+
+Update all affected user-facing text in the same delivery: command responses,
+help, menus, buttons, callback popups, errors, game rules/results, item names,
+payment text and announcements. Check key and placeholder parity, invariant
+commands/URLs, HTML, Unicode, Telegram size limits and, where relevant, RTL/LTR,
+pagination and saved language selection. A Spanish/English fallback does not
+complete a translation. Keep explicit legacy limitations recorded as blocked;
+do not claim they are fixed or add empty catalogs to satisfy a gate.
+
+Before completion, run the relevant language tests across the complete enabled
+inventory and record the outcome. For a change without localized content,
+record that impact assessment. The existing bot regression set is:
+
+```powershell
+.venv/Scripts/python.exe -m pytest tests/test_i18n.py tests/test_private_language_inventory.py tests/test_language_pagination.py tests/test_commerce_languages.py tests/test_release_broadcast.py
+```
+
+Select additional domain tests for the behavior changed. This policy does not
+require a production deployment, Telegram send or paid translation service.
+
 ## Runtime and contracts
 
 - Catalogs are packaged locally; there is no translation request at runtime.
@@ -51,10 +79,12 @@ QA_NODE_MODULES runtime. No real Telegram login, money transfer or remote CI mon
 Native Telegram mobile/Desktop and a real software keyboard are not certified by
 the headless harness. Public landing inventories and translations remain unchanged.
 
-Source versions are bot0.76 and web0.1.23. This run authorizes no deployment, backend
+Historical expansion snapshot from 2026-10-17 follows; current production
+operations are documented in [DEPLOY_VPS.md](DEPLOY_VPS.md).
+Source versions were bot0.76 and web0.1.23. That run authorized no deployment, backend
 restart or Telegram announcement. Publication remains behind the existing BCC flow,
 release authorization and editorial broadcast approval. Code readiness is not production
-activation; the prior verified production remains bot0.68/web0.1.22.
+activation; verified production at that date was bot0.68/web0.1.22.
 
 ## Frozen inventory reconciliation
 
