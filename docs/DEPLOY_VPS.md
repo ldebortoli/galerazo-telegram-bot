@@ -8,8 +8,10 @@ new hosting or capacity upgrades without Lucas's explicit request.
 
 `deploy/vps/bootstrap.sh` installs the versioned slices. `apps.slice` has a 6 GiB
 aggregate ceiling, leaving memory for Ubuntu and Docker on the 8 GB host.
-Galerazo's complete stack belongs to `apps-galerazo.slice` (2 GiB): the bot has
-1792 MiB and cloudflared 128 MiB. Swap is disabled for these workloads.
+Galerazo's complete stack belongs to `apps-galerazo.slice` (1 GiB): the bot has
+768 MiB and cloudflared 128 MiB, leaving 128 MiB for deployment preflight.
+Swap is disabled for these workloads. Lucas reduced Galerazo's aggregate ceiling
+from 2 GiB to 1 GiB on 2026-10-20; older deployment receipts retain the old limit.
 Tivio, A la Altura and En la misma each have a 1 GiB aggregate slice, including
 their database and auxiliary processes. Every future application requires its
 own slice with at most 2 GiB; do not rely only on an API container limit.
@@ -21,6 +23,14 @@ The public frontend remains on its existing Cloudflare Worker. The Worker and
 backend require the same private proxy secret plus valid Telegram initData.
 
 ## Local deployment
+
+Use Bot Control Center's existing Deploy view for normal operations: verify the
+target, then choose the explicitly authorized release, deployment or rollback.
+Its manager and per-bot operation lock cover the complete bot/frontend workflow.
+The server also serializes deployments with `/run/lock/galerazo-deploy.lock`.
+The adapter commands below are maintainer references, not a sequence to run when
+reading this guide. An ordinary fix, documentation update or push does not
+authorize a deployment.
 
 Bot Control Center uses `provider: "vps"` and a local `vpsConfigFile`. The JSON
 contains `host`, `user`, `identityFile` and `knownHostsFile`, with paths to
@@ -37,8 +47,12 @@ $target = Join-Path $PWD 'deploy/out/vps-target.json'
 $image = (Get-Content deploy/out/last-image.txt -Raw).Trim()
 ./scripts/deploy/Invoke-VpsBot.ps1 -VpsConfigFile $target -Action deploy -Image $image
 ./scripts/deploy/Invoke-VpsBot.ps1 -VpsConfigFile $target -Action status
-./scripts/deploy/Invoke-VpsBot.ps1 -VpsConfigFile $target -Action rollback
 ```
+
+The Windows wrapper runs Python with `-X utf8` so remote Unicode output works
+with Windows console encodings. Do not remove this argument. The local `.env`
+can belong to the test bot; production uses `/etc/galerazo/bot.env` and its
+existing private credentials. Never replace it with the local test environment.
 
 Publication validates runtime and the approved release announcement, runs the
 Docker test target, builds the runtime and transfers a local image archive by
@@ -50,10 +64,78 @@ restoring the pre-deploy database and restarting the previous image. Manual
 rollback takes a fresh snapshot and preserves the current database; schema
 compatibility still needs review before choosing an older image.
 
+`/opt/galerazo/image.env` identifies the selected image; the Docker container's
+actual image and state establish what is running. `deploy/out/last-image.txt`
+records publication locally and does not prove a successful deployment.
+
+The first deployment has no previous image. `rollback.sh` requires a nonempty
+`/opt/galerazo/previous-image.env` and stops if it is absent. A later deployment
+with a different existing image copies that reference before starting its
+candidate; verify both the file and the locally available image before rollback:
+
+```powershell
+./scripts/deploy/Invoke-VpsBot.ps1 -VpsConfigFile $target -Action rollback
+```
+
+A failed first candidate can restore its pre-deploy database after being stopped,
+but cannot restart a nonexistent previous image. If stopping a failed candidate
+fails, deployment leaves the database intact and requires operator recovery.
+Never manufacture a previous-image reference from an unverified tag or restart
+the retired GCP service to obtain one. Manual image rollback keeps current data
+on success; restoring an older database is a separate, explicitly chosen action.
+
 The frontend bridge checks backend health over this same strict SSH transport.
 Its source must be clean, on `main`, and from the expected remote; publication
 uses an immutable worktree and verifies served metadata, assets and closed
 anonymous API access. Never publish unrelated edits from another active task.
+
+The existing monthly Windows release remains on day 1 at 03:00 Argentina, with
+12 hourly retries, a three-hour limit and `IgnoreNew`. It uses this same manager,
+configuration and lock; do not create a second scheduler. It requires the PC and
+the Windows user session. The daily server backup is independent of that PC.
+
+## Health and installed files
+
+Docker's `galerazo_bot.healthcheck` opens SQLite read-only and runs `SELECT 1`.
+`healthy` proves database readability, not Telegram connectivity, processing of
+updates, database integrity or end-user Mini App QA. Bot Control Center status
+also checks the active image, restarts, recent logs and Telegram `getMe`. Check
+real update processing and errors/conflicts in existing logs separately; never
+start a second polling process to test production.
+
+Check the effective cgroup values, not just Compose declarations:
+
+```sh
+systemctl show apps.slice apps-galerazo.slice apps-backups.slice -p Id -p MemoryMax -p MemorySwapMax
+cat /sys/fs/cgroup/apps.slice/apps-galerazo.slice/memory.max
+cat /sys/fs/cgroup/apps.slice/apps-galerazo.slice/memory.swap.max
+```
+
+Galerazo's aggregate ceiling must read `1073741824` and swap `0`. Verify the bot,
+the separate `deploy/vps/tunnel.yaml` stack and any preflight container all use
+`apps-galerazo.slice`. The bot and tunnel limits are 768 MiB and 128 MiB; the
+offline database preflight has 128 MiB. Maximums are ceilings, not reservations;
+reassess the shared host budget before adding another application.
+
+| Server path | Purpose |
+| --- | --- |
+| `/opt/galerazo/compose.yaml` | Generated merge of the base and VPS bot Compose files |
+| `/opt/galerazo/image.env`, `previous-image.env` | Selected and previous image references |
+| `/opt/galerazo/tunnel.yaml` | Independently managed existing tunnel stack |
+| `/etc/galerazo/` | Private production bot environment, tunnel token and Sheets credential |
+| `/srv/galerazo/data/galerazo.sqlite3` | Live production database |
+| `/srv/galerazo/backups/predeploy-*.sqlite3` | Deployment recovery snapshots |
+| `/opt/codex-backups/venv`, `telegram_backup.py` | Shared backup runtime and delivery helper |
+| `/usr/local/sbin/codex-database-backup` | Installed `deploy/vps/database-backup.sh` runner |
+| `/srv/codex-backups/galerazo/` | Daily artifacts and durable delivery receipts |
+
+`bootstrap.sh` prepares prerequisites and slices; it does not by itself install
+the backup runtime, runner, timer, private configuration or tunnel stack. The
+existing server has these installed. A future rebuild must explicitly restore
+those components and validate them. Keep private installation evidence and
+delivery receipts outside Git; refer to their locations instead of copying keys
+or environments into a runbook. Never publish full `docker inspect` output,
+which includes container environment variables.
 
 ## Daily backups
 
@@ -81,9 +163,14 @@ download instead of uploading again when a confirmation receipt exists. A
 process crash before saving Telegram's response remains an ambiguous-send case.
 
 Only verified success triggers local cleanup of artifacts older than 14 days.
-Existing files for the current Argentina date are reused for retries, so a
-manual second run that day verifies the same snapshot. Do not overwrite a
-confirmed artifact/receipt to force another backup; use a distinct timestamp.
+Existing files for the current Argentina date are reused for retries. A matching
+verified receipt returns the saved success without a new upload or download;
+a confirmed but unverified receipt resumes downloading that message. Do not
+overwrite a confirmed artifact/receipt to force another backup; use a distinct
+timestamp.
+
+The first command below starts a delivery and is for an authorized backup or
+recovery, not a health probe. Use the remaining commands for observation:
 
 ```sh
 systemctl start codex-backup@galerazo.service
@@ -98,15 +185,30 @@ remove stale WAL/SHM while stopped, set owner 10001 and mode 0600, then start an
 verify health and Telegram. Restoring an old backup discards later writes; select
 the restore point explicitly. Never test a restore over the live production DB.
 
+For a restore drill, use a disposable path/database, open the restored SQLite
+copy, check `integrity_check` and `foreign_key_check`, and compare its expected
+tables, row counts and content against the selected snapshot. Record that
+evidence separately from successful download verification. A past verified
+delivery must not be resent merely to learn the procedure. Preserve the
+production `release_state` cursor; resetting it can duplicate an announcement.
+
 ## Validation
 
 Run `.venv/Scripts/python.exe scripts/runtime_versions.py`, then coverage:
-`python -m coverage run -m pytest`, `python -m coverage json` and
-`python scripts/check_coverage.py`. Python deployment/credential helpers are
-included in the 100% statement/branch gate. PowerShell and bash adapters are
+`.venv/Scripts/python.exe -m coverage run -m pytest`,
+`.venv/Scripts/python.exe -m coverage json` and
+`.venv/Scripts/python.exe scripts/check_coverage.py`. Python deployment/credential
+helpers are included in the 100% statement/branch gate. PowerShell and bash adapters are
 validated with their parsers and real host smoke checks; Python coverage does
 not instrument those interpreters. Docker dependency changes also require the
 test target. Remote CI is not monitored after pushing.
+
+Documentation-only learning can reuse the same source's recorded full coverage
+and Docker/restore results, with runtime and focused offline tests. Do not repeat
+heavy suites, real Telegram sends or live restores only to learn. Report fresh
+checks and reused historical evidence separately. Real Telegram QA of shared
+albums and returning to the owner's album still requires a current user session
+and valid initData; local fixtures or anonymous 401 responses do not complete it.
 
 `scripts/test_vps_deploy.sh` is an opt-in Linux integration harness for an
 ephemeral `python:3.14.8-slim` container with network disabled. Mount `deploy/vps`

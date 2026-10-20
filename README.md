@@ -1,10 +1,11 @@
 # Galerazo Bot
 
-La expansión de idiomas preparada en 0.76 admite 112 opciones (18 previas y 94 nuevas)
+La expansión de idiomas incluida en 0.77 admite 112 opciones (18 previas y 94 nuevas)
 y agrega paginación al selector del bot. El inventario de 176 referencias, las 64
 exclusiones y la validación están en [docs/PRIVATE_LANGUAGES.md](docs/PRIVATE_LANGUAGES.md).
-El frontend hermano prepara 140 opciones. Son catálogos locales automáticos, sin
-certificación nativa; esta entrega de código no publica ni reinicia producción.
+El frontend hermano admite 140 opciones. Son catálogos locales automáticos, sin
+certificación nativa. La operación actual en Contabo está documentada en
+[docs/DEPLOY_VPS.md](docs/DEPLOY_VPS.md); nuevas publicaciones requieren autorización.
 
 Base para un bot de Telegram con una version estable y reproducible de Python, `python-telegram-bot` y SQLite.
 
@@ -113,7 +114,7 @@ Durante el arranque el estado queda en amarillo mientras se valida la configurac
 
 Para reconstruir el lanzador de Windows ejecutá `powershell -ExecutionPolicy Bypass -File build_control_panel.ps1`. El build regenera el ICO multirresolución desde el PNG fuente, compila el lanzador y actualiza el acceso directo de `CODEX APPS`.
 
-El build tambien crea `Galerazo Bot - Logs.lnk` en `CODEX APPS`: abre una consola que sigue los logs de produccion por IAP y se detiene con `Ctrl+C`. El bot emite logs desde `DEBUG`, pero el lanzador omite los polls exitosos repetitivos de `getUpdates`; los errores y el resto del trafico se mantienen visibles. Actualiza `Galerazo Bot.lnk` en el Escritorio. Volve a ejecutar el setup si moves el repositorio, cambias el runtime o necesitas regenerar los accesos con las rutas actuales.
+El build tambien crea el acceso historico `Galerazo Bot - Logs.lnk` en `CODEX APPS`, que apunta a IAP/GCE. Para la produccion actual en VPS usa el estado y los logs de Bot Control Center; no reactives GCP para ese acceso. El bot emite logs desde `DEBUG`, omitiendo los polls exitosos repetitivos de `getUpdates`. El build actualiza `Galerazo Bot.lnk` en el Escritorio. Volve a ejecutar el setup si moves el repositorio, cambias el runtime o necesitas regenerar los accesos con las rutas actuales.
 
 Las dependencias directas se declaran en `requirements.in`. `requirements.txt` fija todas las versiones directas y transitivas para que Windows y Docker instalen el mismo conjunto reproducible.
 
@@ -130,7 +131,7 @@ Solo despues de esas validaciones crea y fusiona la actualizacion. Si algun paso
 
 Si no encuentra cambios de runtime o dependencias, omite la suite y el build Docker para no consumir minutos innecesarios.
 
-El corte mensual de Bot Control Center ejecuta `scripts/deploy/Update-Dependencies.ps1` dentro de un worktree temporal antes de decidir el deploy. Resuelve releases estables en un entorno virtual aislado; si `requirements.txt` cambia, exige pruebas nativas, cobertura completa, `pip check` y validacion Docker antes de permitir que el controlador cree y suba un commit sin `force`. Si no cambian ni el codigo ni el lock, termina sin publicar imagen ni tocar produccion. Un error de resolucion o validacion cancela todo el corte.
+El corte mensual de Bot Control Center ejecuta `scripts/deploy/Update-Dependencies.ps1` dentro de un worktree temporal antes de decidir el deploy. Resuelve releases estables en un entorno virtual aislado; si `requirements.txt` cambia, exige pruebas nativas, cobertura completa, `pip check` y validacion Docker antes de permitir que el controlador cree y suba un commit sin `force`. Si el commit seleccionado coincide con el tag de la imagen actual y no cambia el frontend, termina sin publicar imagen ni tocar produccion. La comparación del bot usa el commit completo: incluso un commit sólo documental puede generar una imagen en el próximo corte autorizado. Un error de resolucion o validacion cancela todo el corte.
 
 ### CI y consumo de GitHub Actions
 
@@ -777,34 +778,32 @@ El polling usa explicitamente `drop_pending_updates=False`: al volver a encender
 
 ## Hosting y deploy
 
-La opcion recomendada es Google Compute Engine con una VM `e2-micro`, Docker
-Compose y disco persistente. El bot no publica puertos: Telegram se consulta por
-polling y la administracion entra por SSH encapsulado en IAP.
+Producción usa el VPS Contabo existente, Docker Compose y SQLite persistente.
+Bot Control Center conserva su manager, lock y tarea mensual; `provider: "vps"`
+selecciona SSH/SCP con clave y host conocidos estrictos. Las imágenes se prueban
+y construyen en la PC y se transfieren directamente, sin registro externo.
+Un push ordinario no publica una imagen ni despliega producción.
 
-El repositorio deja preparados dos productores de la misma imagen `linux/amd64`:
+El bot y el túnel comparten un límite agregado de 1 GiB, sin swap. Telegram usa
+polling saliente y la API Mini App escucha sólo en loopback, detrás del túnel
+existente; el frontend sigue en Cloudflare Worker. Cada deploy conserva un
+snapshot consistente. El rollback necesita una imagen anterior verificada;
+el primer deploy todavía no tiene `previous-image.env`.
 
-- **Local, recomendado para ahorrar CI:** `scripts/deploy/Build-DockerImage.ps1`
-  prueba y construye en Docker Desktop; `Publish-DockerImage.ps1` la publica en
-  Artifact Registry desde la PC.
-- **GitHub manual:** `Publish GCE image` solo aparece bajo `workflow_dispatch`.
-  Nunca construye ni publica una release por cada push.
+Los backups diarios corren en el VPS a las 04:00 Argentina, con hasta 20 minutos
+de demora aleatoria. Codex Bot los entrega a Codex - Logs por MTProto con recibo,
+descarga verificada por SHA-256 y retención local de 14 días tras éxito. La tarea
+mensual de releases requiere la PC; los backups diarios no dependen de ella.
 
-En la VM, `compose.production.yaml` ejecuta el bot sin privilegios, con filesystem
-de solo lectura, volumenes persistentes, healthcheck, rotacion de logs y restart.
-Cada deploy crea un backup SQLite consistente y restaura la imagen anterior si
-la nueva no llega a estado healthy.
+Operación, salud, recuperación y límites están en
+[docs/DEPLOY_VPS.md](docs/DEPLOY_VPS.md), y el release conjunto con la Mini App en
+[docs/FRONTEND_RELEASE.md](docs/FRONTEND_RELEASE.md). La QA real de Telegram con
+initData vigente se registra por separado de las pruebas locales.
 
-La preparacion completa de Google Cloud, los comandos locales, la publicacion
-manual desde GitHub, el primer deploy y el rollback estan en
-[`docs/DEPLOY_GCE.md`](docs/DEPLOY_GCE.md).
-
-La base de producción también tiene backups externos mensuales, consistentes e
-independientes de Docker, con retención de 400 días en Cloud Storage. El diseño,
-costos, seguridad, operación, restauración y procedimiento reutilizable para
-otros bots están en [`docs/BACKUPS_GCE.md`](docs/BACKUPS_GCE.md).
-
-Railway permanece como alternativa y su workflow historico sigue desactivado;
-no forma parte del camino recomendado actual.
+[docs/DEPLOY_GCE.md](docs/DEPLOY_GCE.md) y
+[docs/BACKUPS_GCE.md](docs/BACKUPS_GCE.md) conservan el procedimiento histórico.
+GCP está retirado y Railway permanece desactivado. Esos archivos y workflows no
+autorizan reactivar servicios, facturación, planes ni contratar infraestructura.
 
 ## Checklist para arrancar
 

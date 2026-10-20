@@ -9,6 +9,13 @@ desde el snapshot del bot seleccionado para el release; una actualizacion del
 checkout durante la ejecucion no sustituye el puente validado. `frontend-release` es una accion
 interna del manager para publicar solo web, por ejemplo tras un bot ya desplegado.
 
+Producción usa Contabo con `provider: "vps"` y `vpsConfigFile` privado. El wrapper
+pasa esa referencia a `scripts/frontend_release.py`; la sonda del backend utiliza
+el mismo SSH estricto que el bot, sin IAP ni GCP. El frontend continúa en el Worker
+existente. El procedimiento del host y sus backups está en
+[DEPLOY_VPS.md](DEPLOY_VPS.md); las rutas GCE conservadas en código son históricas
+y no autorizan reactivar facturación ni servicios retirados.
+
 ## Seleccion y deteccion
 
 - Exige frontend limpio en `main`, origin exacto de galerazo-web y commits ya subidos.
@@ -49,8 +56,10 @@ QA Telegram con cuenta real debe informarse por separado.
 ## Fallos y recuperacion
 
 Un fallo web bloquea el siguiente deploy del bot y el job queda failed. Un fallo del
-bot mantiene su rollback de GCE; web nueva ya publicada debe ser compatible con
-bot previo. No existe una transaccion atomica entre Cloudflare y GCE: si la sonda
+bot mantiene el rollback del host configurado; en VPS exige una imagen anterior
+verificada y `previous-image.env`, ausente tras el primer deploy. La web nueva
+ya publicada debe ser compatible con el bot previo. No existe una transaccion
+atomica entre Cloudflare y el host: si la sonda
 posterior falla no se marca exito, el reintento consulta realidad y no confia en
 una marca local. No se hace rollback automatico de web ni se reenvia anuncio;
 para restaurar un Worker usar el rollback existente de Cloudflare bajo autorizacion.

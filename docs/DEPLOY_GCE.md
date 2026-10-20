@@ -1,5 +1,9 @@
 # Deploy de Galerazobot en Google Compute Engine
 
+> Procedimiento histórico. Desde el 20/10/2026 producción usa Contabo:
+> [DEPLOY_VPS.md](DEPLOY_VPS.md). GCP está retirado; este documento no autoriza
+> reactivar servicios, facturación ni publicar imágenes.
+
 ## Diseño elegido
 
 ```text

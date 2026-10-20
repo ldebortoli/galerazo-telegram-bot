@@ -1,5 +1,9 @@
 # Backups SQLite mensuales en Google Cloud
 
+> Procedimiento histórico. Los backups actuales son diarios en el VPS y se
+> entregan a Codex - Logs; ver [DEPLOY_VPS.md](DEPLOY_VPS.md). GCP está retirado:
+> no ejecutar estos pasos ni reactivar facturación para comprobar una copia.
+
 Este documento es el runbook operativo y reproducible de los backups externos de
 SQLite para Galerazobot y los futuros bots de la misma flota. El mecanismo crea
 una copia consistente una vez por mes, la valida y la guarda fuera de la VM en
