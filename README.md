@@ -4,7 +4,7 @@ La fuente 0.80 admite 139 idiomas y variantes; la Mini App hermana 0.1.27 admite
 Se revisó la lista compartida de 250 opciones de Linterna/Gemidos y se añadieron
 27/52 catálogos completos, sin relleno español/inglés. Exclusiones y validación:
 [idiomas privados](docs/PRIVATE_LANGUAGES.md). Son traducciones automáticas sin
-certificación nativa. Esta ampliación de código requiere un release separado. La operación vigente está
+certificación nativa. Bot 0.80 y Mini App 0.1.27 están publicados desde el 20 de octubre de 2026. La operación vigente está
 en [DEPLOY_VPS.md](docs/DEPLOY_VPS.md).
 
 Cada adición o modificación debe contemplar todos los idiomas habilitados y

@@ -24,6 +24,15 @@ backend require the same private proxy secret plus valid Telegram initData.
 
 ## Local deployment
 
+The verified rollout on 2026-10-20 runs bot 0.80 (`galerazo-bot:ee2aba412e2b`)
+and frontend 0.1.27 through Bot Control Center 0.1.7. Galerazo's operational
+configuration and catalog examples select only Contabo/SSH; the retired GCE
+target is absent. The existing monthly task uses this same configuration.
+The rollout passed its joint verification, database integrity and isolated
+snapshot restore checks. Nine other containers retained their IDs, images,
+start times, restart counters and limits; host port bindings were unchanged.
+The verified previous bot image remains available for an authorized rollback.
+
 Use Bot Control Center's existing Deploy view for normal operations: verify the
 target, then choose the explicitly authorized release, deployment or rollback.
 Its manager and per-bot operation lock cover the complete bot/frontend workflow.
