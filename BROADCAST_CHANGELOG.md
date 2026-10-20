@@ -6,15 +6,13 @@ cubre y debe pasar de `borrador` a `aprobado` antes de publicar una imagen. Una 
 vacía con estado `omitido` registra una excepción explícitamente solicitada por el usuario:
 el runtime avanza el cursor sin enviar un broadcast ni acumularla para otro release.
 
-## [0.80] desde=[0.77] estado=borrador
+## [0.80] desde=[0.77] estado=aprobado
 
 Novedades de Galerazo Bot v0.80
 
-Más idiomas: el bot pasa a 139 opciones y la Mini App a 192. Revisamos la lista de 250 idiomas de Linterna y Gemidos Premium y habilitamos los catálogos que quedaron completos. Las opciones con textos pendientes siguen excluidas, sin usar español o inglés de relleno.
+Más idiomas: el bot pasa a 139 opciones y la Mini App a 192.
 
 Correcciones y mejoras en ayuda, regalos, pagos, nombres de artículos, errores y selectores. La elección de idioma se conserva durante la navegación y las compras.
-
-Mantenimiento: el bot y el túnel de la Mini App comparten un máximo de 1 GiB de RAM en el servidor.
 
 ## [0.79] desde=[0.77] estado=borrador
 
