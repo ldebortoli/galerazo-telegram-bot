@@ -18,6 +18,8 @@ permissions:
 
 jobs:
   publish:
+    # Historical adapter. Current production is transferred to the existing VPS by BCC.
+    if: ${{ false }}
     name: Build and publish production image
     runs-on: ubuntu-latest
     timeout-minutes: 15

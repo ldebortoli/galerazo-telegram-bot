@@ -1,0 +1,15 @@
+[Unit]
+Description=Verified database backup to Codex Logs (%i)
+After=docker.service network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+Slice=apps-backups.slice
+MemoryMax=512M
+MemorySwapMax=0
+CPUQuota=75%
+UMask=0077
+TimeoutStartSec=2h
+ExecStart=/usr/local/sbin/codex-database-backup %i
+# Jobs serialize on one host-wide flock; retries reuse the confirmed receipt.

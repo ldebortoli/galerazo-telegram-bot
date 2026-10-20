@@ -1,0 +1,8 @@
+[Unit]
+Description=Galerazo bot and Mini App backend combined
+
+[Slice]
+MemoryAccounting=yes
+MemoryMax=2G
+MemorySwapMax=0
+CPUAccounting=yes

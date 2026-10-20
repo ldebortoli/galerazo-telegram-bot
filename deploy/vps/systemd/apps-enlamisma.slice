@@ -1,0 +1,8 @@
+[Unit]
+Description=En la misma API, OCR and database combined
+
+[Slice]
+MemoryAccounting=yes
+MemoryMax=1G
+MemorySwapMax=0
+CPUAccounting=yes

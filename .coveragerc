@@ -4,6 +4,9 @@ source =
     galerazo_bot
     scripts.frontend_release
     scripts.registry_retention
+    scripts.vps_transport
+    scripts.vps_operations
+    deploy.vps.patch_config
 omit =
     galerazo_bot/control_panel.py
 

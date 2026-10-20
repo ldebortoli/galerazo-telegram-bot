@@ -1,0 +1,8 @@
+[Unit]
+Description=Daily application database backups
+
+[Slice]
+MemoryAccounting=yes
+MemoryMax=512M
+MemorySwapMax=0
+CPUAccounting=yes

@@ -374,7 +374,7 @@ def test_cli_persists_sync_plan_and_passes_expected_image_to_verify(tmp_path, ca
     argv = ["frontend_release.py", "--stage", stage, "--repository", str(tmp_path), "--project", "demo", "--zone", "zone", "--instance", "instance", "--result", str(plan_file), "--target-bot-version", "0.68", "--expected-image", IMAGE]
     with patch.object(sys, "argv", argv), patch.object(bridge, "FrontendRelease", return_value=release) as create:
         bridge.main()
-    create.assert_called_once_with(str(tmp_path), "demo", "zone", "instance")
+    create.assert_called_once_with(str(tmp_path), "demo", "zone", "instance", vps_config=None)
     if stage == "sync":
         release.sync.assert_called_once_with("0.68")
         release.verify.assert_not_called()

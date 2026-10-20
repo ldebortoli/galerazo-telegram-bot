@@ -8,7 +8,8 @@ param(
     [Parameter(Mandatory = $true)][string]$ProjectId,
     [Parameter(Mandatory = $true)][string]$Zone,
     [Parameter(Mandatory = $true)][string]$Instance,
-    [string]$ExpectedImage
+    [string]$ExpectedImage,
+    [string]$VpsConfigFile
 )
 $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
@@ -27,6 +28,7 @@ $arguments = @(
     "--result", $ResultFile, "--target-bot-version", $targetVersion
 )
 if ($ExpectedImage) { $arguments += @("--expected-image", $ExpectedImage) }
+if ($VpsConfigFile) { $arguments += @("--vps-config", $VpsConfigFile) }
 $env:WRANGLER_WRITE_LOGS = "false"
 $env:WRANGLER_SEND_METRICS = "false"
 $env:MINIFLARE_REGISTRY_PATH = Join-Path ([System.IO.Path]::GetTempPath()) "galerazo-miniflare-registry"

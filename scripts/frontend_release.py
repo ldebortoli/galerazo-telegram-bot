@@ -11,6 +11,9 @@ import shutil
 import subprocess
 import tempfile
 import time
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from scripts.vps_transport import VpsTransport
 from urllib.error import HTTPError
 from urllib.request import Request, urlopen
 
@@ -69,19 +72,23 @@ def compatible(metadata, bot_version):
 
 
 class FrontendRelease:
-    def __init__(self, repository, project, zone, instance, *, run=command, get=http, sleep=time.sleep):
+    def __init__(self, repository, project, zone, instance, *, run=command, get=http, sleep=time.sleep, vps_config=None):
         self.repository = Path(repository).resolve()
         self.project, self.zone, self.instance = project, zone, instance
         for value in (project, zone, instance):
             if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._:-]*", value):
                 raise ValueError("Invalid GCE identifier")
         self.run, self.get, self.sleep = run, get, sleep
+        self.vps_config = vps_config
 
     def git(self, *args, cwd=None):
         return self.run(["git", *args], cwd=cwd or self.repository)
 
     def backend(self, expected_image=None):
-        lines = self.run(["gcloud", "compute", "ssh", self.instance, "--project", self.project, "--zone", self.zone, "--tunnel-through-iap", "--quiet", "--command", REMOTE_HEALTH]).splitlines()
+        if self.vps_config:
+            lines = VpsTransport(self.vps_config).remote(REMOTE_HEALTH).splitlines()
+        else:
+            lines = self.run(["gcloud", "compute", "ssh", self.instance, "--project", self.project, "--zone", self.zone, "--tunnel-through-iap", "--quiet", "--command", REMOTE_HEALTH]).splitlines()
         state, image, bot_version = json.loads(lines[-3]), lines[-2], lines[-1]
         if not state.get("Running") or state.get("Health", {}).get("Status") != "healthy":
             raise RuntimeError("Bot is not healthy; frontend release stopped")
@@ -197,8 +204,9 @@ def main():
     parser.add_argument("--result", type=Path, required=True)
     parser.add_argument("--target-bot-version")
     parser.add_argument("--expected-image")
+    parser.add_argument("--vps-config")
     args = parser.parse_args()
-    release = FrontendRelease(args.repository, args.project, args.zone, args.instance)
+    release = FrontendRelease(args.repository, args.project, args.zone, args.instance, vps_config=args.vps_config)
     if args.stage == "sync":
         if not args.target_bot_version:
             parser.error("sync requires --target-bot-version")

@@ -1,0 +1,23 @@
+name: galerazo-tunnel
+services:
+  tunnel:
+    image: cloudflare/cloudflared:2026.10.2
+    restart: unless-stopped
+    user: "65532:65532"
+    network_mode: host
+    cgroup_parent: apps-galerazo.slice
+    mem_limit: 128m
+    memswap_limit: 128m
+    cpus: 0.5
+    pids_limit: 64
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    volumes:
+      - /etc/galerazo/cloudflared.token:/run/secrets/tunnel-token:ro
+    command: [tunnel, --no-autoupdate, --edge-ip-version, "4", --metrics, "127.0.0.1:20241", --protocol, http2, run, --token-file, /run/secrets/tunnel-token]
+    logging:
+      driver: json-file
+      options:
+        max-size: 5m
+        max-file: "2"

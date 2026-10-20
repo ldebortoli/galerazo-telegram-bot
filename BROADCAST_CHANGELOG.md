@@ -6,6 +6,20 @@ cubre y debe pasar de `borrador` a `aprobado` antes de publicar una imagen. Una 
 vacía con estado `omitido` registra una excepción explícitamente solicitada por el usuario:
 el runtime avanza el cursor sin enviar un broadcast ni acumularla para otro release.
 
+## [0.77] desde=[0.68] estado=borrador
+
+Novedades de Galerazo Bot v0.77
+
+Llega el Jefe Final: siempre visible, nunca dentro de un Misterioso. Es un evento muy raro con cuatro fases de cooperación, velocidad, coordinación y un acertijo. Ganar las cuatro desbloquea el Jefe para quienes ayudaron y reparte puntos según su aporte. Si pierden, se aplican las reglas de esa fase. Su imagen queda en el chat como recuerdo; el resultado explica los puntos y, si llegaron a la última fase, la solución al perder. /reglashisopo incluye las reglas completas.
+
+El Hisopo gigante sube al 1 %, dura una hora y pide entre 1 y 15 personas, sin contar bots ni cuentas eliminadas. Conserva el premio de +4 puntos por participante al completarlo. El Plateado queda en 13,25 %, el Jefe Final en 0,01 % y el Común en 29,64 %.
+
+Correcciones y mejoras: al reintentar una carga en la Mini App se conserva el grupo elegido después de volver a tu álbum desde una visita compartida. El Jefe tiene una imagen victoriosa si el grupo pierde, también por tiempo agotado; sus imágenes reutilizan los archivos ya subidos a Telegram. Hisopo Mosquito usa mayúscula; /coleccionhisopos por respuesta elige al autor válido. Galerazo Bot tiene una colección de muestra con todos los Hisopos y cosméticos, también visitable desde la Mini App.
+
+Más idiomas: el bot admite 112 opciones y la Mini App 140, con catálogos locales y aviso de traducción automática en las nuevas traducciones. El selector del bot tiene flechas e indicador de página y conserva tu elección al navegar. Las opciones que no pudieron completarse quedan excluidas.
+
+La Mini App vuelve a estar disponible junto con el bot en el nuevo servidor, conservando las colecciones y los datos recuperados.
+
 ## [0.76] desde=[0.68] estado=borrador
 
 Novedades de Galerazo Bot v0.76

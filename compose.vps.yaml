@@ -1,0 +1,9 @@
+# Merge after compose.production.yaml. The parent slice also bounds auxiliaries.
+services:
+  bot:
+    cgroup_parent: apps-galerazo.slice
+    mem_limit: 1792m
+    memswap_limit: 1792m
+    cpus: 1.5
+    volumes:
+      - /etc/galerazo/google-sheets.json:/run/secrets/google-sheets.json:ro
