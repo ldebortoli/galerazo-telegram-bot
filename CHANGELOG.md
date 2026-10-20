@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.78] - 2026-10-20
+
+- Correcciones y mejoras: reduce el límite agregado de Galerazobot y el túnel de la Mini App a 1 GiB, con 768 MiB para el bot, 128 MiB para el túnel y margen para la comprobación previa del deploy. Mantiene swap deshabilitado y los límites persistentes para futuras actualizaciones.
+
 ## [0.77] - 2026-10-20
 
 - Migra el despliegue a VPS con transferencia de imágenes por SSH, validación de salud, respaldo previo y recuperación de la imagen y SQLite ante un arranque fallido. El límite agregado de Galerazo es de 2 GiB, incluido el túnel de la Mini App.
