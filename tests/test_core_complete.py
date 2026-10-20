@@ -157,7 +157,7 @@ class CommandCoreCompleteTests(unittest.IsolatedAsyncioTestCase):
         self.assertIn("/devcustom", private_response)
         self.assertNotIn(TRANSLATIONS["es"]["help.dev_private_hint"], private_response)
 
-        self.assertIn("common", nivel.handle(make_context(), MagicMock()))
+        self.assertIn(TRANSLATIONS["es"]["role.common"], nivel.handle(make_context(), MagicMock()))
         self.assertEqual([level.label for level in UserLevel], ["common", "admin", "dev"])
 
     async def test_roulette_remaining_paths(self) -> None:

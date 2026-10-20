@@ -18,6 +18,8 @@ from telegram import (
     BotCommandScopeAllChatAdministrators,
     BotCommandScopeAllGroupChats,
     BotCommandScopeAllPrivateChats,
+    BotCommandScopeChat,
+    BotCommandScopeChatAdministrators,
     BotCommandScopeDefault,
     Chat,
     ChatMember,
@@ -393,7 +395,7 @@ async def _configure_mini_app(application: Application) -> bool:
     try:
         await application.bot.set_chat_menu_button(
             menu_button=MenuButtonWebApp(
-                text="Mis álbumes",
+                text=t(DEFAULT_LANGUAGE, "miniapp.menu"),
                 web_app=WebAppInfo(public_url),
             )
         )
@@ -508,6 +510,33 @@ def _suggested_bot_commands(
             continue
         commands.append(BotCommand(command.name, t(language, f"help.{command.command_key}")))
     return tuple(commands)
+
+
+async def _sync_chat_language_menu(state: BotState, bot: Bot, chat: Chat) -> None:
+    selected_language = _chat_language(state.db, chat.id)
+    grouped = chat.type != "private"
+    try:
+        await bot.set_my_commands(
+            _suggested_bot_commands(selected_language, UserLevel.COMMON, grouped),
+            scope=BotCommandScopeChat(chat.id),
+        )
+        if grouped:
+            await bot.set_my_commands(
+                _suggested_bot_commands(selected_language, UserLevel.ADMIN, True),
+                scope=BotCommandScopeChatAdministrators(chat.id),
+            )
+        else:
+            public_url = _available_mini_app_url(state.settings, state.bot_username)
+            if public_url:
+                await bot.set_chat_menu_button(
+                    chat_id=chat.id,
+                    menu_button=MenuButtonWebApp(
+                        text=t(selected_language, "miniapp.menu"),
+                        web_app=WebAppInfo(public_url),
+                    ),
+                )
+    except TelegramError as exc:
+        logger.warning("No pude actualizar los menús localizados del chat %s: %s", chat.id, exc)
 
 
 async def _sync_botfather_commands(bot: Bot) -> None:
@@ -2161,6 +2190,8 @@ async def _handle_command_update(update: Update, context: ContextTypes.DEFAULT_T
                 getattr(command, "response_parse_mode", None) if command is not None else None
             ),
         )
+        if command is not None and command.name == "start" and chat.type == "private":
+            await _sync_chat_language_menu(state, context.bot, chat)
         language = _chat_language(state.db, chat.id)
         if response == t(language, "hisopos.rules"):
             await message.reply_text(t(language, "boss.rules"), do_quote=True)
@@ -2337,6 +2368,8 @@ async def _config_callback_entrypoint(update: Update, context: ContextTypes.DEFA
     popup_text = None
     try:
         popup_text = await _handle_config_callback(state.db, message, parsed)
+        if parsed[0] == "lang" and popup_text is not None:
+            await _sync_chat_language_menu(state, context.bot, message.chat)
     finally:
         await callback_query.answer(text=popup_text)
 

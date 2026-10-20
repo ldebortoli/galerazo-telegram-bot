@@ -657,6 +657,7 @@ class CommandAndCallbackEntrypointTests(unittest.IsolatedAsyncioTestCase):
         message = message_stub(text="/hola", reply_to_message=reply)
         update = SimpleNamespace(effective_message=message, effective_user=user, effective_chat=chat)
         command = SimpleNamespace(
+            name="hola",
             configurable_group=None,
             list_response=True,
             response_parse_mode="HTML",

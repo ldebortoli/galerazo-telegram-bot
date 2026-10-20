@@ -1,0 +1,115 @@
+{
+  "date": "2026-10-20",
+  "scope": "Existing bot and private Mini App; public landing unchanged",
+  "sourceVersions": {
+    "bot": "0.79",
+    "miniapp": "0.1.26"
+  },
+  "bot": {
+    "languages": 112,
+    "keys": 316,
+    "changedOrAddedLocalizedFields": 4517,
+    "legacyCommerceExceptions": []
+  },
+  "miniapp": {
+    "languages": 140,
+    "uiKeys": 88,
+    "naturalItems": 18,
+    "products": 21,
+    "changedOrAddedLocalizedFields": {
+      "ui": 960,
+      "natural": 618,
+      "product_names": 1067,
+      "product_descriptions": 300
+    }
+  },
+  "method": "Static repository text only; automatic translation with protected placeholders/literals and targeted manual corrections. CLDR names with verified autonyms where no exonym is available. No runtime translation or native-speaker certification.",
+  "invariants": [
+    "User-authored names and announcement bodies",
+    "URLs, command names and arguments, SKUs",
+    "Exact amounts, grants, signatures and permissions",
+    "112 bot / 140 Mini App inventory"
+  ],
+  "validation": {
+    "status": "passed",
+    "bot": {
+      "tests": 709,
+      "statements": {
+        "covered": 6748,
+        "total": 6748,
+        "percent": 100
+      },
+      "branches": {
+        "covered": 2084,
+        "total": 2084,
+        "percent": 100
+      },
+      "coverageCommand": ".venv/Scripts/python.exe -m coverage run -m pytest; coverage json; scripts/check_coverage.py",
+      "runtime": "CPython 3.14.8; complete pinned lock; pip check and compileall passed",
+      "logCheckpoint": "No new entries"
+    },
+    "miniapp": {
+      "privateCoverageTests": 69,
+      "completeNodeTests": 90,
+      "publicVitestTests": 203,
+      "lines": 100,
+      "branches": 100,
+      "functions": 100,
+      "publicStatements": 100,
+      "coverageCommands": [
+        "npm run coverage:private",
+        "npm run coverage:public"
+      ],
+      "otherCommands": ["npm run check", "npm test", "npm run build"],
+      "publicRepresentations": 354,
+      "publicLanguages": 176
+    },
+    "browser": {
+      "languages": 140,
+      "widths": [320, 768, 1440],
+      "labelsPerWidth": 19600,
+      "checks": [
+        "album/shop/gift/support",
+        "RTL/LTR and language persistence",
+        "200% text samples",
+        "localized errors",
+        "reduced viewport and Unicode input",
+        "ordinary browser entry"
+      ],
+      "visualSamplesReviewed": [
+        "Japanese large text at 320px",
+        "Arabic large text at 320px"
+      ],
+      "realTelegramSession": false,
+      "realPayments": false
+    },
+    "formatter": {
+      "indexCheckout": true,
+      "coreAutocrlf": true,
+      "lineEnding": "LF",
+      "result": "passed"
+    },
+    "botfather": {
+      "identity": "@galerazo_bot",
+      "verifiedCommandScopes": 6,
+      "verifiedEmptyDefaults": 2,
+      "chatMessagesSent": 0
+    },
+    "coverageScope": "Existing scope preserved; no new exclusions or reduced thresholds. Generated catalogs also have complete inventory/key/placeholder checks.",
+    "notRun": [
+      "Native Telegram initData, screen readers and real mobile keyboard: no authenticated visitor session",
+      "Docker-specific suite: no Docker/runtime/dependency changes",
+      "Remote CI monitoring: standing policy"
+    ],
+    "publication": "Source only; no production deployment, restart or announcement. Broadcast 0.79 remains draft from 0.77 (622/4096)."
+  },
+  "miniappLanguageLabels": {
+    "locales": 140,
+    "targets": 140,
+    "cldr": 12674,
+    "autonyms": 6926,
+    "runtime": "v24.18.0",
+    "icu": "78.3",
+    "method": "Static CLDR exonyms where available, otherwise a localized language label and the verified autonym; no host-language fallback."
+  }
+}

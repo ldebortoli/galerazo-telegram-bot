@@ -68,7 +68,7 @@ async def test_bot_showcase_command_and_shared_album_never_write_inventory(tmp_p
         assert payload["album_owner"]["id"] == "99"
         assert payload["user"]["id"] == "1"
         assert all(item["quantity"] == str(MAX_HISOPO_QUANTITY) for item in payload["natural_hisopos"] + payload["paid_hisopos"])
-        assert payload["albums"] == [{"chat_id": chat_id, "title": f"Group {chat_id}", "discovered": len(COLLECTIBLE_HISOPO_KEYS), "captures": str(MAX_HISOPO_QUANTITY * len(COLLECTIBLE_HISOPO_KEYS))}]
+        assert payload["albums"] == [{"chat_id": chat_id, "title": f"Group {chat_id}", "title_fallback": False, "discovered": len(COLLECTIBLE_HISOPO_KEYS), "captures": str(MAX_HISOPO_QUANTITY * len(COLLECTIBLE_HISOPO_KEYS))}]
         assert next(item for item in payload["paid_hisopos"] if item["key"] == "dengue")["name"] == "Hisopo Mosquito"
         with pytest.raises(web.HTTPForbidden):
             await api.bootstrap(request_stub(headers=headers, query={"chat_id": "all"}))

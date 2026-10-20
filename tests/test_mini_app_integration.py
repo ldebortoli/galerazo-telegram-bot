@@ -119,9 +119,9 @@ async def test_forwarded_shared_link_returns_live_origin_and_then_viewers_own_al
     assert response.headers["Cache-Control"] == "no-store"
     shared = await response.json()
     assert shared["user"] == {"id": "2", "name": "Bob"}
-    assert shared["album_owner"] == {"id": "1", "name": "Alice"}
+    assert shared["album_owner"] == {"id": "1", "name": "Alice", "name_fallback": False}
     assert shared["view"] == "shared"
-    assert shared["albums"] == [{"chat_id": "-1", "title": "Album -1", "discovered": 1, "captures": 3}]
+    assert shared["albums"] == [{"chat_id": "-1", "title": "Album -1", "title_fallback": False, "discovered": 1, "captures": 3}]
     assert set(shared) == {"user", "view", "album_owner", "albums", "selected_chat_id", "natural_hisopos", "paid_hisopos"}
     assert next(item["quantity"] for item in shared["paid_hisopos"] if item["key"] == "pico") == 1
     assert next(item["quantity"] for item in shared["paid_hisopos"] if item["key"] == "mini") == 0
@@ -144,7 +144,7 @@ async def test_forwarded_shared_link_returns_live_origin_and_then_viewers_own_al
         own_response = await client.get("/api/bootstrap" + query, headers=visitor_headers)
         assert own_response.status == 200
         own = await own_response.json()
-        assert own["view"] == "own" and own["album_owner"] == {"id": "2", "name": "Bob"}
+        assert own["view"] == "own" and own["album_owner"] == {"id": "2", "name": "Bob", "name_fallback": False}
         assert own["selected_chat_id"] == selected
         assert {album["chat_id"] for album in own["albums"]} == {"all", "-3"}
         assert next(item["quantity"] for item in own["natural_hisopos"] if item["key"] == "common") == 9
@@ -313,7 +313,8 @@ async def test_donor_visibility_is_owned_and_anonymous_by_default(client, backen
         assert donor["public"] == visible
         if not visible:
             assert donor["name"] == "Anónimo"
-        assert set(donor) == {"name", "public", "amount_stars"}
+        assert set(donor) == {"name", "public", "amount_stars", "name_fallback"}
+        assert donor["name_fallback"] is False
 
 
 def test_init_data_rejects_ambiguous_oversized_and_malformed_identity():

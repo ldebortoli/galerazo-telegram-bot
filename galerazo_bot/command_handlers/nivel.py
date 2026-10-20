@@ -6,7 +6,7 @@ from ..roles import CommandContext
 
 
 def handle(context: CommandContext, _db: Database) -> str:
-    return context.t("nivel.response", level=context.user_level.label)
+    return context.t("nivel.response", level=context.t(f"role.{context.user_level.label}"))
 
 
 COMMANDS = {

@@ -105,6 +105,7 @@ class MiniAppUser:
     display_name: str
     username: str | None
     start_param: str | None
+    name_fallback: bool = False
 
 
 class InitDataError(ValueError):
@@ -152,15 +153,16 @@ def validate_init_data(
     age = int(current_time.timestamp()) - auth_date
     if age < 0 or age > max_age_seconds:
         raise InitDataError("La sesión de Telegram venció.")
-    first_name = str(user_data.get("first_name") or "Usuario")
+    first_name = str(user_data.get("first_name") or "")
     last_name = str(user_data.get("last_name") or "")
-    display_name = " ".join(part for part in (first_name, last_name) if part)
+    display_name = " ".join(part for part in (first_name, last_name) if part) or "Usuario"
     username = user_data.get("username")
     return MiniAppUser(
         user_id=user_id,
         display_name=display_name,
         username=str(username) if username else None,
         start_param=values.get("start_param") or None,
+        name_fallback=not bool(user_data.get("first_name") or user_data.get("last_name")),
     )
 
 
@@ -210,7 +212,9 @@ class MiniAppApi:
             or request.query.get("view") not in {None, "mine"}
         ):
             raise web.HTTPBadRequest(text="El pedido no es valido.")
-        self.db.get_or_create_user(user.user_id, user.display_name, user.username)
+        self.db.get_or_create_user(
+            user.user_id, None if user.name_fallback else user.display_name, user.username
+        )
         # A return to the viewer's own album never uses the shared owner as identity.
         if request.query.get("view") == "mine":
             user = replace(user, start_param=None)
@@ -291,7 +295,9 @@ class MiniAppApi:
             kind=kind,
             value=body.get("recipient"),
         )
-        self.db.get_or_create_user(user.user_id, user.display_name, user.username)
+        self.db.get_or_create_user(
+            user.user_id, None if user.name_fallback else user.display_name, user.username
+        )
         source_chat_id = self._valid_source_chat_id(user.user_id, body.get("source_chat_id"))
         payload = create_payment_payload(
             self.bot_token,
@@ -330,7 +336,9 @@ class MiniAppApi:
             raise web.HTTPBadRequest(text="El pedido no es válido.") from exc
         if not isinstance(body, dict) or not isinstance(body.get("public"), bool):
             raise web.HTTPBadRequest(text="La visibilidad debe ser pública o anónima.")
-        self.db.get_or_create_user(user.user_id, user.display_name, user.username)
+        self.db.get_or_create_user(
+            user.user_id, None if user.name_fallback else user.display_name, user.username
+        )
         self.db.set_donor_display_public(user.user_id, body["public"])
         return web.json_response({"public": body["public"]})
 
@@ -425,7 +433,11 @@ class MiniAppApi:
             club_periods=0,
             club_active_until=None,
             donor_public=False,
-            shared_owner={"id": owner.user_id, "name": owner.display_name or f"Usuario {owner.user_id}"},
+            shared_owner={
+                "id": owner.user_id,
+                "name": owner.display_name or f"Usuario {owner.user_id}",
+                "name_fallback": not bool(owner.display_name),
+            },
         )
 
     def _bootstrap_payload(
@@ -440,7 +452,7 @@ class MiniAppApi:
         club_periods: int,
         club_active_until: str | None,
         donor_public: bool,
-        shared_owner: dict[str, str] | None = None,
+        shared_owner: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         natural = []
         for key in COLLECTIBLE_HISOPO_KEYS:
@@ -459,6 +471,7 @@ class MiniAppApi:
             {
                 "chat_id": album.chat_id,
                 "title": album.title or f"Grupo {album.chat_id}",
+                "title_fallback": not bool(album.title),
                 "discovered": album.discovered_count,
                 "captures": _json_count(album.capture_count),
             }
@@ -477,7 +490,11 @@ class MiniAppApi:
         payload = {
             "user": {"id": user.user_id, "name": user.display_name},
             "view": "shared" if shared_owner is not None else "own",
-            "album_owner": shared_owner or {"id": user.user_id, "name": user.display_name},
+            "album_owner": shared_owner or {
+                "id": user.user_id,
+                "name": user.display_name,
+                "name_fallback": user.name_fallback,
+            },
             "albums": album_payload,
             "selected_chat_id": selected_chat_id,
             "natural_hisopos": natural,
@@ -505,6 +522,12 @@ class MiniAppApi:
                     else "Anónimo",
                     "amount_stars": entry.amount_stars,
                     "public": entry.display_public,
+                    "name_fallback": bool(entry.display_public and not (entry.display_name or entry.username)),
+                    **(
+                        {"user_id": entry.user_id}
+                        if entry.display_public and not (entry.display_name or entry.username)
+                        else {}
+                    ),
                 }
                 for entry in self.db.get_donor_leaderboard()
             ],

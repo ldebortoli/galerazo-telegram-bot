@@ -43,6 +43,44 @@ record that impact assessment. The existing bot regression set is:
 Select additional domain tests for the behavior changed. This policy does not
 require a production deployment, Telegram send or paid translation service.
 
+## Existing-content audit · 2026-10-20
+
+Source versions: bot0.79 and Mini App0.1.26. The enabled inventories remain
+112 and140 options respectively. `TRANSLATION-AUDIT-20261020.json` records the
+scope and validation. This supersedes the legacy payment exception below.
+
+- Help, donation/privacy/payment prose, gift responses and role labels have local
+  text throughout the bot inventory. Latin, Japanese, Southern Quechua and Korean
+  invoices now use their own catalogs. No locale aliases a Spanish payment catalog.
+- Corrected embedded source phrases in UI, rules, natural items and products.
+  Language selectors use CLDR exonyms; where CLDR has no exonym, a localized
+  language label accompanies the verified autonym. Afar/Ewe/Basque labels retain
+  their linguistic identity. Numbers, URLs, commands, SKUs and brands stay invariant.
+- Per-chat Telegram command scopes and the private Mini App button follow the
+  selected bot language, including three-letter locales. Global es/en scopes stay
+  as the compatibility defaults; development commands remain hidden.
+- Mini App language changes keep gift names, in-flight purchase errors and privacy
+  state coherent. Errors appear at their initiating action and disappear on retry.
+  Unsupported Intl date locales use ISO dates rather than the host language.
+- Optional `name_fallback`/`title_fallback` metadata distinguishes generated user and
+  group labels from authored names. Public unnamed donors alone receive a fallback
+  ID; anonymous donors expose no ID. Older backend payloads remain accepted; full
+  generated-name localization requires rollout of both sources.
+
+Acquisition sends only static repository text to the existing public Google
+Translate consumer endpoint. Protected literals and variables are checked before
+atomic writes; targeted Southern Quechua and label corrections supplement it.
+These are automatic translations, without native-speaker certification. User-authored
+names and announcement bodies, including previously approved release broadcasts,
+retain their original text. Their surrounding application UI is localized. The
+Spanish initial HTML/noscript is the default shell; selected language is applied by
+JavaScript, which the private Telegram app requires.
+
+No deployment, production restart, new Telegram message, purchase or billing change
+is part of this audit. Release editorial approval remains pending. Real Telegram
+initData, native screen readers and a real mobile keyboard remain outside the local
+fixture harness. No remote CI polling is required.
+
 ## Runtime and contracts
 
 - Catalogs are packaged locally; there is no translation request at runtime.
@@ -62,10 +100,9 @@ require a production deployment, Telegram send or paid translation service.
 - The independent payment_language_preferences table stores the authenticated payer's
   last successful invoice language. It does not change group configuration. Receipts,
   errors and refunds reuse it. Cosmetic names also use the local catalog in bot albums.
-- Existing legacy payment presentation remains Spanish for la, ja, quz, ko:
-  the new payment catalog could not be verified for these pre-existing locales. They
-  are not counted as new complete catalogs; no existing locale is removed or relabeled
-  as natively reviewed. This limitation is explicit rather than a new fallback catalog.
+- Historical exception (resolved by the 2026-10-20 audit): la, ja, quz and ko
+  previously reused Spanish payment presentation. All four now use own catalogs;
+  this does not certify native linguistic quality.
 
 ## Validation and publication
 

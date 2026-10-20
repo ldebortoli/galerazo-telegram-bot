@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.79] - 2026-10-20
+
+- Correcciones y mejoras: completa textos de ayuda, donaciones, pagos, roles y regalos en los 112 idiomas habilitados; corrige fragmentos sin traducir y nombres de idiomas. Los menús por chat siguen el idioma elegido.
+- La Mini App recibe metadatos para traducir nombres generados de usuarios y grupos sin modificar nombres reales ni revelar identidades anónimas. Los cuatro idiomas con facturas legadas en español pasan a su catálogo propio.
+
 ## [0.78] - 2026-10-20
 
 - Correcciones y mejoras: reduce el límite agregado de Galerazobot y el túnel de la Mini App a 1 GiB, con 768 MiB para el bot, 128 MiB para el túnel y margen para la comprobación previa del deploy. Mantiene swap deshabilitado y los límites persistentes para futuras actualizaciones.
