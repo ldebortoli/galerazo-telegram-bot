@@ -19,7 +19,7 @@ if($Action -eq 'stop' -and -not $AcknowledgeStop){throw 'Detencion requiere conf
 if($Action -eq 'credentials' -and (-not $AcknowledgeSecretUpdate -or -not $PatchFile)){throw 'Parche requiere confirmacion y archivo privado.'}
 if($Action -eq 'media' -and (-not $TriggerId -or -not $OutputFile)){throw 'Multimedia requiere trigger y archivo de salida.'}
 if($Action -eq 'notify-release' -and (-not $ReleaseEvent -or ($ReleaseEvent -eq 'failed' -and -not $ReleaseDetail) -or ($ReleaseEvent -ne 'failed' -and $ReleaseDetail))){throw 'Notificacion de release invalida.'}
-$arguments=@($prefix)+@((Join-Path $projectRoot 'scripts/vps_operations.py'),'--root',$projectRoot,'--config',$VpsConfigFile,'--action',$Action)
+$arguments=@($prefix)+@('-X','utf8',(Join-Path $projectRoot 'scripts/vps_operations.py'),'--root',$projectRoot,'--config',$VpsConfigFile,'--action',$Action)
 foreach($pair in @(@('--image',$Image),@('--tag',$Tag),@('--patch',$PatchFile),@('--output',$OutputFile))){if($pair[1]){$arguments+=$pair}}
 if($Action -in @('media','moderate')){$arguments+=@('--',$TriggerId);if($Action -eq 'moderate'){$arguments+=$ModerationAction}}
 if($Action -eq 'notify-release'){$arguments+=@('--',$ReleaseEvent);if($ReleaseDetail){$arguments+=[Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($ReleaseDetail))}}
