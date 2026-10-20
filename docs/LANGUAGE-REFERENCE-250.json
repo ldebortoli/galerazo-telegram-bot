@@ -1,0 +1,2519 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-20",
+  "reference": {
+    "name": "Shared installed Linterna PREMIUM / Gemidos PREMIUM inventory",
+    "count": 250,
+    "linternaPortableSha256": "4f42b03dc9b97663d8d0664531bc2680ec9491ec1e3018e125f9226516bf6326",
+    "gemidosPortableSha256": "4f42b03dc9b97663d8d0664531bc2680ec9491ec1e3018e125f9226516bf6326",
+    "aliases": {
+      "pa": "pa-Guru"
+    }
+  },
+  "baseline": {
+    "bot": 112,
+    "miniapp": 140
+  },
+  "candidates": [
+    {
+      "referenceCode": "es-AR",
+      "route": "es",
+      "tag": "es-AR",
+      "botCode": "es",
+      "native": "Español (Argentina)",
+      "direction": "ltr",
+      "baselineBot": true,
+      "baselineMiniapp": true
+    },
+    {
+      "referenceCode": "es-ES",
+      "route": "es-ES",
+      "tag": "es-ES",
+      "botCode": "es_ES",
+      "native": "Español (España)",
+      "direction": "ltr",
+      "baselineBot": true,
+      "baselineMiniapp": true
+    },
+    {
+      "referenceCode": "en",
+      "route": "en",
+      "tag": "en",
+      "botCode": "en",
+      "native": "English",
+      "direction": "ltr",
+      "baselineBot": true,
+      "baselineMiniapp": true
+    },
+    {
+      "referenceCode": "ru",
+      "route": "ru",
+      "tag": "ru",
+      "botCode": "ru",
+      "native": "Русский",
+      "direction": "ltr",
+      "baselineBot": true,
+      "baselineMiniapp": true
+    },
+    {
+      "referenceCode": "la",
+      "route": "la",
+      "tag": "la",
+      "botCode": "la",
+      "native": "Latine",
+      "direction": "ltr",
+      "baselineBot": true,
+      "baselineMiniapp": true
+    },
+    {
+      "referenceCode": "ja",
+      "route": "ja",
+      "tag": "ja",
+      "botCode": "ja",
+      "native": "日本語",
+      "direction": "ltr",
+      "baselineBot": true,
+      "baselineMiniapp": true
+    },
+    {
+      "referenceCode": "it",
+      "route": "it",
+      "tag": "it",
+      "botCode": "it",
+      "native": "Italiano",
+      "direction": "ltr",
+      "baselineBot": true,
+      "baselineMiniapp": true
+    },
+    {
+      "referenceCode": "fr",
+      "route": "fr",
+      "tag": "fr",
+      "botCode": "fr",
+      "native": "Français",
+      "direction": "ltr",
+      "baselineBot": true,
+      "baselineMiniapp": true
+    },
+    {
+      "referenceCode": "de",
+      "route": "de",
+      "tag": "de",
+      "botCode": "de",
+      "native": "Deutsch",
+      "direction": "ltr",
+      "baselineBot": true,
+      "baselineMiniapp": true
+    },
+    {
+      "referenceCode": "nl",
+      "route": "nl",
+      "tag": "nl",
+      "botCode": "nl",
+      "native": "Nederlands",
+      "direction": "ltr",
+      "baselineBot": true,
+      "baselineMiniapp": true
+    },
+    {
+      "referenceCode": "zh-Hans",
+      "route": "zh",
+      "tag": "zh-Hans",
+      "botCode": "zh_Hans",
+      "native": "中文（简体）",
+      "direction": "ltr",
+      "baselineBot": true,
+      "baselineMiniapp": true
+    },
+    {
+      "referenceCode": "zh-Hant",
+      "route": "zh-Hant",
+      "tag": "zh-Hant",
+      "botCode": "zh_Hant",
+      "native": "中文（繁體）",
+      "direction": "ltr",
+      "baselineBot": true,
+      "baselineMiniapp": true
+    },
+    {
+      "referenceCode": "pt-BR",
+      "route": "pt",
+      "tag": "pt-BR",
+      "botCode": "pt_BR",
+      "native": "Português (Brasil)",
+      "direction": "ltr",
+      "baselineBot": true,
+      "baselineMiniapp": true
+    },
+    {
+      "referenceCode": "pt-PT",
+      "route": "pt-PT",
+      "tag": "pt-PT",
+      "botCode": "pt_PT",
+      "native": "Português (Portugal)",
+      "direction": "ltr",
+      "baselineBot": true,
+      "baselineMiniapp": true
+    },
+    {
+      "referenceCode": "ca",
+      "route": "ca",
+      "tag": "ca",
+      "botCode": "ca",
+      "native": "Català",
+      "direction": "ltr",
+      "baselineBot": true,
+      "baselineMiniapp": true
+    },
+    {
+      "referenceCode": "eu",
+      "route": "eu",
+      "tag": "eu",
+      "botCode": "eu",
+      "native": "Euskara",
+      "direction": "ltr",
+      "baselineBot": true,
+      "baselineMiniapp": true
+    },
+    {
+      "referenceCode": "gn",
+      "route": "gn",
+      "tag": "gn",
+      "botCode": "gn",
+      "native": "Avañe'ẽ",
+      "direction": "ltr",
+      "baselineBot": true,
+      "baselineMiniapp": true
+    },
+    {
+      "referenceCode": "quz",
+      "route": "quz",
+      "tag": "quz",
+      "botCode": "quz",
+      "native": "Runa Simi",
+      "direction": "ltr",
+      "baselineBot": true,
+      "baselineMiniapp": true
+    },
+    {
+      "referenceCode": "cmn-Hans",
+      "route": "cmn-Hans",
+      "tag": "cmn-Hans",
+      "botCode": "cmn-Hans",
+      "native": "普通话",
+      "direction": "ltr",
+      "baselineBot": true,
+      "baselineMiniapp": true
+    },
+    {
+      "referenceCode": "yue-Hant",
+      "route": "yue-Hant",
+      "tag": "yue-Hant",
+      "botCode": "yue-Hant",
+      "native": "粵語",
+      "direction": "ltr",
+      "baselineBot": true,
+      "baselineMiniapp": true
+    },
+    {
+      "referenceCode": "ko",
+      "route": "ko",
+      "tag": "ko",
+      "botCode": "ko",
+      "native": "한국어",
+      "direction": "ltr",
+      "baselineBot": false,
+      "baselineMiniapp": true
+    },
+    {
+      "referenceCode": "aa",
+      "route": "aa",
+      "tag": "aa",
+      "botCode": "aa",
+      "native": "Qafar",
+      "direction": "ltr",
+      "baselineBot": false,
+      "baselineMiniapp": true
+    },
+    {
+      "referenceCode": "ab",
+      "route": "ab",
+      "tag": "ab",
+      "botCode": "ab",
+      "native": "Аԥсуа [ab]",
+      "direction": "ltr",
+      "baselineBot": false,
+      "baselineMiniapp": false
+    },
+    {
+      "referenceCode": "ace",
+      "route": "ace",
+      "tag": "ace",
+      "botCode": "ace",
+      "native": "Bahasa Aceh [ace]",
+      "direction": "ltr",
+      "baselineBot": false,
+      "baselineMiniapp": false
+    },
+    {
+      "referenceCode": "ach",
+      "route": "ach",
+      "tag": "ach",
+      "botCode": "ach",
+      "native": "Acholi",
+      "direction": "ltr",
+      "baselineBot": true,
+      "baselineMiniapp": true
+    },
+    {
+      "referenceCode": "af",
+      "route": "af",
+      "tag": "af",
+      "botCode": "af",
+      "native": "Afrikaans",
+      "direction": "ltr",
+      "baselineBot": true,
+      "baselineMiniapp": true
+    },
+    {
+      "referenceCode": "ak",
+      "route": "ak",
+      "tag": "ak",
+      "botCode": "ak",
+      "native": "Akan",
+      "direction": "ltr",
+      "baselineBot": false,
+      "baselineMiniapp": true
+    },
+    {
+      "referenceCode": "alz",
+      "route": "alz",
+      "tag": "alz",
+      "botCode": "alz",
+      "native": "Alur [alz]",
+      "direction": "ltr",
+      "baselineBot": false,
+      "baselineMiniapp": false
+    },
+    {
+      "referenceCode": "am",
+      "route": "am",
+      "tag": "am",
+      "botCode": "am",
+      "native": "አማርኛ",
+      "direction": "ltr",
+      "baselineBot": true,
+      "baselineMiniapp": true
+    },
+    {
+      "referenceCode": "ar",
+      "route": "ar",
+      "tag": "ar",
+      "botCode": "ar",
+      "native": "العربية",
+      "direction": "rtl",
+      "baselineBot": true,
+      "baselineMiniapp": true
+    },
+    {
+      "referenceCode": "as",
+      "route": "as",
+      "tag": "as",
+      "botCode": "as",
+      "native": "অসমীয়া [as]",
+      "direction": "ltr",
+      "baselineBot": false,
+      "baselineMiniapp": false
+    },
+    {
+      "referenceCode": "av",
+      "route": "av",
+      "tag": "av",
+      "botCode": "av",
+      "native": "Авар [av]",
+      "direction": "ltr",
+      "baselineBot": false,
+      "baselineMiniapp": false
+    },
+    {
+      "referenceCode": "awa",
+      "route": "awa",
+      "tag": "awa",
+      "botCode": "awa",
+      "native": "अवधी [awa]",
+      "direction": "ltr",
+      "baselineBot": false,
+      "baselineMiniapp": false
+    },
+    {
+      "referenceCode": "ay",
+      "route": "ay",
+      "tag": "ay",
+      "botCode": "ay",
+      "native": "Aymara aru [ay]",
+      "direction": "ltr",
+      "baselineBot": false,
+      "baselineMiniapp": false
+    },
+    {
+      "referenceCode": "az",
+      "route": "az",
+      "tag": "az",
+      "botCode": "az",
+      "native": "azərbaycan",
+      "direction": "ltr",
+      "baselineBot": true,
+      "baselineMiniapp": true
+    },
+    {
+      "referenceCode": "ba",
+      "route": "ba",
+      "tag": "ba",
+      "botCode": "ba",
+      "native": "Башҡорт . [ba]",
+      "direction": "ltr",
+      "baselineBot": false,
+      "baselineMiniapp": false
+    },
+    {
+      "referenceCode": "bal",
+      "route": "bal",
+      "tag": "bal",
+      "botCode": "bal",
+      "native": "بلوچی . [bal]",
+      "direction": "rtl",
+      "baselineBot": false,
+      "baselineMiniapp": false
+    },
+    {
+      "referenceCode": "ban",
+      "route": "ban",
+      "tag": "ban",
+      "botCode": "ban",
+      "native": "Basa Bali [ban]",
+      "direction": "ltr",
+      "baselineBot": false,
+      "baselineMiniapp": false
+    },
+    {
+      "referenceCode": "bbc",
+      "route": "bbc",
+      "tag": "bbc",
+      "botCode": "bbc",
+      "native": "Batak Toba [bbc]",
+      "direction": "ltr",
+      "baselineBot": false,
+      "baselineMiniapp": false
+    },
+    {
+      "referenceCode": "bci",
+      "route": "bci",
+      "tag": "bci",
+      "botCode": "bci",
+      "native": "Baoulɛ [bci]",
+      "direction": "ltr",
+      "baselineBot": false,
+      "baselineMiniapp": false
+    },
+    {
+      "referenceCode": "be",
+      "route": "be",
+      "tag": "be",
+      "botCode": "be",
+      "native": "беларуская",
+      "direction": "ltr",
+      "baselineBot": true,
+      "baselineMiniapp": true
+    },
+    {
+      "referenceCode": "bem",
+      "route": "bem",
+      "tag": "bem",
+      "botCode": "bem",
+      "native": "Icibemba [bem]",
+      "direction": "ltr",
+      "baselineBot": false,
+      "baselineMiniapp": false
+    },
+    {
+      "referenceCode": "ber",
+      "route": "ber",
+      "tag": "ber",
+      "botCode": "ber",
+      "native": "ⵜⴰⵎⴰⵣⵉⵖⵜ (ⵜⵉⴼⵉⵏⴰⵖ) [ber]",
+      "direction": "ltr",
+      "baselineBot": false,
+      "baselineMiniapp": false
+    },
+    {
+      "referenceCode": "ber-Latn",
+      "route": "ber-Latn",
+      "tag": "ber-Latn",
+      "botCode": "ber-Latn",
+      "native": "Tamaziɣt [ber-Latn]",
+      "direction": "ltr",
+      "baselineBot": false,
+      "baselineMiniapp": false
+    },
+    {
+      "referenceCode": "bew",
+      "route": "bew",
+      "tag": "bew",
+      "botCode": "bew",
+      "native": "Betawi",
+      "direction": "ltr",
+      "baselineBot": true,
+      "baselineMiniapp": true
+    },
+    {
+      "referenceCode": "bg",
+      "route": "bg",
+      "tag": "bg",
+      "botCode": "bg",
+      "native": "български",
+      "direction": "ltr",
+      "baselineBot": true,
+      "baselineMiniapp": true
+    },
+    {
+      "referenceCode": "bho",
+      "route": "bho",
+      "tag": "bho",
+      "botCode": "bho",
+      "native": "भोजपुरी के बा [bho]",
+      "direction": "ltr",
+      "baselineBot": false,
+      "baselineMiniapp": false
+    },
+    {
+      "referenceCode": "bik",
+      "route": "bik",
+      "tag": "bik",
+      "botCode": "bik",
+      "native": "Bikol",
+      "direction": "ltr",
+      "baselineBot": false,
+      "baselineMiniapp": true
+    },
+    {
+      "referenceCode": "bm",
+      "route": "bm",
+      "tag": "bm",
+      "botCode": "bm",
+      "native": "bamanakan",
+      "direction": "ltr",
+      "baselineBot": true,
+      "baselineMiniapp": true
+    },
+    {
+      "referenceCode": "bm-Nkoo",
+      "route": "bm-Nkoo",
+      "tag": "bm-Nkoo",
+      "botCode": "bm-Nkoo",
+      "native": "ߒߞߏ [bm-Nkoo]",
+      "direction": "rtl",
+      "baselineBot": false,
+      "baselineMiniapp": false
+    },
+    {
+      "referenceCode": "bn",
+      "route": "bn",
+      "tag": "bn",
+      "botCode": "bn",
+      "native": "বাংলা",
+      "direction": "ltr",
+      "baselineBot": true,
+      "baselineMiniapp": true
+    },
+    {
+      "referenceCode": "bo",
+      "route": "bo",
+      "tag": "bo",
+      "botCode": "bo",
+      "native": "བོད་ཡིག། [bo]",
+      "direction": "ltr",
+      "baselineBot": false,
+      "baselineMiniapp": false
+    },
+    {
+      "referenceCode": "br",
+      "route": "br",
+      "tag": "br",
+      "botCode": "br",
+      "native": "Brezhoneg [br]",
+      "direction": "ltr",
+      "baselineBot": false,
+      "baselineMiniapp": false
+    },
+    {
+      "referenceCode": "bs",
+      "route": "bs",
+      "tag": "bs",
+      "botCode": "bs",
+      "native": "bosanski",
+      "direction": "ltr",
+      "baselineBot": true,
+      "baselineMiniapp": true
+    },
+    {
+      "referenceCode": "bts",
+      "route": "bts",
+      "tag": "bts",
+      "botCode": "bts",
+      "native": "Batak Simalungun",
+      "direction": "ltr",
+      "baselineBot": true,
+      "baselineMiniapp": true
+    },
+    {
+      "referenceCode": "btx",
+      "route": "btx",
+      "tag": "btx",
+      "botCode": "btx",
+      "native": "Batak Karo [btx]",
+      "direction": "ltr",
+      "baselineBot": false,
+      "baselineMiniapp": false
+    },
+    {
+      "referenceCode": "bua",
+      "route": "bua",
+      "tag": "bua",
+      "botCode": "bua",
+      "native": "буряад",
+      "direction": "ltr",
+      "baselineBot": true,
+      "baselineMiniapp": true
+    },
+    {
+      "referenceCode": "ce",
+      "route": "ce",
+      "tag": "ce",
+      "botCode": "ce",
+      "native": "Нохчийн [ce]",
+      "direction": "ltr",
+      "baselineBot": false,
+      "baselineMiniapp": false
+    },
+    {
+      "referenceCode": "ceb",
+      "route": "ceb",
+      "tag": "ceb",
+      "botCode": "ceb",
+      "native": "Cebuano [ceb]",
+      "direction": "ltr",
+      "baselineBot": false,
+      "baselineMiniapp": false
+    },
+    {
+      "referenceCode": "cgg",
+      "route": "cgg",
+      "tag": "cgg",
+      "botCode": "cgg",
+      "native": "Kiga [cgg]",
+      "direction": "ltr",
+      "baselineBot": false,
+      "baselineMiniapp": false
+    },
+    {
+      "referenceCode": "ch",
+      "route": "ch",
+      "tag": "ch",
+      "botCode": "ch",
+      "native": "Chamorro",
+      "direction": "ltr",
+      "baselineBot": false,
+      "baselineMiniapp": true
+    },
+    {
+      "referenceCode": "chk",
+      "route": "chk",
+      "tag": "chk",
+      "botCode": "chk",
+      "native": "Chon Chuuk [chk]",
+      "direction": "ltr",
+      "baselineBot": false,
+      "baselineMiniapp": false
+    },
+    {
+      "referenceCode": "chm",
+      "route": "chm",
+      "tag": "chm",
+      "botCode": "chm",
+      "native": "Луговой марий",
+      "direction": "ltr",
+      "baselineBot": true,
+      "baselineMiniapp": true
+    },
+    {
+      "referenceCode": "ckb",
+      "route": "ckb",
+      "tag": "ckb",
+      "botCode": "ckb",
+      "native": "کوردی (سۆرانی) [ckb]",
+      "direction": "rtl",
+      "baselineBot": false,
+      "baselineMiniapp": false
+    },
+    {
+      "referenceCode": "cnh",
+      "route": "cnh",
+      "tag": "cnh",
+      "botCode": "cnh",
+      "native": "Hakha Chin",
+      "direction": "ltr",
+      "baselineBot": true,
+      "baselineMiniapp": true
+    },
+    {
+      "referenceCode": "co",
+      "route": "co",
+      "tag": "co",
+      "botCode": "co",
+      "native": "Corsu",
+      "direction": "ltr",
+      "baselineBot": true,
+      "baselineMiniapp": true
+    },
+    {
+      "referenceCode": "crh",
+      "route": "crh",
+      "tag": "crh",
+      "botCode": "crh",
+      "native": "Къырымтатар . [crh]",
+      "direction": "ltr",
+      "baselineBot": false,
+      "baselineMiniapp": false
+    },
+    {
+      "referenceCode": "crh-Latn",
+      "route": "crh-Latn",
+      "tag": "crh-Latn",
+      "botCode": "crh-Latn",
+      "native": "Qırımtatar (latin) [crh-Latn]",
+      "direction": "ltr",
+      "baselineBot": false,
+      "baselineMiniapp": false
+    },
+    {
+      "referenceCode": "crs",
+      "route": "crs",
+      "tag": "crs",
+      "botCode": "crs",
+      "native": "Kreol Seselwa [crs]",
+      "direction": "ltr",
+      "baselineBot": false,
+      "baselineMiniapp": false
+    },
+    {
+      "referenceCode": "cs",
+      "route": "cs",
+      "tag": "cs",
+      "botCode": "cs",
+      "native": "čeština",
+      "direction": "ltr",
+      "baselineBot": true,
+      "baselineMiniapp": true
+    },
+    {
+      "referenceCode": "cv",
+      "route": "cv",
+      "tag": "cv",
+      "botCode": "cv",
+      "native": "чӑваш чӗлхи",
+      "direction": "ltr",
+      "baselineBot": true,
+      "baselineMiniapp": true
+    },
+    {
+      "referenceCode": "cy",
+      "route": "cy",
+      "tag": "cy",
+      "botCode": "cy",
+      "native": "Cymraeg",
+      "direction": "ltr",
+      "baselineBot": true,
+      "baselineMiniapp": true
+    },
+    {
+      "referenceCode": "da",
+      "route": "da",
+      "tag": "da",
+      "botCode": "da",
+      "native": "dansk",
+      "direction": "ltr",
+      "baselineBot": true,
+      "baselineMiniapp": true
+    },
+    {
+      "referenceCode": "din",
+      "route": "din",
+      "tag": "din",
+      "botCode": "din",
+      "native": "Dinka [din]",
+      "direction": "ltr",
+      "baselineBot": false,
+      "baselineMiniapp": false
+    },
+    {
+      "referenceCode": "doi",
+      "route": "doi",
+      "tag": "doi",
+      "botCode": "doi",
+      "native": "डोगरी [doi]",
+      "direction": "ltr",
+      "baselineBot": false,
+      "baselineMiniapp": false
+    },
+    {
+      "referenceCode": "dov",
+      "route": "dov",
+      "tag": "dov",
+      "botCode": "dov",
+      "native": "Dombe",
+      "direction": "ltr",
+      "baselineBot": true,
+      "baselineMiniapp": true
+    },
+    {
+      "referenceCode": "dv",
+      "route": "dv",
+      "tag": "dv",
+      "botCode": "dv",
+      "native": "ދިވެހި... [dv]",
+      "direction": "rtl",
+      "baselineBot": false,
+      "baselineMiniapp": false
+    },
+    {
+      "referenceCode": "dyu",
+      "route": "dyu",
+      "tag": "dyu",
+      "botCode": "dyu",
+      "native": "Dyula [dyu]",
+      "direction": "ltr",
+      "baselineBot": false,
+      "baselineMiniapp": false
+    },
+    {
+      "referenceCode": "dz",
+      "route": "dz",
+      "tag": "dz",
+      "botCode": "dz",
+      "native": "རྫོང་ཁ། [dz]",
+      "direction": "ltr",
+      "baselineBot": false,
+      "baselineMiniapp": false
+    },
+    {
+      "referenceCode": "ee",
+      "route": "ee",
+      "tag": "ee",
+      "botCode": "ee",
+      "native": "eʋegbe",
+      "direction": "ltr",
+      "baselineBot": true,
+      "baselineMiniapp": true
+    },
+    {
+      "referenceCode": "el",
+      "route": "el",
+      "tag": "el",
+      "botCode": "el",
+      "native": "Ελληνικά",
+      "direction": "ltr",
+      "baselineBot": true,
+      "baselineMiniapp": true
+    },
+    {
+      "referenceCode": "eo",
+      "route": "eo",
+      "tag": "eo",
+      "botCode": "eo",
+      "native": "Esperanto",
+      "direction": "ltr",
+      "baselineBot": true,
+      "baselineMiniapp": true
+    },
+    {
+      "referenceCode": "et",
+      "route": "et",
+      "tag": "et",
+      "botCode": "et",
+      "native": "eesti",
+      "direction": "ltr",
+      "baselineBot": true,
+      "baselineMiniapp": true
+    },
+    {
+      "referenceCode": "fa",
+      "route": "fa",
+      "tag": "fa",
+      "botCode": "fa",
+      "native": "فارسی",
+      "direction": "rtl",
+      "baselineBot": true,
+      "baselineMiniapp": true
+    },
+    {
+      "referenceCode": "fa-AF",
+      "route": "fa-AF",
+      "tag": "fa-AF",
+      "botCode": "fa-AF",
+      "native": "دری [fa-AF]",
+      "direction": "rtl",
+      "baselineBot": false,
+      "baselineMiniapp": false
+    },
+    {
+      "referenceCode": "ff",
+      "route": "ff",
+      "tag": "ff",
+      "botCode": "ff",
+      "native": "Fulfulde [ff]",
+      "direction": "ltr",
+      "baselineBot": false,
+      "baselineMiniapp": false
+    },
+    {
+      "referenceCode": "fi",
+      "route": "fi",
+      "tag": "fi",
+      "botCode": "fi",
+      "native": "suomi",
+      "direction": "ltr",
+      "baselineBot": true,
+      "baselineMiniapp": true
+    },
+    {
+      "referenceCode": "fil",
+      "route": "fil",
+      "tag": "fil",
+      "botCode": "fil",
+      "native": "Filipino (Tagalog) [fil]",
+      "direction": "ltr",
+      "baselineBot": false,
+      "baselineMiniapp": false
+    },
+    {
+      "referenceCode": "fj",
+      "route": "fj",
+      "tag": "fj",
+      "botCode": "fj",
+      "native": "Vaka-Viti [fj]",
+      "direction": "ltr",
+      "baselineBot": false,
+      "baselineMiniapp": false
+    },
+    {
+      "referenceCode": "fo",
+      "route": "fo",
+      "tag": "fo",
+      "botCode": "fo",
+      "native": "Føroyskt [fo]",
+      "direction": "ltr",
+      "baselineBot": false,
+      "baselineMiniapp": false
+    },
+    {
+      "referenceCode": "fon",
+      "route": "fon",
+      "tag": "fon",
+      "botCode": "fon",
+      "native": "Fon [fon]",
+      "direction": "ltr",
+      "baselineBot": false,
+      "baselineMiniapp": false
+    },
+    {
+      "referenceCode": "fr-CA",
+      "route": "fr-CA",
+      "tag": "fr-CA",
+      "botCode": "fr-CA",
+      "native": "français canadien",
+      "direction": "ltr",
+      "baselineBot": false,
+      "baselineMiniapp": true
+    },
+    {
+      "referenceCode": "fur",
+      "route": "fur",
+      "tag": "fur",
+      "botCode": "fur",
+      "native": "Friul [fur]",
+      "direction": "ltr",
+      "baselineBot": false,
+      "baselineMiniapp": false
+    },
+    {
+      "referenceCode": "fy",
+      "route": "fy",
+      "tag": "fy",
+      "botCode": "fy",
+      "native": "Frysk",
+      "direction": "ltr",
+      "baselineBot": true,
+      "baselineMiniapp": true
+    },
+    {
+      "referenceCode": "ga",
+      "route": "ga",
+      "tag": "ga",
+      "botCode": "ga",
+      "native": "Gaeilge",
+      "direction": "ltr",
+      "baselineBot": true,
+      "baselineMiniapp": true
+    },
+    {
+      "referenceCode": "gaa",
+      "route": "gaa",
+      "tag": "gaa",
+      "botCode": "gaa",
+      "native": "Ga [gaa]",
+      "direction": "ltr",
+      "baselineBot": false,
+      "baselineMiniapp": false
+    },
+    {
+      "referenceCode": "gd",
+      "route": "gd",
+      "tag": "gd",
+      "botCode": "gd",
+      "native": "Gàidhlig na h-Alba [gd]",
+      "direction": "ltr",
+      "baselineBot": false,
+      "baselineMiniapp": false
+    },
+    {
+      "referenceCode": "gl",
+      "route": "gl",
+      "tag": "gl",
+      "botCode": "gl",
+      "native": "galego [gl]",
+      "direction": "ltr",
+      "baselineBot": false,
+      "baselineMiniapp": false
+    },
+    {
+      "referenceCode": "gom",
+      "route": "gom",
+      "tag": "gom",
+      "botCode": "gom",
+      "native": "कोंकणी [gom]",
+      "direction": "ltr",
+      "baselineBot": false,
+      "baselineMiniapp": false
+    },
+    {
+      "referenceCode": "gu",
+      "route": "gu",
+      "tag": "gu",
+      "botCode": "gu",
+      "native": "ગુજરાતી",
+      "direction": "ltr",
+      "baselineBot": true,
+      "baselineMiniapp": true
+    },
+    {
+      "referenceCode": "gv",
+      "route": "gv",
+      "tag": "gv",
+      "botCode": "gv",
+      "native": "Manninagh [gv]",
+      "direction": "ltr",
+      "baselineBot": false,
+      "baselineMiniapp": false
+    },
+    {
+      "referenceCode": "ha",
+      "route": "ha",
+      "tag": "ha",
+      "botCode": "ha",
+      "native": "Hausa",
+      "direction": "ltr",
+      "baselineBot": true,
+      "baselineMiniapp": false
+    },
+    {
+      "referenceCode": "haw",
+      "route": "haw",
+      "tag": "haw",
+      "botCode": "haw",
+      "native": "ʻŌlelo Hawaiʻi",
+      "direction": "ltr",
+      "baselineBot": false,
+      "baselineMiniapp": true
+    },
+    {
+      "referenceCode": "he",
+      "route": "he",
+      "tag": "he",
+      "botCode": "he",
+      "native": "עברית",
+      "direction": "rtl",
+      "baselineBot": true,
+      "baselineMiniapp": true
+    },
+    {
+      "referenceCode": "hi",
+      "route": "hi",
+      "tag": "hi",
+      "botCode": "hi",
+      "native": "हिन्दी",
+      "direction": "ltr",
+      "baselineBot": true,
+      "baselineMiniapp": true
+    },
+    {
+      "referenceCode": "hil",
+      "route": "hil",
+      "tag": "hil",
+      "botCode": "hil",
+      "native": "Hiligaynon",
+      "direction": "ltr",
+      "baselineBot": false,
+      "baselineMiniapp": true
+    },
+    {
+      "referenceCode": "hmn",
+      "route": "hmn",
+      "tag": "hmn",
+      "botCode": "hmn",
+      "native": "hmoob",
+      "direction": "ltr",
+      "baselineBot": false,
+      "baselineMiniapp": true
+    },
+    {
+      "referenceCode": "hr",
+      "route": "hr",
+      "tag": "hr",
+      "botCode": "hr",
+      "native": "hrvatski",
+      "direction": "ltr",
+      "baselineBot": true,
+      "baselineMiniapp": true
+    },
+    {
+      "referenceCode": "hrx",
+      "route": "hrx",
+      "tag": "hrx",
+      "botCode": "hrx",
+      "native": "Hunsrik [hrx]",
+      "direction": "ltr",
+      "baselineBot": false,
+      "baselineMiniapp": false
+    },
+    {
+      "referenceCode": "ht",
+      "route": "ht",
+      "tag": "ht",
+      "botCode": "ht",
+      "native": "Kreyòl ayisyen",
+      "direction": "ltr",
+      "baselineBot": true,
+      "baselineMiniapp": true
+    },
+    {
+      "referenceCode": "hu",
+      "route": "hu",
+      "tag": "hu",
+      "botCode": "hu",
+      "native": "magyar",
+      "direction": "ltr",
+      "baselineBot": true,
+      "baselineMiniapp": true
+    },
+    {
+      "referenceCode": "hy",
+      "route": "hy",
+      "tag": "hy",
+      "botCode": "hy",
+      "native": "հայերեն",
+      "direction": "ltr",
+      "baselineBot": true,
+      "baselineMiniapp": true
+    },
+    {
+      "referenceCode": "iba",
+      "route": "iba",
+      "tag": "iba",
+      "botCode": "iba",
+      "native": "Jaku Iban [iba]",
+      "direction": "ltr",
+      "baselineBot": false,
+      "baselineMiniapp": false
+    },
+    {
+      "referenceCode": "id",
+      "route": "id",
+      "tag": "id",
+      "botCode": "id",
+      "native": "Indonesia",
+      "direction": "ltr",
+      "baselineBot": true,
+      "baselineMiniapp": true
+    },
+    {
+      "referenceCode": "ig",
+      "route": "ig",
+      "tag": "ig",
+      "botCode": "ig",
+      "native": "Igbo [ig]",
+      "direction": "ltr",
+      "baselineBot": false,
+      "baselineMiniapp": false
+    },
+    {
+      "referenceCode": "ilo",
+      "route": "ilo",
+      "tag": "ilo",
+      "botCode": "ilo",
+      "native": "Ilocano",
+      "direction": "ltr",
+      "baselineBot": false,
+      "baselineMiniapp": true
+    },
+    {
+      "referenceCode": "is",
+      "route": "is",
+      "tag": "is",
+      "botCode": "is",
+      "native": "íslenska",
+      "direction": "ltr",
+      "baselineBot": true,
+      "baselineMiniapp": true
+    },
+    {
+      "referenceCode": "iu",
+      "route": "iu",
+      "tag": "iu",
+      "botCode": "iu",
+      "native": "ᐃᓄᒃᑐᑦ (ᖃᓕᐅᔮᖅᐸᐃᑦ) [iu]",
+      "direction": "ltr",
+      "baselineBot": false,
+      "baselineMiniapp": false
+    },
+    {
+      "referenceCode": "iu-Latn",
+      "route": "iu-Latn",
+      "tag": "iu-Latn",
+      "botCode": "iu-Latn",
+      "native": "Inuktuq (laatin) [iu-Latn]",
+      "direction": "ltr",
+      "baselineBot": false,
+      "baselineMiniapp": false
+    },
+    {
+      "referenceCode": "jv",
+      "route": "jv",
+      "tag": "jv",
+      "botCode": "jv",
+      "native": "Jawa",
+      "direction": "ltr",
+      "baselineBot": true,
+      "baselineMiniapp": true
+    },
+    {
+      "referenceCode": "ka",
+      "route": "ka",
+      "tag": "ka",
+      "botCode": "ka",
+      "native": "ქართული",
+      "direction": "ltr",
+      "baselineBot": true,
+      "baselineMiniapp": true
+    },
+    {
+      "referenceCode": "kac",
+      "route": "kac",
+      "tag": "kac",
+      "botCode": "kac",
+      "native": "Jingpo [kac]",
+      "direction": "ltr",
+      "baselineBot": false,
+      "baselineMiniapp": false
+    },
+    {
+      "referenceCode": "kek",
+      "route": "kek",
+      "tag": "kek",
+      "botCode": "kek",
+      "native": "Qʼeqchiʼ [kek]",
+      "direction": "ltr",
+      "baselineBot": false,
+      "baselineMiniapp": false
+    },
+    {
+      "referenceCode": "kg",
+      "route": "kg",
+      "tag": "kg",
+      "botCode": "kg",
+      "native": "Kikongo [kg]",
+      "direction": "ltr",
+      "baselineBot": false,
+      "baselineMiniapp": false
+    },
+    {
+      "referenceCode": "kha",
+      "route": "kha",
+      "tag": "kha",
+      "botCode": "kha",
+      "native": "Khasi [kha]",
+      "direction": "ltr",
+      "baselineBot": false,
+      "baselineMiniapp": false
+    },
+    {
+      "referenceCode": "kk",
+      "route": "kk",
+      "tag": "kk",
+      "botCode": "kk",
+      "native": "қазақ тілі",
+      "direction": "ltr",
+      "baselineBot": true,
+      "baselineMiniapp": true
+    },
+    {
+      "referenceCode": "kl",
+      "route": "kl",
+      "tag": "kl",
+      "botCode": "kl",
+      "native": "Kalaallisut [kl]",
+      "direction": "ltr",
+      "baselineBot": false,
+      "baselineMiniapp": false
+    },
+    {
+      "referenceCode": "km",
+      "route": "km",
+      "tag": "km",
+      "botCode": "km",
+      "native": "ខ្មែរ",
+      "direction": "ltr",
+      "baselineBot": true,
+      "baselineMiniapp": true
+    },
+    {
+      "referenceCode": "kn",
+      "route": "kn",
+      "tag": "kn",
+      "botCode": "kn",
+      "native": "ಕನ್ನಡ",
+      "direction": "ltr",
+      "baselineBot": true,
+      "baselineMiniapp": true
+    },
+    {
+      "referenceCode": "kr",
+      "route": "kr",
+      "tag": "kr",
+      "botCode": "kr",
+      "native": "Kanuri [kr]",
+      "direction": "ltr",
+      "baselineBot": false,
+      "baselineMiniapp": false
+    },
+    {
+      "referenceCode": "kri",
+      "route": "kri",
+      "tag": "kri",
+      "botCode": "kri",
+      "native": "Krio, we de na di wɔl",
+      "direction": "ltr",
+      "baselineBot": false,
+      "baselineMiniapp": true
+    },
+    {
+      "referenceCode": "ktu",
+      "route": "ktu",
+      "tag": "ktu",
+      "botCode": "ktu",
+      "native": "Kituba [ktu]",
+      "direction": "ltr",
+      "baselineBot": false,
+      "baselineMiniapp": false
+    },
+    {
+      "referenceCode": "ku",
+      "route": "ku",
+      "tag": "ku",
+      "botCode": "ku",
+      "native": "kurdî (kurmancî)",
+      "direction": "ltr",
+      "baselineBot": true,
+      "baselineMiniapp": true
+    },
+    {
+      "referenceCode": "kv",
+      "route": "kv",
+      "tag": "kv",
+      "botCode": "kv",
+      "native": "Коми [kv]",
+      "direction": "ltr",
+      "baselineBot": false,
+      "baselineMiniapp": false
+    },
+    {
+      "referenceCode": "ky",
+      "route": "ky",
+      "tag": "ky",
+      "botCode": "ky",
+      "native": "кыргызча",
+      "direction": "ltr",
+      "baselineBot": true,
+      "baselineMiniapp": true
+    },
+    {
+      "referenceCode": "lb",
+      "route": "lb",
+      "tag": "lb",
+      "botCode": "lb",
+      "native": "Lëtzebuergesch",
+      "direction": "ltr",
+      "baselineBot": true,
+      "baselineMiniapp": true
+    },
+    {
+      "referenceCode": "lg",
+      "route": "lg",
+      "tag": "lg",
+      "botCode": "lg",
+      "native": "Luganda",
+      "direction": "ltr",
+      "baselineBot": true,
+      "baselineMiniapp": true
+    },
+    {
+      "referenceCode": "li",
+      "route": "li",
+      "tag": "li",
+      "botCode": "li",
+      "native": "Limburges",
+      "direction": "ltr",
+      "baselineBot": true,
+      "baselineMiniapp": true
+    },
+    {
+      "referenceCode": "lij",
+      "route": "lij",
+      "tag": "lij",
+      "botCode": "lij",
+      "native": "Ligure [lij]",
+      "direction": "ltr",
+      "baselineBot": false,
+      "baselineMiniapp": false
+    },
+    {
+      "referenceCode": "lmo",
+      "route": "lmo",
+      "tag": "lmo",
+      "botCode": "lmo",
+      "native": "Lombardo [lmo]",
+      "direction": "ltr",
+      "baselineBot": false,
+      "baselineMiniapp": false
+    },
+    {
+      "referenceCode": "ln",
+      "route": "ln",
+      "tag": "ln",
+      "botCode": "ln",
+      "native": "lingála",
+      "direction": "ltr",
+      "baselineBot": false,
+      "baselineMiniapp": true
+    },
+    {
+      "referenceCode": "lo",
+      "route": "lo",
+      "tag": "lo",
+      "botCode": "lo",
+      "native": "ລາວ",
+      "direction": "ltr",
+      "baselineBot": false,
+      "baselineMiniapp": true
+    },
+    {
+      "referenceCode": "lt",
+      "route": "lt",
+      "tag": "lt",
+      "botCode": "lt",
+      "native": "lietuvių",
+      "direction": "ltr",
+      "baselineBot": true,
+      "baselineMiniapp": true
+    },
+    {
+      "referenceCode": "ltg",
+      "route": "ltg",
+      "tag": "ltg",
+      "botCode": "ltg",
+      "native": "Latgalīšu . [ltg]",
+      "direction": "ltr",
+      "baselineBot": false,
+      "baselineMiniapp": false
+    },
+    {
+      "referenceCode": "lua",
+      "route": "lua",
+      "tag": "lua",
+      "botCode": "lua",
+      "native": "Tshiluba",
+      "direction": "ltr",
+      "baselineBot": false,
+      "baselineMiniapp": true
+    },
+    {
+      "referenceCode": "luo",
+      "route": "luo",
+      "tag": "luo",
+      "botCode": "luo",
+      "native": "Luo [luo]",
+      "direction": "ltr",
+      "baselineBot": false,
+      "baselineMiniapp": false
+    },
+    {
+      "referenceCode": "lus",
+      "route": "lus",
+      "tag": "lus",
+      "botCode": "lus",
+      "native": "Mizo",
+      "direction": "ltr",
+      "baselineBot": false,
+      "baselineMiniapp": true
+    },
+    {
+      "referenceCode": "lv",
+      "route": "lv",
+      "tag": "lv",
+      "botCode": "lv",
+      "native": "latviešu",
+      "direction": "ltr",
+      "baselineBot": true,
+      "baselineMiniapp": true
+    },
+    {
+      "referenceCode": "mad",
+      "route": "mad",
+      "tag": "mad",
+      "botCode": "mad",
+      "native": "Bhâsa Madhurâ",
+      "direction": "ltr",
+      "baselineBot": false,
+      "baselineMiniapp": true
+    },
+    {
+      "referenceCode": "mai",
+      "route": "mai",
+      "tag": "mai",
+      "botCode": "mai",
+      "native": "मैथिली [mai]",
+      "direction": "ltr",
+      "baselineBot": false,
+      "baselineMiniapp": false
+    },
+    {
+      "referenceCode": "mak",
+      "route": "mak",
+      "tag": "mak",
+      "botCode": "mak",
+      "native": "Makassar",
+      "direction": "ltr",
+      "baselineBot": false,
+      "baselineMiniapp": true
+    },
+    {
+      "referenceCode": "mam",
+      "route": "mam",
+      "tag": "mam",
+      "botCode": "mam",
+      "native": "Mam [mam]",
+      "direction": "ltr",
+      "baselineBot": false,
+      "baselineMiniapp": false
+    },
+    {
+      "referenceCode": "mfe",
+      "route": "mfe",
+      "tag": "mfe",
+      "botCode": "mfe",
+      "native": "kreol morisien",
+      "direction": "ltr",
+      "baselineBot": true,
+      "baselineMiniapp": true
+    },
+    {
+      "referenceCode": "mg",
+      "route": "mg",
+      "tag": "mg",
+      "botCode": "mg",
+      "native": "Malagasy [mg]",
+      "direction": "ltr",
+      "baselineBot": false,
+      "baselineMiniapp": false
+    },
+    {
+      "referenceCode": "mh",
+      "route": "mh",
+      "tag": "mh",
+      "botCode": "mh",
+      "native": "Marshallese [mh]",
+      "direction": "ltr",
+      "baselineBot": false,
+      "baselineMiniapp": false
+    },
+    {
+      "referenceCode": "mi",
+      "route": "mi",
+      "tag": "mi",
+      "botCode": "mi",
+      "native": "Māori",
+      "direction": "ltr",
+      "baselineBot": true,
+      "baselineMiniapp": true
+    },
+    {
+      "referenceCode": "min",
+      "route": "min",
+      "tag": "min",
+      "botCode": "min",
+      "native": "Minang [min]",
+      "direction": "ltr",
+      "baselineBot": false,
+      "baselineMiniapp": false
+    },
+    {
+      "referenceCode": "mk",
+      "route": "mk",
+      "tag": "mk",
+      "botCode": "mk",
+      "native": "македонски",
+      "direction": "ltr",
+      "baselineBot": true,
+      "baselineMiniapp": true
+    },
+    {
+      "referenceCode": "ml",
+      "route": "ml",
+      "tag": "ml",
+      "botCode": "ml",
+      "native": "മലയാളം",
+      "direction": "ltr",
+      "baselineBot": true,
+      "baselineMiniapp": true
+    },
+    {
+      "referenceCode": "mn",
+      "route": "mn",
+      "tag": "mn",
+      "botCode": "mn",
+      "native": "монгол",
+      "direction": "ltr",
+      "baselineBot": true,
+      "baselineMiniapp": true
+    },
+    {
+      "referenceCode": "mni-Mtei",
+      "route": "mni-Mtei",
+      "tag": "mni-Mtei",
+      "botCode": "mni-Mtei",
+      "native": "ꯃꯦꯏꯇꯦꯏꯂꯣꯟ (ꯃꯅꯤꯄꯨꯔꯤ) ꯴. [mni-Mtei]",
+      "direction": "ltr",
+      "baselineBot": false,
+      "baselineMiniapp": false
+    },
+    {
+      "referenceCode": "mr",
+      "route": "mr",
+      "tag": "mr",
+      "botCode": "mr",
+      "native": "मराठी",
+      "direction": "ltr",
+      "baselineBot": true,
+      "baselineMiniapp": true
+    },
+    {
+      "referenceCode": "ms",
+      "route": "ms",
+      "tag": "ms",
+      "botCode": "ms",
+      "native": "Melayu",
+      "direction": "ltr",
+      "baselineBot": true,
+      "baselineMiniapp": true
+    },
+    {
+      "referenceCode": "ms-Arab",
+      "route": "ms-Arab",
+      "tag": "ms-Arab",
+      "botCode": "ms-Arab",
+      "native": "ملايو ﴿جاوي﴾",
+      "direction": "rtl",
+      "baselineBot": false,
+      "baselineMiniapp": true
+    },
+    {
+      "referenceCode": "mt",
+      "route": "mt",
+      "tag": "mt",
+      "botCode": "mt",
+      "native": "Malti [mt]",
+      "direction": "ltr",
+      "baselineBot": false,
+      "baselineMiniapp": false
+    },
+    {
+      "referenceCode": "mwr",
+      "route": "mwr",
+      "tag": "mwr",
+      "botCode": "mwr",
+      "native": "मारवाड़ी [mwr]",
+      "direction": "ltr",
+      "baselineBot": false,
+      "baselineMiniapp": false
+    },
+    {
+      "referenceCode": "my",
+      "route": "my",
+      "tag": "my",
+      "botCode": "my",
+      "native": "မြန်မာ (ဗမာ)၊ [my]",
+      "direction": "ltr",
+      "baselineBot": false,
+      "baselineMiniapp": false
+    },
+    {
+      "referenceCode": "ndc-ZW",
+      "route": "ndc-ZW",
+      "tag": "ndc-ZW",
+      "botCode": "ndc-ZW",
+      "native": "Ndau [ndc-ZW]",
+      "direction": "ltr",
+      "baselineBot": false,
+      "baselineMiniapp": false
+    },
+    {
+      "referenceCode": "ne",
+      "route": "ne",
+      "tag": "ne",
+      "botCode": "ne",
+      "native": "नेपाली",
+      "direction": "ltr",
+      "baselineBot": true,
+      "baselineMiniapp": true
+    },
+    {
+      "referenceCode": "new",
+      "route": "new",
+      "tag": "new",
+      "botCode": "new",
+      "native": "नेपालभाषा (नेवारी) ३. [new]",
+      "direction": "ltr",
+      "baselineBot": false,
+      "baselineMiniapp": false
+    },
+    {
+      "referenceCode": "nhe",
+      "route": "nhe",
+      "tag": "nhe",
+      "botCode": "nhe",
+      "native": "Nahuatl (Huasteca Oriental) [nhe]",
+      "direction": "ltr",
+      "baselineBot": false,
+      "baselineMiniapp": false
+    },
+    {
+      "referenceCode": "no",
+      "route": "no",
+      "tag": "no",
+      "botCode": "no",
+      "native": "norsk",
+      "direction": "ltr",
+      "baselineBot": true,
+      "baselineMiniapp": true
+    },
+    {
+      "referenceCode": "nr",
+      "route": "nr",
+      "tag": "nr",
+      "botCode": "nr",
+      "native": "IsiNdebele (Sewula)",
+      "direction": "ltr",
+      "baselineBot": true,
+      "baselineMiniapp": true
+    },
+    {
+      "referenceCode": "nso",
+      "route": "nso",
+      "tag": "nso",
+      "botCode": "nso",
+      "native": "Sesotho sa Leboa",
+      "direction": "ltr",
+      "baselineBot": false,
+      "baselineMiniapp": true
+    },
+    {
+      "referenceCode": "nus",
+      "route": "nus",
+      "tag": "nus",
+      "botCode": "nus",
+      "native": "Nuer [nus]",
+      "direction": "ltr",
+      "baselineBot": false,
+      "baselineMiniapp": false
+    },
+    {
+      "referenceCode": "ny",
+      "route": "ny",
+      "tag": "ny",
+      "botCode": "ny",
+      "native": "Chichewa (Nyanja) [ny]",
+      "direction": "ltr",
+      "baselineBot": false,
+      "baselineMiniapp": false
+    },
+    {
+      "referenceCode": "oc",
+      "route": "oc",
+      "tag": "oc",
+      "botCode": "oc",
+      "native": "occitan",
+      "direction": "ltr",
+      "baselineBot": false,
+      "baselineMiniapp": true
+    },
+    {
+      "referenceCode": "om",
+      "route": "om",
+      "tag": "om",
+      "botCode": "om",
+      "native": "Oromoo",
+      "direction": "ltr",
+      "baselineBot": false,
+      "baselineMiniapp": true
+    },
+    {
+      "referenceCode": "or",
+      "route": "or",
+      "tag": "or",
+      "botCode": "or",
+      "native": "ଓଡିଆ (ଓଡିଆ) [or]",
+      "direction": "ltr",
+      "baselineBot": false,
+      "baselineMiniapp": false
+    },
+    {
+      "referenceCode": "os",
+      "route": "os",
+      "tag": "os",
+      "botCode": "os",
+      "native": "ирон",
+      "direction": "ltr",
+      "baselineBot": true,
+      "baselineMiniapp": true
+    },
+    {
+      "referenceCode": "pa",
+      "route": "pa",
+      "tag": "pa-Guru",
+      "botCode": "pa",
+      "native": "ਪੰਜਾਬੀ (ਗੁਰਮੁਖੀ)",
+      "direction": "ltr",
+      "baselineBot": true,
+      "baselineMiniapp": true
+    },
+    {
+      "referenceCode": "pa-Arab",
+      "route": "pa-Arab",
+      "tag": "pa-Arab",
+      "botCode": "pa-Arab",
+      "native": "پنجابی (شاہ مکھی) [pa-Arab]",
+      "direction": "rtl",
+      "baselineBot": false,
+      "baselineMiniapp": false
+    },
+    {
+      "referenceCode": "pag",
+      "route": "pag",
+      "tag": "pag",
+      "botCode": "pag",
+      "native": "Pangasinan",
+      "direction": "ltr",
+      "baselineBot": false,
+      "baselineMiniapp": true
+    },
+    {
+      "referenceCode": "pam",
+      "route": "pam",
+      "tag": "pam",
+      "botCode": "pam",
+      "native": "Kapampangan",
+      "direction": "ltr",
+      "baselineBot": false,
+      "baselineMiniapp": true
+    },
+    {
+      "referenceCode": "pap",
+      "route": "pap",
+      "tag": "pap",
+      "botCode": "pap",
+      "native": "Papiamentu",
+      "direction": "ltr",
+      "baselineBot": true,
+      "baselineMiniapp": true
+    },
+    {
+      "referenceCode": "pl",
+      "route": "pl",
+      "tag": "pl",
+      "botCode": "pl",
+      "native": "polski",
+      "direction": "ltr",
+      "baselineBot": false,
+      "baselineMiniapp": true
+    },
+    {
+      "referenceCode": "ps",
+      "route": "ps",
+      "tag": "ps",
+      "botCode": "ps",
+      "native": "پښتو",
+      "direction": "rtl",
+      "baselineBot": true,
+      "baselineMiniapp": true
+    },
+    {
+      "referenceCode": "rn",
+      "route": "rn",
+      "tag": "rn",
+      "botCode": "rn",
+      "native": "Rundi [rn]",
+      "direction": "ltr",
+      "baselineBot": false,
+      "baselineMiniapp": false
+    },
+    {
+      "referenceCode": "ro",
+      "route": "ro",
+      "tag": "ro",
+      "botCode": "ro",
+      "native": "română",
+      "direction": "ltr",
+      "baselineBot": true,
+      "baselineMiniapp": true
+    },
+    {
+      "referenceCode": "rom",
+      "route": "rom",
+      "tag": "rom",
+      "botCode": "rom",
+      "native": "Romani",
+      "direction": "ltr",
+      "baselineBot": true,
+      "baselineMiniapp": true
+    },
+    {
+      "referenceCode": "rw",
+      "route": "rw",
+      "tag": "rw",
+      "botCode": "rw",
+      "native": "Kinyarwanda [rw]",
+      "direction": "ltr",
+      "baselineBot": false,
+      "baselineMiniapp": false
+    },
+    {
+      "referenceCode": "sa",
+      "route": "sa",
+      "tag": "sa",
+      "botCode": "sa",
+      "native": "संस्कृत भाषा",
+      "direction": "ltr",
+      "baselineBot": true,
+      "baselineMiniapp": true
+    },
+    {
+      "referenceCode": "sah",
+      "route": "sah",
+      "tag": "sah",
+      "botCode": "sah",
+      "native": "саха тыла",
+      "direction": "ltr",
+      "baselineBot": true,
+      "baselineMiniapp": true
+    },
+    {
+      "referenceCode": "sat",
+      "route": "sat",
+      "tag": "sat",
+      "botCode": "sat",
+      "native": "ᱥᱟᱱᱛᱟᱲᱤ (ᱚᱞ ᱪᱤᱠᱤ) [sat]",
+      "direction": "ltr",
+      "baselineBot": false,
+      "baselineMiniapp": false
+    },
+    {
+      "referenceCode": "sat-Latn",
+      "route": "sat-Latn",
+      "tag": "sat-Latn",
+      "botCode": "sat-Latn",
+      "native": "Santali (laṭin) [sat-Latn]",
+      "direction": "ltr",
+      "baselineBot": false,
+      "baselineMiniapp": false
+    },
+    {
+      "referenceCode": "scn",
+      "route": "scn",
+      "tag": "scn",
+      "botCode": "scn",
+      "native": "Sicilianu [scn]",
+      "direction": "ltr",
+      "baselineBot": false,
+      "baselineMiniapp": false
+    },
+    {
+      "referenceCode": "sd",
+      "route": "sd",
+      "tag": "sd",
+      "botCode": "sd",
+      "native": "سنڌي",
+      "direction": "rtl",
+      "baselineBot": false,
+      "baselineMiniapp": true
+    },
+    {
+      "referenceCode": "se",
+      "route": "se",
+      "tag": "se",
+      "botCode": "se",
+      "native": "davvisámegiella",
+      "direction": "ltr",
+      "baselineBot": false,
+      "baselineMiniapp": true
+    },
+    {
+      "referenceCode": "sg",
+      "route": "sg",
+      "tag": "sg",
+      "botCode": "sg",
+      "native": "Sango [sg]",
+      "direction": "ltr",
+      "baselineBot": false,
+      "baselineMiniapp": false
+    },
+    {
+      "referenceCode": "shn",
+      "route": "shn",
+      "tag": "shn",
+      "botCode": "shn",
+      "native": "ရှမ်း [shn]",
+      "direction": "ltr",
+      "baselineBot": false,
+      "baselineMiniapp": false
+    },
+    {
+      "referenceCode": "si",
+      "route": "si",
+      "tag": "si",
+      "botCode": "si",
+      "native": "සිංහල",
+      "direction": "ltr",
+      "baselineBot": true,
+      "baselineMiniapp": true
+    },
+    {
+      "referenceCode": "sk",
+      "route": "sk",
+      "tag": "sk",
+      "botCode": "sk",
+      "native": "slovenčina",
+      "direction": "ltr",
+      "baselineBot": true,
+      "baselineMiniapp": true
+    },
+    {
+      "referenceCode": "sl",
+      "route": "sl",
+      "tag": "sl",
+      "botCode": "sl",
+      "native": "slovenščina",
+      "direction": "ltr",
+      "baselineBot": true,
+      "baselineMiniapp": true
+    },
+    {
+      "referenceCode": "sm",
+      "route": "sm",
+      "tag": "sm",
+      "botCode": "sm",
+      "native": "Samoa",
+      "direction": "ltr",
+      "baselineBot": true,
+      "baselineMiniapp": true
+    },
+    {
+      "referenceCode": "sn",
+      "route": "sn",
+      "tag": "sn",
+      "botCode": "sn",
+      "native": "Shona [sn]",
+      "direction": "ltr",
+      "baselineBot": false,
+      "baselineMiniapp": false
+    },
+    {
+      "referenceCode": "so",
+      "route": "so",
+      "tag": "so",
+      "botCode": "so",
+      "native": "Soomaali",
+      "direction": "ltr",
+      "baselineBot": true,
+      "baselineMiniapp": true
+    },
+    {
+      "referenceCode": "sq",
+      "route": "sq",
+      "tag": "sq",
+      "botCode": "sq",
+      "native": "shqip",
+      "direction": "ltr",
+      "baselineBot": true,
+      "baselineMiniapp": true
+    },
+    {
+      "referenceCode": "sr",
+      "route": "sr",
+      "tag": "sr",
+      "botCode": "sr",
+      "native": "српски [sr]",
+      "direction": "ltr",
+      "baselineBot": false,
+      "baselineMiniapp": false
+    },
+    {
+      "referenceCode": "ss",
+      "route": "ss",
+      "tag": "ss",
+      "botCode": "ss",
+      "native": "SiSwati [ss]",
+      "direction": "ltr",
+      "baselineBot": false,
+      "baselineMiniapp": false
+    },
+    {
+      "referenceCode": "st",
+      "route": "st",
+      "tag": "st",
+      "botCode": "st",
+      "native": "Sesotho",
+      "direction": "ltr",
+      "baselineBot": true,
+      "baselineMiniapp": true
+    },
+    {
+      "referenceCode": "su",
+      "route": "su",
+      "tag": "su",
+      "botCode": "su",
+      "native": "Basa Sunda",
+      "direction": "ltr",
+      "baselineBot": true,
+      "baselineMiniapp": true
+    },
+    {
+      "referenceCode": "sus",
+      "route": "sus",
+      "tag": "sus",
+      "botCode": "sus",
+      "native": "Susu [sus]",
+      "direction": "ltr",
+      "baselineBot": false,
+      "baselineMiniapp": false
+    },
+    {
+      "referenceCode": "sv",
+      "route": "sv",
+      "tag": "sv",
+      "botCode": "sv",
+      "native": "svenska",
+      "direction": "ltr",
+      "baselineBot": true,
+      "baselineMiniapp": true
+    },
+    {
+      "referenceCode": "sw",
+      "route": "sw",
+      "tag": "sw",
+      "botCode": "sw",
+      "native": "Kiswahili",
+      "direction": "ltr",
+      "baselineBot": true,
+      "baselineMiniapp": true
+    },
+    {
+      "referenceCode": "szl",
+      "route": "szl",
+      "tag": "szl",
+      "botCode": "szl",
+      "native": "Sylezyjsko [szl]",
+      "direction": "ltr",
+      "baselineBot": false,
+      "baselineMiniapp": false
+    },
+    {
+      "referenceCode": "ta",
+      "route": "ta",
+      "tag": "ta",
+      "botCode": "ta",
+      "native": "தமிழ்",
+      "direction": "ltr",
+      "baselineBot": true,
+      "baselineMiniapp": true
+    },
+    {
+      "referenceCode": "tcy",
+      "route": "tcy",
+      "tag": "tcy",
+      "botCode": "tcy",
+      "native": "ತುಳು [tcy]",
+      "direction": "ltr",
+      "baselineBot": false,
+      "baselineMiniapp": false
+    },
+    {
+      "referenceCode": "te",
+      "route": "te",
+      "tag": "te",
+      "botCode": "te",
+      "native": "తెలుగు [te]",
+      "direction": "ltr",
+      "baselineBot": false,
+      "baselineMiniapp": false
+    },
+    {
+      "referenceCode": "tet",
+      "route": "tet",
+      "tag": "tet",
+      "botCode": "tet",
+      "native": "Tetum .",
+      "direction": "ltr",
+      "baselineBot": true,
+      "baselineMiniapp": true
+    },
+    {
+      "referenceCode": "tg",
+      "route": "tg",
+      "tag": "tg",
+      "botCode": "tg",
+      "native": "тоҷикӣ",
+      "direction": "ltr",
+      "baselineBot": true,
+      "baselineMiniapp": true
+    },
+    {
+      "referenceCode": "th",
+      "route": "th",
+      "tag": "th",
+      "botCode": "th",
+      "native": "ไทย",
+      "direction": "ltr",
+      "baselineBot": true,
+      "baselineMiniapp": true
+    },
+    {
+      "referenceCode": "ti",
+      "route": "ti",
+      "tag": "ti",
+      "botCode": "ti",
+      "native": "ትግርኛ",
+      "direction": "ltr",
+      "baselineBot": true,
+      "baselineMiniapp": true
+    },
+    {
+      "referenceCode": "tiv",
+      "route": "tiv",
+      "tag": "tiv",
+      "botCode": "tiv",
+      "native": "Tiv [tiv]",
+      "direction": "ltr",
+      "baselineBot": false,
+      "baselineMiniapp": false
+    },
+    {
+      "referenceCode": "tk",
+      "route": "tk",
+      "tag": "tk",
+      "botCode": "tk",
+      "native": "Türkmenler [tk]",
+      "direction": "ltr",
+      "baselineBot": false,
+      "baselineMiniapp": false
+    },
+    {
+      "referenceCode": "tn",
+      "route": "tn",
+      "tag": "tn",
+      "botCode": "tn",
+      "native": "Motswana [tn]",
+      "direction": "ltr",
+      "baselineBot": false,
+      "baselineMiniapp": false
+    },
+    {
+      "referenceCode": "to",
+      "route": "to",
+      "tag": "to",
+      "botCode": "to",
+      "native": "Tonga [to]",
+      "direction": "ltr",
+      "baselineBot": false,
+      "baselineMiniapp": false
+    },
+    {
+      "referenceCode": "tpi",
+      "route": "tpi",
+      "tag": "tpi",
+      "botCode": "tpi",
+      "native": "Tok Pisin",
+      "direction": "ltr",
+      "baselineBot": false,
+      "baselineMiniapp": true
+    },
+    {
+      "referenceCode": "tr",
+      "route": "tr",
+      "tag": "tr",
+      "botCode": "tr",
+      "native": "Türkçe",
+      "direction": "ltr",
+      "baselineBot": true,
+      "baselineMiniapp": true
+    },
+    {
+      "referenceCode": "trp",
+      "route": "trp",
+      "tag": "trp",
+      "botCode": "trp",
+      "native": "Kokborok [trp]",
+      "direction": "ltr",
+      "baselineBot": false,
+      "baselineMiniapp": false
+    },
+    {
+      "referenceCode": "ts",
+      "route": "ts",
+      "tag": "ts",
+      "botCode": "ts",
+      "native": "Vatsonga",
+      "direction": "ltr",
+      "baselineBot": false,
+      "baselineMiniapp": true
+    },
+    {
+      "referenceCode": "tt",
+      "route": "tt",
+      "tag": "tt",
+      "botCode": "tt",
+      "native": "Татар [tt]",
+      "direction": "ltr",
+      "baselineBot": false,
+      "baselineMiniapp": false
+    },
+    {
+      "referenceCode": "tum",
+      "route": "tum",
+      "tag": "tum",
+      "botCode": "tum",
+      "native": "Chitumbuka [tum]",
+      "direction": "ltr",
+      "baselineBot": false,
+      "baselineMiniapp": false
+    },
+    {
+      "referenceCode": "ty",
+      "route": "ty",
+      "tag": "ty",
+      "botCode": "ty",
+      "native": "Tahiti [ty]",
+      "direction": "ltr",
+      "baselineBot": false,
+      "baselineMiniapp": false
+    },
+    {
+      "referenceCode": "tyv",
+      "route": "tyv",
+      "tag": "tyv",
+      "botCode": "tyv",
+      "native": "Тыва",
+      "direction": "ltr",
+      "baselineBot": true,
+      "baselineMiniapp": true
+    },
+    {
+      "referenceCode": "udm",
+      "route": "udm",
+      "tag": "udm",
+      "botCode": "udm",
+      "native": "Удмурт",
+      "direction": "ltr",
+      "baselineBot": true,
+      "baselineMiniapp": true
+    },
+    {
+      "referenceCode": "ug",
+      "route": "ug",
+      "tag": "ug",
+      "botCode": "ug",
+      "native": "ئۇيغۇر [ug]",
+      "direction": "rtl",
+      "baselineBot": false,
+      "baselineMiniapp": false
+    },
+    {
+      "referenceCode": "uk",
+      "route": "uk",
+      "tag": "uk",
+      "botCode": "uk",
+      "native": "українська",
+      "direction": "ltr",
+      "baselineBot": true,
+      "baselineMiniapp": true
+    },
+    {
+      "referenceCode": "ur",
+      "route": "ur",
+      "tag": "ur",
+      "botCode": "ur",
+      "native": "اردو [ur]",
+      "direction": "rtl",
+      "baselineBot": false,
+      "baselineMiniapp": false
+    },
+    {
+      "referenceCode": "uz",
+      "route": "uz",
+      "tag": "uz",
+      "botCode": "uz",
+      "native": "o'zbek [uz]",
+      "direction": "ltr",
+      "baselineBot": false,
+      "baselineMiniapp": false
+    },
+    {
+      "referenceCode": "ve",
+      "route": "ve",
+      "tag": "ve",
+      "botCode": "ve",
+      "native": "Venda [ve]",
+      "direction": "ltr",
+      "baselineBot": false,
+      "baselineMiniapp": false
+    },
+    {
+      "referenceCode": "vec",
+      "route": "vec",
+      "tag": "vec",
+      "botCode": "vec",
+      "native": "veneto",
+      "direction": "ltr",
+      "baselineBot": false,
+      "baselineMiniapp": true
+    },
+    {
+      "referenceCode": "vi",
+      "route": "vi",
+      "tag": "vi",
+      "botCode": "vi",
+      "native": "Tiếng Việt",
+      "direction": "ltr",
+      "baselineBot": true,
+      "baselineMiniapp": true
+    },
+    {
+      "referenceCode": "war",
+      "route": "war",
+      "tag": "war",
+      "botCode": "war",
+      "native": "Waray [war]",
+      "direction": "ltr",
+      "baselineBot": false,
+      "baselineMiniapp": false
+    },
+    {
+      "referenceCode": "wo",
+      "route": "wo",
+      "tag": "wo",
+      "botCode": "wo",
+      "native": "Wolof [wo]",
+      "direction": "ltr",
+      "baselineBot": false,
+      "baselineMiniapp": false
+    },
+    {
+      "referenceCode": "xh",
+      "route": "xh",
+      "tag": "xh",
+      "botCode": "xh",
+      "native": "IsiXhosa",
+      "direction": "ltr",
+      "baselineBot": true,
+      "baselineMiniapp": true
+    },
+    {
+      "referenceCode": "yi",
+      "route": "yi",
+      "tag": "yi",
+      "botCode": "yi",
+      "native": "יידיש [yi]",
+      "direction": "rtl",
+      "baselineBot": false,
+      "baselineMiniapp": false
+    },
+    {
+      "referenceCode": "yo",
+      "route": "yo",
+      "tag": "yo",
+      "botCode": "yo",
+      "native": "Èdè Yorùbá",
+      "direction": "ltr",
+      "baselineBot": true,
+      "baselineMiniapp": true
+    },
+    {
+      "referenceCode": "yua",
+      "route": "yua",
+      "tag": "yua",
+      "botCode": "yua",
+      "native": "maaya yucatec [yua]",
+      "direction": "ltr",
+      "baselineBot": false,
+      "baselineMiniapp": false
+    },
+    {
+      "referenceCode": "zap",
+      "route": "zap",
+      "tag": "zap",
+      "botCode": "zap",
+      "native": "Zapoteca [zap]",
+      "direction": "ltr",
+      "baselineBot": false,
+      "baselineMiniapp": false
+    },
+    {
+      "referenceCode": "zu",
+      "route": "zu",
+      "tag": "zu",
+      "botCode": "zu",
+      "native": "isiZulu",
+      "direction": "ltr",
+      "baselineBot": true,
+      "baselineMiniapp": true
+    }
+  ]
+}

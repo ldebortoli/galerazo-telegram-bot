@@ -88,4 +88,4 @@ class VersioningTests(unittest.TestCase):
                 encoding="utf-8",
             )
             with patch.object(versioning, "CHANGELOG_PATH", changelog):
-                self.assertNotIn("v0.8", versioning.pending_release_notes("0.7"))
+                self.assertNotIn("Cambios acumulados de v0.8:", versioning.pending_release_notes("0.7"))

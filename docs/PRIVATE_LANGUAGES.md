@@ -1,3 +1,51 @@
+# Inventario privado de 250 referencias · 2026-10-20
+
+Fuentes 0.80/0.1.27: **139 idiomas del bot (+27) y 192 de Mini App (+52)**.
+Se evaluaron las 250 opciones instaladas, idénticas en Linterna PREMIUM y Gemidos
+PREMIUM. La referencia congelada y sus hashes están en `LANGUAGE-REFERENCE-250.json`;
+`PRIVATE-LANGUAGE-INVENTORY-250-20261020.json` registra cada admisión/exclusión,
+campos y causas. Se preservan las 112/140 opciones anteriores y sus códigos,
+incluido el alias explícito `pa`→`pa-Guru`. No se modifica la portada pública de 176 opciones.
+
+Los 111 candidatos excluidos del bot y 58 de Mini App siguen fuera del selector.
+Se intentaron reparaciones protegidas y con contexto para variables, comandos,
+HTML, URLs, cifras, textos de compra y fragmentos fuente, usando sólo texto
+estático del repositorio y el endpoint público existente. No se reintenta Bing HTTP401,
+no se envían datos de visitantes y no hay traducción remota en runtime.
+
+La admisión exige 316 mensajes del bot o 88 textos de UI/18 nombres naturales/21
+pares de productos, además del comercio propio de 12 plantillas y facturas válidas.
+Marcas, comandos, unidades (`pt`), tecnicismos y cognados comprobados no son
+relleno. Para opciones nuevas se usa la etiqueta inequívoca GitHub en su enlace
+al repositorio. Los títulos conservan marca y encabezado traducido al normalizar
+el separador. No se recortan reglas ni se eliminan cantidades para superar límites.
+Se corrigieron además 131 campos de 76 idiomas ya habilitados en la Mini App,
+incluidos cinco nombres de compra y un nombre natural turcos. La guardia contra
+el sustantivo inglés `swab` recorre todos los catálogos habilitados. CLDR sólo se
+usa cuando su escritura resuelta coincide con la solicitada; NKo conserva NKo.
+Las coincidencias dudosas de términos sin revisión suficiente permanecen excluidas;
+el recibo no afirma que una lengua carezca de esos términos o sea intraducible.
+
+Las traducciones admitidas son automáticas, con aviso localizado y sin certificación
+nativa. CLDR aporta exónimos cuando existen; en otros casos se conserva el autónimo
+con una etiqueta de idioma localizada, sin heredar el idioma del sistema.
+Los nuevos idiomas privados sin portada pública vuelven a una ruta existente;
+URL/localStorage conservan su idioma para regresar a la Mini App.
+
+Validación final: bot 718 pruebas/100% (6748 sentencias y 2084 ramas); web 77 privadas,
+98 Node completas y 203 Vitest públicas con 100% en las métricas disponibles. Build 354
+representaciones públicas/176 idiomas, check e índice LF/autocrlf=true correctos.
+Chrome local: 192 idiomas×320/768/1440,36864 etiquetas por ancho; datos finales con
+movimiento reducido, texto 200%, NKo/árabe, errores/persistencia y viewport reducido.
+Detalle auditable: `TRANSLATION-250-VALIDATION-20261020.json`.
+
+Los idiomas nuevos de facturas requieren desplegar Galerazobot 0.80 junto a
+Mini App 0.1.27: backend 0.77 no contiene esos catálogos.
+
+Entrega de código: no incluye despliegue, reinicio productivo, broadcast ni compras.
+El borrador editorial 0.80 cubre desde 0.77 y sigue sin aprobación. Los recibos 17/10
+que siguen son históricos; las pruebas activas usan el inventario vigente de 250 opciones.
+
 # Private language expansion · 2026-10-17
 
 The frozen reference has 176 public language/script/region options. This delivery
@@ -19,9 +67,9 @@ No Spanish placeholder catalogs are added. Existing locales are preserved.
 
 Standing request from Lucas, 2026-10-20: every addition or modification must
 consider every language enabled in Galerazobot. Read the current
-`galerazo_bot.language_catalogs.LANGUAGE_OPTIONS` inventory (112 options today),
+`galerazo_bot.language_catalogs.LANGUAGE_OPTIONS` inventory (139 options today),
 not a fixed Spanish/English subset or the global nine-language default. If the
-change touches the Mini App, review its complete current inventory too (140
+change touches the Mini App, review its complete current inventory too (192
 options today), in the sibling frontend project.
 
 Update all affected user-facing text in the same delivery: command responses,
@@ -37,7 +85,7 @@ inventory and record the outcome. For a change without localized content,
 record that impact assessment. The existing bot regression set is:
 
 ```powershell
-.venv/Scripts/python.exe -m pytest tests/test_i18n.py tests/test_private_language_inventory.py tests/test_language_pagination.py tests/test_commerce_languages.py tests/test_release_broadcast.py
+.venv/Scripts/python.exe -m pytest tests/test_i18n.py tests/test_private_language_inventory.py tests/test_language_inventory_250.py tests/test_translation_completeness.py tests/test_language_pagination.py tests/test_commerce_languages.py tests/test_release_broadcast.py
 ```
 
 Select additional domain tests for the behavior changed. This policy does not

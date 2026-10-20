@@ -139,18 +139,30 @@ which includes container environment variables.
 
 ## Daily backups
 
-`codex-backup@<app>.timer` runs daily at 04:00 Argentina, with up to 20 minutes
-jitter and `Persistent=true` for missed runs. A host-wide flock serializes jobs;
-`apps-backups.slice` caps all backup jobs together at 512 MiB. Root-owned 0600
-configuration lives in `/etc/codex-backups/<app>.conf`. The common private
-Telegram environment is `/etc/codex-backups/telegram.env`.
+The active schedule is `codex-backup@daily.timer`: 04:00 Argentina plus up to
+20 minutes of jitter. It replaces the four disabled per-application timers;
+never re-enable those timers as part of a normal Galerazo deployment. The grouped
+runner belongs to the private [codex-vps-monitor repository](https://github.com/ldebortoli/codex-vps-monitor)
+(source `e4283cd`, documentation closure `01d4d00`). Galerazo's older versioned
+single-app installer is a recovery reference, not the active daily schedule.
+All backup work shares `apps-backups.slice` (512 MiB, swap disabled).
+
+Galerazo sends its original SQLite file to **Codex - Logs**. Tivio, A la Altura
+and En la misma send an album of three original database documents to
+**Apps para tu Vecina**, using the existing private target configuration. No tar/zip: each file is directly
+downloadable and carries ART/UTC timestamps and its SHA-256. Consistency is per
+database, not one transaction across the four applications.
 
 SQLite uses the backup API, including committed WAL, then `integrity_check`.
 PostgreSQL configurations set `BACKUP_FORMAT=dump` and `DATABASE_CONTAINER`;
 the runner executes `pg_dump -Fc` with the database container's existing private
 environment and checks `pg_restore --list`. Each PostgreSQL project must also
 verify a real restore into an isolated database; archive listing alone is not a
-complete restore test.
+complete restore test. PostgreSQL restores use the existing local image with
+no network/ports, `--pull=never`, 384 MiB, swap disabled and CPU0.5 inside the
+shared 512 MiB backup slice. Settings constrain buffers32MB, work_mem4MB,
+maintenance32MB, max_connections10 and jitoff. Wait for final PostgreSQL PID1
+as well as readiness. Clean up temporary containers and volumes even on failure.
 
 `galerazo_bot/telegram_backup.py` verifies Codex Bot's exact identity, target
 supergroup and administrator membership before sending to Codex - Logs. It
@@ -173,11 +185,31 @@ The first command below starts a delivery and is for an authorized backup or
 recovery, not a health probe. Use the remaining commands for observation:
 
 ```sh
-systemctl start codex-backup@galerazo.service
-systemctl status codex-backup@galerazo.service
+systemctl start codex-backup@daily.service
+systemctl status codex-backup@daily.service
 systemctl list-timers 'codex-backup@*'
-journalctl -u codex-backup@galerazo.service --since today
+journalctl -u codex-backup@daily.service --since today
 ```
+
+The 2026-10-20 handoff records all four copies downloaded/hash/restore verified.
+Message IDs and hashes remain in the private durable receipts; this documentation
+is not an instruction to resend. Reassess disk capacity
+and retention as databases grow; do not purchase capacity or raise app limits.
+
+## Native monitoring
+
+The VPS monitor checks every 5 minutes and sends a grouped daily summary at 09:00 ART
+to Codex - Logs, with transition/recovery alerts and at most one message per check.
+It observes effective limits, swap, RAM, sampled peaks, OOM/restarts, health, disk
+and backup freshness. Its own ceiling is 128 MiB/CPU20%/swap0. Stable conditions do
+not repeat alerts; sampled peaks do not represent continuous measurement.
+
+Windows task `Codex - VPS daily liveness` performs one strict-host-key SSH probe
+at 09:15 ART through a hidden native launcher, without AI/tokens. It requires the PC
+and user session. The former Codex VPS audit automation was deleted: do not
+recreate AI polling or a duplicate scheduler.
+
+## Restore reference
 
 For SQLite restore: stop the bot, verify the selected receipt/hash and SQLite
 integrity, preserve the current database, replace it with the selected snapshot,

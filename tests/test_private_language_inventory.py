@@ -34,7 +34,8 @@ class PrivateLanguageInventoryTests(unittest.TestCase):
             omitted={x['route'] for x in value['omitted']}
             self.assertFalse(added & omitted)
             self.assertTrue(all(x['reasons'] for x in value['omitted']))
-        self.assertEqual(len(LANGUAGE_OPTIONS),receipt['bot']['after'])
+        current=json.loads((root/'docs/PRIVATE-LANGUAGE-INVENTORY-250-20261020.json').read_text(encoding='utf-8'))
+        self.assertEqual(len(LANGUAGE_OPTIONS),current['summary']['bot']['enabled'])
         self.assertEqual({o['code'] for o in LANGUAGE_OPTIONS},set(TRANSLATIONS))
         self.assertEqual(len({o['route'] for o in LANGUAGE_OPTIONS}),len(LANGUAGE_OPTIONS))
         for option in LANGUAGE_OPTIONS:

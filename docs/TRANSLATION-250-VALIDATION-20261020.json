@@ -1,0 +1,116 @@
+{
+  "date": "2026-10-20",
+  "sourceVersions": {
+    "bot": "0.80",
+    "miniapp": "0.1.27"
+  },
+  "inventory": {
+    "bot": {
+      "enabled": 139,
+      "added": 27,
+      "excluded": 111
+    },
+    "miniapp": {
+      "enabled": 192,
+      "added": 52,
+      "excluded": 58
+    }
+  },
+  "baselineCorrections": {
+    "miniappFields": 131,
+    "locales": 76,
+    "commerceProductNames": 5,
+    "naturalNames": 1
+  },
+  "nativeReview": false,
+  "validation": {
+    "bot": {
+      "tests": 718,
+      "statements": {
+        "covered": 6748,
+        "total": 6748
+      },
+      "branches": {
+        "covered": 2084,
+        "total": 2084
+      },
+      "runtime": "CPython3.14.8",
+      "dependencyLock": "aligned; pip check passed",
+      "logCheckpoint": "no new entries"
+    },
+    "web": {
+      "privateCoverageTests": 77,
+      "nodeFullTests": 98,
+      "publicVitestTests": 203,
+      "coveragePercent": {
+        "privateLines": 100,
+        "privateBranches": 100,
+        "privateFunctions": 100,
+        "publicStatements": 100,
+        "publicLines": 100,
+        "publicBranches": 100,
+        "publicFunctions": 100
+      },
+      "buildPublicRepresentations": 354,
+      "publicLocales": 176,
+      "check": [
+        "format",
+        "lint",
+        "typecheck",
+        "version",
+        "dependencies"
+      ],
+      "formatterIndexCheckout": {
+        "coreAutocrlf": true,
+        "eol": "lf",
+        "result": "passed"
+      }
+    },
+    "browser": {
+      "locales": 192,
+      "selectorLabelsPerWidth": 36864,
+      "widths": [
+        320,
+        768,
+        1440
+      ],
+      "normalMotion": "passed; matrix began before last131 baseline text fixes",
+      "finalReducedMotion": "passed after all baseline repairs",
+      "largeTextPercent": 200,
+      "largeTextScriptsInclude": [
+        "bm-Nkoo",
+        "pa-Arab"
+      ],
+      "reducedViewportInputs": [
+        [
+          320,
+          360
+        ],
+        [
+          640,
+          300
+        ]
+      ],
+      "realTelegramLoginOrPayments": false,
+      "nativeScreenReadersOrRealMobileKeyboard": false
+    },
+    "botFather": {
+      "identity": "@galerazo_bot",
+      "verifiedScopes": 6,
+      "verifiedEmptyDefaults": 2,
+      "messagesSent": 0
+    }
+  },
+  "publication": {
+    "deploymentPerformed": false,
+    "remoteCiMonitored": false,
+    "broadcast": {
+      "version": "0.80",
+      "base": "0.77",
+      "status": "draft",
+      "maximumFormattedLength": 817,
+      "limit": 4096
+    },
+    "requiresBotVersionForNewMiniAppLocales": "0.80"
+  }
+}

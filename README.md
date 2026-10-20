@@ -1,11 +1,11 @@
 # Galerazo Bot
 
-La expansión de idiomas incluida en 0.77 admite 112 opciones (18 previas y 94 nuevas)
-y agrega paginación al selector del bot. El inventario de 176 referencias, las 64
-exclusiones y la validación están en [docs/PRIVATE_LANGUAGES.md](docs/PRIVATE_LANGUAGES.md).
-El frontend hermano admite 140 opciones. Son catálogos locales automáticos, sin
-certificación nativa. La operación actual en Contabo está documentada en
-[docs/DEPLOY_VPS.md](docs/DEPLOY_VPS.md); nuevas publicaciones requieren autorización.
+La fuente 0.80 admite 139 idiomas y variantes; la Mini App hermana 0.1.27 admite 192.
+Se revisó la lista compartida de 250 opciones de Linterna/Gemidos y se añadieron
+27/52 catálogos completos, sin relleno español/inglés. Exclusiones y validación:
+[idiomas privados](docs/PRIVATE_LANGUAGES.md). Son traducciones automáticas sin
+certificación nativa. Esta ampliación de código requiere un release separado. La operación vigente está
+en [DEPLOY_VPS.md](docs/DEPLOY_VPS.md).
 
 Cada adición o modificación debe contemplar todos los idiomas habilitados y
 actualizar y validar los textos afectados en la misma entrega. La regla y las
@@ -580,10 +580,10 @@ release autorizado del bot ni el ensayo real dentro de Telegram.
 
 Menu principal:
 
-- `Idioma`: permite elegir Español (Argentina o España), English, Русский, Latine, 日本語, Italiano, Français, Deutsch, Nederlands, 中文 (简体 o 繁體), Português (Brasil o Portugal), Català, Euskara o Avañe'ẽ. El idioma actual aparece marcado entre corchetes.
+- `Idioma`: ofrece 139 opciones en un selector bilingüe paginado. El idioma elegido permanece marcado; consultar el inventario vigente en la documentación de idiomas privados.
 - `Comandos`: muestra los conjuntos de comandos configurables por grupo.
 
-Todos los submenus tienen un boton `< Atrás`. El menu principal no tiene boton de volver.
+Todos los submenús tienen un botón `Volver`. El menu principal no tiene boton de volver.
 
 Todos los niveles del menu incluyen una X roja para cerrar y eliminar el mensaje de configuracion. Igual que el resto del tablero, solo pueden usarla admines del chat, quien agrego el bot o devs.
 
