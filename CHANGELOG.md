@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.77] - 2026-10-20
+
+- Migra el despliegue a VPS con transferencia de imágenes por SSH, validación de salud, respaldo previo y recuperación de la imagen y SQLite ante un arranque fallido. El límite agregado de Galerazo es de 2 GiB, incluido el túnel de la Mini App.
+- Agrega backups diarios consistentes de SQLite y entrega de archivos grandes a Codex - Logs mediante Codex Bot, con recibos persistentes, descarga de comprobación, SHA-256 e integridad de la copia restaurada.
+- Correcciones y mejoras: el flujo habitual de Bot Control Center comprueba el backend del VPS y mantiene las verificaciones de compatibilidad del frontend; los adaptadores históricos de publicación GCP quedan inactivos para esta producción.
+
 ## [0.76] - 2026-10-17
 
 - Agrega 94 catálogos locales completos de mensajes, ayuda, juegos, errores y pagos (112 opciones en total); 64 variantes incompletas se excluyen con un recibo preciso, sin catálogos de relleno ni traducción remota de usuarios.
