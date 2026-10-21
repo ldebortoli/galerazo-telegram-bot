@@ -2,7 +2,7 @@ name: galerazo
 
 services:
   bot:
-    image: ${GALERAZO_IMAGE:?Set GALERAZO_IMAGE in deploy/gce/image.env}
+    image: ${GALERAZO_IMAGE:?Set GALERAZO_IMAGE in /opt/galerazo/image.env}
     restart: unless-stopped
     init: true
     network_mode: host

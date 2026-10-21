@@ -93,7 +93,7 @@ class VpsDeployTests(unittest.TestCase):
         self.assertIn('rm -f --',transport.remote.call_args.args[0])
         with self.assertRaises(ValueError): ops.operate('.',transport,'shell')
 
-    def test_cli_and_frontend_probe_use_vps_without_gcloud(self):
+    def test_cli_and_frontend_probe_use_vps(self):
         with patch.object(ops,'VpsTransport') as transport,patch.object(ops,'operate',return_value='ok') as operate,contextlib.redirect_stdout(io.StringIO()):
             ops.main(['--config','private.json','--action','status'])
             transport.assert_called_once_with('private.json')
@@ -104,7 +104,7 @@ class VpsDeployTests(unittest.TestCase):
         with patch('scripts.frontend_release.VpsTransport') as transport:
             transport.return_value.remote.return_value='{"Running":true,"Health":{"Status":"healthy"}}\ngalerazo-bot:abc\n0.76'
             run=Mock()
-            release=FrontendRelease('.','contabo','europe','vmi3680696',run=run,vps_config='private.json')
+            release=FrontendRelease('.',run=run,vps_config='private.json')
             self.assertEqual(release.backend(),('0.76','galerazo-bot:abc'))
             run.assert_not_called()
 

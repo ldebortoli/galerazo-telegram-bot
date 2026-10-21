@@ -5,11 +5,12 @@ param(
     [Parameter(Mandatory = $true)][string]$RuntimeRepositoryPath,
     [Parameter(Mandatory = $true)][string]$BotSourceRoot,
     [Parameter(Mandatory = $true)][string]$ResultFile,
-    [Parameter(Mandatory = $true)][string]$ProjectId,
-    [Parameter(Mandatory = $true)][string]$Zone,
-    [Parameter(Mandatory = $true)][string]$Instance,
+    # Accepted for compatibility with existing Bot Control Center callers.
+    [string]$ProjectId,
+    [string]$Zone,
+    [string]$Instance,
     [string]$ExpectedImage,
-    [string]$VpsConfigFile
+    [Parameter(Mandatory = $true)][string]$VpsConfigFile
 )
 $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
@@ -24,11 +25,10 @@ $targetVersion = $Matches[1]
 $arguments = @(
     (Join-Path $BotSourceRoot "scripts\frontend_release.py"),
     "--stage", $Stage, "--repository", $FrontendRepositoryPath,
-    "--project", $ProjectId, "--zone", $Zone, "--instance", $Instance,
+    "--vps-config", $VpsConfigFile,
     "--result", $ResultFile, "--target-bot-version", $targetVersion
 )
 if ($ExpectedImage) { $arguments += @("--expected-image", $ExpectedImage) }
-if ($VpsConfigFile) { $arguments += @("--vps-config", $VpsConfigFile) }
 $env:WRANGLER_WRITE_LOGS = "false"
 $env:WRANGLER_SEND_METRICS = "false"
 $env:MINIFLARE_REGISTRY_PATH = Join-Path ([System.IO.Path]::GetTempPath()) "galerazo-miniflare-registry"

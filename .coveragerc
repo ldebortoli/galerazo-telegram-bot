@@ -3,7 +3,6 @@ branch = True
 source =
     galerazo_bot
     scripts.frontend_release
-    scripts.registry_retention
     scripts.vps_transport
     scripts.vps_operations
     deploy.vps.patch_config

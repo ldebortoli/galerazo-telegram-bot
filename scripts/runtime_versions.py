@@ -17,8 +17,6 @@ DIRECT_DEPENDENCIES = {
     "coverage",
     "pytest",
     "pytest-asyncio",
-    "google-auth",
-    "google-cloud-bigquery",
     "httpx",
     "pillow",
     "python-dotenv",

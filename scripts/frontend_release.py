@@ -32,16 +32,10 @@ sudo docker exec "$container_id" python -c 'from galerazo_bot.versioning import 
 
 def command(args, *, cwd=None):
     args = list(args)
-    if args[0] == "gcloud" and os.name == "nt":
-        gcloud = Path(os.environ.get("LOCALAPPDATA", "")) / "Google/Cloud SDK/google-cloud-sdk/bin/gcloud.cmd"
-        if not gcloud.is_file():
-            raise RuntimeError("Existing Google Cloud CLI is unavailable")
-        args[0] = str(gcloud)
-        args[-1] = args[-1].replace("\n", "; ").rstrip("; ")
     environment = {**os.environ, "CI": "true", "WRANGLER_WRITE_LOGS": "false", "WRANGLER_SEND_METRICS": "false"}
     result = subprocess.run(args, cwd=cwd, env=environment, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=1800, check=False)
     if result.returncode:
-        # Neither gcloud nor npm output is a safe source for credentials in errors.
+        # Command output can contain credentials; report only the exit status.
         raise RuntimeError(f"{Path(args[0]).name} failed (exit {result.returncode})")
     return result.stdout.strip()
 
@@ -72,12 +66,10 @@ def compatible(metadata, bot_version):
 
 
 class FrontendRelease:
-    def __init__(self, repository, project, zone, instance, *, run=command, get=http, sleep=time.sleep, vps_config=None):
+    def __init__(self, repository, *, vps_config, run=command, get=http, sleep=time.sleep):
         self.repository = Path(repository).resolve()
-        self.project, self.zone, self.instance = project, zone, instance
-        for value in (project, zone, instance):
-            if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._:-]*", value):
-                raise ValueError("Invalid GCE identifier")
+        if not vps_config:
+            raise ValueError("VPS configuration is required")
         self.run, self.get, self.sleep = run, get, sleep
         self.vps_config = vps_config
 
@@ -85,10 +77,7 @@ class FrontendRelease:
         return self.run(["git", *args], cwd=cwd or self.repository)
 
     def backend(self, expected_image=None):
-        if self.vps_config:
-            lines = VpsTransport(self.vps_config).remote(REMOTE_HEALTH).splitlines()
-        else:
-            lines = self.run(["gcloud", "compute", "ssh", self.instance, "--project", self.project, "--zone", self.zone, "--tunnel-through-iap", "--quiet", "--command", REMOTE_HEALTH]).splitlines()
+        lines = VpsTransport(self.vps_config).remote(REMOTE_HEALTH).splitlines()
         state, image, bot_version = json.loads(lines[-3]), lines[-2], lines[-1]
         if not state.get("Running") or state.get("Health", {}).get("Status") != "healthy":
             raise RuntimeError("Bot is not healthy; frontend release stopped")
@@ -198,15 +187,15 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--stage", choices=("sync", "verify"), required=True)
     parser.add_argument("--repository", required=True)
-    parser.add_argument("--project", required=True)
-    parser.add_argument("--zone", required=True)
-    parser.add_argument("--instance", required=True)
+    # Older Bot Control Center callers still pass these unused target labels.
+    for legacy_label in ("project", "zone", "instance"):
+        parser.add_argument("--" + legacy_label, help=argparse.SUPPRESS)
     parser.add_argument("--result", type=Path, required=True)
     parser.add_argument("--target-bot-version")
     parser.add_argument("--expected-image")
-    parser.add_argument("--vps-config")
+    parser.add_argument("--vps-config", required=True)
     args = parser.parse_args()
-    release = FrontendRelease(args.repository, args.project, args.zone, args.instance, vps_config=args.vps_config)
+    release = FrontendRelease(args.repository, vps_config=args.vps_config)
     if args.stage == "sync":
         if not args.target_bot_version:
             parser.error("sync requires --target-bot-version")

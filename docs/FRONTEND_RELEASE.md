@@ -11,10 +11,11 @@ interna del manager para publicar solo web, por ejemplo tras un bot ya desplegad
 
 Producción usa Contabo con `provider: "vps"` y `vpsConfigFile` privado. El wrapper
 pasa esa referencia a `scripts/frontend_release.py`; la sonda del backend utiliza
-el mismo SSH estricto que el bot, sin IAP ni GCP. El frontend continúa en el Worker
+el mismo SSH estricto que el bot. El frontend continúa en el Worker
 existente. El procedimiento del host y sus backups está en
-[DEPLOY_VPS.md](DEPLOY_VPS.md); las rutas GCE conservadas en código son históricas
-y no autorizan reactivar facturación ni servicios retirados.
+[DEPLOY_VPS.md](DEPLOY_VPS.md). La referencia `vpsConfigFile` es obligatoria;
+los antiguos argumentos de destino se aceptan por compatibilidad con el manager,
+pero no seleccionan otro transporte.
 
 ## Seleccion y deteccion
 

@@ -1,7 +1,7 @@
 # Galerazo Bot
 
-La fuente 0.80 admite 139 idiomas y variantes; la Mini App hermana 0.1.27 admite 192.
-Se revisó la lista compartida de 250 opciones de Linterna/Gemidos y se añadieron
+La fuente 0.80.1 admite 139 idiomas y variantes; la Mini App hermana 0.1.27 admite 192.
+Se revisó el inventario de referencia de 250 opciones y se añadieron
 27/52 catálogos completos, sin relleno español/inglés. Exclusiones y validación:
 [idiomas privados](docs/PRIVATE_LANGUAGES.md). Son traducciones automáticas sin
 certificación nativa. Bot 0.80 y Mini App 0.1.27 están publicados desde el 20 de octubre de 2026. La operación vigente está
@@ -118,7 +118,7 @@ Durante el arranque el estado queda en amarillo mientras se valida la configurac
 
 Para reconstruir el lanzador de Windows ejecutá `powershell -ExecutionPolicy Bypass -File build_control_panel.ps1`. El build regenera el ICO multirresolución desde el PNG fuente, compila el lanzador y actualiza el acceso directo de `CODEX APPS`.
 
-El build tambien crea el acceso historico `Galerazo Bot - Logs.lnk` en `CODEX APPS`, que apunta a IAP/GCE. Para la produccion actual en VPS usa el estado y los logs de Bot Control Center; no reactives GCP para ese acceso. El bot emite logs desde `DEBUG`, omitiendo los polls exitosos repetitivos de `getUpdates`. El build actualiza `Galerazo Bot.lnk` en el Escritorio. Volve a ejecutar el setup si moves el repositorio, cambias el runtime o necesitas regenerar los accesos con las rutas actuales.
+Para consultar la producción en VPS usá el estado y los logs de Bot Control Center. El bot emite logs desde `DEBUG`, omitiendo los polls exitosos repetitivos de `getUpdates`. El build actualiza `Galerazo Bot.lnk` en el Escritorio. Volve a ejecutar el setup si moves el repositorio, cambias el runtime o necesitas regenerar los accesos con las rutas actuales.
 
 Las dependencias directas se declaran en `requirements.in`. `requirements.txt` fija todas las versiones directas y transitivas para que Windows y Docker instalen el mismo conjunto reproducible.
 
@@ -275,44 +275,9 @@ TELEGRAM_HISOPO_TWIN_FILE_ID=file-id-del-hisopo-gemelo
 TELEGRAM_HISOPO_GIANT_FILE_ID=file-id-del-hisopo-gigante
 TELEGRAM_HISOPO_MIRACLE_FILE_ID=file-id-del-hisopo-milagroso
 DATABASE_PATH=data/galerazo.sqlite3
-GOOGLE_CLOUD_BILLING_PROJECT_ID=bot-fleet-production
-GOOGLE_CLOUD_BILLING_TABLE=bot-fleet-production.billing_export.gcp_billing_export_v1_XXXXXX_XXXXXX_XXXXXX
-GOOGLE_CLOUD_BILLING_REPORT_TIME=09:00
 ```
 
 El archivo `.env` no se sube al repo.
-
-### 7. Configurar el reporte diario de gasto de Google Cloud
-
-El bot usa `JobQueue.run_daily` de `python-telegram-bot` y la exportacion estandar de Cloud Billing a BigQuery. La API de Billing no expone el gasto mensual actual directamente.
-
-1. En Google Cloud crea un dataset de BigQuery; para obtener backfill desde el mes anterior conviene la ubicacion multirregion `US`.
-2. En `Facturacion > Exportacion de facturacion > Exportacion a BigQuery`, habilita `Costo de uso estandar` y selecciona ese dataset.
-3. Espera a que Google cree la tabla `gcp_billing_export_v1_<BILLING_ACCOUNT_ID>`; la carga inicial puede tardar hasta cinco dias.
-4. Concede a la service account de la VM `BigQuery Job User` en el proyecto que contiene el dataset y `BigQuery Data Viewer` solamente sobre ese dataset.
-5. Configura el proyecto, la tabla completa y la hora argentina:
-
-```env
-GOOGLE_CLOUD_BILLING_PROJECT_ID=bot-fleet-production
-GOOGLE_CLOUD_BILLING_TABLE=bot-fleet-production.billing_export.gcp_billing_export_v1_XXXXXX_XXXXXX_XXXXXX
-GOOGLE_CLOUD_BILLING_REPORT_TIME=09:00
-```
-
-En GCE no se usa una clave JSON: el cliente toma Application Default Credentials de la service account adjunta a la VM. Localmente podes usar `gcloud auth application-default login` con una cuenta que tenga los mismos permisos.
-
-Cada dia el canal de logging recibe gasto bruto, creditos, gasto neto y fecha de actualizacion para el mes de factura vigente. La consulta usa parametros, cache y un limite estricto de 100 MiB facturables. La exportacion y los reportes de Google pueden llevar mas de 24 horas de demora, por lo que este aviso complementa pero no reemplaza el presupuesto y sus alertas.
-
-El dataset y los permisos minimos se pueden preparar de forma idempotente. El script exige reconocer que BigQuery es un recurso potencialmente facturable:
-
-```powershell
-.\scripts\deploy\Initialize-GceBillingReport.ps1 `
-  -ProjectId bot-fleet-production `
-  -DatasetId billing_export `
-  -ServiceAccountId galerazo-vm `
-  -AcknowledgeBillableResource
-```
-
-El script no habilita la exportacion de la cuenta de facturacion: ese paso se confirma manualmente en la consola.
 
 ## Canales del bot
 
@@ -326,7 +291,6 @@ Por ahora el canal de logging solo recibe:
 - Errores no handleados.
 - Reportes enviados por usuarios con `/reportar`.
 - Avisos cuando un mensaje no paginable supera el limite de Telegram y se envia truncado.
-- Reporte diario del gasto mensual de Google Cloud cuando Billing esta configurado.
 
 Los reportes de excepciones muestran en el mensaje solamente `TipoDeExcepcion: detalle`. El traceback y la update completa se adjuntan sin caption en `Debug del error de la update {update_id}.txt`, de modo que nunca se recortan al límite de los mensajes. El `BadRequest` que Telegram devuelve cuando un callback ya venció (`Query is too old...`) se considera esperado y no se envía al canal.
 
@@ -565,13 +529,13 @@ Este servidor solo atiende la API autenticada desde el gateway; no sirve HTML,
 JavaScript, CSS, imagenes ni vistas simuladas. La firma de Telegram, SQLite,
 precios e idempotencia siguen en Python.
 
-El preset seguro es `deploy/gce/miniapp.env.example`: requiere el mismo
+El preset seguro es `deploy/vps/miniapp.env.example`: requiere el mismo
 `MINI_APP_PROXY_SECRET` que el Worker y escucha exclusivamente en loopback.
 Una URL vacia conserva la integracion desactivada. No activar la URL ni el tunel
 sobre una imagen anterior a 0.60.
 
-Ver [contrato y activacion](docs/MINIAPP_INTEGRATION.md) para BotFather, tunel
-IPv6, secrets, verificacion y rollback. La publicacion web no sustituye un
+Ver [contrato y activacion](docs/MINIAPP_INTEGRATION.md) para BotFather, túnel
+Cloudflare, secrets, verificacion y rollback. La publicacion web no sustituye un
 release autorizado del bot ni el ensayo real dentro de Telegram.
 
 ## Configuracion por grupo
@@ -792,7 +756,7 @@ El bot y el túnel comparten un límite agregado de 1 GiB, sin swap. Telegram us
 polling saliente y la API Mini App escucha sólo en loopback, detrás del túnel
 existente; el frontend sigue en Cloudflare Worker. Cada deploy conserva un
 snapshot consistente. El rollback necesita una imagen anterior verificada;
-el primer deploy todavía no tiene `previous-image.env`.
+su disponibilidad se verifica antes de cada recuperación.
 
 Los backups diarios corren en el VPS a las 04:00 Argentina, con hasta 20 minutos
 de demora aleatoria. Codex Bot los entrega a Codex - Logs por MTProto con recibo,
@@ -804,10 +768,7 @@ Operación, salud, recuperación y límites están en
 [docs/FRONTEND_RELEASE.md](docs/FRONTEND_RELEASE.md). La QA real de Telegram con
 initData vigente se registra por separado de las pruebas locales.
 
-[docs/DEPLOY_GCE.md](docs/DEPLOY_GCE.md) y
-[docs/BACKUPS_GCE.md](docs/BACKUPS_GCE.md) conservan el procedimiento histórico.
-GCP está retirado y Railway permanece desactivado. Esos archivos y workflows no
-autorizan reactivar servicios, facturación, planes ni contratar infraestructura.
+Railway permanece desactivado. La operación vigente usa exclusivamente el VPS existente.
 
 ## Checklist para arrancar
 

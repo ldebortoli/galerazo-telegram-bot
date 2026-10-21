@@ -56,12 +56,7 @@ from .chat_config import (
     parse_config_callback,
 )
 from .chat_migration import chat_migration_ids
-from .cloud_billing import (
-    GoogleCloudBillingConfig,
-    GoogleCloudBillingReader,
-    format_google_cloud_billing_report,
-    parse_report_time,
-)
+
 from .announcements import (
     AnnouncementBroadcastResult,
     announcement_fits,
@@ -340,7 +335,6 @@ async def _post_init(application: Application) -> None:
     _restore_hisopo_jobs(application)
     _schedule_club_rewards(application)
     await _send_log_event(application.bot, settings.telegram_log_chat_id, "Galerazo Bot iniciado.")
-    _schedule_google_cloud_billing_report(application, settings)
 
 
 def _schedule_club_rewards(application: Application) -> None:
@@ -566,85 +560,10 @@ async def _sync_botfather_commands(bot: Bot) -> None:
         logger.warning("No pude sincronizar los comandos sugeridos de BotFather: %s", exc)
 
 
-def _schedule_google_cloud_billing_report(
-    application: Application,
-    settings: Settings,
-) -> bool:
-    if not settings.telegram_log_chat_id:
-        logger.info(
-            "Reporte diario de Google Cloud Billing desactivado: falta el canal de logging."
-        )
-        return False
-    config = GoogleCloudBillingConfig(
-        query_project_id=settings.google_cloud_billing_project_id,
-        export_table=settings.google_cloud_billing_table,
-    )
-    if not config.is_configured:
-        logger.info("Reporte diario de Google Cloud Billing no configurado.")
-        return False
-
-    try:
-        reader = GoogleCloudBillingReader(config)
-        report_time = parse_report_time(settings.google_cloud_billing_report_time)
-    except ValueError as exc:
-        logger.error("Configuracion invalida del reporte de Google Cloud Billing: %s", exc)
-        return False
-
-    job_queue = application.job_queue
-    if job_queue is None:
-        raise RuntimeError(
-            "python-telegram-bot debe instalarse con el extra job-queue"
-        )
-    job_queue.run_daily(
-        _google_cloud_billing_report_job,
-        time=report_time,
-        data=reader,
-        name="google-cloud-monthly-spend",
-        job_kwargs={
-            "coalesce": True,
-            "max_instances": 1,
-            "misfire_grace_time": 6 * 60 * 60,
-        },
-    )
-    logger.info(
-        "Reporte diario de Google Cloud Billing programado para las %s (Argentina).",
-        settings.google_cloud_billing_report_time,
-    )
-    return True
 
 
-async def _google_cloud_billing_report_job(
-    context: ContextTypes.DEFAULT_TYPE,
-) -> None:
-    job = context.job
-    reader = job.data if job is not None else None
-    if not isinstance(reader, GoogleCloudBillingReader):
-        logger.error("El job de Google Cloud Billing no tiene un lector valido.")
-        return
-    settings = context.application.bot_data["settings"]
-    await _send_google_cloud_billing_report(
-        context.bot,
-        settings.telegram_log_chat_id,
-        reader,
-    )
 
 
-async def _send_google_cloud_billing_report(
-    bot: Bot,
-    log_chat_id: str | None,
-    reader: GoogleCloudBillingReader,
-) -> bool:
-    try:
-        report = await reader.get_month_to_date()
-        text = format_google_cloud_billing_report(report)
-    except Exception as exc:
-        logger.exception("No pude consultar Google Cloud Billing: %s", exc)
-        text = (
-            "Google Cloud - gasto mensual\n"
-            "No pude consultar el gasto. Revisa la exportacion de Billing, "
-            "los permisos de BigQuery y los logs del bot."
-        )
-    return await _send_log_event(bot, log_chat_id, text)
 
 
 def _state(context: CallbackContext) -> BotState:

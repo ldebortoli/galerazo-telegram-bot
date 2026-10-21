@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.80.1] - 2026-10-21
+
+- Correcciones y mejoras: retira el reporte de Google Cloud Billing y las herramientas, dependencias y guías de la infraestructura reemplazada. Conserva el control del VPS, el túnel Cloudflare y el soporte de configuración de Google Sheets; el puente de frontend exige el transporte SSH vigente.
+- Actualiza las rutas y pruebas de operación, y elimina las referencias a otras apps del README. Esta limpieza de fuentes no modifica recursos externos, credenciales, permisos ni despliegues.
+
 ## [0.80] - 2026-10-20
 
 - Evalúa los 250 idiomas de Linterna/Gemidos y habilita 27 catálogos completos nuevos para el bot: 139 en total. Cada candidato queda registrado por separado para bot y Mini App, con campos y causas precisas de exclusión.

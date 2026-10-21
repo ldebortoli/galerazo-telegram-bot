@@ -25,7 +25,7 @@ SOURCE = "100644 blob " + "a" * 40 + " public/miniapp-assets/app.js"
 FINGERPRINT = hashlib.sha256((SOURCE + "\n").encode()).hexdigest()
 CONTRACT = {"schema": 1, "minimum_bot_version": "0.63", "features": sorted(FEATURES)}
 METADATA = {**CONTRACT, "version": "0.1.14", "commit": COMMIT, "fingerprint": FINGERPRINT}
-IMAGE = "us-central1-docker.pkg.dev/demo/bots/galerazobot:" + "c" * 12
+IMAGE = "galerazo-bot:" + "c" * 12
 
 
 class Fixture:
@@ -34,13 +34,22 @@ class Fixture:
         self.dirty, self.fail_build, self.bad_asset, self.unhealthy = dirty, fail_build, bad_asset, unhealthy
         self.deployed = not changed
         self.metadata = dict(METADATA)
-        self.release = FrontendRelease(root, "demo", "us-central1-a", "galerazo-prod", run=self.run, get=self.get, sleep=lambda _: None)
+        self.release = FrontendRelease(root, vps_config="fixture.json", run=self.run, get=self.get, sleep=lambda _: None)
+
+
+        original_backend = self.release.backend
+        def backend(expected_image=None):
+            with patch.object(bridge, "VpsTransport", return_value=SimpleNamespace(remote=self.remote)):
+                return original_backend(expected_image)
+        self.release.backend = backend
+
+    def remote(self, command):
+        self.calls.append(["ssh", command])
+        state = {"Running": not self.unhealthy, "Health": {"Status": "healthy"}}
+        return json.dumps(state) + "\n" + IMAGE + "\n0.68"
 
     def run(self, args, *, cwd=None):
         self.calls.append(args)
-        if args[0] == "gcloud":
-            state = {"Running": not self.unhealthy, "Health": {"Status": "healthy"}}
-            return json.dumps(state) + "\n" + IMAGE + "\n0.68"
         if args[0] == "git":
             op = args[1]
             if op == "remote": return "https://github.com/ldebortoli/galerazo-web.git"
@@ -91,7 +100,7 @@ class FrontendReleaseTests(unittest.TestCase):
         compatible(METADATA, "0.68")
         for bad in ({**METADATA, "schema": 2}, {**METADATA, "commit": ""}, {**METADATA, "features": []}, {**METADATA, "minimum_bot_version": "0.69"}):
             with self.assertRaises(RuntimeError): compatible(bad, "0.68")
-        with self.assertRaises(ValueError): FrontendRelease(".", "bad; shell", "zone", "instance")
+        with self.assertRaises(ValueError): FrontendRelease(".", vps_config="")
 
     def test_pending_frontend_is_validated_published_and_verified(self):
         with tempfile.TemporaryDirectory() as root:
@@ -103,7 +112,7 @@ class FrontendReleaseTests(unittest.TestCase):
             self.assertTrue(any(args[-2:] == ["run", "coverage"] for args in commands))
             self.assertTrue(any("--dry-run" in args for args in commands))
             self.assertTrue(any("--tag" in args and COMMIT in args[-1] for args in commands))
-            self.assertFalse(any("Publish-DockerImage" in str(args) or "Deploy-Gce" in str(args) for args in commands))
+            self.assertFalse(any("vps_operations.py" in str(args) for args in commands))
             self.assertIn("remove", commands[-1])
 
     def test_identical_or_documentation_only_source_does_not_build_or_publish(self):
@@ -150,29 +159,21 @@ class FrontendReleaseTests(unittest.TestCase):
 
 @pytest.mark.parametrize("windows", [False, True])
 def test_subprocess_boundary_keeps_credentials_out_of_errors_and_disables_telemetry(tmp_path, windows):
-    gcloud = tmp_path / "Google/Cloud SDK/google-cloud-sdk/bin/gcloud.cmd"
-    gcloud.parent.mkdir(parents=True)
-    gcloud.write_text("fixture", encoding="utf-8")
     environment = {"LOCALAPPDATA": str(tmp_path), "EXISTING_SETTING": "preserved"}
     process = Mock(return_value=SimpleNamespace(returncode=0, stdout=" response \n"))
     with patch.object(bridge, "os", SimpleNamespace(name="nt" if windows else "posix", environ=environment)), patch.object(bridge.subprocess, "run", process):
-        assert bridge.command(["gcloud", "--command", "one\ntwo\n"], cwd=tmp_path) == "response"
+        assert bridge.command(["node", "script.js", "one\ntwo\n"], cwd=tmp_path) == "response"
         args, options = process.call_args
-        assert args[0][0] == (str(gcloud) if windows else "gcloud")
-        assert args[0][-1] == ("one; two" if windows else "one\ntwo\n")
+        assert args[0][0] == "node"
+        assert args[0][-1] == "one\ntwo\n"
         assert options["cwd"] == tmp_path and options["timeout"] == 1800
         assert options["env"] == {**environment, "CI": "true", "WRANGLER_WRITE_LOGS": "false", "WRANGLER_SEND_METRICS": "false"}
         process.return_value = SimpleNamespace(returncode=23, stdout="credential-sentinel", stderr="credential-sentinel")
         with pytest.raises(RuntimeError) as error:
-            bridge.command(["gcloud", "--command", "safe"])
+            bridge.command(["node", "script.js", "safe"])
         assert "exit 23" in str(error.value) and "credential-sentinel" not in str(error.value)
 
 
-def test_missing_windows_gcloud_stops_before_subprocess(tmp_path):
-    with patch.object(bridge, "os", SimpleNamespace(name="nt", environ={"LOCALAPPDATA": str(tmp_path)})), patch.object(bridge.subprocess, "run") as process:
-        with pytest.raises(RuntimeError, match="Google Cloud CLI is unavailable"):
-            bridge.command(["gcloud", "--command", "safe"])
-        process.assert_not_called()
 
 
 def test_http_adapter_preserves_status_headers_and_bounds_reads():
@@ -202,7 +203,7 @@ def test_http_adapter_preserves_status_headers_and_bounds_reads():
 ])
 def test_unavailable_or_unrecognized_frontend_never_bootstraps_a_release(tmp_path, responses, legacy, error):
     get = Mock(side_effect=responses)
-    release = FrontendRelease(tmp_path, "demo", "zone", "instance", get=get)
+    release = FrontendRelease(tmp_path, vps_config="fixture.json", get=get)
     with pytest.raises(error):
         release.metadata("https://fixture.invalid", legacy=legacy)
     assert get.call_count == len(responses)
@@ -229,7 +230,7 @@ def test_release_verification_requires_source_document_assets_and_closed_gateway
     plan = {"metadata": METADATA, "assets": {"app.js": hashlib.sha256(b"app.js").hexdigest()}}
     with pytest.raises(RuntimeError, match=message):
         fixture.release.verify(plan)
-    assert all(call[0] == "gcloud" for call in fixture.calls)
+    assert all(call[0] == "ssh" for call in fixture.calls)
 
 
 def test_verification_checks_both_domains_and_accepts_lowercase_cache_header(tmp_path):
@@ -268,7 +269,7 @@ def test_repository_identity_and_git_failures_block_before_snapshot_or_external_
     fixture.release.run = run
     with pytest.raises(RuntimeError, match=error):
         fixture.release.sync("0.68")
-    assert not any("worktree" in call or "deploy" in call or call[0] == "gcloud" for call in fixture.calls)
+    assert not any("worktree" in call or "deploy" in call or call[0] == "ssh" for call in fixture.calls)
 
 
 def test_remote_fast_forward_uses_remote_snapshot_without_mutating_live_checkout(tmp_path):
@@ -371,10 +372,10 @@ def test_cli_persists_sync_plan_and_passes_expected_image_to_verify(tmp_path, ca
     if stage == "verify":
         plan_file.parent.mkdir()
         plan_file.write_text(json.dumps(plan), encoding="utf-8")
-    argv = ["frontend_release.py", "--stage", stage, "--repository", str(tmp_path), "--project", "demo", "--zone", "zone", "--instance", "instance", "--result", str(plan_file), "--target-bot-version", "0.68", "--expected-image", IMAGE]
+    argv = ["frontend_release.py", "--stage", stage, "--repository", str(tmp_path), "--vps-config", "fixture.json", "--result", str(plan_file), "--target-bot-version", "0.68", "--expected-image", IMAGE]
     with patch.object(sys, "argv", argv), patch.object(bridge, "FrontendRelease", return_value=release) as create:
         bridge.main()
-    create.assert_called_once_with(str(tmp_path), "demo", "zone", "instance", vps_config=None)
+    create.assert_called_once_with(str(tmp_path), vps_config="fixture.json")
     if stage == "sync":
         release.sync.assert_called_once_with("0.68")
         release.verify.assert_not_called()
@@ -386,7 +387,7 @@ def test_cli_persists_sync_plan_and_passes_expected_image_to_verify(tmp_path, ca
 
 
 def test_cli_requires_target_version_before_sync(tmp_path, capsys):
-    argv = ["frontend_release.py", "--stage", "sync", "--repository", str(tmp_path), "--project", "demo", "--zone", "zone", "--instance", "instance", "--result", str(tmp_path / "result.json")]
+    argv = ["frontend_release.py", "--stage", "sync", "--repository", str(tmp_path), "--vps-config", "fixture.json", "--result", str(tmp_path / "result.json")]
     with patch.object(sys, "argv", argv), patch.object(bridge, "FrontendRelease") as create, pytest.raises(SystemExit) as error:
         bridge.main()
     assert error.value.code == 2
@@ -425,7 +426,7 @@ def test_powershell_release_wrapper_executes_selected_snapshot_with_existing_run
     process = subprocess.run([
         powershell, "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(repository / "scripts/deploy/Invoke-FrontendRelease.ps1"),
         "-Stage", "verify", "-FrontendRepositoryPath", str(tmp_path / "frontend"), "-RuntimeRepositoryPath", str(repository),
-        "-BotSourceRoot", str(snapshot), "-ResultFile", str(result), "-ProjectId", "demo", "-Zone", "zone", "-Instance", "instance", "-ExpectedImage", IMAGE,
+        "-BotSourceRoot", str(snapshot), "-ResultFile", str(result), "-ProjectId", "demo", "-Zone", "zone", "-Instance", "instance", "-ExpectedImage", IMAGE, "-VpsConfigFile", "fixture.json",
     ], capture_output=True, text=True, timeout=30, check=False)
     assert process.returncode == 0, process.stderr
     recorded = json.loads(result.read_text(encoding="utf-8"))

@@ -8,12 +8,11 @@ No existe modo preview ni respuesta simulada en el backend.
 
 ## Contrato
 
-Condicion de costo: no generar gastos adicionales. Los assets se sirven desde
-Cloudflare y sus derivados WebP se mantienen en Galerazo web; la VM solo entrega
-JSON. Antes de activar Tunnel/API, comprobar el consumo compartido del Free Tier
-de Google Cloud y el plan gratuito de Workers. Tunnel sin cargo no elimina el
-costo potencial de salida de datos de la VM. No ampliar recursos ni activar
-servicios pagos automaticamente; un presupuesto de Billing solo alerta, no corta.
+Los assets se sirven desde Cloudflare y sus derivados WebP se mantienen en
+Galerazo web; el VPS existente solo entrega JSON. La API escucha en loopback y
+el túnel usa el contenedor `deploy/vps/tunnel.yaml`, con métricas también locales.
+No ampliar recursos ni activar servicios pagos automáticamente. Ver
+[operación y límites](DEPLOY_VPS.md).
 
 | Gateway web | Backend | Metodo |
 | --- | --- | --- |
@@ -81,7 +80,7 @@ imagen, el reinicio del bot y el anuncio de version requieren el flujo autorizad
 de release de este proyecto. La web devuelve 503 hasta completar el corte.
 
 1. Verificar `getMe.username == galerazo_bot`. Aplicar mediante el parcheador
-   privado de configuracion el preset `deploy/gce/miniapp.env.example`, con el
+   privado de configuracion el preset `deploy/vps/miniapp.env.example`, con el
    secreto real: URL `https://galerazo.com/miniapp`, nombre corto `hisopos`, host
    `127.0.0.1`, puerto 8080. No aplicar al bot local de pruebas. El arranque
    rechaza para ese dominio una identidad de pruebas, una URL diferente,
@@ -90,27 +89,20 @@ de release de este proyecto. La web devuelve 503 hasta completar el corte.
 2. Crear un **tunel nombrado** en la cuenta Cloudflare existente, sin planes
    pagos, y un hostname HTTPS estable bajo `galerazo.com`. El candidato es
    `bot-api.galerazo.com`; el archivo de ejemplo no significa que ya exista.
-   Aplicar `deploy/gce/miniapp-tunnel-config.example.json` a su configuracion
+   Aplicar `deploy/vps/miniapp-tunnel-config.example.json` a su configuracion
    remota y el CNAME proxied del hostname hacia `<tunnel-id>.cfargotunnel.com`.
    Solo las tres rutas indicadas llegan al backend; todo lo demas termina en
    404. No habilitar cache, captura de headers/payloads, niveles debug ni reglas
    que registren el secreto o initData. No usar un Quick Tunnel efimero.
-3. Instalar `cloudflared` y la unidad supervisada siguiendo
-   [el mecanismo de corte mensual](MINIAPP_TRAFFIC_GUARD.md). Desde 0.63, el
-   supervisor de la VM avisa a 700/850 MB y detiene exclusivamente el tunel a
-   950 MB. Usa el runtime exacto de la imagen aprobada, UID 10001, estado
-   persistente y credenciales de avisos separadas. El bot sigue funcionando.
-   No instalar un segundo servicio de tunel que eluda el corte. Habilitar esta
-   unidad solamente durante el release autorizado. El token de tunel es
-   diferente del secreto proxy y nunca se entrega al Worker ni va en Git,
-   argumentos, mensajes o logs.
-4. La unidad usa salida IPv6, HTTP/2 por TCP 7844 y metricas solo en loopback.
-   La VM actual ya tiene Compose con red de host: `cloudflared` alcanza el
-   `127.0.0.1:8080` del bot sin publicar puertos. No abrir firewall entrante,
-   crear NAT, asignar IPv4, contratar servidor o cambiar de plan. Las sondas
-   TCP IPv6 a ambas regiones de Cloudflare funcionaron el 2026-09-07; falta
-   probar el tunel autenticado y su estabilidad. Cualquier alternativa paga
-   necesita autorizacion expresa.
+3. El túnel actual se administra con `deploy/vps/tunnel.yaml`: Cloudflare,
+   red de host, salida IPv4, HTTP/2 y métricas `127.0.0.1:20241`. Su contenedor
+   comparte el slice agregado de Galerazo y tiene 128 MiB, sin swap. El token
+   se monta en solo lectura desde `/etc/galerazo/cloudflared.token`; no va en
+   Git, argumentos, mensajes ni logs y nunca se entrega al Worker.
+4. `cloudflared` alcanza `127.0.0.1:8080` sin publicar puertos. Preservar la
+   configuración y el túnel existentes. Los cambios de producción requieren
+   un release autorizado; los ejemplos no modifican infraestructura. El
+   procedimiento de salud, despliegue y recuperación está en [DEPLOY_VPS.md](DEPLOY_VPS.md).
 5. Guardar como **secrets** del Worker `galerazo-web`:
    `MINI_APP_API_ORIGIN=https://bot-api.galerazo.com` (solo tras verificar el
    hostname real) y `MINI_APP_PROXY_SECRET` (valor identico al bot). Mantener
@@ -118,7 +110,7 @@ de release de este proyecto. La web devuelve 503 hasta completar el corte.
    SQLite a Cloudflare. Coordinar esta escritura con la tarea web; no editar
    su checkout en paralelo.
 6. Aprobar por separado el texto de `BROADCAST_CHANGELOG.md` y autorizar el
-   release de esta version desde Bot Control Center. Verificar backup, guard,
+   release de esta version desde Bot Control Center. Verificar backup, túnel,
    estado del servidor API y menu. No habilitar la URL en produccion 0.59:
    ese backend anterior todavia carece de la barrera del secreto proxy.
 

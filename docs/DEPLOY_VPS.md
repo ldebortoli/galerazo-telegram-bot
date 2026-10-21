@@ -1,7 +1,7 @@
 # Contabo deployment and database backups
 
 Production uses the existing Contabo host with Ubuntu 24.04, Docker's systemd
-cgroup driver and cgroup v2. Do not activate GCP billing, a registry, paid backup,
+cgroup driver and cgroup v2. Do not activate a registry, paid backup,
 new hosting or capacity upgrades without Lucas's explicit request.
 
 ## Limits and network
@@ -26,8 +26,7 @@ backend require the same private proxy secret plus valid Telegram initData.
 
 The verified rollout on 2026-10-20 runs bot 0.80 (`galerazo-bot:ee2aba412e2b`)
 and frontend 0.1.27 through Bot Control Center 0.1.7. Galerazo's operational
-configuration and catalog examples select only Contabo/SSH; the retired GCE
-target is absent. The existing monthly task uses this same configuration.
+configuration and catalog examples select only Contabo/SSH. The existing monthly task uses this same configuration.
 The rollout passed its joint verification, database integrity and isolated
 snapshot restore checks. Nine other containers retained their IDs, images,
 start times, restart counters and limits; host port bindings were unchanged.
@@ -89,8 +88,7 @@ candidate; verify both the file and the locally available image before rollback:
 A failed first candidate can restore its pre-deploy database after being stopped,
 but cannot restart a nonexistent previous image. If stopping a failed candidate
 fails, deployment leaves the database intact and requires operator recovery.
-Never manufacture a previous-image reference from an unverified tag or restart
-the retired GCP service to obtain one. Manual image rollback keeps current data
+Never manufacture a previous-image reference from an unverified tag. Manual image rollback keeps current data
 on success; restoring an older database is a separate, explicitly chosen action.
 
 The frontend bridge checks backend health over this same strict SSH transport.

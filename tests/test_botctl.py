@@ -10,7 +10,7 @@ import unittest
 from unittest.mock import patch
 
 
-SCRIPT = Path(__file__).parents[1] / "deploy" / "gce" / "botctl.py"
+SCRIPT = Path(__file__).parents[1] / "deploy" / "vps" / "botctl.py"
 SPEC = importlib.util.spec_from_file_location("galerazo_deploy_botctl", SCRIPT)
 assert SPEC and SPEC.loader
 botctl = importlib.util.module_from_spec(SPEC)

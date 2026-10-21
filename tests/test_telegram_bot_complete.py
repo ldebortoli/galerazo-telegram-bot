@@ -22,7 +22,6 @@ from telegram import (
 )
 from telegram.error import BadRequest, Conflict, Forbidden, NetworkError, TelegramError, TimedOut
 
-from galerazo_bot.cloud_billing import GoogleCloudBillingReader, GoogleCloudBillingReport
 from galerazo_bot.config import Settings
 from galerazo_bot.hisopos import MYSTERY_HISOPO
 from galerazo_bot.database import (
@@ -51,9 +50,6 @@ def settings(**overrides) -> Settings:
         telegram_log_chat_id="-10",
         telegram_announcements_chat_id="-11",
         database_path=Path("db.sqlite3"),
-        google_cloud_billing_project_id=None,
-        google_cloud_billing_table=None,
-        google_cloud_billing_report_time="09:00",
     )
     values.update(overrides)
     return Settings(**values)
@@ -113,7 +109,7 @@ def trigger(media_type=None, file_id=None, text=None, payload_json=None, caption
     return Trigger("-1", "name", "Name", text, media_type, file_id, caption, "1", "now", payload_json)
 
 
-class LifecycleAndBillingTests(unittest.IsolatedAsyncioTestCase):
+class LifecycleTests(unittest.IsolatedAsyncioTestCase):
     def test_panel_managed_restart_refreshes_the_pid_file(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             pid_path = Path(directory) / "bot.pid"
@@ -296,7 +292,7 @@ class LifecycleAndBillingTests(unittest.IsolatedAsyncioTestCase):
             tb, "_send_log_event", AsyncMock(return_value=True)
         ) as log, patch.object(
             tb, "_configure_mini_app", AsyncMock(return_value=False)
-        ) as configure_mini_app, patch.object(tb, "_schedule_google_cloud_billing_report") as schedule, patch.object(
+        ) as configure_mini_app, patch.object(
             tb, "_schedule_club_rewards"
         ) as club_schedule:
             await tb._post_init(app)
@@ -307,7 +303,6 @@ class LifecycleAndBillingTests(unittest.IsolatedAsyncioTestCase):
         announce.assert_awaited_once_with(db, app.bot, app.bot_data["settings"])
         cleanup.assert_awaited_once()
         log.assert_awaited_once()
-        schedule.assert_called_once()
         club_schedule.assert_called_once_with(app)
 
     async def test_release_announcement_only_marks_version_after_success(self) -> None:
@@ -380,42 +375,7 @@ class LifecycleAndBillingTests(unittest.IsolatedAsyncioTestCase):
         )
         db.set_announced_release_version.assert_called_once_with(tb.CURRENT_VERSION)
 
-    def test_schedule_invalid_reader_time_and_missing_job_queue(self) -> None:
-        app = SimpleNamespace(job_queue=MagicMock())
-        self.assertFalse(tb._schedule_google_cloud_billing_report(app, settings(telegram_log_chat_id=None)))
-        self.assertFalse(tb._schedule_google_cloud_billing_report(app, settings()))
-        configured = settings(
-            google_cloud_billing_project_id="project1",
-            google_cloud_billing_table="invalid",
-        )
-        self.assertFalse(tb._schedule_google_cloud_billing_report(app, configured))
-        configured = replace(
-            configured,
-            google_cloud_billing_table="project1.dataset.table",
-            google_cloud_billing_report_time="bad",
-        )
-        self.assertFalse(tb._schedule_google_cloud_billing_report(app, configured))
-        with self.assertRaisesRegex(RuntimeError, "job-queue"):
-            tb._schedule_google_cloud_billing_report(SimpleNamespace(job_queue=None), replace(configured, google_cloud_billing_report_time="09:00"))
 
-    async def test_billing_job_invalid_valid_and_report_failure(self) -> None:
-        app = SimpleNamespace(bot_data={"settings": settings()})
-        invalid = SimpleNamespace(job=None, application=app, bot=MagicMock())
-        await tb._google_cloud_billing_report_job(invalid)
-        reader = MagicMock(spec=GoogleCloudBillingReader)
-        valid = SimpleNamespace(job=SimpleNamespace(data=reader), application=app, bot=MagicMock())
-        with patch.object(tb, "_send_google_cloud_billing_report", AsyncMock(return_value=True)) as send:
-            await tb._google_cloud_billing_report_job(valid)
-        send.assert_awaited_once_with(valid.bot, "-10", reader)
-
-        reader.get_month_to_date = AsyncMock(return_value=GoogleCloudBillingReport("202607", (), None))
-        with patch.object(tb, "_send_log_event", AsyncMock(return_value=True)) as log:
-            self.assertTrue(await tb._send_google_cloud_billing_report(valid.bot, "-10", reader))
-        self.assertIn("gasto mensual", log.await_args.args[2])
-        reader.get_month_to_date.side_effect = RuntimeError("billing")
-        with patch.object(tb, "_send_log_event", AsyncMock(return_value=False)) as log:
-            self.assertFalse(await tb._send_google_cloud_billing_report(valid.bot, "-10", reader))
-        self.assertIn("No pude consultar", log.await_args.args[2])
 
 
 class PreprocessAndTriggerTests(unittest.IsolatedAsyncioTestCase):

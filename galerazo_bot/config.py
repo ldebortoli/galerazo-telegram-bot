@@ -14,9 +14,6 @@ class Settings:
     telegram_log_chat_id: str | None
     telegram_announcements_chat_id: str | None
     database_path: Path
-    google_cloud_billing_project_id: str | None = None
-    google_cloud_billing_table: str | None = None
-    google_cloud_billing_report_time: str = "09:00"
     telegram_hisopo_common_file_id: str | None = None
     telegram_hisopo_silver_file_id: str | None = None
     telegram_hisopo_gold_file_id: str | None = None
@@ -60,11 +57,6 @@ def load_settings() -> Settings:
         telegram_log_chat_id=os.getenv("TELEGRAM_LOG_CHAT_ID") or None,
         telegram_announcements_chat_id=os.getenv("TELEGRAM_ANNOUNCEMENTS_CHAT_ID") or None,
         database_path=Path(os.getenv("DATABASE_PATH", "data/galerazo.sqlite3")),
-        google_cloud_billing_project_id=os.getenv("GOOGLE_CLOUD_BILLING_PROJECT_ID") or None,
-        google_cloud_billing_table=os.getenv("GOOGLE_CLOUD_BILLING_TABLE") or None,
-        google_cloud_billing_report_time=_env_or_default(
-            "GOOGLE_CLOUD_BILLING_REPORT_TIME", "09:00"
-        ),
         telegram_hisopo_common_file_id=os.getenv("TELEGRAM_HISOPO_COMMON_FILE_ID") or None,
         telegram_hisopo_silver_file_id=os.getenv("TELEGRAM_HISOPO_SILVER_FILE_ID") or None,
         telegram_hisopo_gold_file_id=os.getenv("TELEGRAM_HISOPO_GOLD_FILE_ID") or None,

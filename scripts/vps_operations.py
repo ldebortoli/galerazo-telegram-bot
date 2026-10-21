@@ -63,7 +63,7 @@ def operate(root, transport, action, *, image=None, tag=None, arguments=(), outp
             transport.remote('rm -f -- '+remote)
     if action not in {'status','triggers','media','moderate','stop','notify-release'}:
         raise ValueError('Unknown VPS action.')
-    transport.upload(root/'deploy/gce/botctl.py','/opt/galerazo/botctl.py')
+    transport.upload(root/'deploy/vps/botctl.py','/opt/galerazo/botctl.py')
     remote_media='/opt/galerazo/media-'+uuid.uuid4().hex+'.bin'
     args=[action,*arguments]
     if action=='media':

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Local images arrive over authenticated SSH; no external registry or GCP.
+# Local images arrive over authenticated SSH; no external registry.
 set -Eeuo pipefail
 umask 077
 [[ $EUID == 0 && $# == 1 ]] || exit 2

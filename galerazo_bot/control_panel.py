@@ -57,9 +57,6 @@ FIELDS = (
     ("TELEGRAM_HISOPO_FINAL_BOSS_VICTORIOUS_FILE_ID", "File ID del Jefe Final victorioso", False),
     ("TELEGRAM_HISOPO_MIRACLE_FILE_ID", "File ID del hisopo milagroso", False),
     ("DATABASE_PATH", "Base de datos", False),
-    ("GOOGLE_CLOUD_BILLING_PROJECT_ID", "Proyecto de Google Billing", False),
-    ("GOOGLE_CLOUD_BILLING_TABLE", "Tabla de Google Billing", False),
-    ("GOOGLE_CLOUD_BILLING_REPORT_TIME", "Hora diaria de Billing", False),
 )
 
 
@@ -347,7 +344,6 @@ class ControlPanel(tk.Tk):
         values = _read_env()
         defaults = {
             "DATABASE_PATH": "data/galerazo.sqlite3",
-            "GOOGLE_CLOUD_BILLING_REPORT_TIME": "09:00",
         }
         for key, variable in self.variables.items():
             variable.set(values.get(key, defaults.get(key, "")))

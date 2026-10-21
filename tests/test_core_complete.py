@@ -14,9 +14,8 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
-from google.cloud import bigquery
 
-from galerazo_bot import chat_config, cli, cloud_billing, commands, config, deploy_backup
+from galerazo_bot import chat_config, cli, commands, config, deploy_backup
 from galerazo_bot import healthcheck, integration_status, logging_utils
 from galerazo_bot import pagination, roles, runtime, user_display
 from galerazo_bot.command_handlers import help as help_handler
@@ -221,9 +220,6 @@ class ConfigurationAndEntrypointTests(unittest.TestCase):
             "TELEGRAM_HISOPO_GIANT_FILE_ID": "giant",
             "TELEGRAM_HISOPO_MIRACLE_FILE_ID": "miracle",
             "DATABASE_PATH": "db.sqlite3",
-            "GOOGLE_CLOUD_BILLING_PROJECT_ID": "project",
-            "GOOGLE_CLOUD_BILLING_TABLE": "project1.dataset.table",
-            "GOOGLE_CLOUD_BILLING_REPORT_TIME": "10:30",
         }
         with patch.dict("os.environ", environment, clear=True):
             settings = config.load_settings()
@@ -250,7 +246,6 @@ class ConfigurationAndEntrypointTests(unittest.TestCase):
 
     def test_blank_optional_configuration_uses_safe_defaults(self) -> None:
         environment = {
-            "GOOGLE_CLOUD_BILLING_REPORT_TIME": "",
             "TELEGRAM_MINI_APP_SHORT_NAME": "",
             "MINI_APP_BIND_HOST": " ",
             "MINI_APP_PORT": "",
@@ -258,7 +253,6 @@ class ConfigurationAndEntrypointTests(unittest.TestCase):
         with patch.dict("os.environ", environment, clear=True):
             settings = config.load_settings()
 
-        self.assertEqual(settings.google_cloud_billing_report_time, "09:00")
         self.assertEqual(settings.telegram_mini_app_short_name, "hisopos")
         self.assertEqual(settings.mini_app_bind_host, "127.0.0.1")
         self.assertEqual(settings.mini_app_port, 8080)
@@ -318,38 +312,8 @@ class ConfigurationAndEntrypointTests(unittest.TestCase):
                 runtime.ensure_python_version()
 
 
-class BillingSheetsHealthAndStatusTests(unittest.IsolatedAsyncioTestCase):
-    def test_billing_remaining_format_and_conversion_paths(self) -> None:
-        self.assertFalse(cloud_billing.GoogleCloudBillingConfig(None, None).is_configured)
-        self.assertEqual(cloud_billing._as_decimal(None), Decimal("0"))
-        value = Decimal("1.2")
-        self.assertIs(cloud_billing._as_decimal(value), value)
-        self.assertEqual(cloud_billing._as_decimal(2), Decimal("2"))
-        first = datetime(2026, 1, 1)
-        second = datetime(2026, 1, 2, tzinfo=timezone.utc)
-        rows = [
-            SimpleNamespace(currency="USD", gross_cost=None, credits=Decimal("-1"), net_cost="2", latest_export_time=None),
-            SimpleNamespace(currency="ARS", gross_cost=1, credits=0, net_cost=1, latest_export_time=second),
-        ]
-        report = cloud_billing._build_report("202601", rows)
-        self.assertEqual(report.latest_export_time, second)
-        naive_report = replace(report, latest_export_time=first)
-        self.assertIn("Argentina", cloud_billing.format_google_cloud_billing_report(naive_report))
-        self.assertNotIn(
-            "Datos actualizados",
-            cloud_billing.format_google_cloud_billing_report(replace(report, latest_export_time=None)),
-        )
-        self.assertEqual(cloud_billing._format_decimal(Decimal("1234.5")), "1.234,50")
-        with patch("galerazo_bot.cloud_billing.bigquery.Client") as client:
-            cloud_billing._create_bigquery_client("project")
-        client.assert_called_once_with(project="project")
+class HealthAndStatusTests(unittest.IsolatedAsyncioTestCase):
 
-    async def test_billing_reader_missing_runtime_config(self) -> None:
-        reader = cloud_billing.GoogleCloudBillingReader(cloud_billing.GoogleCloudBillingConfig(None, None))
-        with self.assertRaises(RuntimeError):
-            await reader.get_month_to_date()
-        with self.assertRaises(RuntimeError):
-            reader._query("202601")
 
 
     def test_healthcheck_success_missing_and_bad_result(self) -> None:

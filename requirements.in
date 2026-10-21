@@ -3,11 +3,9 @@ colorama
 coverage
 pytest
 pytest-asyncio
-google-cloud-bigquery
 httpx
 Pillow
 python-telegram-bot[job-queue,rate-limiter]
 python-dotenv
-google-auth
 tzdata
 Telethon
