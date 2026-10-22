@@ -1,6 +1,6 @@
 # Galerazo Bot
 
-La fuente 0.80.1 admite 139 idiomas y variantes; la Mini App hermana 0.1.27 admite 192.
+La fuente 0.80.2 admite 139 idiomas y variantes; la Mini App hermana 0.1.27 admite 192.
 Se revisó el inventario de referencia de 250 opciones y se añadieron
 27/52 catálogos completos, sin relleno español/inglés. Exclusiones y validación:
 [idiomas privados](docs/PRIVATE_LANGUAGES.md). Son traducciones automáticas sin

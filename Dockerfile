@@ -1,16 +1,20 @@
-FROM python:3.14.8-slim AS base
+FROM python:3.14.9-slim AS base
 
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONDONTWRITEBYTECODE=1
 
 WORKDIR /app
 
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
 RUN groupadd --gid 10001 galerazo \
     && useradd --uid 10001 --gid galerazo --create-home --home-dir /home/galerazo galerazo \
     && install -d -o galerazo -g galerazo /app/data /app/backups
 
 COPY requirements.txt ./
-RUN python -m pip install --no-cache-dir --requirement requirements.txt
+RUN python -m pip install --no-cache-dir pip==26.2.2 --requirement requirements.txt
 
 FROM base AS test
 

@@ -1,4 +1,5 @@
 aiohttp
+certifi
 colorama
 coverage
 pytest

@@ -6,6 +6,8 @@ cubre y debe pasar de `borrador` a `aprobado` antes de publicar una imagen. Una 
 vacía con estado `omitido` registra una excepción explícitamente solicitada por el usuario:
 el runtime avanza el cursor sin enviar un broadcast ni acumularla para otro release.
 
+## [0.80.2] desde=[0.80] estado=omitido
+
 ## [0.80.1] desde=[0.80] estado=borrador
 
 Novedades de Galerazo Bot v0.80.1

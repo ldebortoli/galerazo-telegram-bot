@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.80.2] - 2026-10-22
+
+- Correcciones y mejoras: actualiza Python a 3.14.9, certifi a 2026.10.19 y pip a 26.2.2 con su bundle certifi 2026.10.19 para incorporar las correcciones de confianza de certificados eMudhra/emSign. La imagen renueva las CA del sistema mediante el paquete oficial de la distribución.
+- Incluye la limpieza 0.80.1 en el despliegue del VPS. Se omite el anuncio de esta entrega por pedido explícito del usuario; no cambia comandos, catálogos, credenciales ni controles TLS.
+
 ## [0.80.1] - 2026-10-21
 
 - Correcciones y mejoras: retira el reporte de Google Cloud Billing y las herramientas, dependencias y guías de la infraestructura reemplazada. Conserva el control del VPS, el túnel Cloudflare y el soporte de configuración de Google Sheets; el puente de frontend exige el transporte SSH vigente.
