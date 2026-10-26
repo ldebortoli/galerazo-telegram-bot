@@ -26,11 +26,20 @@ jobs:
         uses: actions/setup-python@v6
         with:
           python-version: "3.x"
+          check-latest: true
           cache: pip
           cache-dependency-path: requirements.in
 
       - name: Align runtime files
-        run: python scripts/runtime_versions.py --set-running
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import sys
+          configured = tuple(map(int, Path('.python-version').read_text().strip().split('.')))
+          if sys.version_info[:3] < configured:
+              raise SystemExit('Runner Python is older than the project pin; refusing a runtime downgrade.')
+          PY
+          python scripts/runtime_versions.py --set-running
 
       - name: Resolve latest stable dependencies
         run: |

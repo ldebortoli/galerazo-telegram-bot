@@ -81,6 +81,9 @@ class ContainerRuntimeTests(unittest.TestCase):
         for entry in (".codex/", "AGENTS.md", ".env.*", "secrets/", "*.key"):
             self.assertIn(entry, ignored)
         tunnel = (PROJECT_ROOT / "deploy/vps/tunnel.yaml").read_text()
+        self.assertIn("image: cloudflare/cloudflared:2026.10.3", tunnel)
+        self.assertIn("stop_grace_period: 35s", tunnel)
+        self.assertNotIn("--no-tls-verify", tunnel)
         self.assertIn("127.0.0.1:20241", tunnel)
         self.assertIn("--token-file", tunnel)
         self.assertIn("/run/secrets/tunnel-token:ro", tunnel)

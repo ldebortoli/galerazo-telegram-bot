@@ -19,6 +19,17 @@ own slice with at most 2 GiB; do not rely only on an API container limit.
 The bot polls Telegram outbound. Its Mini App API listens on `127.0.0.1:8080`.
 The existing Cloudflare tunnel serves `bot-api.galerazo.com`; its metrics also
 bind to loopback. Keep databases and administrative endpoints off public ports.
+
+The independent tunnel stack pins `cloudflare/cloudflared:2026.10.3`, following
+Cloudflare's October 2026 Docker update notice. Its 35-second stop timeout covers
+cloudflared's default 30-second request grace period. For an authorized update,
+hold the existing Bot Control Center operation lock and server deployment lock,
+start a temporary replica in the same application slice with separate loopback
+metrics, and verify readiness and Cloudflare connectivity before replacing the
+original connector. Verify the original is healthy on the new image before
+removing the temporary replica. Keep the previous image for rollback and preserve
+the bot, origin configuration, TLS verification, tokens and resource limits.
+Long-lived sessions on a replaced connector may need to reconnect.
 The public frontend remains on its existing Cloudflare Worker. The Worker and
 backend require the same private proxy secret plus valid Telegram initData.
 
