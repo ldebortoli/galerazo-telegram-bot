@@ -588,7 +588,7 @@ async def _preprocess_message(update: Update, context: ContextTypes.DEFAULT_TYPE
     if user is None or chat is None:
         return
 
-    state.db.get_or_create_user(str(user.id), _display_name(user), user.username)
+    state.db.get_or_create_user(str(user.id), _display_name(user), user.username, is_bot=getattr(user, 'is_bot', None))
     if state.db.is_user_blocked(str(user.id)):
         return
     if _is_user_restricted_in_message_chat(state.db, message, str(user.id)):
@@ -1025,7 +1025,7 @@ async def _hisopo_callback_entrypoint(
         return
 
     language = _chat_language(state.db, message.chat.id)
-    state.db.get_or_create_user(str(user.id), _display_name(user), user.username)
+    state.db.get_or_create_user(str(user.id), _display_name(user), user.username, is_bot=getattr(user, 'is_bot', None))
     if state.db.is_user_blocked(str(user.id)) or _is_user_restricted_in_callback_chat(
         state.db,
         callback_query,
@@ -1988,7 +1988,7 @@ async def _handle_command_update(update: Update, context: ContextTypes.DEFAULT_T
     if command is not None and getattr(command, "command_key", None) in {"reiniciarbot", "apagar"}:
         await _cleanup_expired_restart_confirmations(state.db, context.bot)
 
-    state.db.get_or_create_user(str(user.id), _display_name(user), user.username)
+    state.db.get_or_create_user(str(user.id), _display_name(user), user.username, is_bot=getattr(user, 'is_bot', None))
     if state.db.is_user_blocked(str(user.id)):
         return
     if _is_user_restricted_in_message_chat(state.db, message, str(user.id)):
@@ -2143,7 +2143,7 @@ async def _send_hisopo_collection(
     private = message.chat.type == "private"
     if private:
         target_user = requester
-    db.get_or_create_user(str(target_user.id), _display_name(target_user), target_user.username)
+    db.get_or_create_user(str(target_user.id), _display_name(target_user), target_user.username, is_bot=getattr(target_user, 'is_bot', None))
     entries = [] if private else db.get_hisopo_collection(chat_id, str(target_user.id))
     db.reconcile_club_rewards(user_id=str(target_user.id))
     text = render_hisopo_collection(
@@ -2191,7 +2191,7 @@ async def _callback_query_entrypoint(update: Update, context: ContextTypes.DEFAU
     if callback_query is None or user is None:
         return
 
-    state.db.get_or_create_user(str(user.id), _display_name(user), user.username)
+    state.db.get_or_create_user(str(user.id), _display_name(user), user.username, is_bot=getattr(user, 'is_bot', None))
     if state.db.is_user_blocked(str(user.id)):
         await callback_query.answer()
         return
@@ -2254,7 +2254,7 @@ async def _config_callback_entrypoint(update: Update, context: ContextTypes.DEFA
     if callback_query is None or user is None:
         return
 
-    state.db.get_or_create_user(str(user.id), _display_name(user), user.username)
+    state.db.get_or_create_user(str(user.id), _display_name(user), user.username, is_bot=getattr(user, 'is_bot', None))
     message = callback_query.message
     language = _chat_language(state.db, message.chat.id) if message is not None else DEFAULT_LANGUAGE
     if message is None or message.chat.type not in {"private", "group", "supergroup"}:
@@ -3027,7 +3027,7 @@ def _register_bot_added_event(message: Message, db: Database, bot_user_id: str) 
     if not was_bot_added:
         return
 
-    db.get_or_create_user(str(from_user.id), _display_name(from_user), from_user.username)
+    db.get_or_create_user(str(from_user.id), _display_name(from_user), from_user.username, is_bot=getattr(from_user, 'is_bot', None))
     db.register_chat(
         chat_id=str(chat.id),
         chat_type=chat.type,

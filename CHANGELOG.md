@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.81] - 2026-10-28
+
+- La Mini App permite regalar un cosmético de la colección propia mediante alias o user ID, con confirmación y sin comprar otra unidad. La tienda conserva la compra para regalo.
+- Correcciones y mejoras: los regalos actualizan las colecciones de ambas personas y los reintentos no duplican la entrega.
+- Los regalos de la colección rechazan bots y cuentas cuyo tipo todavía no se pudo verificar, sin descontar unidades.
+
 ## [0.80.3] - 2026-10-26
 
 - Correcciones y mejoras: actualiza el contenedor independiente de Cloudflare Tunnel a cloudflared 2026.10.3, como indica el aviso para Docker, y permite 35 segundos para completar su apagado gradual. Conserva la verificación TLS, el origen privado y los límites de recursos.

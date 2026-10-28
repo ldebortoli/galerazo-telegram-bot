@@ -144,6 +144,8 @@ def validate_init_data(
         auth_date = int(values["auth_date"])
         user_data = json.loads(values["user"])
         raw_user_id = user_data["id"]
+        if user_data.get('is_bot', False) is not False:
+            raise ValueError("Bot accounts cannot authenticate as Mini App users")
         if type(raw_user_id) is not int or not 0 < raw_user_id < 2**63:
             raise ValueError("Invalid user ID")
         user_id = str(raw_user_id)
@@ -213,7 +215,7 @@ class MiniAppApi:
         ):
             raise web.HTTPBadRequest(text="El pedido no es valido.")
         self.db.get_or_create_user(
-            user.user_id, None if user.name_fallback else user.display_name, user.username
+            user.user_id, None if user.name_fallback else user.display_name, user.username, is_bot=False
         )
         # A return to the viewer's own album never uses the shared owner as identity.
         if request.query.get("view") == "mine":
@@ -296,7 +298,7 @@ class MiniAppApi:
             value=body.get("recipient"),
         )
         self.db.get_or_create_user(
-            user.user_id, None if user.name_fallback else user.display_name, user.username
+            user.user_id, None if user.name_fallback else user.display_name, user.username, is_bot=False
         )
         source_chat_id = self._valid_source_chat_id(user.user_id, body.get("source_chat_id"))
         payload = create_payment_payload(
@@ -337,10 +339,44 @@ class MiniAppApi:
         if not isinstance(body, dict) or not isinstance(body.get("public"), bool):
             raise web.HTTPBadRequest(text="La visibilidad debe ser pública o anónima.")
         self.db.get_or_create_user(
-            user.user_id, None if user.name_fallback else user.display_name, user.username
+            user.user_id, None if user.name_fallback else user.display_name, user.username, is_bot=False
         )
         self.db.set_donor_display_public(user.user_id, body["public"])
         return web.json_response({"public": body["public"]})
+
+    async def transfer_cosmetic(self, request: web.Request) -> web.Response:
+        try:
+            user = self.authenticate(request)
+            body = await request.json()
+            if not isinstance(body, dict) or set(body) != {"item_key", "recipient", "request_id"}:
+                raise ValueError("Invalid request")
+            item = body['item_key']
+            request_id = body['request_id']
+            recipient = body['recipient']
+            if (not isinstance(item, str) or item not in {p.key for p in (*PAID_HISOPOS, CLUB_HISOPO)}
+                    or not isinstance(request_id, str) or not re.fullmatch(r'[A-Za-z0-9_-]{16,80}', request_id)
+                    or not isinstance(recipient, str) or not recipient.strip()):
+                raise ValueError("Invalid request")
+        except InitDataError as exc:
+            raise web.HTTPUnauthorized() from exc
+        except (TypeError, ValueError) as exc:
+            raise web.HTTPBadRequest() from exc
+        recipient_id, _ = self._purchase_recipient(user, kind='product', value=recipient)
+        recipient_id = str(int(recipient_id))
+        if int(recipient_id) >= 2**63 or recipient_id == self.bot_token.partition(':')[0]:
+            raise web.HTTPBadRequest()
+        self.db.get_or_create_user(user.user_id, None if user.name_fallback else user.display_name, user.username, is_bot=False)
+        if self.db.is_user_blocked(user.user_id):
+            raise web.HTTPForbidden()
+        recipient_is_bot = self.db.get_user_bot_status(recipient_id)
+        if recipient_is_bot is not False:
+            return web.json_response({'error': 'gift_bot' if recipient_is_bot is True else 'gift_unverified'}, status=409)
+        try:
+            self.db.transfer_paid_hisopo(sender_user_id=user.user_id, recipient_user_id=recipient_id,
+                                        hisopo_key=item, request_id=request_id)
+        except ValueError as exc:
+            return web.json_response({"error": str(exc)}, status=409)
+        return web.json_response({"transferred": True, "recipient_user_id": recipient_id})
 
     def _selected_chat_id(
         self,
@@ -504,6 +540,7 @@ class MiniAppApi:
             return payload
         return {
             **payload,
+            "owned_gifts": True,
             "donation_tiers": list(DONATION_TIERS),
             "club": {
                 "price_stars": CLUB_HISOPO.price_stars,
@@ -605,6 +642,7 @@ def build_mini_app(
     app.router.add_get("/api/bootstrap", api.bootstrap, allow_head=False)
     app.router.add_post("/api/invoice", api.create_invoice)
     app.router.add_post("/api/donor-visibility", api.donor_visibility)
+    app.router.add_post("/api/gift", api.transfer_cosmetic)
     return app
 
 

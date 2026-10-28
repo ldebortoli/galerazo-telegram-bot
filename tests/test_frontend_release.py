@@ -98,6 +98,10 @@ class FrontendReleaseTests(unittest.TestCase):
         for bad in ("bad", "0", "1.2.3.4"):
             with self.assertRaises(ValueError): version(bad)
         compatible(METADATA, "0.68")
+        compatible(METADATA, "0.80.3")
+        with self.assertRaisesRegex(RuntimeError, 'owned cosmetic gifts'):
+            compatible(METADATA, "0.81")
+        compatible({**METADATA, "features": [*FEATURES, 'owned-cosmetic-gifts']}, "0.81")
         for bad in ({**METADATA, "schema": 2}, {**METADATA, "commit": ""}, {**METADATA, "features": []}, {**METADATA, "minimum_bot_version": "0.69"}):
             with self.assertRaises(RuntimeError): compatible(bad, "0.68")
         with self.assertRaises(ValueError): FrontendRelease(".", vps_config="")

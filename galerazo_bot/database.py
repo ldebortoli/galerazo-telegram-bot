@@ -10,6 +10,7 @@ from pathlib import Path
 from zoneinfo import ZoneInfo
 
 from .club_rewards import reconcile_rewards
+from . import cosmetic_inventory
 
 
 MAX_HISOPO_SCHEDULES_PER_CHAT_DAY = 10
@@ -300,6 +301,8 @@ class Database:
             )
             _ensure_column(conn, "users", "username", "TEXT")
             conn.execute("CREATE INDEX IF NOT EXISTS idx_users_username ON users (username)")
+            conn.execute("CREATE TABLE IF NOT EXISTS telegram_user_kinds (user_id TEXT PRIMARY KEY, "
+                         "is_bot INTEGER NOT NULL CHECK(is_bot IN (0, 1)))")
             conn.execute(
                 """
                 CREATE TABLE IF NOT EXISTS chats (
@@ -764,6 +767,7 @@ class Database:
             from .final_boss import initialize_schema as initialize_final_boss_schema
 
             initialize_final_boss_schema(conn)
+            cosmetic_inventory.initialize(conn)
 
     @staticmethod
     def _apply_schema_migrations(conn: sqlite3.Connection) -> None:
@@ -1044,6 +1048,7 @@ class Database:
         user_id: str,
         display_name: str | None = None,
         username: str | None = None,
+        *, is_bot: bool | None = None,
     ) -> User:
         normalized_username = _normalize_username(username)
         with self._connect() as conn:
@@ -1058,6 +1063,9 @@ class Database:
                 """,
                 (user_id, display_name, normalized_username),
             )
+            if type(is_bot) is bool:
+                conn.execute("INSERT INTO telegram_user_kinds VALUES (?, ?) ON CONFLICT(user_id) "
+                             "DO UPDATE SET is_bot = excluded.is_bot", (user_id, int(is_bot)))
             row = conn.execute(
                 "SELECT user_id, display_name, username FROM users WHERE user_id = ?",
                 (user_id,),
@@ -1068,6 +1076,11 @@ class Database:
             display_name=row["display_name"],
             username=row["username"],
         )
+
+    def get_user_bot_status(self, user_id: str) -> bool | None:
+        with self._connect() as conn:
+            row = conn.execute('SELECT is_bot FROM telegram_user_kinds WHERE user_id = ?', (user_id,)).fetchone()
+        return bool(row['is_bot']) if row is not None else None
 
     def get_user(self, user_id: str) -> User | None:
         with self._connect() as conn:
@@ -2823,7 +2836,16 @@ class Database:
                 """,
                 (recipient_user_id, hisopo_key),
             ).fetchone()
+            cosmetic_inventory.credit(conn, recipient_user_id, hisopo_key, 'legacy:' + recipient_user_id, 1)
         return int(row["quantity"])
+
+    def transfer_paid_hisopo(self, *, sender_user_id: str, recipient_user_id: str,
+                            hisopo_key: str, request_id: str) -> None:
+        with self._connect() as conn:
+            conn.execute("BEGIN IMMEDIATE")
+            reconcile_rewards(conn, datetime.now(timezone.utc), user_id=sender_user_id)
+            cosmetic_inventory.transfer(conn, sender_user_id, recipient_user_id, hisopo_key,
+                                        request_id, datetime.now(timezone.utc).isoformat())
 
     def record_star_payment(
         self,
@@ -2900,6 +2922,8 @@ class Database:
                     """,
                     (effective_recipient_id, reward_hisopo_key, paid_at, paid_at),
                 )
+                cosmetic_inventory.credit(conn, effective_recipient_id, reward_hisopo_key,
+                                          'payment:' + telegram_payment_charge_id, 1)
             if kind == "subscription":
                 conn.execute(
                     """
@@ -2925,6 +2949,7 @@ class Database:
         refunded_at: str,
     ) -> bool:
         with self._connect() as conn:
+            conn.execute("BEGIN IMMEDIATE")
             payment = conn.execute(
                 """
                 SELECT user_id, COALESCE(recipient_user_id, user_id) AS recipient_user_id,
@@ -2946,21 +2971,7 @@ class Database:
             )
             reward_key = payment["reward_hisopo_key"] or None
             if reward_key is not None:
-                conn.execute(
-                    """
-                    DELETE FROM paid_hisopo_ownership
-                    WHERE user_id = ? AND hisopo_key = ? AND quantity = 1
-                    """,
-                    (payment["recipient_user_id"], reward_key),
-                )
-                conn.execute(
-                    """
-                    UPDATE paid_hisopo_ownership
-                    SET quantity = quantity - 1, last_acquired_at = ?
-                    WHERE user_id = ? AND hisopo_key = ? AND quantity > 1
-                    """,
-                    (refunded_at, payment["recipient_user_id"], reward_key),
-                )
+                cosmetic_inventory.revoke(conn, reward_key, 'payment:' + telegram_payment_charge_id, 1, refunded_at)
             if payment["kind"] == "subscription":
                 summary = conn.execute(
                     """

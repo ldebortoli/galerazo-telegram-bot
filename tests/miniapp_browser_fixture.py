@@ -28,8 +28,10 @@ PROXY_SECRET = "browser-fixture-proxy-secret-000000000000"
 
 def prepare(directory: Path):
     db = Database(directory / "browser-fixture.sqlite3")
-    db.get_or_create_user("1", "Ada (fixture)", "ada_fixture")
-    db.get_or_create_user("2", "Bob (fixture)", "bob_fixture")
+    db.get_or_create_user("1", "Ada (fixture)", "ada_fixture", is_bot=False)
+    db.get_or_create_user("2", "Bob (fixture)", "bob_fixture", is_bot=False)
+    db.get_or_create_user("3", "Robot (fixture)", "robot_fixture", is_bot=True)
+    db.get_or_create_user("4", "Legacy account (fixture)", "legacy_fixture")
     for recipient, item in (("1", "stellar"), ("2", "massive")):
         db.grant_paid_hisopo(gifted_by_user_id="2", recipient_user_id=recipient,
                             hisopo_key=item, gifted_at="2026-10-07")
@@ -48,7 +50,7 @@ def prepare(directory: Path):
     contexts = {
         "shared": signed_init_data(user=visitor, start_param=shared),
         "own": signed_init_data(user=visitor),
-        "owner": signed_init_data(start_param=shared),
+        "owner": signed_init_data(user={"id": 1, "first_name": "Ada (fixture)", "username": "ada_fixture"}, start_param=shared),
         "empty": signed_init_data(user=visitor, start_param=empty),
         "invalid": signed_init_data(user=visitor, start_param="s1_invalid"),
         "expired": signed_init_data(user=visitor, start_param=shared, auth_date=int(

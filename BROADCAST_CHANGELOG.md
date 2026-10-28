@@ -6,6 +6,16 @@ cubre y debe pasar de `borrador` a `aprobado` antes de publicar una imagen. Una 
 vacía con estado `omitido` registra una excepción explícitamente solicitada por el usuario:
 el runtime avanza el cursor sin enviar un broadcast ni acumularla para otro release.
 
+## [0.81] desde=[0.80.2] estado=aprobado
+
+Novedades de Galerazo Bot v0.81
+
+Ahora podés regalar los cosméticos que ya tenés desde tu colección en la Mini App. Elegí uno, ingresá el alias o user ID de la persona y confirmá: se transfiere una unidad, sin comprar otra.
+
+También podés seguir comprando cosméticos para regalar desde la tienda.
+
+Correcciones y mejoras en la conexión de la Mini App.
+
 ## [0.80.3] desde=[0.80.2] estado=borrador
 
 Novedades de Galerazo Bot v0.80.3

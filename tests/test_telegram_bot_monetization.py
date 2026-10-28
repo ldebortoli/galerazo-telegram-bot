@@ -215,7 +215,7 @@ class TelegramBotMonetizationTests(unittest.IsolatedAsyncioTestCase):
         self.assertIn("startapp=", button.url)
         shared = parse_shared_album_context("token", parse_qs(urlsplit(button.url).query)["startapp"][0])
         self.assertEqual(shared, ("-1", "2"))
-        db.get_or_create_user.assert_called_with("2", "Grace", None)
+        db.get_or_create_user.assert_called_with("2", "Grace", None, is_bot=False)
 
         message.reply_text.side_effect = TimedOut()
         self.assertFalse(

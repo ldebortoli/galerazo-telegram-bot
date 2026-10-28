@@ -63,6 +63,8 @@ def compatible(metadata, bot_version):
         raise RuntimeError("Frontend requires a newer bot")
     if version(bot_version) >= version("0.65") and not FEATURES.issubset(metadata.get("features", [])):
         raise RuntimeError("Frontend cannot handle the bot album contract")
+    if version(bot_version) >= version("0.81") and "owned-cosmetic-gifts" not in metadata.get("features", []):
+        raise RuntimeError("Frontend is missing owned cosmetic gifts")
 
 
 class FrontendRelease:

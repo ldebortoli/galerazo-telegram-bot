@@ -504,7 +504,7 @@ class MiniAppApiTests(unittest.IsolatedAsyncioTestCase):
             proxy_secret="s" * 32,
         )
         self.assertIsInstance(app[MINI_APP_API_KEY], MiniAppApi)
-        self.assertEqual(len(list(app.router.routes())), 3)
+        self.assertEqual(len(list(app.router.routes())), 4)
 
         service = await start_mini_app(
             db=self.db,

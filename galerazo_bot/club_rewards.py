@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import sqlite3
 from datetime import datetime, timedelta, timezone
+from . import cosmetic_inventory
 
 
 CLUB_PERIOD = timedelta(days=30)
@@ -80,16 +81,9 @@ def reconcile_rewards(
                 "last_acquired_at = excluded.last_acquired_at",
                 (member_id, CLUB_REWARD_KEY, delta, timestamp, timestamp),
             )
+            cosmetic_inventory.credit(conn, member_id, CLUB_REWARD_KEY, 'club:' + member_id, delta)
         else:
-            conn.execute(
-                "DELETE FROM paid_hisopo_ownership WHERE user_id = ? AND hisopo_key = ? AND quantity <= ?",
-                (member_id, CLUB_REWARD_KEY, -delta),
-            )
-            conn.execute(
-                "UPDATE paid_hisopo_ownership SET quantity = quantity + ?, last_acquired_at = ? "
-                "WHERE user_id = ? AND hisopo_key = ?",
-                (delta, timestamp, member_id, CLUB_REWARD_KEY),
-            )
+            cosmetic_inventory.revoke(conn, CLUB_REWARD_KEY, 'club:' + member_id, -delta, timestamp)
         conn.execute(
             "INSERT INTO club_reward_ledger "
             "(user_id, quantity_delta, earned_total, evaluated_at, processed_at) VALUES (?, ?, ?, ?, ?)",

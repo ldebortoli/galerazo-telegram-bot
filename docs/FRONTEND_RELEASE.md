@@ -37,7 +37,9 @@ pero no seleccionan otro transporte.
 
 `release-contract.json` declara esquema, version minima compatible y capacidades;
 la metadata compilada agrega version, commit y fingerprint. `shared-album-s1`,
-`own-view` y `club-90-days` son obligatorios cuando bot >=0.65. Frontend actual
+`own-view` y `club-90-days` son obligatorios cuando bot >=0.65; desde bot0.81
+también se exige `owned-cosmetic-gifts`. El bootstrap propio anuncia `owned_gifts`
+y la UI oculta esa acción si el backend anterior no la ofrece. Frontend actual
 mantiene compatibilidad desde bot0.63. Se comprueban tanto bot actual como corte
 objetivo antes de publicar web. Una evolucion del protocolo requiere actualizar
 este contrato, pruebas y el puente; la version por si sola no valida otro esquema.
